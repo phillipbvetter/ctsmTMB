@@ -85,23 +85,23 @@ which can be used to define a stochastic state space system.</p>
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
 
 <ul><li><p><a href="#method-ctsmTMB-new"><code>ctsmTMB$new()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-add_systems"><code>ctsmTMB$add_systems()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-add_observations"><code>ctsmTMB$add_observations()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-add_observation_variances"><code>ctsmTMB$add_observation_variances()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-add_inputs"><code>ctsmTMB$add_inputs()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-add_parameters"><code>ctsmTMB$add_parameters()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-add_algebraics"><code>ctsmTMB$add_algebraics()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-set_initial_state"><code>ctsmTMB$set_initial_state()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-set_lamperti"><code>ctsmTMB$set_lamperti()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-set_modelname"><code>ctsmTMB$set_modelname()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-addSystem"><code>ctsmTMB$addSystem()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-addObs"><code>ctsmTMB$addObs()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-setVariance"><code>ctsmTMB$setVariance()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-addInput"><code>ctsmTMB$addInput()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-setParameter"><code>ctsmTMB$setParameter()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-setAlgebraics"><code>ctsmTMB$setAlgebraics()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-setInitialState"><code>ctsmTMB$setInitialState()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-setLamperti"><code>ctsmTMB$setLamperti()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-setModelname"><code>ctsmTMB$setModelname()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-set_cppfile_directory"><code>ctsmTMB$set_cppfile_directory()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-set_map"><code>ctsmTMB$set_map()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-get_systems"><code>ctsmTMB$get_systems()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-get_observations"><code>ctsmTMB$get_observations()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-get_observation_variances"><code>ctsmTMB$get_observation_variances()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-get_algebraics"><code>ctsmTMB$get_algebraics()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-get_initial_state"><code>ctsmTMB$get_initial_state()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-get_parameters"><code>ctsmTMB$get_parameters()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-setMAP"><code>ctsmTMB$setMAP()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-getSystems"><code>ctsmTMB$getSystems()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-getObservations"><code>ctsmTMB$getObservations()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-getVariances"><code>ctsmTMB$getVariances()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-getAlgebraics"><code>ctsmTMB$getAlgebraics()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-getInitialState"><code>ctsmTMB$getInitialState()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-getParameters"><code>ctsmTMB$getParameters()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-construct_nll"><code>ctsmTMB$construct_nll()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-estimate"><code>ctsmTMB$estimate()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-simulate"><code>ctsmTMB$simulate()</code></a></p></li>
@@ -118,8 +118,8 @@ which can be used to define a stochastic state space system.</p>
 </div>
 
 
-</div><p></p><hr><a id="method-ctsmTMB-add_systems"></a><div class="section">
-<h3 id="method-add-systems-">Method <code><a href="add_systems.html">add_systems()</a></code><a class="anchor" aria-label="anchor" href="#method-add-systems-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-addSystem"></a><div class="section">
+<h3 id="method-addsystem-">Method <code><a href="addSystem.html">addSystem()</a></code><a class="anchor" aria-label="anchor" href="#method-addsystem-"></a></h3>
 <p>Define and add multiple stochastic differential equation governing the
 process of individual state variables on the form</p>
 <p><code>d&lt;state&gt; ~ f(t,&lt;states&gt;,&lt;inputs&gt;) * dt + g1(t,&lt;states&gt;,&lt;inputs&gt;) * dw1 
@@ -127,7 +127,7 @@ process of individual state variables on the form</p>
 <p>where <code>f</code> is the drift, and <code>g1, g2, ..., gN</code> are diffusions, with
 differential brownian motions dw1, dw2, ..., dwN.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">add_systems</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -147,13 +147,13 @@ multiple equations at once.</p></dd>
 <div class="section">
 <h4 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a></h4>
 <p></p><div class="r example copy"><div class="sourceCode"><pre><code><span><span class="co"># Specify Ornstein-Uhlenbeck Process</span></span>
-<span><span class="fu"><a href="../reference/add_systems.html">add_systems</a></span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">x</span> <span class="op">+</span> <span class="va">u</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/addSystem.html">addSystem</a></span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">x</span> <span class="op">+</span> <span class="va">u</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span>
 <span>             </span></code></pre></div><p></p></div>
 </div>
 
 
-</div><p></p><hr><a id="method-ctsmTMB-add_observations"></a><div class="section">
-<h3 id="method-add-observations-">Method <code><a href="add_observations.html">add_observations()</a></code><a class="anchor" aria-label="anchor" href="#method-add-observations-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-addObs"></a><div class="section">
+<h3 id="method-addobs-">Method <code><a href="addObs.html">addObs()</a></code><a class="anchor" aria-label="anchor" href="#method-addobs-"></a></h3>
 <p>Define and add a relationship between an observed variable and system states.
 The observation equation takes the form</p>
 <p><code>&lt;observation&gt; ~ h(t,&lt;states&gt;,&lt;inputs&gt;) + e)</code></p>
@@ -162,7 +162,7 @@ distributed noise with zero mean and variance to be specified. The
 observation variable should be present in the data provided when calling
 <code>estimate(.data)</code> for parameter estimation.</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">add_observations</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span>, obsnames <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span>, obsnames <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -186,26 +186,26 @@ given a name on the form obs__# where # is a number, unless obsnames is provided
 <div class="section">
 <h4 id="examples-1">Examples<a class="anchor" aria-label="anchor" href="#examples-1"></a></h4>
 <p></p><div class="r example copy"><div class="sourceCode"><pre><code>#Specify observation directly as a latent state
-add_observations(y ~ x)
+addObs(y ~ x)
 
 Specify observation as the sum of exponentials of two latent states
-add_observations(y ~ exp(x1) + exp(x2))
+addObs(y ~ exp(x1) + exp(x2))
 </code></pre></div><p></p></div>
 </div>
 
 
-</div><p></p><hr><a id="method-ctsmTMB-add_observation_variances"></a><div class="section">
-<h3 id="method-add-observation-variances-">Method <code><a href="add_observation_variances.html">add_observation_variances()</a></code><a class="anchor" aria-label="anchor" href="#method-add-observation-variances-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-setVariance"></a><div class="section">
+<h3 id="method-setvariance-">Method <code><a href="setVariance.html">setVariance()</a></code><a class="anchor" aria-label="anchor" href="#method-setvariance-"></a></h3>
 <p>Specify the variance of an observation equation.</p>
-<p>A defined observation variable <code>y</code> in e.g. <code>add_observations(y ~ 
+<p>A defined observation variable <code>y</code> in e.g. <code>addObs(y ~ 
 h(t,&lt;states&gt;,&lt;inputs&gt;)</code> is pertubed by Gaussian noise with zero mean and
 variance
-to-be specified using <code>add_observation_variances(y ~ p(t,&lt;states&gt;,&lt;inputs&gt;)</code>.
-We can for instance declare <code>add_observation_variances(y ~ sigma_x^2</code>
+to-be specified using <code>setVariance(y ~ p(t,&lt;states&gt;,&lt;inputs&gt;)</code>.
+We can for instance declare <code>setVariance(y ~ sigma_x^2</code>
 where <code>sigma_x</code> is a fixed effect parameter to be declared through
-<code>add_parameters</code>.</p><div class="section">
+<code>setParameter</code>.</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">add_observation_variances</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -223,16 +223,16 @@ observation equations at a time.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-ctsmTMB-add_inputs"></a><div class="section">
-<h3 id="method-add-inputs-">Method <code><a href="add_inputs.html">add_inputs()</a></code><a class="anchor" aria-label="anchor" href="#method-add-inputs-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-addInput"></a><div class="section">
+<h3 id="method-addinput-">Method <code><a href="addInput.html">addInput()</a></code><a class="anchor" aria-label="anchor" href="#method-addinput-"></a></h3>
 <p>Declare variables as data inputs</p>
 <p>Declare whether a variable contained in system, observation or observation
 variance equations is an input variable. If e.g. the system equation contains
-an input variable <code>u</code> then it is declared using <code>add_inputs(u)</code>.
+an input variable <code>u</code> then it is declared using <code>addInput(u)</code>.
 The input <code>u</code> must be contained in the data.frame <code>.data</code> provided
 when calling the <code>estimate</code> or <code>predict</code> methods.</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">add_inputs</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">addInput</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -244,11 +244,11 @@ when calling the <code>estimate</code> or <code>predict</code> methods.</p><div 
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-ctsmTMB-add_parameters"></a><div class="section">
-<h3 id="method-add-parameters-">Method <code><a href="add_parameters.html">add_parameters()</a></code><a class="anchor" aria-label="anchor" href="#method-add-parameters-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-setParameter"></a><div class="section">
+<h3 id="method-setparameter-">Method <code><a href="setParameter.html">setParameter()</a></code><a class="anchor" aria-label="anchor" href="#method-setparameter-"></a></h3>
 <p>Declare which variables that are (fixed effects) parameters in
 the specified model, and specify the initial optimizer value, as well as
-lower / upper bounds during optimization. There are two ways to declare parameters:</p><ol><li><p>You can declare parameters using formulas i.e. <code>add_parameters( 
+lower / upper bounds during optimization. There are two ways to declare parameters:</p><ol><li><p>You can declare parameters using formulas i.e. <code>setParameter( 
 theta = c(1,0,10), mu = c(0,-10,10) )</code>. The first value is the initial
 value for the optimizer, the second value is the lower optimization
 bound and the third value is the upper optimization bound.</p></li>
@@ -257,7 +257,7 @@ parameters, and the parameter names are provided as rownames of the matrix.
 The columns values corresponds to the description in the vector format above.</p></li>
 </ol><div class="section">
 <h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">add_parameters</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -269,19 +269,19 @@ The columns values corresponds to the description in the vector format above.</p
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-ctsmTMB-add_algebraics"></a><div class="section">
-<h3 id="method-add-algebraics-">Method <code><a href="add_algebraics.html">add_algebraics()</a></code><a class="anchor" aria-label="anchor" href="#method-add-algebraics-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-setAlgebraics"></a><div class="section">
+<h3 id="method-setalgebraics-">Method <code><a href="setAlgebraics.html">setAlgebraics()</a></code><a class="anchor" aria-label="anchor" href="#method-setalgebraics-"></a></h3>
 <p>Add algebraic relations.</p>
 <p>Algebraic relations is a convenient way to transform parameters in your equations.
 In the Ornstein-Uhlenbeck process the rate parameter <code>theta</code> is always positive, so
 estimation in the log-domain is a good idea. Instead of writing <code>exp(theta)</code> directly
 in the system equation one can transform into the log domain using the algebraic relation
-<code>add_algebraics(theta ~ exp(logtheta))</code>. All instances of <code>theta</code> is replaced
+<code>setAlgebraics(theta ~ exp(logtheta))</code>. All instances of <code>theta</code> is replaced
 by <code>exp(logtheta)</code> when compiling the C++ function. Note that you must provide values
 for <code>logtheta</code> now instead of <code>theta</code> when declaring parameters through
-<code>add_parameters</code></p><div class="section">
+<code>setParameter</code></p><div class="section">
 <h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">add_algebraics</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -297,11 +297,11 @@ for <code>logtheta</code> now instead of <code>theta</code> when declaring param
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-ctsmTMB-set_initial_state"></a><div class="section">
-<h3 id="method-set-initial-state-">Method <code><a href="set_initial_state.html">set_initial_state()</a></code><a class="anchor" aria-label="anchor" href="#method-set-initial-state-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-setInitialState"></a><div class="section">
+<h3 id="method-setinitialstate-">Method <code><a href="setInitialState.html">setInitialState()</a></code><a class="anchor" aria-label="anchor" href="#method-setinitialstate-"></a></h3>
 <p>Declare the initial state values i.e. mean and covariance for the system states.</p><div class="section">
 <h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">set_initial_state</span><span class="op">(</span><span class="va">initial.state</span>, estimate <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="va">initial.state</span>, estimate <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -319,8 +319,8 @@ used as initial guesses</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-ctsmTMB-set_lamperti"></a><div class="section">
-<h3 id="method-set-lamperti-">Method <code>set_lamperti()</code><a class="anchor" aria-label="anchor" href="#method-set-lamperti-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-setLamperti"></a><div class="section">
+<h3 id="method-setlamperti-">Method <code>setLamperti()</code><a class="anchor" aria-label="anchor" href="#method-setlamperti-"></a></h3>
 <p>Set a Lamperti Transformation</p>
 <p>If the provided system equations have state dependent diffusion in a few available ways
 then it is advantageous to perform a transformation to remove the state dependence. This
@@ -331,7 +331,7 @@ is currently supported</p><ol><li><p>'identity' - when the diffusion is state-in
 <li><p>'sqrt-logit' - when the diffusion is proportional to sqrt(x * (1-x)) * dw</p></li>
 </ol><div class="section">
 <h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">set_lamperti</span><span class="op">(</span><span class="va">transforms</span>, states <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setLamperti</span><span class="op">(</span><span class="va">transforms</span>, states <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -347,14 +347,14 @@ is currently supported</p><ol><li><p>'identity' - when the diffusion is state-in
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-ctsmTMB-set_modelname"></a><div class="section">
-<h3 id="method-set-modelname-">Method <code>set_modelname()</code><a class="anchor" aria-label="anchor" href="#method-set-modelname-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-setModelname"></a><div class="section">
+<h3 id="method-setmodelname-">Method <code>setModelname()</code><a class="anchor" aria-label="anchor" href="#method-setmodelname-"></a></h3>
 <p>Set modelname used to create the C++ file for TMB</p>
 <p>When calling <code><a href="https://rdrr.io/pkg/TMB/man/MakeADFun.html" class="external-link">TMB::MakeADFun</a></code> the (negative log) likelihood function
 is created in the directory specified by the <code>set_cppfile_directory</code>
 method with name <code>&lt;modelname&gt;.cpp</code></p><div class="section">
 <h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">set_modelname</span><span class="op">(</span><span class="va">name</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="va">name</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -385,14 +385,14 @@ in the current working directory - then you can call e.g.
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-ctsmTMB-set_map"></a><div class="section">
-<h3 id="method-set-map-">Method <code>set_map()</code><a class="anchor" aria-label="anchor" href="#method-set-map-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-setMAP"></a><div class="section">
+<h3 id="method-setmap-">Method <code>setMAP()</code><a class="anchor" aria-label="anchor" href="#method-setmap-"></a></h3>
 <p>Enable maximum a posterior (MAP) estimation.</p>
 <p>Adds a maximum a posterior contribution to the (negative log) likelihood
 function by evaluating the fixed effects parameters in a multivariate Gaussian
 with <code>mean</code> and <code>covariance</code> as provided.</p><div class="section">
 <h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">set_map</span><span class="op">(</span><span class="va">mean</span>, <span class="va">cov</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setMAP</span><span class="op">(</span><span class="va">mean</span>, <span class="va">cov</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -408,51 +408,51 @@ with <code>mean</code> and <code>covariance</code> as provided.</p><div class="s
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-ctsmTMB-get_systems"></a><div class="section">
-<h3 id="method-get-systems-">Method <code>get_systems()</code><a class="anchor" aria-label="anchor" href="#method-get-systems-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-getSystems"></a><div class="section">
+<h3 id="method-getsystems-">Method <code>getSystems()</code><a class="anchor" aria-label="anchor" href="#method-getsystems-"></a></h3>
 <p>Retrieve system equations.</p><div class="section">
 <h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">get_systems</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">getSystems</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
-</div><p></p><hr><a id="method-ctsmTMB-get_observations"></a><div class="section">
-<h3 id="method-get-observations-">Method <code>get_observations()</code><a class="anchor" aria-label="anchor" href="#method-get-observations-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-getObservations"></a><div class="section">
+<h3 id="method-getobservations-">Method <code>getObservations()</code><a class="anchor" aria-label="anchor" href="#method-getobservations-"></a></h3>
 <p>Retrieve observation equations.</p><div class="section">
 <h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">get_observations</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">getObservations</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
-</div><p></p><hr><a id="method-ctsmTMB-get_observation_variances"></a><div class="section">
-<h3 id="method-get-observation-variances-">Method <code>get_observation_variances()</code><a class="anchor" aria-label="anchor" href="#method-get-observation-variances-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-getVariances"></a><div class="section">
+<h3 id="method-getvariances-">Method <code>getVariances()</code><a class="anchor" aria-label="anchor" href="#method-getvariances-"></a></h3>
 <p>Retrieve observation variances</p><div class="section">
 <h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">get_observation_variances</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">getVariances</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
-</div><p></p><hr><a id="method-ctsmTMB-get_algebraics"></a><div class="section">
-<h3 id="method-get-algebraics-">Method <code>get_algebraics()</code><a class="anchor" aria-label="anchor" href="#method-get-algebraics-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-getAlgebraics"></a><div class="section">
+<h3 id="method-getalgebraics-">Method <code>getAlgebraics()</code><a class="anchor" aria-label="anchor" href="#method-getalgebraics-"></a></h3>
 <p>Retrieve algebraic relations</p><div class="section">
 <h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">get_algebraics</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">getAlgebraics</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
-</div><p></p><hr><a id="method-ctsmTMB-get_initial_state"></a><div class="section">
-<h3 id="method-get-initial-state-">Method <code>get_initial_state()</code><a class="anchor" aria-label="anchor" href="#method-get-initial-state-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-getInitialState"></a><div class="section">
+<h3 id="method-getinitialstate-">Method <code>getInitialState()</code><a class="anchor" aria-label="anchor" href="#method-getinitialstate-"></a></h3>
 <p>Retrieve initially set state and covariance</p><div class="section">
 <h4 id="usage-16">Usage<a class="anchor" aria-label="anchor" href="#usage-16"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">get_initial_state</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
-</div><p></p><hr><a id="method-ctsmTMB-get_parameters"></a><div class="section">
-<h3 id="method-get-parameters-">Method <code>get_parameters()</code><a class="anchor" aria-label="anchor" href="#method-get-parameters-"></a></h3>
+</div><p></p><hr><a id="method-ctsmTMB-getParameters"></a><div class="section">
+<h3 id="method-getparameters-">Method <code>getParameters()</code><a class="anchor" aria-label="anchor" href="#method-getparameters-"></a></h3>
 <p>Get initial (and estimated) parameters.</p><div class="section">
 <h4 id="usage-17">Usage<a class="anchor" aria-label="anchor" href="#usage-17"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">get_parameters</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"all"</span>, value <span class="op">=</span> <span class="st">"all"</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">getParameters</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"all"</span>, value <span class="op">=</span> <span class="st">"all"</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -695,7 +695,7 @@ using the method of <a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" cl
 
 <dt><code>unconstrained.optim</code></dt>
 <dd><p>boolean value. When TRUE then the optimization is carried out unconstrained i.e.
-without any of the parameter bounds specified during <code>add_parameters</code>.</p></dd>
+without any of the parameter bounds specified during <code>setParameter</code>.</p></dd>
 
 
 <dt><code>compile</code></dt>
@@ -728,7 +728,7 @@ state estimate as the initial condition.</p><div class="section">
 <span>  ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>  ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
 <span>  pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">get_initial_state</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  n.sims <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  simulation.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>  k.ahead <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -788,7 +788,7 @@ differential equations. The default "euler" is the Forward Euler method, alterna
 
 <dt><code>pars</code></dt>
 <dd><p>fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through <code>add_parameters</code>, unless the <code>estimate</code>
+parameter values used are the initial parameters provided through <code>setParameter</code>, unless the <code>estimate</code>
 function has been run, then the default values will be those at the found optimum.</p></dd>
 
 
@@ -851,7 +851,7 @@ state estimate as the initial condition.</p><div class="section">
 <span>  ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>  ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
 <span>  pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">get_initial_state</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  k.ahead <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  return.k.ahead <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">k.ahead</span>,</span>
 <span>  return.covariance <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -910,7 +910,7 @@ differential equations. The default "euler" is the Forward Euler method, alterna
 
 <dt><code>pars</code></dt>
 <dd><p>fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through <code>add_parameters</code>, unless the <code>estimate</code>
+parameter values used are the initial parameters provided through <code>setParameter</code>, unless the <code>estimate</code>
 function has been run, then the default values will be those at the found optimum.</p></dd>
 
 

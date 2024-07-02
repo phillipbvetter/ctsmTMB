@@ -419,14 +419,14 @@ ctsmTMB = R6::R6Class(
     #' In the Ornstein-Uhlenbeck process the rate parameter \code{theta} is always positive, so
     #' estimation in the log-domain is a good idea. Instead of writing \code{exp(theta)} directly
     #' in the system equation one can transform into the log domain using the algebraic relation
-    #' \code{add_algebraics(theta ~ exp(logtheta))}. All instances of \code{theta} is replaced
+    #' \code{setAlgebraics(theta ~ exp(logtheta))}. All instances of \code{theta} is replaced
     #' by \code{exp(logtheta)} when compiling the C++ function. Note that you must provide values
     #' for \code{logtheta} now instead of \code{theta} when declaring parameters through 
     #' \code{setParameter}
     #' 
     #' @param form formula specifying the stochastic differential equation(s) to be added to the system.
     #' @param ... additional formulas similar to \code{form} for specifying multiple equations at once.
-    add_algebraics = function(form,...) {
+    setAlgebraics = function(form,...) {
       
       # You are not allowed to change the model after you add algebraics
       private$lock.model = TRUE
@@ -456,7 +456,7 @@ ctsmTMB = R6::R6Class(
     #' shall be estimated as fixed effects parameters. The provided mean and covariance are then
     #' used as initial guesses
     #' 
-    set_initial_state = function(initial.state, estimate=FALSE) {
+    setInitialState = function(initial.state, estimate=FALSE) {
       if (is.null(private$sys.eqs)) {
         stop("Please specify system equations first")
       }
@@ -536,7 +536,7 @@ ctsmTMB = R6::R6Class(
     #' 
     #' @param transforms character vector - one of either "identity, "log", "logit", "sqrt-logit"
     #' @param states a vector of the state names for which the specified transformations should be applied to. 
-    set_lamperti = function(transforms, states=NULL) {
+    setLamperti = function(transforms, states=NULL) {
       
       # remove repeated entries
       states = unique(states)
@@ -617,7 +617,7 @@ ctsmTMB = R6::R6Class(
     #' method with name \code{<modelname>.cpp}
     #' 
     #' @param name string defining the model name.
-    set_modelname = function(name) {
+    setModelname = function(name) {
       
       # was a string passed?
       if (!is.character(name)) {
@@ -656,7 +656,7 @@ ctsmTMB = R6::R6Class(
       private$cppfile.directory = directory
       
       # update private$cppfile.path by calling set_modelname
-      self$set_modelname(private$modelname)
+      self$setModelname(private$modelname)
       
       # return
       return(invisible(self))
@@ -673,7 +673,7 @@ ctsmTMB = R6::R6Class(
     #' 
     #' @param mean mean vector of the Gaussian prior parameter distribution
     #' @param cov covariance matrix of the Gaussian prior parameter distribution
-    set_map = function(mean,cov) {
+    setMAP = function(mean,cov) {
       
       # Test the inputs
       if (!is.numeric(mean)) {
@@ -703,7 +703,7 @@ ctsmTMB = R6::R6Class(
     # GET SYSTEMS
     ########################################################################
     #' @description Retrieve system equations.
-    get_systems = function() {
+    getSystems = function() {
       
       # extract system formulas
       syseqs = lapply(private$sys.eqs,function(x) x$form)
@@ -716,7 +716,7 @@ ctsmTMB = R6::R6Class(
     # GET OBSERVATIONS
     ########################################################################
     #' @description Retrieve observation equations.
-    get_observations = function() {
+    getObservations = function() {
       
       # extract observation formulas
       obseqs = lapply(private$obs.eqs,function(x) x$form)
@@ -729,7 +729,7 @@ ctsmTMB = R6::R6Class(
     # GET OBSERVATION VARIANCES
     ########################################################################
     #' @description Retrieve observation variances
-    get_observation_variances = function() {
+    getVariances = function() {
       
       # extract observation variance formulas
       obsvar = lapply(private$obs.var,function(x) x$form)
@@ -742,7 +742,7 @@ ctsmTMB = R6::R6Class(
     # GET ALGEBRAICS
     ########################################################################
     #' @description Retrieve algebraic relations
-    get_algebraics = function() {
+    getAlgebraics = function() {
       
       # extract algebraic relation formulas
       algs = lapply(private$alg.eqs,function(x) x$form)
@@ -755,7 +755,7 @@ ctsmTMB = R6::R6Class(
     # GET ALGEBRAICS
     ########################################################################
     #' @description Retrieve initially set state and covariance
-    get_initial_state = function() {
+    getInitialState = function() {
       
       
       # extract algebraic relation formulas
@@ -771,7 +771,7 @@ ctsmTMB = R6::R6Class(
     #' @description Get initial (and estimated) parameters.
     #' @param type one of "all", free" or "fixed" parameters.
     #' @param value one of "all", initial", "estimate", "lower" or "upper"
-    get_parameters = function(type="all", value="all") {
+    getParameters = function(type="all", value="all") {
       
       if(is.null(private$parameters)){
         return(NULL)
@@ -1166,7 +1166,7 @@ ctsmTMB = R6::R6Class(
                         ode.timestep = diff(data$t),
                         ode.solver = "rk4",
                         pars = NULL,
-                        initial.state = self$get_initial_state(),
+                        initial.state = self$getInitialState(),
                         n.sims = 100,
                         simulation.timestep = diff(data$t),
                         k.ahead = 1,
@@ -1290,7 +1290,7 @@ ctsmTMB = R6::R6Class(
                        ode.timestep = diff(data$t),
                        ode.solver = "rk4",
                        pars = NULL,
-                       initial.state = self$get_initial_state(),
+                       initial.state = self$getInitialState(),
                        k.ahead = 1,
                        return.k.ahead = 0:k.ahead,
                        return.covariance = TRUE,

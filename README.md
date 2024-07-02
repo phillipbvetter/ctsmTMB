@@ -101,7 +101,7 @@ u = u.sim[ids]
 obj = ctsmTMB$new()
 
 # Set name of model (and the created .cpp file)
-obj$set_modelname("ornstein_uhlenbeck")
+obj$setModelname("ornstein_uhlenbeck")
 
 # Add system equations
 obj$addSystem(
@@ -119,7 +119,7 @@ obj$setVariance(
 )
 
 # Specify algebraic relations
-obj$add_algebraics(
+obj$setAlgebraics(
   theta   ~ exp(logtheta),
   sigma_x ~ exp(logsigma_x),
   sigma_y ~ exp(logsigma_y)
@@ -137,7 +137,7 @@ obj$setParameter(
 )
 
 # Set initial state mean and covariance
-obj$set_initial_state(list(x[1], 1e-1*diag(1)))
+obj$setInitialState(list(x[1], 1e-1*diag(1)))
 
 # Carry out estimation using extended kalman filter method with stats::nlminb as optimizer
 fit <- obj$estimate(data=.data, 

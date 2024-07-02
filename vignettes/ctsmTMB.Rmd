@@ -122,7 +122,7 @@ print(obj)
 
 The last thing to do before we can perform estimation is to set the initial value of the state(s) and its associated (co)variance. These two inputs are adequate since we assume a normally distributed state. The choice of value should reflect ones belief in the initial state, but it is most often a ballpark figure.
 ```{r}
-obj$set_initial_state(list(mean=3, cov=1e-1*diag(1)))
+obj$setInitialState(list(mean=3, cov=1e-1*diag(1)))
 ```
 Note that we use `diag` to construct a 1x1 matrix for the covariance, as required by the method.
 
@@ -281,7 +281,7 @@ Let's say that we wish only to consider positive values of the parameter $\theta
 
 We specify the algebraic relation like so:
 ```{r}
-obj$add_algebraics(theta ~ exp(logtheta))
+obj$setAlgebraics(theta ~ exp(logtheta))
 ```
 
 The parameter settings for `theta` are not automatically transformed into `logtheta`, so they must be redefined:

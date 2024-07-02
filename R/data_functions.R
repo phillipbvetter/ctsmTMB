@@ -382,11 +382,9 @@ set_parameters = function(pars, silent, self, private){
     if(!silent) message("No parameters were supplied - using estimated or initial values")
     # if the estimation has been run, then use these parameters
     if(!is.null(private$fit)){
-      # pars = self$get_parameters()[,"estimate"]
-      pars = self$get_parameters(value="estimate")
+      pars = self$getParameters(value="estimate")
     } else {
-      # pars = self$get_parameters()[,"initial"]
-      pars = self$get_parameters(value="initial")
+      pars = self$getParameters(value="initial")
     }
   } else {
     # check if parameters is with or without fixed parameters
@@ -398,7 +396,7 @@ set_parameters = function(pars, silent, self, private){
     }
     # if not contain fixed parameters, add these
     if(length(pars)==lp-fp){
-      pars = c(pars, self$get_parameters(type="fixed",value="initial"))
+      pars = c(pars, self$getParameters(type="fixed",value="initial"))
     }
   }
   

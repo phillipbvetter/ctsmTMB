@@ -44,18 +44,18 @@ addObs(y ~ exp(x1) + exp(x2))
 \item \href{#method-ctsmTMB-setVariance}{\code{ctsmTMB$setVariance()}}
 \item \href{#method-ctsmTMB-addInput}{\code{ctsmTMB$addInput()}}
 \item \href{#method-ctsmTMB-setParameter}{\code{ctsmTMB$setParameter()}}
-\item \href{#method-ctsmTMB-add_algebraics}{\code{ctsmTMB$add_algebraics()}}
-\item \href{#method-ctsmTMB-set_initial_state}{\code{ctsmTMB$set_initial_state()}}
-\item \href{#method-ctsmTMB-set_lamperti}{\code{ctsmTMB$set_lamperti()}}
-\item \href{#method-ctsmTMB-set_modelname}{\code{ctsmTMB$set_modelname()}}
+\item \href{#method-ctsmTMB-setAlgebraics}{\code{ctsmTMB$setAlgebraics()}}
+\item \href{#method-ctsmTMB-setInitialState}{\code{ctsmTMB$setInitialState()}}
+\item \href{#method-ctsmTMB-setLamperti}{\code{ctsmTMB$setLamperti()}}
+\item \href{#method-ctsmTMB-setModelname}{\code{ctsmTMB$setModelname()}}
 \item \href{#method-ctsmTMB-set_cppfile_directory}{\code{ctsmTMB$set_cppfile_directory()}}
-\item \href{#method-ctsmTMB-set_map}{\code{ctsmTMB$set_map()}}
-\item \href{#method-ctsmTMB-get_systems}{\code{ctsmTMB$get_systems()}}
-\item \href{#method-ctsmTMB-get_observations}{\code{ctsmTMB$get_observations()}}
-\item \href{#method-ctsmTMB-get_observation_variances}{\code{ctsmTMB$get_observation_variances()}}
-\item \href{#method-ctsmTMB-get_algebraics}{\code{ctsmTMB$get_algebraics()}}
-\item \href{#method-ctsmTMB-get_initial_state}{\code{ctsmTMB$get_initial_state()}}
-\item \href{#method-ctsmTMB-get_parameters}{\code{ctsmTMB$get_parameters()}}
+\item \href{#method-ctsmTMB-setMAP}{\code{ctsmTMB$setMAP()}}
+\item \href{#method-ctsmTMB-getSystems}{\code{ctsmTMB$getSystems()}}
+\item \href{#method-ctsmTMB-getObservations}{\code{ctsmTMB$getObservations()}}
+\item \href{#method-ctsmTMB-getVariances}{\code{ctsmTMB$getVariances()}}
+\item \href{#method-ctsmTMB-getAlgebraics}{\code{ctsmTMB$getAlgebraics()}}
+\item \href{#method-ctsmTMB-getInitialState}{\code{ctsmTMB$getInitialState()}}
+\item \href{#method-ctsmTMB-getParameters}{\code{ctsmTMB$getParameters()}}
 \item \href{#method-ctsmTMB-construct_nll}{\code{ctsmTMB$construct_nll()}}
 \item \href{#method-ctsmTMB-estimate}{\code{ctsmTMB$estimate()}}
 \item \href{#method-ctsmTMB-simulate}{\code{ctsmTMB$simulate()}}
@@ -238,21 +238,21 @@ The columns values corresponds to the description in the vector format above.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-add_algebraics"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-add_algebraics}{}}}
-\subsection{Method \code{add_algebraics()}}{
+\if{html}{\out{<a id="method-ctsmTMB-setAlgebraics"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setAlgebraics}{}}}
+\subsection{Method \code{setAlgebraics()}}{
 Add algebraic relations.
 
 Algebraic relations is a convenient way to transform parameters in your equations.
 In the Ornstein-Uhlenbeck process the rate parameter \code{theta} is always positive, so
 estimation in the log-domain is a good idea. Instead of writing \code{exp(theta)} directly
 in the system equation one can transform into the log domain using the algebraic relation
-\code{add_algebraics(theta ~ exp(logtheta))}. All instances of \code{theta} is replaced
+\code{setAlgebraics(theta ~ exp(logtheta))}. All instances of \code{theta} is replaced
 by \code{exp(logtheta)} when compiling the C++ function. Note that you must provide values
 for \code{logtheta} now instead of \code{theta} when declaring parameters through
 \code{setParameter}
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$add_algebraics(form, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setAlgebraics(form, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -266,12 +266,12 @@ for \code{logtheta} now instead of \code{theta} when declaring parameters throug
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-set_initial_state"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-set_initial_state}{}}}
-\subsection{Method \code{set_initial_state()}}{
+\if{html}{\out{<a id="method-ctsmTMB-setInitialState"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setInitialState}{}}}
+\subsection{Method \code{setInitialState()}}{
 Declare the initial state values i.e. mean and covariance for the system states.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$set_initial_state(initial.state, estimate = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setInitialState(initial.state, estimate = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -287,9 +287,9 @@ used as initial guesses}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-set_lamperti"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-set_lamperti}{}}}
-\subsection{Method \code{set_lamperti()}}{
+\if{html}{\out{<a id="method-ctsmTMB-setLamperti"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setLamperti}{}}}
+\subsection{Method \code{setLamperti()}}{
 Set a Lamperti Transformation
 
 If the provided system equations have state dependent diffusion in a few available ways
@@ -303,7 +303,7 @@ is currently supported
 \item 'sqrt-logit' - when the diffusion is proportional to sqrt(x * (1-x)) * dw
 }
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$set_lamperti(transforms, states = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setLamperti(transforms, states = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -317,16 +317,16 @@ is currently supported
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-set_modelname"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-set_modelname}{}}}
-\subsection{Method \code{set_modelname()}}{
+\if{html}{\out{<a id="method-ctsmTMB-setModelname"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setModelname}{}}}
+\subsection{Method \code{setModelname()}}{
 Set modelname used to create the C++ file for TMB
 
 When calling \code{TMB::MakeADFun} the (negative log) likelihood function
 is created in the directory specified by the \code{set_cppfile_directory}
 method with name \code{<modelname>.cpp}
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$set_modelname(name)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setModelname(name)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -358,16 +358,16 @@ in the current working directory - then you can call e.g.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-set_map"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-set_map}{}}}
-\subsection{Method \code{set_map()}}{
+\if{html}{\out{<a id="method-ctsmTMB-setMAP"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setMAP}{}}}
+\subsection{Method \code{setMAP()}}{
 Enable maximum a posterior (MAP) estimation.
 
 Adds a maximum a posterior contribution to the (negative log) likelihood
 function by evaluating the fixed effects parameters in a multivariate Gaussian
 with \code{mean} and \code{covariance} as provided.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$set_map(mean, cov)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setMAP(mean, cov)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -381,62 +381,62 @@ with \code{mean} and \code{covariance} as provided.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-get_systems"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-get_systems}{}}}
-\subsection{Method \code{get_systems()}}{
+\if{html}{\out{<a id="method-ctsmTMB-getSystems"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getSystems}{}}}
+\subsection{Method \code{getSystems()}}{
 Retrieve system equations.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$get_systems()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getSystems()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-get_observations"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-get_observations}{}}}
-\subsection{Method \code{get_observations()}}{
+\if{html}{\out{<a id="method-ctsmTMB-getObservations"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getObservations}{}}}
+\subsection{Method \code{getObservations()}}{
 Retrieve observation equations.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$get_observations()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getObservations()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-get_observation_variances"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-get_observation_variances}{}}}
-\subsection{Method \code{get_observation_variances()}}{
+\if{html}{\out{<a id="method-ctsmTMB-getVariances"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getVariances}{}}}
+\subsection{Method \code{getVariances()}}{
 Retrieve observation variances
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$get_observation_variances()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getVariances()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-get_algebraics"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-get_algebraics}{}}}
-\subsection{Method \code{get_algebraics()}}{
+\if{html}{\out{<a id="method-ctsmTMB-getAlgebraics"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getAlgebraics}{}}}
+\subsection{Method \code{getAlgebraics()}}{
 Retrieve algebraic relations
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$get_algebraics()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getAlgebraics()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-get_initial_state"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-get_initial_state}{}}}
-\subsection{Method \code{get_initial_state()}}{
+\if{html}{\out{<a id="method-ctsmTMB-getInitialState"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getInitialState}{}}}
+\subsection{Method \code{getInitialState()}}{
 Retrieve initially set state and covariance
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$get_initial_state()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getInitialState()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-get_parameters"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-get_parameters}{}}}
-\subsection{Method \code{get_parameters()}}{
+\if{html}{\out{<a id="method-ctsmTMB-getParameters"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getParameters}{}}}
+\subsection{Method \code{getParameters()}}{
 Get initial (and estimated) parameters.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$get_parameters(type = "all", value = "all")}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getParameters(type = "all", value = "all")}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -698,7 +698,7 @@ state estimate as the initial condition.
   ode.timestep = diff(data$t),
   ode.solver = "rk4",
   pars = NULL,
-  initial.state = self$get_initial_state(),
+  initial.state = self$getInitialState(),
   n.sims = 100,
   simulation.timestep = diff(data$t),
   k.ahead = 1,
@@ -802,7 +802,7 @@ state estimate as the initial condition.
   ode.timestep = diff(data$t),
   ode.solver = "rk4",
   pars = NULL,
-  initial.state = self$get_initial_state(),
+  initial.state = self$getInitialState(),
   k.ahead = 1,
   return.k.ahead = 0:k.ahead,
   return.covariance = TRUE,

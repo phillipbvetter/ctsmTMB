@@ -146,32 +146,32 @@ Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim
 <span><span class="va">obj</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Set name of model (and the created .cpp file)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">set_modelname</span><span class="op">(</span><span class="st">"ornstein_uhlenbeck"</span><span class="op">)</span></span>
+<span><span class="va">obj</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="st">"ornstein_uhlenbeck"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Add system equations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">add_systems</span><span class="op">(</span></span>
+<span><span class="va">obj</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span></span>
 <span>  <span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span><span class="op">*</span><span class="va">dw</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Add observation equations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">add_observations</span><span class="op">(</span></span>
+<span><span class="va">obj</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span></span>
 <span>  <span class="va">y</span> <span class="op">~</span> <span class="va">x</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Set observation equation variances</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">add_observation_variances</span><span class="op">(</span></span>
+<span><span class="va">obj</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span></span>
 <span>  <span class="va">y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Specify algebraic relations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">add_algebraics</span><span class="op">(</span></span>
+<span><span class="va">obj</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span></span>
 <span>  <span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span>,</span>
 <span>  <span class="va">sigma_x</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logsigma_x</span><span class="op">)</span>,</span>
 <span>  <span class="va">sigma_y</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logsigma_y</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Specify parameter initial values and lower/upper bounds in estimation</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">add_parameters</span><span class="op">(</span></span>
+<span><span class="va">obj</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
 <span>  logtheta   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">5</span>,    lower <span class="op">=</span> <span class="fl">0</span>,    upper <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  mu         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>    initial <span class="op">=</span> <span class="fl">0</span>,    lower <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>,  upper <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
 <span>  logsigma_x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">1e-1</span>, lower <span class="op">=</span> <span class="fl">1e-5</span>, upper <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -179,7 +179,7 @@ Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Set initial state mean and covariance</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">set_initial_state</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">obj</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="estimation">Estimation<a class="anchor" aria-label="anchor" href="#estimation"></a>
@@ -191,13 +191,9 @@ run the optimization scheme using the built-in optimization which uses
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Building model...</span></span></code></pre>
-<pre><code><span><span class="co">## Compiling C++ likelihood function...</span></span></code></pre>
-<pre><code><span><span class="co">## Note: Using Makevars in /Users/pbrve/.R/Makevars</span></span></code></pre>
-<pre><code><span><span class="co">## using C++ compiler: 'Apple clang version 15.0.0 (clang-1500.3.9.4)'</span></span></code></pre>
-<pre><code><span><span class="co">## using SDK: 'MacOSX14.4.sdk'</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.009 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.011 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
 <pre><code><span><span class="co">##   0:     915.71828:  1.60944  0.00000 -2.30259 -2.30259</span></span>
 <span><span class="co">##   1:     70.083379:  1.05724 0.615164 -1.83518 -1.98924</span></span>
@@ -234,7 +230,7 @@ run the optimization scheme using the built-in optimization which uses
 the fixed parameters using the construction function handlers from
 <code><a href="https://rdrr.io/pkg/TMB/man/MakeADFun.html" class="external-link">TMB::MakeADFun</a></code> and parsing them to
 <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code> i.e.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span> <span class="op">=</span> <span class="fu">TMB</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/TMB/man/MakeADFun.html" class="external-link">MakeADFun</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span>
 <span><span class="va">opt</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a></span><span class="op">(</span>start<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span>, objective<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">fn</span>, grad<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">gr</span>, hessian<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">he</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -246,29 +242,29 @@ the fixed parameters using the construction function handlers from
 <code>nll</code> object that holds the negative log-likelihood, and its
 derivatives. The method takes arguments similar to those of
 <code>estimate</code>.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">construct_nll</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Building model...</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.006 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.005 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Succesfully returned function handlers</span></span></code></pre>
 <p>The initial parameters (supplied by the user) are stored here</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span><span class="op">$</span><span class="va">par</span></span></code></pre></div>
 <pre><code><span><span class="co">##   logtheta         mu logsigma_x logsigma_y </span></span>
 <span><span class="co">##   1.609438   0.000000  -2.302585  -2.302585</span></span></code></pre>
 <p>The objective function can be evaluted by</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span><span class="op">$</span><span class="fu">fn</span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] 915.7183</span></span></code></pre>
 <p>The gradient can be evaluted by</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span><span class="op">$</span><span class="fu">gr</span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##          [,1]      [,2]      [,3]      [,4]</span></span>
 <span><span class="co">## [1,] 1413.301 -1574.451 -1196.276 -801.9666</span></span></code></pre>
 <p>The hessian can be evaluted by</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span><span class="op">$</span><span class="fu">he</span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##           [,1]       [,2]       [,3]       [,4]</span></span>
 <span><span class="co">## [1,]  2184.127 -2837.6171 -1639.8825 -1194.9684</span></span>
@@ -283,11 +279,11 @@ e.g. <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">s
 </h2>
 <hr>
 <p>You can extract the parameter bounds specified when calling
-<code><a href="../reference/add_parameters.html">add_parameters()</a></code> method by using the
-<code>get_parameters</code> method (note that <code>nll$par</code> and
+<code><a href="../reference/setParameter.html">setParameter()</a></code> method by using the
+<code>getParameters</code> method (note that <code>nll$par</code> and
 <code>pars$initial</code> are identical).</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pars</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">get_parameters</span><span class="op">(</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pars</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">getParameters</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##            type   estimate   initial     lower     upper</span></span>
 <span><span class="co">## logtheta   free  2.7577902  1.609438      -Inf  2.995732</span></span>
@@ -300,7 +296,7 @@ e.g. <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">s
 </h2>
 <p>We supply the initial parameter values, objective function handler
 and gradient handler, and parameter bounds to <code>optim</code>.</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">opt</span> <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a></span><span class="op">(</span>par<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span>, </span>
 <span>                   fn<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">fn</span>, </span>
 <span>                   gr<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">gr</span>, </span>
@@ -315,7 +311,7 @@ and gradient handler, and parameter bounds to <code>optim</code>.</p>
 <p>Lets compare the results from using <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim</a></code> with
 the extracted function handler versus the internal optimisation that
 uses <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code> stored in <code>fit</code>:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Estimated parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>external<span class="op">=</span><span class="va">opt</span><span class="op">$</span><span class="va">par</span>, internal<span class="op">=</span><span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##              external   internal</span></span>
@@ -323,12 +319,12 @@ uses <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">s
 <span><span class="co">## mu          1.0765431  1.0765425</span></span>
 <span><span class="co">## logsigma_x  0.1931184  0.1931173</span></span>
 <span><span class="co">## logsigma_y -2.3166255 -2.3166274</span></span></code></pre>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Neg. Log-Likelihood</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>external<span class="op">=</span><span class="va">opt</span><span class="op">$</span><span class="va">value</span>, internal<span class="op">=</span><span class="va">fit</span><span class="op">$</span><span class="va">nll</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##    external  internal</span></span>
 <span><span class="co">## 1 -38.66878 -38.66878</span></span></code></pre>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Gradient components</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>external<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="fu">gr</span><span class="op">(</span><span class="va">opt</span><span class="op">$</span><span class="va">par</span><span class="op">)</span><span class="op">)</span>, internal<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="fu">gr</span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##       external      internal</span></span>

@@ -56,7 +56,7 @@ basic_model_check = function(self, private, prediction=TRUE) {
   }
   
   # parameters
-  if(is.null(self$get_parameters())){
+  if(is.null(self$getParameters())){
     stop("No parameters were specified.")
   }
   

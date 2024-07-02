@@ -141,7 +141,7 @@ object.</p>
 <p>We can begin by adding the desired stochastic differential equation
 to the object.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">add_systems</span><span class="op">(</span><span class="va">dX</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">X</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span><span class="va">dX</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">X</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span></code></pre></div>
 <p>We note that the drift term ends with <code>*dt</code> and diffusions
 are specified by <code>dw</code> or <code>dw#</code> where
 <code>#</code> can be any sequence of numbers.</p>
@@ -152,7 +152,7 @@ are specified by <code>dw</code> or <code>dw#</code> where
 <hr>
 <p>We must also add the observation equation.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">add_observations</span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">X</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">X</span><span class="op">)</span></span></code></pre></div>
 <p>The observations associated with <code>Y</code> in the
 <code>data</code> should also be named <code>Y</code>.</p>
 </div>
@@ -163,7 +163,7 @@ are specified by <code>dw</code> or <code>dw#</code> where
 <p>For every observation variable we must also specify the variance of
 the normally distributed residuals for that observation equation</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">add_observation_variances</span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span><span class="op">*</span><span class="va">U</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span><span class="op">*</span><span class="va">U</span><span class="op">)</span></span></code></pre></div>
 <p>The variable name on the left-hand side of the formula must match a
 name previously defined via <code>add_observations</code>, and the
 variance is associated with that observation equation.</p>
@@ -197,7 +197,7 @@ are no inputs and no parameter specified yet.</p>
 <hr>
 <p>We tell the model which variable names are inputs via</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">add_inputs</span><span class="op">(</span><span class="va">U</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">addInput</span><span class="op">(</span><span class="va">U</span><span class="op">)</span></span></code></pre></div>
 <p>The input values should be provided in the <code>data</code>, with
 the same name, similar to the observations.</p>
 </div>
@@ -208,7 +208,7 @@ the same name, similar to the observations.</p>
 <p>We must also specify the (fixed effects) parameters, together with
 their initial value and lower/upper bound, for the optimization.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">add_parameters</span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
 <span>  theta   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">5</span>,    lower <span class="op">=</span> <span class="fl">0</span>,    upper <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>,</span>
 <span>  mu      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">0</span>,    lower <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>,  upper <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
 <span>  sigma_x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">1e-1</span>, lower <span class="op">=</span> <span class="fl">1e-5</span>, upper <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span>
@@ -219,7 +219,7 @@ supplying just a single value. It is usually difficult to identify both
 of the noise parameters <span class="math inline">\(\left(\sigma_{X},\sigma_{Y}\right)\)</span> in
 practice, so lets assume that we want to fix <span class="math inline">\(\sigma_{Y}\)</span>. This is done via</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">add_parameters</span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
 <span>  sigma_y  <span class="op">=</span> <span class="fl">1e-1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Let’s inspect the model object again, and see that inputs and
@@ -256,7 +256,7 @@ inputs are adequate since we assume a normally distributed state. The
 choice of value should reflect ones belief in the initial state, but it
 is most often a ballpark figure.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">set_initial_state</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>mean<span class="op">=</span><span class="fl">3</span>, cov<span class="op">=</span><span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>mean<span class="op">=</span><span class="fl">3</span>, cov<span class="op">=</span><span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Note that we use <code>diag</code> to construct a 1x1 matrix for the
 covariance, as required by the method.</p>
 </div>
@@ -309,13 +309,9 @@ objective function hessian unlike e.g. ‘stats::optim’</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Building model...</span></span></code></pre>
-<pre><code><span><span class="co">## Compiling C++ likelihood function...</span></span></code></pre>
-<pre><code><span><span class="co">## Note: Using Makevars in /Users/pbrve/.R/Makevars</span></span></code></pre>
-<pre><code><span><span class="co">## using C++ compiler: 'Apple clang version 15.0.0 (clang-1500.3.9.4)'</span></span></code></pre>
-<pre><code><span><span class="co">## using SDK: 'MacOSX14.4.sdk'</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.008 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.011 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
 <pre><code><span><span class="co">##   0:     818.68776:  5.00000  0.00000 0.100000</span></span>
 <span><span class="co">##   1:    -24.103906:  4.97527 0.144197  1.08924</span></span>
@@ -359,7 +355,7 @@ objective function hessian unlike e.g. ‘stats::optim’</p>
 <p>If you change the model at a later stage but retain the same model
 name, then you need to recompile the <code>C++</code> objective
 function. You can do this like so:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">data</span>, compile<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>If you receive error messages when calling <code>estimate</code>
 regarding variables that are not in your specified model, it is likely
@@ -372,7 +368,7 @@ because you forgot to recompile.</p>
 <p>Let’s inspect results from the estimation.</p>
 <p>We can print the <code>fit</code> object to see a standard
 coefficient matrix for the parameter estimates.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Coefficent Matrix </span></span>
 <span><span class="co">##          Estimate Std. Error t value  Pr(&gt;|t|)    </span></span>
@@ -392,17 +388,17 @@ simulation step as <span class="math inline">\(\theta = 10\)</span>,
 <p>The parameter values, standard deviations and covariance matrix can
 be extracted via:</p>
 <p>The estimated (fixed) parameters:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span></span></code></pre></div>
 <pre><code><span><span class="co">##     theta        mu   sigma_x </span></span>
 <span><span class="co">## 15.743756  1.072147  1.210571</span></span></code></pre>
 <p>The standard deviations of the (fixed) parameters:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">sd.fixed</span></span></code></pre></div>
 <pre><code><span><span class="co">##      theta         mu    sigma_x </span></span>
 <span><span class="co">## 3.80640122 0.08168822 0.16054743</span></span></code></pre>
 <p>The covariance of the (fixed) parameters:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">cov.fixed</span></span></code></pre></div>
 <pre><code><span><span class="co">##              theta          mu     sigma_x</span></span>
 <span><span class="co">## theta   14.4886902 0.085360603 0.210293731</span></span>
@@ -418,10 +414,10 @@ estimate is the resulting estimate purely from integrating the mean and
 covariance of the SDE system forward in time, while the posterior state
 estimation is obtained from updating the prior estimate with the
 information contained in the observation (using Bayes’ rule).</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># ggplot2 theme</span></span>
 <span><span class="va">mytheme</span> <span class="op">=</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
@@ -436,7 +432,7 @@ information contained in the observation (using Bayes’ rule).</p>
 <span>    legend.position  <span class="op">=</span> <span class="st">"top"</span>,</span>
 <span>    plot.title       <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>hjust<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t</span>         <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">mean</span><span class="op">$</span><span class="va">posterior</span><span class="op">$</span><span class="va">t</span></span>
 <span><span class="va">xprior</span>    <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">mean</span><span class="op">$</span><span class="va">prior</span><span class="op">$</span><span class="va">X</span></span>
 <span><span class="va">xpost</span>     <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">mean</span><span class="op">$</span><span class="va">posterior</span><span class="op">$</span><span class="va">X</span></span>
@@ -461,7 +457,7 @@ calling <code>plot</code> on the <code>fit</code> object, which invokes
 the <code>S3</code> <code>plot.ctsmTMB.fit</code> method of
 <code>plot</code>. This includes a quantile-quantile plot, histogram,
 auto-correlations and cumulative periodogram.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ctsmTMB_files/figure-html/unnamed-chunk-22-1.png" width="700">
 The residuals (both standard and normalized) can be extracted as well,
@@ -487,12 +483,12 @@ have written <code>exp(theta)</code> directly when specifying the system
 equations, but calling the parameter <code>logtheta</code> reminds one
 that we are really interested in the exponential of the parameter.</p>
 <p>We specify the algebraic relation like so:</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">add_algebraics</span><span class="op">(</span><span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>The parameter settings for <code>theta</code> are not automatically
 transformed into <code>logtheta</code>, so they must be redefined:</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">add_parameters</span><span class="op">(</span>logtheta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial<span class="op">=</span><span class="fl">5</span>, lower<span class="op">=</span><span class="fl">0</span>, upper<span class="op">=</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span>logtheta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial<span class="op">=</span><span class="fl">5</span>, lower<span class="op">=</span><span class="fl">0</span>, upper<span class="op">=</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

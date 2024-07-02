@@ -83,7 +83,7 @@ construct_kalman_makeADFun = function(self, private){
     MAP_bool = 0L
   )
   if (!is.null(private$map)) {
-    bool = self$get_parameters()[,"type"] == "free"
+    bool = self$getParameters()[,"type"] == "free"
     tmb.map.data = list(
       MAP_bool = 1L,
       map_mean__ = private$map$mean[bool],
@@ -172,7 +172,7 @@ construct_rtmb_ekf_makeADFun = function(self, private)
   # MAP Estimation?
   MAP_bool = 0L
   if (!is.null(private$map)) {
-    bool = self$get_parameters()[,"type"] == "free"
+    bool = self$getParameters()[,"type"] == "free"
     MAP_bool = 1L
     map_mean__ = private$map$mean[bool]
     map_cov__ = private$map$cov[bool,bool]

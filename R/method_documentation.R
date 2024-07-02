@@ -186,7 +186,7 @@ setParameter = function(...) {
 #' 
 #' @examples
 #' # Example 1
-#' add_algebraics(
+#' setAlgebraics(
 #' sigma ~ exp(logsigma),
 #' theta ~ invlogit(alpha + beta)
 #' )
@@ -199,14 +199,14 @@ setParameter = function(...) {
 #' new parameters.
 #' 
 #' @usage
-#' add_algebraics(form,
+#' setAlgebraics(form,
 #'                ...)
 #' 
 #' @param form formula specifying algebraic relation.
 #' @param ... formulas similar to \code{form}, used to allow specifying
 #' multiple formulas by comma-seperation rather than providing a list.
 #' 
-add_algebraics = function(form,...) {
+setAlgebraics = function(form,...) {
   NULL
 }
 
@@ -222,7 +222,7 @@ add_algebraics = function(form,...) {
 #' shall be estimated as fixed effects parameters. The provided mean and covariance are then
 #' used as initial guesses
 #' 
-set_initial_state = function(initial.state, estimate=FALSE) {
+setInitialState = function(initial.state, estimate=FALSE) {
   NULL
 }
 

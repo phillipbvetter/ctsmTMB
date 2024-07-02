@@ -37,6 +37,15 @@
     <loc>/news/index.html</loc>
   </url>
   <url>
+    <loc>/reference/addInput.html</loc>
+  </url>
+  <url>
+    <loc>/reference/addObs.html</loc>
+  </url>
+  <url>
+    <loc>/reference/addSystem.html</loc>
+  </url>
+  <url>
     <loc>/reference/add_algebraics.html</loc>
   </url>
   <url>
@@ -98,6 +107,18 @@
   </url>
   <url>
     <loc>/reference/sdeTMB.html</loc>
+  </url>
+  <url>
+    <loc>/reference/setAlgebraics.html</loc>
+  </url>
+  <url>
+    <loc>/reference/setInitialState.html</loc>
+  </url>
+  <url>
+    <loc>/reference/setParameter.html</loc>
+  </url>
+  <url>
+    <loc>/reference/setVariance.html</loc>
   </url>
   <url>
     <loc>/reference/set_initial_state.html</loc>
