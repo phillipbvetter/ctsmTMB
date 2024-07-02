@@ -19,7 +19,7 @@ obj = ctsmTMB$new()
 obj$set_modelname("ornstein_uhlenbeck")
 
 # Add system equations
-obj$add_systems(
+obj$addSystem(
   dx ~ theta * (mu-x) * dt + sigma_x*dw
 )
 ```
@@ -35,7 +35,7 @@ $$
 It is sufficient for the user to provide the data column `y` in the provided `data.frame` to e.g. `estimate` or `predict` by adding the following observation equation
 
 ```{r}
-obj$add_observations(
+obj$addObs(
   log(y) ~ x, obsnames = "log_y"
 )
 ```
@@ -49,14 +49,14 @@ Note that these kind of observation equations, where the left-hand side is a fun
 The names given with `obsnames` are important because they are needed to specify the observation variance. As an example the code below does not work, because the observation was named `log_y`
 
 ```{r, error=TRUE}
-obj$add_observation_variances(
+obj$setVariance(
   y ~ sigma_y^2
 )
 ```
 
 So the correct way to add the observation variance is this:
 ```{r}
-obj$add_observation_variances(
+obj$setVariance(
   log_y ~ sigma_y^2
 )
 ```
@@ -67,7 +67,7 @@ obj$add_observation_variances(
 
 You must supply multiple `obsnames` if you are supplying multiple observatin equations, although the name will only be used if the left-hand side is not just a single variable i.e.
 ```{r, eval=FALSE}
-obj$add_observations(
+obj$addObs(
   log(y) ~ x,
   y ~ x,
   y^2+z^3 ~ x,

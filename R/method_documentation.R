@@ -1,5 +1,5 @@
 # This document contains empty functions with names similar to the methods in ctsmTMB
-# This allow users to easily find method documentation using ?add_systems, instead of having
+# This allow users to easily find method documentation using ?addSystem, instead of having
 # to manually retrieve them from ?ctsmTMB and then finding the method among the large list of other methods
 
 
@@ -13,15 +13,15 @@
 #' governs the differential evolution of states in the specified model.
 #' 
 #' @usage
-#' add_systems(form,
+#' addSystem(form,
 #'             ...)
 #' 
 #' @examples 
 #' # Example 1 - Linear System
-#' add_systems(dx ~ theta * (mu - x + u) * dt + sigma * dw)
+#' addSystem(dx ~ theta * (mu - x + u) * dt + sigma * dw)
 #' 
 #' # Example 2 - Non-Linear System
-#' add_systems(dx ~ theta * (mu - exp(x)^2 + u) * dt + sigma * x * (1-x) * dw)
+#' addSystem(dx ~ theta * (mu - exp(x)^2 + u) * dt + sigma * x * (1-x) * dw)
 #' 
 #' @details
 #' ## Usable functions
@@ -36,7 +36,7 @@
 #' @param ... formulas similar to \code{form}, used to allow specifying
 #' multiple formulas by comma-seperation rather than providing a list.
 #' 
-add_systems = function(form,...) {
+addSystem = function(form,...) {
   NULL
 }
 
@@ -51,18 +51,18 @@ add_systems = function(form,...) {
 #'  
 #' @examples
 #' # Example 1
-#' add_observations(y ~ x)
+#' addObs(y ~ x)
 #' 
 #' # Example 2
 #' Specify observation as the sum of exponentials of two latent states
-#' add_observations(y ~ exp(x1) + exp(x2))
+#' addObs(y ~ exp(x1) + exp(x2))
 #' 
 #' # Example 3
 #' Specify observation as the sum of exponentials of two latent states
-#' add_observations(log(y) ~ x, obsnames = "logy")
+#' addObs(log(y) ~ x, obsnames = "logy")
 #' 
 #' @usage
-#' add_observations(form,
+#' addObs(form,
 #'                  ...,
 #'                  obsnames=NULL)
 #' 
@@ -83,9 +83,9 @@ add_systems = function(form,...) {
 #' provide data for \code{y}, and the log-transformation
 #' is then handled internally.
 #' 
-#' The supported functions are those discussed in the \code{\link{add_systems}}.
+#' The supported functions are those discussed in the \code{\link{addSystem}}.
 #' 
-add_observations = function(form,...,obsnames=NULL) {
+addObs = function(form,...,obsnames=NULL) {
   NULL
 }
 
@@ -98,22 +98,22 @@ add_observations = function(form,...,obsnames=NULL) {
 #' Specify the observation variance of an existing observation equation.
 #' 
 #' @usage
-#' add_observation_variances(form,
+#' setVariance(form,
 #'                           ...)
 #' 
 #' @examples
 #' # Example 1
-#' add_observation_variances(y ~ sigma_y^2). 
+#' setVariance(y ~ sigma_y^2). 
 #'
 #' # Example 2 
-#' add_observation_variances(y ~ 0.1 + x * exp(logsigma_y)^2). 
+#' setVariance(y ~ 0.1 + x * exp(logsigma_y)^2). 
 #' 
 #' @param form formula class specifying the obsevation equation to be added 
 #' to the system.
 #' @param ... formulas similar to \code{form}, used to allow specifying
 #' multiple formulas by comma-seperation rather than providing a list.
 #' 
-add_observation_variances = function(form,...) {
+setVariance = function(form,...) {
   NULL
 }
 
@@ -127,19 +127,19 @@ add_observation_variances = function(form,...) {
 #' 
 #' 
 #' @usage 
-#' add_inputs(...)
+#' addInput(...)
 #' 
 #' @examples
 #' # Example 1
-#' add_inputs(u)
+#' addInput(u)
 #' 
 #' # Example 2
-#' add_inputs(u1, u2, u3)
+#' addInput(u1, u2, u3)
 #' 
 #' @param ... a series of variable names (unquouted) that match variable names
 #' in the defined system which should be treated as input variables.
 #' 
-add_inputs =  function(...) {
+addInput =  function(...) {
   NULL
 }
 
@@ -157,7 +157,7 @@ add_inputs =  function(...) {
 #' 
 #' @examples
 #' # Example 1
-#' add_parameters(
+#' setParameter(
 #' alpha = c(initial=0, lower=-10, upper=10),
 #' beta = c(2, 0, 5),
 #' gamma = 5)
@@ -167,10 +167,10 @@ add_inputs =  function(...) {
 #' parmat = matrix(rep(c(0,-10,10),times=3),ncol=3,byrow=T)
 #' rownames(parmat) = c("a","b","c")
 #' colnames(parmat) = c("initial","lower","upper")
-#' add_parameters(parmat)
+#' setParameter(parmat)
 #'
 #' @param ... a comma-seperated series of vectors/matrix entries
-add_parameters = function(...) {
+setParameter = function(...) {
   NULL
 }
 
@@ -195,7 +195,7 @@ add_parameters = function(...) {
 #' The left-hand side of the provided formula specifies which parameter that
 #' should be overwritten with the expression on the right-hand side. This also
 #' means that the left-hand side parameter will vanish from the model formulation
-#' and \code{link{add_parameters}} should therefore specify values for the 
+#' and \code{link{setParameter}} should therefore specify values for the 
 #' new parameters.
 #' 
 #' @usage

@@ -22,7 +22,7 @@ positivity (log-transform).
 The left-hand side of the provided formula specifies which parameter that
 should be overwritten with the expression on the right-hand side. This also
 means that the left-hand side parameter will vanish from the model formulation
-and \code{link{add_parameters}} should therefore specify values for the
+and \code{link{setParameter}} should therefore specify values for the
 new parameters.
 }
 \examples{

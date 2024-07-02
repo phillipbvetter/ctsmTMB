@@ -18,32 +18,32 @@ thus must be functions of at least one state.
 \examples{
 
 ## ------------------------------------------------
-## Method `ctsmTMB$add_systems`
+## Method `ctsmTMB$addSystem`
 ## ------------------------------------------------
 
 # Specify Ornstein-Uhlenbeck Process
-add_systems(dx ~ theta * (mu - x + u) * dt + sigma * dw)
+addSystem(dx ~ theta * (mu - x + u) * dt + sigma * dw)
              
 
 ## ------------------------------------------------
-## Method `ctsmTMB$add_observations`
+## Method `ctsmTMB$addObs`
 ## ------------------------------------------------
 
 #Specify observation directly as a latent state
-add_observations(y ~ x)
+addObs(y ~ x)
 
 Specify observation as the sum of exponentials of two latent states
-add_observations(y ~ exp(x1) + exp(x2))
+addObs(y ~ exp(x1) + exp(x2))
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-ctsmTMB-new}{\code{ctsmTMB$new()}}
-\item \href{#method-ctsmTMB-add_systems}{\code{ctsmTMB$add_systems()}}
-\item \href{#method-ctsmTMB-add_observations}{\code{ctsmTMB$add_observations()}}
-\item \href{#method-ctsmTMB-add_observation_variances}{\code{ctsmTMB$add_observation_variances()}}
-\item \href{#method-ctsmTMB-add_inputs}{\code{ctsmTMB$add_inputs()}}
-\item \href{#method-ctsmTMB-add_parameters}{\code{ctsmTMB$add_parameters()}}
+\item \href{#method-ctsmTMB-addSystem}{\code{ctsmTMB$addSystem()}}
+\item \href{#method-ctsmTMB-addObs}{\code{ctsmTMB$addObs()}}
+\item \href{#method-ctsmTMB-setVariance}{\code{ctsmTMB$setVariance()}}
+\item \href{#method-ctsmTMB-addInput}{\code{ctsmTMB$addInput()}}
+\item \href{#method-ctsmTMB-setParameter}{\code{ctsmTMB$setParameter()}}
 \item \href{#method-ctsmTMB-add_algebraics}{\code{ctsmTMB$add_algebraics()}}
 \item \href{#method-ctsmTMB-set_initial_state}{\code{ctsmTMB$set_initial_state()}}
 \item \href{#method-ctsmTMB-set_lamperti}{\code{ctsmTMB$set_lamperti()}}
@@ -77,9 +77,9 @@ Initialize private fields
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-add_systems"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-add_systems}{}}}
-\subsection{Method \code{add_systems()}}{
+\if{html}{\out{<a id="method-ctsmTMB-addSystem"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-addSystem}{}}}
+\subsection{Method \code{addSystem()}}{
 Define and add multiple stochastic differential equation governing the
 process of individual state variables on the form
 
@@ -89,7 +89,7 @@ process of individual state variables on the form
 where \code{f} is the drift, and \code{g1, g2, ..., gN} are diffusions, with
 differential brownian motions dw1, dw2, ..., dwN.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$add_systems(form, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$addSystem(form, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -106,7 +106,7 @@ multiple equations at once.}
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{# Specify Ornstein-Uhlenbeck Process
-add_systems(dx ~ theta * (mu - x + u) * dt + sigma * dw)
+addSystem(dx ~ theta * (mu - x + u) * dt + sigma * dw)
              
 }
 \if{html}{\out{</div>}}
@@ -115,9 +115,9 @@ add_systems(dx ~ theta * (mu - x + u) * dt + sigma * dw)
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-add_observations"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-add_observations}{}}}
-\subsection{Method \code{add_observations()}}{
+\if{html}{\out{<a id="method-ctsmTMB-addObs"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-addObs}{}}}
+\subsection{Method \code{addObs()}}{
 Define and add a relationship between an observed variable and system states.
 The observation equation takes the form
 
@@ -128,7 +128,7 @@ distributed noise with zero mean and variance to be specified. The
 observation variable should be present in the data provided when calling
 \code{estimate(.data)} for parameter estimation.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$add_observations(form, ..., obsnames = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$addObs(form, ..., obsnames = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -147,10 +147,10 @@ given a name on the form obs__# where # is a number, unless obsnames is provided
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{#Specify observation directly as a latent state
-add_observations(y ~ x)
+addObs(y ~ x)
 
 Specify observation as the sum of exponentials of two latent states
-add_observations(y ~ exp(x1) + exp(x2))
+addObs(y ~ exp(x1) + exp(x2))
 }
 \if{html}{\out{</div>}}
 
@@ -158,20 +158,20 @@ add_observations(y ~ exp(x1) + exp(x2))
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-add_observation_variances"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-add_observation_variances}{}}}
-\subsection{Method \code{add_observation_variances()}}{
+\if{html}{\out{<a id="method-ctsmTMB-setVariance"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setVariance}{}}}
+\subsection{Method \code{setVariance()}}{
 Specify the variance of an observation equation.
 
-A defined observation variable \code{y} in e.g. \code{add_observations(y ~ 
+A defined observation variable \code{y} in e.g. \code{addObs(y ~ 
 h(t,<states>,<inputs>)} is pertubed by Gaussian noise with zero mean and
 variance
-to-be specified using \code{add_observation_variances(y ~ p(t,<states>,<inputs>)}.
-We can for instance declare \code{add_observation_variances(y ~ sigma_x^2}
+to-be specified using \code{setVariance(y ~ p(t,<states>,<inputs>)}.
+We can for instance declare \code{setVariance(y ~ sigma_x^2}
 where \code{sigma_x} is a fixed effect parameter to be declared through
-\code{add_parameters}.
+\code{setParameter}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$add_observation_variances(form, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setVariance(form, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -187,18 +187,18 @@ observation equations at a time.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-add_inputs"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-add_inputs}{}}}
-\subsection{Method \code{add_inputs()}}{
+\if{html}{\out{<a id="method-ctsmTMB-addInput"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-addInput}{}}}
+\subsection{Method \code{addInput()}}{
 Declare variables as data inputs
 
 Declare whether a variable contained in system, observation or observation
 variance equations is an input variable. If e.g. the system equation contains
-an input variable \code{u} then it is declared using \code{add_inputs(u)}.
+an input variable \code{u} then it is declared using \code{addInput(u)}.
 The input \code{u} must be contained in the data.frame \code{.data} provided
 when calling the \code{estimate} or \code{predict} methods.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$add_inputs(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$addInput(...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -210,14 +210,14 @@ when calling the \code{estimate} or \code{predict} methods.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-add_parameters"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-add_parameters}{}}}
-\subsection{Method \code{add_parameters()}}{
+\if{html}{\out{<a id="method-ctsmTMB-setParameter"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setParameter}{}}}
+\subsection{Method \code{setParameter()}}{
 Declare which variables that are (fixed effects) parameters in
 the specified model, and specify the initial optimizer value, as well as
 lower / upper bounds during optimization. There are two ways to declare parameters:
 \enumerate{
-\item You can declare parameters using formulas i.e. \code{add_parameters( 
+\item You can declare parameters using formulas i.e. \code{setParameter( 
 theta = c(1,0,10), mu = c(0,-10,10) )}. The first value is the initial
 value for the optimizer, the second value is the lower optimization
 bound and the third value is the upper optimization bound.
@@ -226,7 +226,7 @@ parameters, and the parameter names are provided as rownames of the matrix.
 The columns values corresponds to the description in the vector format above.
 }
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$add_parameters(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setParameter(...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -250,7 +250,7 @@ in the system equation one can transform into the log domain using the algebraic
 \code{add_algebraics(theta ~ exp(logtheta))}. All instances of \code{theta} is replaced
 by \code{exp(logtheta)} when compiling the C++ function. Note that you must provide values
 for \code{logtheta} now instead of \code{theta} when declaring parameters through
-\code{add_parameters}
+\code{setParameter}
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$add_algebraics(form, ...)}\if{html}{\out{</div>}}
 }
@@ -668,7 +668,7 @@ without any random effects.}
 using the method of \link[TMB]{oneStepPredict}.}
 
 \item{\code{unconstrained.optim}}{boolean value. When TRUE then the optimization is carried out unconstrained i.e.
-without any of the parameter bounds specified during \code{add_parameters}.}
+without any of the parameter bounds specified during \code{setParameter}.}
 
 \item{\code{compile}}{boolean value. The default (\code{FALSE}) is to not compile the C++ objective
 function but assume it is already compiled and corresponds to the specified model object. It is
@@ -755,7 +755,7 @@ differential equations. The default "euler" is the Forward Euler method, alterna
 4th order Runge Kutta method is available via "rk4".}
 
 \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through \code{add_parameters}, unless the \code{estimate}
+parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
 function has been run, then the default values will be those at the found optimum.}
 
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
@@ -858,7 +858,7 @@ differential equations. The default "euler" is the Forward Euler method, alterna
 4th order Runge Kutta method is available via "rk4".}
 
 \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through \code{add_parameters}, unless the \code{estimate}
+parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
 function has been run, then the default values will be those at the found optimum.}
 
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}

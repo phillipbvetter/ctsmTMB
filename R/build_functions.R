@@ -40,12 +40,12 @@ basic_model_check = function(self, private, prediction=TRUE) {
   
   # system eqs
   if (length(private$sys.eqs) == 0) {
-    stop("There were no specified system equations - use 'add_systems'")
+    stop("There were no specified system equations - use 'addSystem'")
   }
   
   # obs eqs
   if (length(private$obs.eqs) == 0) {
-    stop("There were no specified observation equations - use 'add_observations'")
+    stop("There were no specified observation equations - use 'addObs'")
   }
   
   # obs var

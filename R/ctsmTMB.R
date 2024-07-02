@@ -16,37 +16,10 @@ ctsmTMB = R6::R6Class(
   # Class name
   classname = "ctsmTMB",
   
-  
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
   ################################################################################################################################################
   ################################################################################################################################################
   ################################################################################################################################################
   # Public Methods
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
   ################################################################################################################################################
   ################################################################################################################################################
   ################################################################################################################################################
@@ -160,14 +133,13 @@ ctsmTMB = R6::R6Class(
     #' 
     #' @examples 
     #' # Specify Ornstein-Uhlenbeck Process
-    #' add_systems(dx ~ theta * (mu - x + u) * dt + sigma * dw)
+    #' addSystem(dx ~ theta * (mu - x + u) * dt + sigma * dw)
     #'              
     #' @param form formula specifying the stochastic differential equation to be 
     #' added to the system.
     #' @param ... additional formulas similar to \code{form} for specifying 
     #' multiple equations at once.
-    #' 
-    add_systems = function(form,...) {
+    addSystem = function(form,...) {
       
       if(private$lock.model){
         stop("The model is locked after applying algebraics")
@@ -206,16 +178,16 @@ ctsmTMB = R6::R6Class(
     #'  
     #' @examples
     #' #Specify observation directly as a latent state
-    #' add_observations(y ~ x)
+    #' addObs(y ~ x)
     #' 
     #' Specify observation as the sum of exponentials of two latent states
-    #' add_observations(y ~ exp(x1) + exp(x2))
+    #' addObs(y ~ exp(x1) + exp(x2))
     #' @param form formula class specifying the obsevation equation to be added to the system.
     #' @param ... additional formulas identical to \code{form} to specify multiple observation equations at a time.
     #' @param obsnames character vector specifying the name of the observation. When the observation left-hand side
     #' consists of more than just a single variable name (when its class is 'call' instead of 'name') it will be 
     #' given a name on the form obs__# where # is a number, unless obsnames is provided.
-    add_observations = function(form,...,obsnames=NULL) {
+    addObs = function(form,...,obsnames=NULL) {
       
       if(private$lock.model){
         stop("The model is locked after applying algebraics")
@@ -259,20 +231,20 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     #' @description Specify the variance of an observation equation.
     #' 
-    #' A defined observation variable \code{y} in e.g. \code{add_observations(y ~ 
+    #' A defined observation variable \code{y} in e.g. \code{addObs(y ~ 
     #' h(t,<states>,<inputs>)} is pertubed by Gaussian noise with zero mean and 
     #' variance 
-    #' to-be specified using \code{add_observation_variances(y ~ p(t,<states>,<inputs>)}. 
-    #' We can for instance declare \code{add_observation_variances(y ~ sigma_x^2} 
+    #' to-be specified using \code{setVariance(y ~ p(t,<states>,<inputs>)}. 
+    #' We can for instance declare \code{setVariance(y ~ sigma_x^2} 
     #' where \code{sigma_x} is a fixed effect parameter to be declared through 
-    #' \code{add_parameters}.
+    #' \code{setParameter}.
     #' 
     #' @param form formula class specifying the obsevation equation to be added 
     #' to the system.
     #' @param ... additional formulas identical to \code{form} to specify multiple 
     #' observation equations at a time.
     #' 
-    add_observation_variances = function(form,...) {
+    setVariance = function(form,...) {
       
       if(private$lock.model){
         stop("The model is locked after applying algebraics")
@@ -302,13 +274,13 @@ ctsmTMB = R6::R6Class(
     #' 
     #' Declare whether a variable contained in system, observation or observation 
     #' variance equations is an input variable. If e.g. the system equation contains 
-    #' an input variable \code{u} then it is declared using \code{add_inputs(u)}. 
+    #' an input variable \code{u} then it is declared using \code{addInput(u)}. 
     #' The input \code{u} must be contained in the data.frame \code{.data} provided 
     #' when calling the \code{estimate} or \code{predict} methods.
     #' 
     #' @param ... variable names that specifies the name of input variables in the defined system.
     #' 
-    add_inputs =  function(...) {
+    addInput =  function(...) {
       
       # if(private$lock.model){
       #   stop("The model is locked after applying algebraics")
@@ -340,7 +312,7 @@ ctsmTMB = R6::R6Class(
     #' the specified model, and specify the initial optimizer value, as well as
     #' lower / upper bounds during optimization. There are two ways to declare parameters:
     #' 
-    #' 1. You can declare parameters using formulas i.e. \code{add_parameters( 
+    #' 1. You can declare parameters using formulas i.e. \code{setParameter( 
     #' theta = c(1,0,10), mu = c(0,-10,10) )}. The first value is the initial 
     #' value for the optimizer, the second value is the lower optimization 
     #' bound and the third value is the upper optimization bound. 
@@ -350,7 +322,7 @@ ctsmTMB = R6::R6Class(
     #' The columns values corresponds to the description in the vector format above.
     #'
     #' @param ... a named vector or matrix as described above.
-    add_parameters = function(...) {
+    setParameter = function(...) {
       
       if(nargs()==0L){stop("No arguments received")}
       
@@ -450,7 +422,7 @@ ctsmTMB = R6::R6Class(
     #' \code{add_algebraics(theta ~ exp(logtheta))}. All instances of \code{theta} is replaced
     #' by \code{exp(logtheta)} when compiling the C++ function. Note that you must provide values
     #' for \code{logtheta} now instead of \code{theta} when declaring parameters through 
-    #' \code{add_parameters}
+    #' \code{setParameter}
     #' 
     #' @param form formula specifying the stochastic differential equation(s) to be added to the system.
     #' @param ... additional formulas similar to \code{form} for specifying multiple equations at once.
@@ -1042,7 +1014,7 @@ ctsmTMB = R6::R6Class(
     #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
     #' the unscented transformation.
     #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
-    #' without any of the parameter bounds specified during \code{add_parameters}.
+    #' without any of the parameter bounds specified during \code{setParameter}.
     #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
     #' methods). The loss function is per default quadratic in the one-step residauls as is natural 
     #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the 
@@ -1138,7 +1110,7 @@ ctsmTMB = R6::R6Class(
     #' @param data data.frame containing time-vector 't', observations and inputs. The observations
     #' can take \code{NA}-values.
     #' @param pars fixed parameter vector parsed to the objective function for prediction/filtration. The default
-    #' parameter values used are the initial parameters provided through \code{add_parameters}, unless the \code{estimate}
+    #' parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
     #' function has been run, then the default values will be those at the found optimum.
     #' @param k.ahead integer specifying the desired number of time-steps (as determined by the provided
     #' data time-vector) for which predictions are made (integrating the moment ODEs forward in time without 
@@ -1264,7 +1236,7 @@ ctsmTMB = R6::R6Class(
     #' @param data data.frame containing time-vector 't', observations and inputs. The observations
     #' can take \code{NA}-values.
     #' @param pars fixed parameter vector parsed to the objective function for prediction/filtration. The default
-    #' parameter values used are the initial parameters provided through \code{add_parameters}, unless the \code{estimate}
+    #' parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
     #' function has been run, then the default values will be those at the found optimum.
     #' @param k.ahead integer specifying the desired number of time-steps (as determined by the provided
     #' data time-vector) for which predictions are made (integrating the moment ODEs forward in time without 
@@ -1500,33 +1472,7 @@ ctsmTMB = R6::R6Class(
   ################################################################################################################################################
   ################################################################################################################################################
   ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
   # Private Methods
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
-  ################################################################################################################################################
   ################################################################################################################################################
   ################################################################################################################################################
   ################################################################################################################################################

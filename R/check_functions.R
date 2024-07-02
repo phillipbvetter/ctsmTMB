@@ -196,7 +196,7 @@ check_inputs <- function(input, self, private) {
   
   # Check for correct input class
   if (!is.name(input)) {
-    stop("The inputs should be of class 'name' i.e. use $add_inputs(a)")
+    stop("The inputs should be of class 'name' i.e. use $addInput(a)")
   }
   
   name = deparse1(input)

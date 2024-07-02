@@ -60,17 +60,17 @@ obj = ctsmTMB$new()
 obj$set_modelname("ornstein_uhlenbeck")
 
 # Add system equations
-obj$add_systems(
+obj$addSystem(
   dx ~ theta * (mu-x) * dt + sigma_x*dw
 )
 
 # Add observation equations
-obj$add_observations(
+obj$addObs(
   y ~ x
 )
 
 # Set observation equation variances
-obj$add_observation_variances(
+obj$setVariance(
   y ~ sigma_y^2
 )
 
@@ -82,7 +82,7 @@ obj$add_algebraics(
 )
 
 # Specify parameter initial values and lower/upper bounds in estimation
-obj$add_parameters(
+obj$setParameter(
   logtheta   = log(c(initial = 5,    lower = 0,    upper = 20)),
   mu         = c(    initial = 0,    lower = -10,  upper = 10),
   logsigma_x = log(c(initial = 1e-1, lower = 1e-5, upper = 5)),

@@ -48,7 +48,7 @@ We see that the model is called `sde_model` (default), and there are no states, 
 
 We can begin by adding the desired stochastic differential equation to the object.
 ```{r}
-obj$add_systems(dX ~ theta * (mu - X) * dt + sigma_x * dw)
+obj$addSystem(dX ~ theta * (mu - X) * dt + sigma_x * dw)
 ```
 We note that the drift term ends with `*dt` and diffusions are specified by `dw` or `dw#` where `#` can be any sequence of numbers.
 
@@ -58,7 +58,7 @@ We note that the drift term ends with `*dt` and diffusions are specified by `dw`
 
 We must also add the observation equation.
 ```{r}
-obj$add_observations(Y ~ X)
+obj$addObs(Y ~ X)
 ```
 
 The observations associated with `Y` in the `data` should also be named `Y`. 
@@ -69,7 +69,7 @@ The observations associated with `Y` in the `data` should also be named `Y`.
 
 For every observation variable we must also specify the variance of the normally distributed residuals for that observation equation
 ```{r}
-obj$add_observation_variances(Y ~ sigma_y^2*U)
+obj$setVariance(Y ~ sigma_y^2*U)
 ```
 The variable name on the left-hand side of the formula must match a name previously defined via `add_observations`, and the variance is associated with that observation equation.
 
@@ -85,7 +85,7 @@ So now we have specified one state $X$ and an observation $Y$. The diffusions co
 
 We tell the model which variable names are inputs via
 ```{r}
-obj$add_inputs(U)
+obj$addInput(U)
 ```
 The input values should be provided in the `data`, with the same name, similar to the observations.
 
@@ -96,7 +96,7 @@ The input values should be provided in the `data`, with the same name, similar t
 
 We must also specify the (fixed effects) parameters, together with their initial value and lower/upper bound, for the optimization.
 ```{r}
-obj$add_parameters(
+obj$setParameter(
   theta   = c(initial = 5,    lower = 0,    upper = 20),
   mu      = c(initial = 0,    lower = -10,  upper = 10),
   sigma_x = c(initial = 1e-1, lower = 1e-5, upper = 5),
@@ -106,7 +106,7 @@ obj$add_parameters(
 
 We can fix a parameter value (so the parameter becomes a constant) by supplying just a single value. It is usually difficult to identify both of the noise parameters $\left(\sigma_{X},\sigma_{Y}\right)$ in practice, so lets assume that we want to fix $\sigma_{Y}$. This is done via
 ```{r}
-obj$add_parameters(
+obj$setParameter(
   sigma_y  = 1e-1
 )
 ```
@@ -286,7 +286,7 @@ obj$add_algebraics(theta ~ exp(logtheta))
 
 The parameter settings for `theta` are not automatically transformed into `logtheta`, so they must be redefined:
 ```{r}
-obj$add_parameters(logtheta = log(c(initial=5, lower=0, upper=20)))
+obj$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
 ```
 
 

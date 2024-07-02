@@ -50,7 +50,7 @@ You can access the documentation for all the available methods with
 ``` r
 ?ctsmTMB
 ```
-or individually (for a subset of methods) using i.e. `?ctsmTMB::add_systems`. The methods documentation is also available on the [homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
+or individually (for a subset of methods) using i.e. `?ctsmTMB::addSystem`. The methods documentation is also available on the [homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
 ## Example Usage
 
@@ -104,17 +104,17 @@ obj = ctsmTMB$new()
 obj$set_modelname("ornstein_uhlenbeck")
 
 # Add system equations
-obj$add_systems(
+obj$addSystem(
   dx ~ theta * (mu-x+u) * dt + sigma_x*dw
 )
 
 # Add observation equations
-obj$add_observations(
+obj$addObs(
   y ~ x
 )
 
 # Set observation equation variances
-obj$add_observation_variances(
+obj$setVariance(
   y ~ sigma_y^2
 )
 
@@ -126,10 +126,10 @@ obj$add_algebraics(
 )
 
 # Add vector input
-obj$add_inputs(u)
+obj$addInput(u)
 
 # Specify parameter initial values and lower/upper bounds in estimation
-obj$add_parameters(
+obj$setParameter(
   logtheta    = log(c(initial = 1, lower=1e-5, upper=50)),
   mu          = c(initial=1.5, lower=0, upper=5),
   logsigma_x  = log(c(initial=1, lower=1e-10, upper=30)),
