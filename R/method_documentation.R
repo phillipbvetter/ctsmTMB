@@ -1,6 +1,6 @@
-# This document contains empty functions with names similar to the methods in sdeTMB
+# This document contains empty functions with names similar to the methods in ctsmTMB
 # This allow users to easily find method documentation using ?add_systems, instead of having
-# to manually retrieve them from ?sdeTMB and then finding the method among the large list of other methods
+# to manually retrieve them from ?ctsmTMB and then finding the method among the large list of other methods
 
 
 ########################################################################
@@ -9,7 +9,7 @@
 #' @title Add state equations to model object
 #' 
 #' @description 
-#' Add stochastic differential equation to the \code{sdeTMB} model-object that 
+#' Add stochastic differential equation to the \code{ctsmTMB} model-object that 
 #' governs the differential evolution of states in the specified model.
 #' 
 #' @usage
@@ -46,7 +46,7 @@ add_systems = function(form,...) {
 #' @title Add observation equations to model object
 #' 
 #' @description
-#' Add an observation equation to the \code{sdeTMB} model-object that links 
+#' Add an observation equation to the \code{ctsmTMB} model-object that links 
 #' states to an observed variable.
 #'  
 #' @examples

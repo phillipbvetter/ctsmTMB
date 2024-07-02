@@ -15,7 +15,7 @@ added to the system.}
 multiple formulas by comma-seperation rather than providing a list.}
 }
 \description{
-Add stochastic differential equation to the \code{sdeTMB} model-object that
+Add stochastic differential equation to the \code{ctsmTMB} model-object that
 governs the differential evolution of states in the specified model.
 }
 \details{

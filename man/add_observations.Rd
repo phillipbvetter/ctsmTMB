@@ -19,7 +19,7 @@ multiple formulas by comma-seperation rather than providing a list.}
 when the observation left-hand side is a function call. See details.}
 }
 \description{
-Add an observation equation to the \code{sdeTMB} model-object that links
+Add an observation equation to the \code{ctsmTMB} model-object that links
 states to an observed variable.
 }
 \details{

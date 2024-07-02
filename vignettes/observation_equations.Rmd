@@ -6,14 +6,14 @@ output: html_document
 ---
 
 ```{r, include=FALSE}
-library(sdeTMB)
+library(ctsmTMB)
 ```
 
 In this document we show how to apply functions to the left-hand side of an observation equation.
 
 ```{r}
 # Create model object
-obj = sdeTMB$new()
+obj = ctsmTMB$new()
 
 # Set name of model (and the created .cpp file)
 obj$set_modelname("ornstein_uhlenbeck")

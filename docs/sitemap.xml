@@ -10,6 +10,9 @@
     <loc>/articles/construct_nll.html</loc>
   </url>
   <url>
+    <loc>/articles/ctsmTMB.html</loc>
+  </url>
+  <url>
     <loc>/articles/estimate.html</loc>
   </url>
   <url>
@@ -52,6 +55,9 @@
     <loc>/reference/add_systems.html</loc>
   </url>
   <url>
+    <loc>/reference/ctsmTMB.html</loc>
+  </url>
+  <url>
     <loc>/reference/execute_ekf_prediction.html</loc>
   </url>
   <url>
@@ -61,6 +67,15 @@
     <loc>/reference/index.html</loc>
   </url>
   <url>
+    <loc>/reference/plot.ctsmTMB.fit.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot.ctsmTMB.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot.ctsmTMB.pred.html</loc>
+  </url>
+  <url>
     <loc>/reference/plot.sdeTMB.fit.html</loc>
   </url>
   <url>
@@ -68,6 +83,12 @@
   </url>
   <url>
     <loc>/reference/plot.sdeTMB.pred.html</loc>
+  </url>
+  <url>
+    <loc>/reference/print.ctsmTMB.fit.html</loc>
+  </url>
+  <url>
+    <loc>/reference/print.ctsmTMB.html</loc>
   </url>
   <url>
     <loc>/reference/print.sdeTMB.fit.html</loc>
@@ -80,6 +101,9 @@
   </url>
   <url>
     <loc>/reference/set_initial_state.html</loc>
+  </url>
+  <url>
+    <loc>/reference/summary.ctsmTMB.html</loc>
   </url>
   <url>
     <loc>/reference/summary.sdeTMB.html</loc>

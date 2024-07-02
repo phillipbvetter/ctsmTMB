@@ -1,7 +1,7 @@
-# Stochastic Differential Equations using Template Model Builder (sdeTMB)
+# Continuous Time Stochastic Modelling using Template Model Builder (ctsmTMB)
 
-`sdeTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, heavily inspired by [Continuous Time Stochastic Modelling](https://ctsm.info). 
-The package is a user-friendly wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) that frees the user from writing the required C++ file containing the (negative log) likelihood function themselves. Instead, the C++ script is generated automatically based on a model specified by the user using the provided R6 `sdeTMB` class object. The package furthermore employs the `Rcpp` package universe to allow faster calculations of model predictions and stochastic simulation paths.
+`ctsmTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, heavily inspired by [Continuous Time Stochastic Modelling](https://ctsm.info). 
+The package is a user-friendly wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) that frees the user from writing the required C++ file containing the (negative log) likelihood function themselves. Instead, the C++ script is generated automatically based on a model specified by the user using the provided R6 `ctsmTMB` class object. The package furthermore employs the `Rcpp` package universe to allow faster calculations of model predictions and stochastic simulation paths.
 
 The package implements the following methods 
 
@@ -15,16 +15,16 @@ The main advantage of the Kalman Filter implementations are a large increase in 
 
 A district advantage of the `laplace`-style implementation is its use of the Laplace approximation for likelihood calculations which allows state space formulations where the density of the observation residuals are non-Gaussian.
 
-The package is currently mostly tailored towards the Kalman Filter, with its available methods `predict` and `simulate`  for k-step-ahead predictions and simulations. It also has an `S3 method` implementation of `plot` to be called on the `sdeTMB.fit` class object returned from the `estimate` method, which plots a basic residuals analysis using the `ggplot2` package.
+The package is currently mostly tailored towards the Kalman Filter, with its available methods `predict` and `simulate`  for k-step-ahead predictions and simulations. It also has an `S3 method` implementation of `plot` to be called on the `ctsmTMB.fit` class object returned from the `estimate` method, which plots a basic residuals analysis using the `ggplot2` package.
 
 ## Installation
 
 You can install the package by copying the command below into `R`.
 ``` r
-remotes::install_github(repo="phillipbvetter/sdeTMB", dependencies=TRUE)
+remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
 ```
 
-We note that `sdeTMB` depends on the following packages:
+We note that `ctsmTMB` depends on the following packages:
 1. `TMB`
 2. `Rcpp`
 3. `RcppEigen`
@@ -43,14 +43,14 @@ sudo apt-get install libgsl-dev
 ```
 
 ## How to get started
-You can visit the package [webpage](https://phillipbvetter.github.io/sdeTMB/index.html) and browse the vignettes for example uses, in particular see [Getting Started](https://phillipbvetter.github.io/sdeTMB/articles/sdeTMB.html).
+You can visit the package [webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and browse the vignettes for example uses, in particular see [Getting Started](https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html).
 
 ## Help
 You can access the documentation for all the available methods with
 ``` r
-?sdeTMB
+?ctsmTMB
 ```
-or individually (for a subset of methods) using i.e. `?sdeTMB::add_systems`. The methods documentation is also available on the [homepage](https://phillipbvetter.github.io/sdeTMB/reference/sdeTMB.html).
+or individually (for a subset of methods) using i.e. `?ctsmTMB::add_systems`. The methods documentation is also available on the [homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
 ## Example Usage
 
@@ -59,7 +59,7 @@ library(ggplot2)
 library(patchwork)
 library(dplyr)
 library(reshape2)
-library(sdeTMB)
+library(ctsmTMB)
 
 ############################################################
 # Data simulation
@@ -98,7 +98,7 @@ u = u.sim[ids]
 ############################################################
 
 # Create model object
-obj = sdeTMB$new()
+obj = ctsmTMB$new()
 
 # Set name of model (and the created .cpp file)
 obj$set_modelname("ornstein_uhlenbeck")

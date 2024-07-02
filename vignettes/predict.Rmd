@@ -6,8 +6,7 @@ output: html_document
 ---
 
 ```{r, include=FALSE}
-# library(sdeTMB)
-devtools::load_all("~/github/sdeTMB")
+library(ctsmTMB)
 ```
 
 We demonstate how to use the `predict` method to obtain k-step ahead predictions / forecasts of a model object, and the observations.
@@ -79,11 +78,11 @@ y = x[t.sim %in% t.obs] + sigma_y * rnorm(length(t.obs))
 
 ---
 
-We now construct the `sdeTMB` model object
+We now construct the `ctsmTMB` model object
 
 ```{r}
 # Create model object
-obj = sdeTMB$new()
+obj = ctsmTMB$new()
 
 # Set name of model (and the created .cpp file)
 obj$set_modelname("ornstein_uhlenbeck")

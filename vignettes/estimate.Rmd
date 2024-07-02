@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r, include=FALSE}
-library(sdeTMB)
+library(ctsmTMB)
 ```
 
 In this document we demonstrate the functionality of `estimate` further. We use the Ornstein-Uhlenbeck process for this purpose.
@@ -50,11 +50,11 @@ y = x[t.sim %in% t.obs] + sigma_y * rnorm(length(t.obs))
 
 ---
 
-We now construct the `sdeTMB` model object as per usual
+We now construct the `ctsmTMB` model object as per usual
 
 ```{r}
 # Create model object
-obj = sdeTMB$new()
+obj = ctsmTMB$new()
 
 # Set name of model (and the created .cpp file)
 obj$set_modelname("ornstein_uhlenbeck")
