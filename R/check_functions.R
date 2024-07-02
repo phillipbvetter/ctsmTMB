@@ -252,29 +252,36 @@ check_parameter_vector = function(par, parname, self, private) {
     names(par) = expected.names
   }
   
+  # change parameter names to expected
+  other.names = c("init","lb","ub")
+  for(i in seq_along(par)){
+    names(par)[names(par) %in%  other.names[i]] = expected.names[i]
+  }
+  
+  
   # Is the 3-vector named?, otherwise name it
   if (is.null(names(par))){
-    if(length(par)==3) names(par) = c("initial","lower","upper")
+    names(par) = expected.names
   }
   
   # if the 3-vector is already named, are all names present?
   if(!all(expected.names %in% names(par))){
-    stop("The parameter ", parname, " gave an error because it was named but did not contain all three required names  'initial', 'lower' and 'upper'")
+    stop("The parameter ", parname, " gave an error - the vector must be named with init/initial, lb/lower and ub/upper.")
   }
   
   # the initial value can't be NA
-  if(is.na(par["initial"])){
+  if(is.na(par[expected.names[1]])){
     stop("The parameter ", parname, " gave an error because the initial value was NA") 
   }
   
   # if either of lower or upper are NA, then set both as NA
-  if(any(is.na(par[c("lower","upper")]))){
-    par[c("lower","upper")] = NA
+  if(any(is.na(par[expected.names[2:3]]))){
+    par[expected.names[2:3]] = NA
   }
   
   # check if the values are ascending lower <= initial <= upper
-  if(!all(is.na(par[c("lower","upper")]))){
-    if(any(diff(par[c("lower","initial","upper")]) < 0)){
+  if(!all(is.na(par[expected.names[2:3]]))){
+    if(any(diff(par[expected.names[c(2,1,3)]]) < 0)){
       stop("The parameter ", parname, " does not have ascending bounds i.e. lower bound <= initial value <= upper bound.")
     }
   }
@@ -302,18 +309,26 @@ check_parameter_vector = function(par, parname, self, private) {
 
 check_parameter_matrix <- function(parmat, self, private) {
   
+  # set names
+  expected.names = c("initial","lower","upper")
+  
   # set column names if 3 columns and no column names
   if(is.null(colnames(parmat)) & ncol(parmat)==3){
-    colnames(parmat) = c("initial","lower","upper")
+    colnames(parmat) = expected.names
     message("Note: No colnames were provided in parameter matrix - assuming order 'initial', 'lower', 'upper'")
+  }
+  
+  # change parameter names to expected
+  other.names = c("init","lb","ub")
+  for(i in 1:ncol(parmat)){
+    colnames(parmat)[colnames(parmat) %in%  other.names[i]] = expected.names[i]
   }
   
   # are column names initial, lower and upper present?
   col.names = colnames(parmat)
-  expected.names = c("initial","lower","upper")
   bool = expected.names %in% col.names
   if(!all(bool)){
-    stop(sprintf("Missing column names: %s", paste(expected.names[!bool],collapse=", ")))
+    stop(sprintf("Missing column(s): %s", paste(expected.names[!bool],collapse=", ")))
   }
   
   # extract relevant columns
