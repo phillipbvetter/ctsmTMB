@@ -4,3 +4,4 @@
 *.o
 *.so
 vignettes/ctsmTMB_cppfiles
+ctsmTMB_cppfiles
