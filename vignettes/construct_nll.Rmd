@@ -1,0 +1,197 @@
+---
+title: "construct_nll: How to extract function handlers, and choosing your own optimizer"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r, include=FALSE}
+# library(sdeTMB)
+devtools::load_all("~/github/sdeTMB")
+setwd("~/github/sdeTMB/vignettes")
+```
+
+In this document we show how to use the `construct_nll` method to obtain function handlers for the objective function, gradient, and hessian (the latter is only avaible when there are no random effects in your model).
+
+These handlers can be parsed to an optimization algorithm of your own choice, or you can regularize the objective function using a wrapper function in `R` around the objective function. This last step is however at the cost of the automatic differentiation so probably not worth it.
+
+# Simulate from the Ornstein-Uhlenbeck process
+
+---
+
+We use the common Ornstein-Uhlenbeck process to showcase the use of `construct_nll`. 
+
+$$
+\mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \, \mathrm{d}B_{t} 
+$$
+
+
+$$
+Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim \mathcal{N}\left(0,\sigma_{Y}^{2}\right)  
+$$
+We first create data by simulating the process
+
+```{r}
+# Simulate data using Euler Maruyama
+set.seed(10)
+theta=10; mu=1; sigma_x=1; sigma_y=1e-1
+# 
+dt.sim = 1e-3
+t.sim = seq(0,1,by=dt.sim)
+dw = rnorm(length(t.sim)-1,sd=sqrt(dt.sim))
+x = 3
+for(i in 1:(length(t.sim)-1)) {
+  x[i+1] = x[i] + theta*(mu-x[i])*dt.sim + sigma_x*dw[i]
+}
+
+# Extract observations and add noise
+dt.obs = 1e-2
+t.obs = seq(0,1,by=dt.obs)
+y = x[t.sim %in% t.obs] + sigma_y * rnorm(length(t.obs))
+
+# Create data
+.data = data.frame(
+  t = t.obs,
+  y = y
+)
+```
+
+
+# Construct model object
+
+---
+
+We now construct the `sdeTMB` model object
+
+```{r}
+# Create model object
+obj = sdeTMB$new()
+
+# Set name of model (and the created .cpp file)
+obj$set_modelname("ornstein_uhlenbeck")
+
+# Add system equations
+obj$add_systems(
+  dx ~ theta * (mu-x) * dt + sigma_x*dw
+)
+
+# Add observation equations
+obj$add_observations(
+  y ~ x
+)
+
+# Set observation equation variances
+obj$add_observation_variances(
+  y ~ sigma_y^2
+)
+
+# Specify algebraic relations
+obj$add_algebraics(
+  theta ~ exp(logtheta),
+  sigma_x ~ exp(logsigma_x),
+  sigma_y ~ exp(logsigma_y)
+)
+
+# Specify parameter initial values and lower/upper bounds in estimation
+obj$add_parameters(
+  logtheta   = log(c(initial = 5,    lower = 0,    upper = 20)),
+  mu         = c(    initial = 0,    lower = -10,  upper = 10),
+  logsigma_x = log(c(initial = 1e-1, lower = 1e-5, upper = 5)),
+  logsigma_y = log(c(initial = 1e-1, lower = 1e-5, upper = 5))
+)
+
+# Set initial state mean and covariance
+obj$set_initial_state(list(x[1], 1e-1*diag(1)))
+```
+
+# Estimation
+
+---
+
+We are in principle ready to call the `estimate` method to run the optimization scheme using the built-in optimization which uses `stats::nlminb` i.e.
+
+```{r}
+fit = obj$estimate(.data)
+```
+
+Inside the package we optimise the objective function with respect to the fixed parameters using the construction function handlers from `TMB::MakeADFun` and parsing them to `stats::nlminb` i.e.
+
+```{r, eval=FALSE}
+nll = TMB::MakeADFun(...)
+opt = nlminb(start=nll$par, objective=nll$fn, grad=nll$gr, hessian=nll$he)
+```
+
+# Extract function handlers
+
+---
+
+The `construct_nll` method allows you to retrieve the `nll` object that holds the negative log-likelihood, and its derivatives. The method takes arguments similar to those of `estimate`.
+
+```{r}
+nll = obj$construct_nll(.data)
+```
+
+The initial parameters (supplied by the user) are stored here
+```{r}
+nll$par
+```
+
+The objective function can be evaluted by
+```{r}
+nll$fn(nll$par)
+```
+
+The gradient can be evaluted by
+```{r}
+nll$gr(nll$par)
+```
+
+The hessian can be evaluted by
+```{r}
+nll$he(nll$par)
+```
+
+We can now use these to optimize the function using e.g. `stats::optim` instead. 
+
+# Extract parameter lower/upper bounds
+
+---
+
+
+You can extract the parameter bounds specified when calling `add_parameters()` method by using the `get_parameters` method (note that `nll$par` and `pars$initial` are identical).
+
+```{r}
+pars = obj$get_parameters()
+print(pars)
+```
+
+# Optimize manually using `stats::optim`
+
+We supply the initial parameter values, objective function handler and gradient handler, and parameter bounds to `optim`.
+```{r}
+opt = stats::optim(par=nll$par, 
+                   fn=nll$fn, 
+                   gr=nll$gr, 
+                   method="L-BFGS-B", 
+                   lower=pars$lower, 
+                   upper=pars$upper)
+```
+
+# Compare results between the two optimizers
+
+---
+
+Lets compare the results from using `stats::optim` with the extracted function handler versus the internal optimisation that uses `stats::nlminb` stored in `fit`:
+
+```{r}
+# Estimated parameters
+data.frame(external=opt$par, internal=fit$par.fixed)
+
+# Neg. Log-Likelihood
+data.frame(external=opt$value, internal=fit$nll)
+
+# Gradient components
+data.frame(external=t(nll$gr(opt$par)), internal=t(nll$gr(fit$par.fixed)))
+```
+
+

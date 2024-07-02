@@ -1,0 +1,174 @@
+---
+title: "estimate: Estimating model parameters and states"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r, include=FALSE}
+library(sdeTMB)
+```
+
+In this document we demonstrate the functionality of `estimate` further. We use the Ornstein-Uhlenbeck process for this purpose.
+
+$$
+\mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \, \mathrm{d}B_{t} 
+$$
+
+
+$$
+Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim \mathcal{N}\left(0,\sigma_{Y}^{2}\right)  
+$$
+
+```{r, include=FALSE}
+# Simulate data using Euler Maruyama
+set.seed(10)
+theta=10; mu=1; sigma_x=1; sigma_y=1e-1
+# 
+dt.sim = 1e-3
+t.sim = seq(0,1,by=dt.sim)
+dw = rnorm(length(t.sim)-1,sd=sqrt(dt.sim))
+x = 3
+for(i in 1:(length(t.sim)-1)) {
+  x[i+1] = x[i] + theta*(mu-x[i])*dt.sim + sigma_x*dw[i]
+}
+
+# Extract observations and add noise
+dt.obs = 1e-2
+t.obs = seq(0,1,by=dt.obs)
+y = x[t.sim %in% t.obs] + sigma_y * rnorm(length(t.obs))
+
+# Create data
+.data = data.frame(
+  t = t.obs,
+  y = y
+)
+```
+
+
+# Construct model object
+
+---
+
+We now construct the `sdeTMB` model object as per usual
+
+```{r}
+# Create model object
+obj = sdeTMB$new()
+
+# Set name of model (and the created .cpp file)
+obj$set_modelname("ornstein_uhlenbeck")
+
+# Add system equations
+obj$add_systems(
+  dx ~ theta * (mu-x) * dt + sigma_x*dw
+)
+
+# Add observation equations
+obj$add_observations(
+  y ~ x
+)
+
+# Set observation equation variances
+obj$add_observation_variances(
+  y ~ sigma_y^2
+)
+
+# Specify algebraic relations
+obj$add_algebraics(
+  theta ~ exp(logtheta),
+  sigma_x ~ exp(logsigma_x),
+  sigma_y ~ exp(logsigma_y)
+)
+
+# Specify parameter initial values and lower/upper bounds in estimation
+obj$add_parameters(
+  logtheta   = log(c(initial = 5,    lower = 0,    upper = 20)),
+  mu         = c(    initial = 0,    lower = -10,  upper = 10),
+  logsigma_x = log(c(initial = 1e-1, lower = 1e-5, upper = 5)),
+  logsigma_y = log(c(initial = 1e-1, lower = 1e-5, upper = 5))
+)
+
+# Set initial state mean and covariance
+obj$set_initial_state(list(x[1], 1e-1*diag(1)))
+```
+
+# Using `estimate` - default settings
+
+---
+
+We can run `estimate` directly with the default settings
+
+```{r, eval=FALSE}
+obj$estimate(.data)
+```
+
+This is the same as using the default settings
+```{r, eval=FALSE}
+obj$estimate(data = .data, 
+             method = "ekf",
+             ode.solver = "rk4",
+             ode.timestep = diff(data$t),
+             loss = "quadratic",
+             loss_c = 3,
+             unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
+             control = list(trace=1,iter.max=1e5,eval.max=1e5),
+             use.hessian = FALSE,
+             laplace.residuals = FALSE,
+             unconstrained.optim = FALSE,
+             compile = FALSE,
+             silent = FALSE)
+```
+
+Let's walk through the various arguments and their effect:
+
+# Argument: `method`
+
+---
+
+The `method` argument determines which underlying estimation techniques is used. The current implementation supports the following
+
+1. `method='ekf'`: The Extended Kalman Filter.
+2. `method='ukf'`: The Unscented Kalman Filter - currently disabled.
+3. `method='laplace'`: The Laplace Approximation
+
+The former two are quite similar in that they are based on the Kalman Filter theory. The assumptions of normality in the state transition and observation equation are fundamental, although the implemented filters are standard non-linear filters, in the sense that they try to overcome these assumptions for small non-linearities. The Unscented Kalman Filter is generally considered to perform better in these cases.
+
+<!-- The Extended Kalman Filter linearizes (to first order in the drift, and zeroth order in the diffusion) around the expectation of the state value to obtain prior and posterior state estimates as a way to handle non-linearities in system and observation equations.  -->
+
+The latter `laplace` method employs the Laplace Approximation method of \code{link{TMB}} to integration out random effects. In this formulation we consider the states as random effects, and parameters as fixed. The underlying assumption is one of normality, but its implementation allows for the flexibility of choosing arbitrary distributions (not yet implemented.)
+
+Both of these methods can be used to estimate parameter and states. In the case of `laplace` the states will be smoothed (conditioned on both past and future observations).
+
+# Argument: `ode.solver`
+
+---
+
+This argument is only used by the Kalman Filter methods i.e. `ekf` and `ukf`. The argument determines the algorithm used to integrate forward the moment (mean and variance) differential equations. The current implementation supports
+
+1. `ode.solver='euler'`: The forward Euler scheme
+2. `ode.solver='rk4'`: The 4th order Runge-Kutta scheme
+
+# Argument: `ode.timestep`
+
+---
+
+This argument determines the time-step used in the ODE solvers
+
+
+# Argument: `loss` and `loss_c`
+
+---
+
+
+# Argument: `use_hessian`
+
+---
+
+# Argument: `compile`
+
+---
+
+# Argument: `control`
+
+---

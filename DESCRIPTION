@@ -1,0 +1,46 @@
+Package: sdeTMB
+Type: Package
+Title: Stochastic Differential Equations using Template Model Builder
+Version: 0.5
+Date: 2023-02-27
+Authors@R: c(person("Phillip", "Vetter", email="pbrve@dtu.dk", role = c("aut", "cre")),
+		person("Jan", "Møller", email="jkmo@dtu.dk", role="ctb"),
+		person("Uffe", "Thygesen", email="uhth@dtu.dk", role="ctb"),
+		person("Peder", "Bacher", email="pbac@dtu.dk", role="ctb"),
+		person("Henrik", "Madsen", email="hmad@dtu.dk", role="ctb") )
+Maintainer: Phillip Brinck Vetter <pbrve@dtu.dk>
+Author: Phillip Brinck Vetter [aut, cre],
+	Jan K. Møller [ctb],
+	Uffe H. Thygesen [ctb],
+	Peder Bacher [ctb],
+	Henrik Madsen [ctb]
+Description: The sdeTMB (Stochastic Differential Equations using Template Model Builder) is a package used to perform parameter and state estimation, and forecasting in stochastic state space systems. The package employs the R6 object for easy model construction, and uses the TMB/RTMB packages for its C++ properties, algorithmic differentiation, and Laplace approximation method.
+License: GPL-3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Config/testthat/edition: 3
+Depends:
+	R (>= 3.0.0)
+Imports:
+	TMB,
+	RTMB,
+	R6,
+	Deriv,
+	stringr,
+	stats,
+	Rcpp,
+	RcppEigen,
+	RcppXPtrUtils,
+	RcppZiggurat
+LinkingTo:
+	Rcpp,
+	RcppEigen,
+	RcppZiggurat
+Suggests:
+	testthat (>= 3.0.0),
+	patchwork,
+	ggplot2,
+	ggfortify
+URL: 
+	https://github.com/phillipbvetter/sdeTMB

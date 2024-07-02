@@ -1,0 +1,76 @@
+---
+title: "observations: Using functions on the left-hand side"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r, include=FALSE}
+library(sdeTMB)
+```
+
+In this document we show how to apply functions to the left-hand side of an observation equation.
+
+```{r}
+# Create model object
+obj = sdeTMB$new()
+
+# Set name of model (and the created .cpp file)
+obj$set_modelname("ornstein_uhlenbeck")
+
+# Add system equations
+obj$add_systems(
+  dx ~ theta * (mu-x) * dt + sigma_x*dw
+)
+```
+
+# Adding observation equations
+
+---
+
+Let's assume that our observations $y_{t}$ are log-normally distributed conditioned on $x_{t}$ i.e.
+$$
+\log y_{t_{i}} \sim \mathcal{N}(x_{t_{i}},\sigma_{y}^{2})
+$$
+It is sufficient for the user to provide the data column `y` in the provided `data.frame` to e.g. `estimate` or `predict` by adding the following observation equation
+
+```{r}
+obj$add_observations(
+  log(y) ~ x, obsnames = "log_y"
+)
+```
+
+Note that these kind of observation equations, where the left-hand side is a function of one (or more) observed variables must be explicitly named using the `obsnames` argument.
+
+# Adding observation variances
+
+---
+
+The names given with `obsnames` are important because they are needed to specify the observation variance. As an example the code below does not work, because the observation was named `log_y`
+
+```{r, error=TRUE}
+obj$add_observation_variances(
+  y ~ sigma_y^2
+)
+```
+
+So the correct way to add the observation variance is this:
+```{r}
+obj$add_observation_variances(
+  log_y ~ sigma_y^2
+)
+```
+
+# Multiple observation equations
+
+---
+
+You must supply multiple `obsnames` if you are supplying multiple observatin equations, although the name will only be used if the left-hand side is not just a single variable i.e.
+```{r, eval=FALSE}
+obj$add_observations(
+  log(y) ~ x,
+  y ~ x,
+  y^2+z^3 ~ x,
+  obsnames = c("log_y", NA, "y2_plus_z3")
+)
+```

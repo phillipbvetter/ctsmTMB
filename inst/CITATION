@@ -1,0 +1,22 @@
+bibentry(bibtype = "Article",
+  title        = "sdeTMB: Stochastic Differential Equations using Template Model Builder",
+  author       = c(
+		person(given = c("Phillip", "Brinck"), 	family = "Vetter", 	email = "pbrve@dtu.dk"),
+		person(given = c("Jan","K."),	family = "Møller"),
+		person(given = "Uffe", 		family = "Thygesen"),
+		person(given = "Peder",		family = "Bacher")
+),
+  journal      	= ".",
+  howpublished	= "\\url{https://github.com/phillipbvetter/sdeTMB/}",
+  year         	= "2024",
+  volume       	= "X",
+  number       	= "X",
+  pages        	= "X",
+  doi          	= "X",
+
+  header       = "Please use the package's Github Repo for citation:",
+  textVersion  =
+  paste("Phillip Brinck Vetter, Jan Kloppenborg Møller, Peder Bacher, Uffe Thygesen, (2024).",
+        "sdeTMB: Stochastic Differential Equations using Template Model Builder.",
+        "https://github.com/phillipbvetter/sdeTMB/")
+)

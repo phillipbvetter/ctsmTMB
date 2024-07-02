@@ -1,0 +1,22 @@
+title: sdeTMB
+
+url: ~
+
+template:
+  bootstrap: 5
+  #bootswatch: quartz
+  bslib:
+    base_font: {google: "Mukta"}
+    code_font: {google: "Source Code Pro"}
+    pkgdown-nav-height: 125px
+    bg: '#FFFFFF'
+    fg: '#424242'
+    primary: '#0075FD'
+
+navbar:
+  bg: light
+
+
+
+
+
