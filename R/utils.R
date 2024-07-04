@@ -82,6 +82,65 @@ logdet <- RTMB::ADjoint(
   name = "logdet")
 
 ###########################################################
+# RK4 SOLVER FOR RTMB EKF
+###########################################################
+
+# ODE Solver
+ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt, ode_solver){
+  
+  # Initials
+  X0 = stateVec
+  P0 = covMat
+  
+  # Explicit Forward Euler
+  if(ode_solver==1){
+    X1 = X0 + f__(stateVec, parVec, inputVec) * dt
+    P1 = P0 + cov_ode_1step(covMat, stateVec, parVec, inputVec) * dt
+  }
+  
+  # Classical 4th Order Runge-Kutta Method
+  if(ode_solver==2){
+    
+    # 1. Approx Slope at Initial Point
+    k1 = f__(stateVec, parVec, inputVec)
+    c1 = cov_ode_1step(covMat, stateVec, parVec, inputVec)
+    
+    # 2. First Approx Slope at Midpoint
+    # inputVec = inputVec + 0.5 * dinputVec
+    stateVec = X0 + 0.5 * dt * k1
+    covMat   = P0 + 0.5 * dt * c1
+    k2       = f__(stateVec, parVec, inputVec)
+    c2       = cov_ode_1step(covMat, stateVec, parVec, inputVec)   
+    
+    # 3. Second Approx Slope at Midpoint
+    stateVec = X0 + 0.5 * dt * k2
+    covMat   = P0 + 0.5 * dt * c2
+    k3       = f__(stateVec, parVec, inputVec)
+    c3       = cov_ode_1step(covMat, stateVec, parVec, inputVec)
+    
+    # 4. Approx Slope at End Point
+    # inputVec = inputVec + 0.5 * dinputVec
+    stateVec = X0 + dt * k3
+    covMat   = P0 + dt * c3
+    k4       = f__(stateVec, parVec, inputVec)
+    c4       = cov_ode_1step(covMat, stateVec, parVec, inputVec)
+    
+    # ODE UPDATE
+    X1 = X0 + (k1 + 2.0*k2 + 2.0*k3 + k4)/6.0 * dt
+    P1 = P0 + (c1 + 2.0*c2 + 2.0*c3 + c4)/6.0 * dt
+  }
+  return(invisible(list(X1,P1)))
+}
+
+# Covariance ODE 1-Step
+cov_ode_1step = function(covMat, stateVec, parVec, inputVec){
+  A = dfdx__(stateVec, parVec, inputVec)
+  G = g__(stateVec, parVec, inputVec)
+  AcovMat = A %*% covMat
+  return(AcovMat + t(AcovMat) + G %*% t(G))
+}
+
+###########################################################
 # SOLVE LYAPUNOV EQUATION
 ###########################################################
 

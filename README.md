@@ -98,38 +98,38 @@ u = u.sim[ids]
 ############################################################
 
 # Create model object
-obj = ctsmTMB$new()
+model = ctsmTMB$new()
 
 # Set name of model (and the created .cpp file)
-obj$setModelname("ornstein_uhlenbeck")
+model$setModelname("ornstein_uhlenbeck")
 
 # Add system equations
-obj$addSystem(
+model$addSystem(
   dx ~ theta * (mu-x+u) * dt + sigma_x*dw
 )
 
 # Add observation equations
-obj$addObs(
+model$addObs(
   y ~ x
 )
 
 # Set observation equation variances
-obj$setVariance(
+model$setVariance(
   y ~ sigma_y^2
 )
 
 # Specify algebraic relations
-obj$setAlgebraics(
+model$setAlgebraics(
   theta   ~ exp(logtheta),
   sigma_x ~ exp(logsigma_x),
   sigma_y ~ exp(logsigma_y)
 )
 
 # Add vector input
-obj$addInput(u)
+model$addInput(u)
 
 # Specify parameter initial values and lower/upper bounds in estimation
-obj$setParameter(
+model$setParameter(
   logtheta    = log(c(initial = 1, lower=1e-5, upper=50)),
   mu          = c(initial=1.5, lower=0, upper=5),
   logsigma_x  = log(c(initial=1, lower=1e-10, upper=30)),
@@ -137,10 +137,10 @@ obj$setParameter(
 )
 
 # Set initial state mean and covariance
-obj$setInitialState(list(x[1], 1e-1*diag(1)))
+model$setInitialState(list(x[1], 1e-1*diag(1)))
 
 # Carry out estimation using extended kalman filter method with stats::nlminb as optimizer
-fit <- obj$estimate(data=.data, 
+fit <- model$estimate(data=.data, 
                     method="ekf", 
                     use.hessian=T,
                     ode.timestep=1e-2
@@ -163,7 +163,7 @@ plot1 = ggplot() +
   theme_minimal()
 
 # Predict to obtain k-step-ahead predictions to see model forecasting ability
-pred.list = obj$predict(data=.data, 
+pred.list = model$predict(data=.data, 
                         k.ahead=10, 
                         method="ekf",
 )
@@ -181,13 +181,13 @@ plot2 = ggplot() +
   theme_minimal()
 
 # Perform full prediction without data update
-pred.list = obj$predict(data=.data, 
+pred.list = model$predict(data=.data, 
                         k.ahead=1e6, 
                         method="ekf",
 )
 
 # Perform full simulation without data update
-sim.list = obj$simulate(data=.data, 
+sim.list = model$simulate(data=.data, 
                         k.ahead=1e6, 
                         method="ekf"
 )

@@ -74,6 +74,7 @@ ctsmTMB = R6::R6Class(
       private$lock.model = FALSE
       private$fixed.pars = NULL
       private$free.pars = NULL
+      private$pars = NULL
       
       # names
       private$state.names = NULL
@@ -99,12 +100,18 @@ ctsmTMB = R6::R6Class(
       private$nll = NULL
       private$opt = NULL
       private$fit = NULL
+      private$prediction = NULL
+      private$simulation = NULL
       
       # predict
       private$n.ahead = 0
       private$last.pred.index = 0
       
-      # Rcpp Prediction
+      # rtmb
+      rtmb.function.strings = NULL
+      rtmb.nll.strings = NULL
+      
+      # Rcpp
       private$Rcppfunction_f = NULL
       private$Rcppfunction_g = NULL
       private$Rcppfunction_dfdx = NULL
@@ -838,125 +845,74 @@ ctsmTMB = R6::R6Class(
     },
     
     ########################################################################
-    # CONSTRUCT NEG. LIKELIHOOD FUNCTION HANDLERS FROM TMB
+    # GET ESTIMATION
     ########################################################################
-    #' @description Construct and extract function handlers for the negative
-    #' log likelihood function.
-    #'
-    #' The handlers from \code{TMB}'s \code{MakeADFun} are constructed and returned. 
-    #' This enables the user to e.g. choose their own optimization algorithm, or just
-    #' have more control of the optimization workflow.
-    #' 
-    #' @param data a data.frame containing time-vector 't', observations and inputs. 
-    #' The observations can take \code{NA}-values.  
-    #' @param ode.timestep the time-step used in the filtering schemes. The
-    #' time-step has two different uses depending on the chosen method.
-    #' 
-    #' 1. Kalman Filters: The time-step is used when numerically solving the 
-    #' moment differential equations.
-    #' 2. Laplace Approximation: The time-step is used in the Euler-Maruyama
-    #' simulation scheme for simulating a sample path of the stochastic differential 
-    #' equation, which serves to link together the latent (random effects) states.
-    #' 
-    #' The defined step-size is used to calculate the number of steps between 
-    #' observation time-points as 
-    #' defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N 
-    #' is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations  
-    #' The step-size is used in the two following ways depending on the
-    #' chosen method:
-    #' 1. Kalman filters: The time-step is used as the step-size in the
-    #' numerical Forward-Euler scheme to compute the prior state mean and
-    #' covariance estimate as the final time solution to the first and second
-    #' order moment differential equations.
-    #' 2. TMB method: The time-step is used as the step-size in the Euler-Maruyama
-    #' scheme for simulating a sample path of the stochastic differential equation,
-    #' which serves to link together the latent (random effects) states.
-    #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment 
-    #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
-    #' 4th order Runge Kutta method is available via "rk4".
-    #' @param compile boolean value. The default (\code{FALSE}) is to not compile the C++ objective
-    #' function but assume it is already compiled and corresponds to the specified model object. It is
-    #' the user's responsibility to ensure correspondence between the specified model and the precompiled
-    #' C++ object. If a precompiled C++ object is not found in the specified directory i.e. 
-    #' in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
-    #' If the user makes changes to system equations, observation equations, observation variances, 
-    #' algebraic relations or lamperi transformations then the C++ object should be recompiled.
-    #' @param method character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation 
-    #' method. The package has three available methods implemented:
-    #' 1. The natural TMB-style formulation where latent states are considered random effects
-    #' and are integrated out using the Laplace approximation. This method only yields the gradient
-    #' of the (negative log) likelihood function with respect to the fixed effects for optimization.
-    #' The method is slower although probably has some precision advantages, and allows for non-Gaussian
-    #' observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-    #' the package.
-    #' 2. (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-    #' to handle potential non-linearities. This is computationally the fastest method.
-    #' 3. (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-    #' which improves the mean and covariance estimates when the system display high nonlinearity, and
-    #' circumvents the necessity to compute the jacobian of the drift and observation functions.
-    #' 
-    #' All package features are currently available for the kalman filters, while TMB is limited to
-    #' parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-    #' with these methods (use the \code{predict} S3 method), and stochastic simulation is also available 
-    #' in the cases where long prediction horizons are sought, where the normality assumption will be 
-    #' inaccurate.
-    #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-    #' the unscented transformation.
-    #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
-    #' methods). The loss function is per default quadratic in the one-step residauls as is natural 
-    #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the 
-    #' distribution is considered too small i.e. outliers are weighted too much, then one 
-    #' can choose loss functions that accounts for this. The three available types available:
-    #' 
-    #' 1. Quadratic loss (\code{quadratic}).
-    #' 2. Quadratic-Linear (\code{huber})
-    #' 3. Quadratic-Constant (\code{tukey})
-    #' 
-    #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff 
-    #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid 
-    #' approxmation respectively) for smooth derivatives.
-    #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
-    #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
-    #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
-    construct_nll = function(data,
-                             method = "ekf",
-                             ode.solver = "rk4",
-                             ode.timestep = diff(data$t),
-                             loss = "quadratic",
-                             loss_c = 3,
-                             unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-                             compile=FALSE,
-                             silent=FALSE){
+    #' @description Retrieve initially set state and covariance
+    getEstimate = function() {
       
-      # set flags
-      private$set_compile(compile)
-      private$set_method(method)
-      private$set_ode_solver(ode.solver)
-      private$set_timestep(ode.timestep)
-      private$set_simulation_timestep(ode.timestep)
-      private$set_loss(loss,loss_c)
       
-      # build model
-      if(!silent) message("Building model...")
-      build_model(self, private)
-      
-      # check and set data
-      if(!silent) message("Checking data...")
-      check_and_set_data(data, unscented_hyperpars, self, private)
-      
-      # construct neg. log-likelihood
-      if(!silent) message("Constructing objective function...")
-      comptime <- system.time(
-        construct_makeADFun(self, private)
-      )
-      
-      comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
-      if(!private$silent) message("...took: ", comptime, " seconds.")
+      # extract algebraic relation formulas
+      if(is.null(private$fit)){
+        message("There are no estimation results to be exctracted - run 'estimate'.")
+        return(NULL)
+      }
       
       # return
-      if(!silent) message("Succesfully returned function handlers")
+      return(private$fit)
+    },
+    
+    
+    ########################################################################
+    # GET NEG LOG LIKE (MakeADFUN)
+    ########################################################################
+    #' @description Retrieve initially set state and covariance
+    getNegLogLike = function() {
+      
+      
+      # extract algebraic relation formulas
+      if(is.null(private$nll)){
+        message("There are no likelihood function to be exctracted - run 'constructNegLogLike'.")
+        return(NULL)
+      }
+      
+      # return
       return(private$nll)
     },
+    
+    ########################################################################
+    # GET PREDICTION
+    ########################################################################
+    #' @description Retrieve initially set state and covariance
+    getPrediction = function() {
+      
+      
+      # extract algebraic relation formulas
+      if(is.null(private$prediction)){
+        message("There are no prediction results to be exctracted - run 'predict'.")
+        return(NULL)
+      }
+      
+      # return
+      return(private$prediction)
+    },
+    
+    ########################################################################
+    # GET SIMULATION
+    ########################################################################
+    #' @description Retrieve initially set state and covariance
+    getSimulation = function() {
+      
+      
+      # extract algebraic relation formulas
+      if(is.null(private$simulation)){
+        message("There are no simulation results to be exctracted - run 'simulate'.")
+        return(NULL)
+      }
+      
+      # return
+      return(private$simulation)
+    },
+    
     
     ########################################################################
     # ESTIMATE FUNCTION
@@ -1050,20 +1006,24 @@ ctsmTMB = R6::R6Class(
                         silent = FALSE){
       
       # settings and flags
-      private$set_compile(compile)
       private$set_method(method)
       private$set_ode_solver(ode.solver)
       private$set_timestep(ode.timestep)
       private$set_simulation_timestep(ode.timestep)
-      private$use_hessian(use.hessian)
       private$set_loss(loss, loss_c)
       private$set_control(control)
+      private$use_hessian(use.hessian)
       private$set_unconstrained_optim(unconstrained.optim)
+      private$set_compile(compile)
       private$set_silence(silent)
       
       # build model
       if(!private$silent) message("Building model...")
       build_model(self ,private)
+      
+      # compile model
+      if(!private$silent) message("Compiling model...")
+      perform_compilation(self, private, type="estimation")
       
       # check and set data
       if(!private$silent) message("Checking data...")
@@ -1071,15 +1031,11 @@ ctsmTMB = R6::R6Class(
       
       # construct neg. log-likelihood function
       if(!private$silent) message("Constructing objective function and derivative tables...")
-      comptime <- system.time(
       construct_makeADFun(self, private)
-      )
-      comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
-      if(!private$silent) message("...took: ", comptime, " seconds.")
       
       # estimate
       if(!private$silent) message("Minimizing the negative log-likelihood...")
-      optimize_negative_loglikelihood(self, private)
+      perform_estimation(self, private)
       
       # exit if optimization failed
       if(is.null(private$opt)){
@@ -1088,16 +1044,244 @@ ctsmTMB = R6::R6Class(
       
       # create return fit
       if(!private$silent) message("Returning results...")
-      create_return_fit(self, private, laplace.residuals)
-      if(!private$silent) message("Finished!")
+      create_fit(self, private, laplace.residuals)
       
-      # return cloned fit
-      cloned.self = self$clone(deep=TRUE)
-      cloned.private = cloned.self$.__enclos_env__$private
-      return(invisible(cloned.private$fit))
+      # return fit
+      if(!private$silent) message("Finished!")
+      return(invisible(private$fit))
     },
+    
+    ########################################################################
+    # CONSTRUCT NEG. LIKELIHOOD FUNCTION HANDLERS FROM TMB
+    ########################################################################
+    #' @description Construct and extract function handlers for the negative
+    #' log likelihood function.
+    #'
+    #' The handlers from \code{TMB}'s \code{MakeADFun} are constructed and returned. 
+    #' This enables the user to e.g. choose their own optimization algorithm, or just
+    #' have more control of the optimization workflow.
+    #' 
+    #' @param data a data.frame containing time-vector 't', observations and inputs. 
+    #' The observations can take \code{NA}-values.  
+    #' @param ode.timestep the time-step used in the filtering schemes. The
+    #' time-step has two different uses depending on the chosen method.
+    #' 
+    #' 1. Kalman Filters: The time-step is used when numerically solving the 
+    #' moment differential equations.
+    #' 2. Laplace Approximation: The time-step is used in the Euler-Maruyama
+    #' simulation scheme for simulating a sample path of the stochastic differential 
+    #' equation, which serves to link together the latent (random effects) states.
+    #' 
+    #' The defined step-size is used to calculate the number of steps between 
+    #' observation time-points as 
+    #' defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N 
+    #' is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations  
+    #' The step-size is used in the two following ways depending on the
+    #' chosen method:
+    #' 1. Kalman filters: The time-step is used as the step-size in the
+    #' numerical Forward-Euler scheme to compute the prior state mean and
+    #' covariance estimate as the final time solution to the first and second
+    #' order moment differential equations.
+    #' 2. TMB method: The time-step is used as the step-size in the Euler-Maruyama
+    #' scheme for simulating a sample path of the stochastic differential equation,
+    #' which serves to link together the latent (random effects) states.
+    #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment 
+    #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
+    #' 4th order Runge Kutta method is available via "rk4".
+    #' @param compile boolean value. The default (\code{FALSE}) is to not compile the C++ objective
+    #' function but assume it is already compiled and corresponds to the specified model object. It is
+    #' the user's responsibility to ensure correspondence between the specified model and the precompiled
+    #' C++ object. If a precompiled C++ object is not found in the specified directory i.e. 
+    #' in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
+    #' If the user makes changes to system equations, observation equations, observation variances, 
+    #' algebraic relations or lamperi transformations then the C++ object should be recompiled.
+    #' @param method character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation 
+    #' method. The package has three available methods implemented:
+    #' 1. The natural TMB-style formulation where latent states are considered random effects
+    #' and are integrated out using the Laplace approximation. This method only yields the gradient
+    #' of the (negative log) likelihood function with respect to the fixed effects for optimization.
+    #' The method is slower although probably has some precision advantages, and allows for non-Gaussian
+    #' observation noise (not yet implemented). One-step / K-step residuals are not yet available in
+    #' the package.
+    #' 2. (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
+    #' to handle potential non-linearities. This is computationally the fastest method.
+    #' 3. (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
+    #' which improves the mean and covariance estimates when the system display high nonlinearity, and
+    #' circumvents the necessity to compute the jacobian of the drift and observation functions.
+    #' 
+    #' All package features are currently available for the kalman filters, while TMB is limited to
+    #' parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
+    #' with these methods (use the \code{predict} S3 method), and stochastic simulation is also available 
+    #' in the cases where long prediction horizons are sought, where the normality assumption will be 
+    #' inaccurate.
+    #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
+    #' the unscented transformation.
+    #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
+    #' methods). The loss function is per default quadratic in the one-step residauls as is natural 
+    #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the 
+    #' distribution is considered too small i.e. outliers are weighted too much, then one 
+    #' can choose loss functions that accounts for this. The three available types available:
+    #' 
+    #' 1. Quadratic loss (\code{quadratic}).
+    #' 2. Quadratic-Linear (\code{huber})
+    #' 3. Quadratic-Constant (\code{tukey})
+    #' 
+    #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff 
+    #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid 
+    #' approxmation respectively) for smooth derivatives.
+    #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
+    #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
+    #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
+    construct_nll = function(data,
+                             method = "ekf",
+                             ode.solver = "rk4",
+                             ode.timestep = diff(data$t),
+                             loss = "quadratic",
+                             loss_c = 3,
+                             unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
+                             compile=FALSE,
+                             silent=FALSE){
+      
+      private$set_compile(compile)
+      private$set_method(method)
+      private$set_ode_solver(ode.solver)
+      private$set_timestep(ode.timestep)
+      private$set_simulation_timestep(ode.timestep)
+      private$set_loss(loss, loss_c)
+      
+      # build model
+      if(!silent) message("Building model...")
+      build_model(self, private)
+      
+      # check and set data
+      if(!silent) message("Checking data...")
+      check_and_set_data(data, unscented_hyperpars, self, private)
+      
+      # construct neg. log-likelihood
+      if(!silent) message("Constructing objective function...")
+      construct_makeADFun(self, private)
+      
+      # return
+      if(!silent) message("Succesfully returned function handlers")
+      return(invisible(private$nll))
+    },
+    
     ########################################################################
     # PREDICT FUNCTION
+    ########################################################################
+    #' @description Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
+    #' obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior 
+    #' state estimate as the initial condition. 
+    #' 
+    #' @return A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
+    #' prior state predictions (\code{k = 1,...,n.ahead}). If \code{return.covariance = TRUE} then the state covariance/correlation 
+    #' matrix is returned, otherwise only the marginal variances are returned.
+    #' 
+    #' @param data data.frame containing time-vector 't', observations and inputs. The observations
+    #' can take \code{NA}-values.
+    #' @param pars fixed parameter vector parsed to the objective function for prediction/filtration. The default
+    #' parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
+    #' function has been run, then the default values will be those at the found optimum.
+    #' @param k.ahead integer specifying the desired number of time-steps (as determined by the provided
+    #' data time-vector) for which predictions are made (integrating the moment ODEs forward in time without 
+    #' data updates).
+    #' @param return.k.ahead numeric vector of integers specifying which n.ahead predictions to that
+    #' should be returned.
+    #' @param return.covariance booelan value to indicate whether the covariance (instead of the correlation) 
+    #' should be returned.
+    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
+    #' @param ode.timestep numeric value. Sets the time step-size in numerical filtering schemes. 
+    #' The defined step-size is used to calculate the number of steps between observation time-points as 
+    #' defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N 
+    #' is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations  
+    #' The step-size is used in the two following ways depending on the
+    #' chosen method:
+    #' 1. Kalman filters: The time-step is used as the step-size in the
+    #' numerical Forward-Euler scheme to compute the prior state mean and
+    #' covariance estimate as the final time solution to the first and second
+    #' order moment differential equations.
+    #' 2. TMB method: The time-step is used as the step-size in the Euler-Maruyama
+    #' scheme for simulating a sample path of the stochastic differential equation,
+    #' which serves to link together the latent (random effects) states.
+    #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment 
+    #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
+    #' 4th order Runge Kutta method is available via "rk4".
+    #' @param method
+    #' 1. The natural TMB-style formulation where latent states are considered random effects
+    #' and are integrated out using the Laplace approximation. This method only yields the gradient
+    #' of the (negative log) likelihood function with respect to the fixed effects for optimization.
+    #' The method is slower although probably has some precision advantages, and allows for non-Gaussian
+    #' observation noise (not yet implemented). One-step / K-step residuals are not yet available in
+    #' the package.
+    #' 2. (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
+    #' to handle potential non-linearities. This is computationally the fastest method.
+    #' 3. (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
+    #' which improves the mean and covariance estimates when the system display high nonlinearity, and
+    #' circumvents the necessity to compute the jacobian of the drift and observation functions.
+    #' 
+    #' All package features are currently available for the kalman filters, while TMB is limited to
+    #' parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
+    #' with these methods (use the \code{predict} S3 method), and stochastic simulation is also available 
+    #' in the cases where long prediction horizons are sought, where the normality assumption will be 
+    #' inaccurate.
+    #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
+    #' the unscented transformation.
+    #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
+    #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
+    #' 
+    predict = function(data,
+                       method = "ekf",
+                       ode.timestep = diff(data$t),
+                       ode.solver = "rk4",
+                       pars = NULL,
+                       initial.state = self$getInitialState(),
+                       k.ahead = 1,
+                       return.k.ahead = 0:k.ahead,
+                       return.covariance = TRUE,
+                       unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
+                       silent = FALSE){
+      
+      
+      
+      if(method!="ekf"){ stop("The predict function is currently only implemented for method = 'ekf'.") }
+      
+      ###### SET FLAGS #######
+      private$set_method(method)
+      private$set_ode_solver(ode.solver)
+      private$set_timestep(ode.timestep)
+      private$set_simulation_timestep(ode.timestep)
+      private$set_pred_initial_state(initial.state)
+      private$set_silence(silent)
+      
+      ###### BUILD MODEL #######
+      if(!private$silent) message("Building model...")
+      build_model(self, private, prediction=TRUE)
+      
+      ###### CHECK AND SET DATA, PARS, ETC.  #######
+      if(!private$silent) message("Checking data...")
+      check_and_set_data(data, unscented_hyperpars, self, private)
+      private$set_n_ahead_and_last_pred_index(k.ahead)
+      set_parameters(pars, silent, self, private)
+      
+      ##### COMPILE C++ FUNCTIONS #######
+      if(!private$silent) message("Compiling C++ functions...")
+      compile_rcpp_functions(self, private)
+      
+      ##### PERFORM PREDICTION #######
+      if(!private$silent) message("Predicting...")
+      rcpp_prediction(self, private)
+      
+      ##### CREATE RETURN DATA.FRAME #######
+      if(!private$silent) message("Constructing return data.frame...")
+      create_return_prediction(return.covariance, return.k.ahead, self, private)
+      
+      ##### RETURN #######
+      if(!private$silent) message("Finished.")
+      return(invisible(private$prediction))
+    },
+    
+    ########################################################################
+    # SIMULATE FUNCTION
     ########################################################################
     #' @description Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
     #' obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior 
@@ -1195,154 +1379,24 @@ ctsmTMB = R6::R6Class(
       if(!private$silent) message("Checking data...")
       check_and_set_data(data, unscented_hyperpars, self, private)
       private$set_n_ahead_and_last_pred_index(k.ahead)
-      pars = set_parameters(pars, silent, self, private)
+      set_parameters(pars, silent, self, private)
       
       ###### PERFORM PREDICTION #######
       if(!private$silent) message("Compiling C++ functions...")
-      create_rcpp_statespace_functions(self, private)
+      compile_rcpp_functions(self, private)
       
       if(!private$silent) message("Simulating...")
-      predict.list = perform_rcpp_ekf_simulation(self, 
-                                                 private, 
-                                                 pars, 
-                                                 private$pred.initial.state, 
-                                                 n.sims)
+      rcpp_simulation(self, private, n.sims)
       
       # construct return data.frame
       if(!private$silent) message("Constructing return data.frame...")
-      list.out = construct_simulate_rcpp_dataframe(pars,
-                                                   predict.list,
-                                                   data,
-                                                   return.k.ahead,
-                                                   n.sims,
-                                                   self,
-                                                   private)
+      create_return_simulation(return.k.ahead, n.sims, self, private)
       
       # return
       if(!private$silent) message("Finished.")
-      return(invisible(list.out))
+      return(invisible(private$simulation))
     },
-    ########################################################################
-    # PREDICT FUNCTION
-    ########################################################################
-    #' @description Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
-    #' obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior 
-    #' state estimate as the initial condition. 
-    #' 
-    #' @return A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
-    #' prior state predictions (\code{k = 1,...,n.ahead}). If \code{return.covariance = TRUE} then the state covariance/correlation 
-    #' matrix is returned, otherwise only the marginal variances are returned.
-    #' 
-    #' @param data data.frame containing time-vector 't', observations and inputs. The observations
-    #' can take \code{NA}-values.
-    #' @param pars fixed parameter vector parsed to the objective function for prediction/filtration. The default
-    #' parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
-    #' function has been run, then the default values will be those at the found optimum.
-    #' @param k.ahead integer specifying the desired number of time-steps (as determined by the provided
-    #' data time-vector) for which predictions are made (integrating the moment ODEs forward in time without 
-    #' data updates).
-    #' @param return.k.ahead numeric vector of integers specifying which n.ahead predictions to that
-    #' should be returned.
-    #' @param return.covariance booelan value to indicate whether the covariance (instead of the correlation) 
-    #' should be returned.
-    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
-    #' @param ode.timestep numeric value. Sets the time step-size in numerical filtering schemes. 
-    #' The defined step-size is used to calculate the number of steps between observation time-points as 
-    #' defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N 
-    #' is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations  
-    #' The step-size is used in the two following ways depending on the
-    #' chosen method:
-    #' 1. Kalman filters: The time-step is used as the step-size in the
-    #' numerical Forward-Euler scheme to compute the prior state mean and
-    #' covariance estimate as the final time solution to the first and second
-    #' order moment differential equations.
-    #' 2. TMB method: The time-step is used as the step-size in the Euler-Maruyama
-    #' scheme for simulating a sample path of the stochastic differential equation,
-    #' which serves to link together the latent (random effects) states.
-    #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment 
-    #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
-    #' 4th order Runge Kutta method is available via "rk4".
-    #' @param method
-    #' 1. The natural TMB-style formulation where latent states are considered random effects
-    #' and are integrated out using the Laplace approximation. This method only yields the gradient
-    #' of the (negative log) likelihood function with respect to the fixed effects for optimization.
-    #' The method is slower although probably has some precision advantages, and allows for non-Gaussian
-    #' observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-    #' the package.
-    #' 2. (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-    #' to handle potential non-linearities. This is computationally the fastest method.
-    #' 3. (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-    #' which improves the mean and covariance estimates when the system display high nonlinearity, and
-    #' circumvents the necessity to compute the jacobian of the drift and observation functions.
-    #' 
-    #' All package features are currently available for the kalman filters, while TMB is limited to
-    #' parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-    #' with these methods (use the \code{predict} S3 method), and stochastic simulation is also available 
-    #' in the cases where long prediction horizons are sought, where the normality assumption will be 
-    #' inaccurate.
-    #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-    #' the unscented transformation.
-    #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
-    #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
-    #' 
-    predict = function(data,
-                       method = "ekf",
-                       ode.timestep = diff(data$t),
-                       ode.solver = "rk4",
-                       pars = NULL,
-                       initial.state = self$getInitialState(),
-                       k.ahead = 1,
-                       return.k.ahead = 0:k.ahead,
-                       return.covariance = TRUE,
-                       unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-                       silent = FALSE){
-      
-      
-      
-      if(method!="ekf"){ stop("The predict function is currently only implemented for method = 'ekf'.") }
-      
-      ###### SET FLAGS #######
-      private$set_method(method)
-      private$set_ode_solver(ode.solver)
-      private$set_timestep(ode.timestep)
-      private$set_simulation_timestep(ode.timestep)
-      private$set_pred_initial_state(initial.state)
-      private$set_silence(silent)
-      
-      ###### BUILD MODEL #######
-      if(!private$silent) message("Building model...")
-      build_model(self, private, prediction=TRUE)
-      
-      ###### CHECK AND SET DATA, PARS, ETC.  #######
-      if(!private$silent) message("Checking data...")
-      check_and_set_data(data, unscented_hyperpars, self, private)
-      private$set_n_ahead_and_last_pred_index(k.ahead)
-      pars = set_parameters(pars, silent, self, private)
-      
-      
-      ##### COMPILE C++ FUNCTIONS #######
-      if(!private$silent) message("Compiling C++ functions...")
-      create_rcpp_statespace_functions(self, private)
-      
-      ##### PERFORM PREDICTION #######
-      if(!private$silent) message("Predicting...")
-      predict.out = perform_prediction(pars, self, private)
-      predict.list = perform_rcpp_ekf_prediction(self, private, pars)
-      
-      ##### CREATE RETURN DATA.FRAME #######
-      if(!private$silent) message("Constructing return data.frame...")
-      df.out = construct_predict_rcpp_dataframe(pars,
-                                                predict.list,
-                                                data,
-                                                return.covariance,
-                                                return.k.ahead,
-                                                self,
-                                                private)
-      
-      ##### RETURN #######
-      if(!private$silent) message("Finished.")
-      return(invisible(df.out))
-    },
+    
     ########################################################################
     # PRINT
     ########################################################################
@@ -1479,14 +1533,14 @@ ctsmTMB = R6::R6Class(
   
   private = list(
     
-    # Model
+    # model stats
     modelname = character(0),
     cppfile.directory = NULL,
     cppfile.path = character(0),
     cppfile.path.with.method = NULL,
     modelname.with.method = NULL,
     
-    # Equations
+    # model equations
     sys.eqs = NULL,
     obs.eqs = NULL,
     obs.var = NULL,
@@ -1535,6 +1589,7 @@ ctsmTMB = R6::R6Class(
     lock.model = FALSE,
     fixed.pars = NULL,
     free.pars = NULL,
+    pars = NULL,
     
     # lengths
     number.of.states = NULL,
@@ -1554,12 +1609,18 @@ ctsmTMB = R6::R6Class(
     opt = NULL,
     sdr = NULL,
     fit = NULL,
+    prediction = NULL,
+    simulation = NULL,
     
     # predict
     n.ahead = NULL,
     last.pred.index = NULL,
     
-    # Rcpp Prediction
+    # rtmb
+    rtmb.function.strings = NULL,
+    rtmb.nll.strings = NULL,
+    
+    # Rcpp
     Rcppfunction_f = NULL,
     Rcppfunction_g = NULL,
     Rcppfunction_dfdx = NULL,

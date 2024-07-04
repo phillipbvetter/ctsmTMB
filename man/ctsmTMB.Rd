@@ -56,10 +56,14 @@ addObs(y ~ exp(x1) + exp(x2))
 \item \href{#method-ctsmTMB-getAlgebraics}{\code{ctsmTMB$getAlgebraics()}}
 \item \href{#method-ctsmTMB-getInitialState}{\code{ctsmTMB$getInitialState()}}
 \item \href{#method-ctsmTMB-getParameters}{\code{ctsmTMB$getParameters()}}
-\item \href{#method-ctsmTMB-construct_nll}{\code{ctsmTMB$construct_nll()}}
+\item \href{#method-ctsmTMB-getEstimate}{\code{ctsmTMB$getEstimate()}}
+\item \href{#method-ctsmTMB-getNegLogLike}{\code{ctsmTMB$getNegLogLike()}}
+\item \href{#method-ctsmTMB-getPrediction}{\code{ctsmTMB$getPrediction()}}
+\item \href{#method-ctsmTMB-getSimulation}{\code{ctsmTMB$getSimulation()}}
 \item \href{#method-ctsmTMB-estimate}{\code{ctsmTMB$estimate()}}
-\item \href{#method-ctsmTMB-simulate}{\code{ctsmTMB$simulate()}}
+\item \href{#method-ctsmTMB-construct_nll}{\code{ctsmTMB$construct_nll()}}
 \item \href{#method-ctsmTMB-predict}{\code{ctsmTMB$predict()}}
+\item \href{#method-ctsmTMB-simulate}{\code{ctsmTMB$simulate()}}
 \item \href{#method-ctsmTMB-print}{\code{ctsmTMB$print()}}
 \item \href{#method-ctsmTMB-summary}{\code{ctsmTMB$summary()}}
 \item \href{#method-ctsmTMB-plot}{\code{ctsmTMB$plot()}}
@@ -450,120 +454,44 @@ Get initial (and estimated) parameters.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-construct_nll"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-construct_nll}{}}}
-\subsection{Method \code{construct_nll()}}{
-Construct and extract function handlers for the negative
-log likelihood function.
-
-The handlers from \code{TMB}'s \code{MakeADFun} are constructed and returned.
-This enables the user to e.g. choose their own optimization algorithm, or just
-have more control of the optimization workflow.
+\if{html}{\out{<a id="method-ctsmTMB-getEstimate"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getEstimate}{}}}
+\subsection{Method \code{getEstimate()}}{
+Retrieve initially set state and covariance
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$construct_nll(
-  data,
-  method = "ekf",
-  ode.solver = "rk4",
-  ode.timestep = diff(data$t),
-  loss = "quadratic",
-  loss_c = 3,
-  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
-  compile = FALSE,
-  silent = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getEstimate()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data}}{a data.frame containing time-vector 't', observations and inputs.
-The observations can take \code{NA}-values.}
-
-\item{\code{method}}{character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation
-method. The package has three available methods implemented:
-\enumerate{
-\item The natural TMB-style formulation where latent states are considered random effects
-and are integrated out using the Laplace approximation. This method only yields the gradient
-of the (negative log) likelihood function with respect to the fixed effects for optimization.
-The method is slower although probably has some precision advantages, and allows for non-Gaussian
-observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-the package.
-\item (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-to handle potential non-linearities. This is computationally the fastest method.
-\item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-getNegLogLike"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getNegLogLike}{}}}
+\subsection{Method \code{getNegLogLike()}}{
+Retrieve initially set state and covariance
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getNegLogLike()}\if{html}{\out{</div>}}
 }
 
-All package features are currently available for the kalman filters, while TMB is limited to
-parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-with these methods (use the \code{predict} S3 method), and stochastic simulation is also available
-in the cases where long prediction horizons are sought, where the normality assumption will be
-inaccurate.}
-
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
-differential equations. The default "euler" is the Forward Euler method, alternatively the classical
-4th order Runge Kutta method is available via "rk4".}
-
-\item{\code{ode.timestep}}{the time-step used in the filtering schemes. The
-time-step has two different uses depending on the chosen method.
-\enumerate{
-\item Kalman Filters: The time-step is used when numerically solving the
-moment differential equations.
-\item Laplace Approximation: The time-step is used in the Euler-Maruyama
-simulation scheme for simulating a sample path of the stochastic differential
-equation, which serves to link together the latent (random effects) states.
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-getPrediction"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getPrediction}{}}}
+\subsection{Method \code{getPrediction()}}{
+Retrieve initially set state and covariance
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getPrediction()}\if{html}{\out{</div>}}
 }
 
-The defined step-size is used to calculate the number of steps between
-observation time-points as
-defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
-is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
-The step-size is used in the two following ways depending on the
-chosen method:
-\enumerate{
-\item Kalman filters: The time-step is used as the step-size in the
-numerical Forward-Euler scheme to compute the prior state mean and
-covariance estimate as the final time solution to the first and second
-order moment differential equations.
-\item TMB method: The time-step is used as the step-size in the Euler-Maruyama
-scheme for simulating a sample path of the stochastic differential equation,
-which serves to link together the latent (random effects) states.
-}}
-
-\item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
-methods). The loss function is per default quadratic in the one-step residauls as is natural
-when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
-distribution is considered too small i.e. outliers are weighted too much, then one
-can choose loss functions that accounts for this. The three available types available:
-\enumerate{
-\item Quadratic loss (\code{quadratic}).
-\item Quadratic-Linear (\code{huber})
-\item Quadratic-Constant (\code{tukey})
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-getSimulation"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getSimulation}{}}}
+\subsection{Method \code{getSimulation()}}{
+Retrieve initially set state and covariance
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getSimulation()}\if{html}{\out{</div>}}
 }
 
-The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
-parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
-approxmation respectively) for smooth derivatives.}
-
-\item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
-
-\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-the unscented transformation.}
-
-\item{\code{compile}}{boolean value. The default (\code{FALSE}) is to not compile the C++ objective
-function but assume it is already compiled and corresponds to the specified model object. It is
-the user's responsibility to ensure correspondence between the specified model and the precompiled
-C++ object. If a precompiled C++ object is not found in the specified directory i.e.
-in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
-If the user makes changes to system equations, observation equations, observation variances,
-algebraic relations or lamperi transformations then the C++ object should be recompiled.}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
-'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-estimate"></a>}}
@@ -685,6 +613,221 @@ algebraic relations or lamperi transformations then the C++ object should be rec
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-construct_nll"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-construct_nll}{}}}
+\subsection{Method \code{construct_nll()}}{
+Construct and extract function handlers for the negative
+log likelihood function.
+
+The handlers from \code{TMB}'s \code{MakeADFun} are constructed and returned.
+This enables the user to e.g. choose their own optimization algorithm, or just
+have more control of the optimization workflow.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$construct_nll(
+  data,
+  method = "ekf",
+  ode.solver = "rk4",
+  ode.timestep = diff(data$t),
+  loss = "quadratic",
+  loss_c = 3,
+  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
+  compile = FALSE,
+  silent = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{data}}{a data.frame containing time-vector 't', observations and inputs.
+The observations can take \code{NA}-values.}
+
+\item{\code{method}}{character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation
+method. The package has three available methods implemented:
+\enumerate{
+\item The natural TMB-style formulation where latent states are considered random effects
+and are integrated out using the Laplace approximation. This method only yields the gradient
+of the (negative log) likelihood function with respect to the fixed effects for optimization.
+The method is slower although probably has some precision advantages, and allows for non-Gaussian
+observation noise (not yet implemented). One-step / K-step residuals are not yet available in
+the package.
+\item (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
+to handle potential non-linearities. This is computationally the fastest method.
+\item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
+which improves the mean and covariance estimates when the system display high nonlinearity, and
+circumvents the necessity to compute the jacobian of the drift and observation functions.
+}
+
+All package features are currently available for the kalman filters, while TMB is limited to
+parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
+with these methods (use the \code{predict} S3 method), and stochastic simulation is also available
+in the cases where long prediction horizons are sought, where the normality assumption will be
+inaccurate.}
+
+\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+differential equations. The default "euler" is the Forward Euler method, alternatively the classical
+4th order Runge Kutta method is available via "rk4".}
+
+\item{\code{ode.timestep}}{the time-step used in the filtering schemes. The
+time-step has two different uses depending on the chosen method.
+\enumerate{
+\item Kalman Filters: The time-step is used when numerically solving the
+moment differential equations.
+\item Laplace Approximation: The time-step is used in the Euler-Maruyama
+simulation scheme for simulating a sample path of the stochastic differential
+equation, which serves to link together the latent (random effects) states.
+}
+
+The defined step-size is used to calculate the number of steps between
+observation time-points as
+defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
+is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
+The step-size is used in the two following ways depending on the
+chosen method:
+\enumerate{
+\item Kalman filters: The time-step is used as the step-size in the
+numerical Forward-Euler scheme to compute the prior state mean and
+covariance estimate as the final time solution to the first and second
+order moment differential equations.
+\item TMB method: The time-step is used as the step-size in the Euler-Maruyama
+scheme for simulating a sample path of the stochastic differential equation,
+which serves to link together the latent (random effects) states.
+}}
+
+\item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
+methods). The loss function is per default quadratic in the one-step residauls as is natural
+when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
+distribution is considered too small i.e. outliers are weighted too much, then one
+can choose loss functions that accounts for this. The three available types available:
+\enumerate{
+\item Quadratic loss (\code{quadratic}).
+\item Quadratic-Linear (\code{huber})
+\item Quadratic-Constant (\code{tukey})
+}
+
+The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
+parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
+approxmation respectively) for smooth derivatives.}
+
+\item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+
+\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
+the unscented transformation.}
+
+\item{\code{compile}}{boolean value. The default (\code{FALSE}) is to not compile the C++ objective
+function but assume it is already compiled and corresponds to the specified model object. It is
+the user's responsibility to ensure correspondence between the specified model and the precompiled
+C++ object. If a precompiled C++ object is not found in the specified directory i.e.
+in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
+If the user makes changes to system equations, observation equations, observation variances,
+algebraic relations or lamperi transformations then the C++ object should be recompiled.}
+
+\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-predict"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-predict}{}}}
+\subsection{Method \code{predict()}}{
+Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
+obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior
+state estimate as the initial condition.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$predict(
+  data,
+  method = "ekf",
+  ode.timestep = diff(data$t),
+  ode.solver = "rk4",
+  pars = NULL,
+  initial.state = self$getInitialState(),
+  k.ahead = 1,
+  return.k.ahead = 0:k.ahead,
+  return.covariance = TRUE,
+  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
+  silent = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
+can take \code{NA}-values.}
+
+\item{\code{method}}{\enumerate{
+\item The natural TMB-style formulation where latent states are considered random effects
+and are integrated out using the Laplace approximation. This method only yields the gradient
+of the (negative log) likelihood function with respect to the fixed effects for optimization.
+The method is slower although probably has some precision advantages, and allows for non-Gaussian
+observation noise (not yet implemented). One-step / K-step residuals are not yet available in
+the package.
+\item (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
+to handle potential non-linearities. This is computationally the fastest method.
+\item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
+which improves the mean and covariance estimates when the system display high nonlinearity, and
+circumvents the necessity to compute the jacobian of the drift and observation functions.
+}
+
+All package features are currently available for the kalman filters, while TMB is limited to
+parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
+with these methods (use the \code{predict} S3 method), and stochastic simulation is also available
+in the cases where long prediction horizons are sought, where the normality assumption will be
+inaccurate.}
+
+\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
+The defined step-size is used to calculate the number of steps between observation time-points as
+defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
+is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
+The step-size is used in the two following ways depending on the
+chosen method:
+\enumerate{
+\item Kalman filters: The time-step is used as the step-size in the
+numerical Forward-Euler scheme to compute the prior state mean and
+covariance estimate as the final time solution to the first and second
+order moment differential equations.
+\item TMB method: The time-step is used as the step-size in the Euler-Maruyama
+scheme for simulating a sample path of the stochastic differential equation,
+which serves to link together the latent (random effects) states.
+}}
+
+\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+differential equations. The default "euler" is the Forward Euler method, alternatively the classical
+4th order Runge Kutta method is available via "rk4".}
+
+\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
+function has been run, then the default values will be those at the found optimum.}
+
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+
+\item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
+data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
+data updates).}
+
+\item{\code{return.k.ahead}}{numeric vector of integers specifying which n.ahead predictions to that
+should be returned.}
+
+\item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
+should be returned.}
+
+\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
+the unscented transformation.}
+
+\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
+prior state predictions (\code{k = 1,...,n.ahead}). If \code{return.covariance = TRUE} then the state covariance/correlation
+matrix is returned, otherwise only the marginal variances are returned.
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-simulate"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-simulate}{}}}
 \subsection{Method \code{simulate()}}{
@@ -779,105 +922,6 @@ the unscented transformation.}
 
 \item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
 should be returned.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
-prior state predictions (\code{k = 1,...,n.ahead}). If \code{return.covariance = TRUE} then the state covariance/correlation
-matrix is returned, otherwise only the marginal variances are returned.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-predict"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-predict}{}}}
-\subsection{Method \code{predict()}}{
-Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
-obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior
-state estimate as the initial condition.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$predict(
-  data,
-  method = "ekf",
-  ode.timestep = diff(data$t),
-  ode.solver = "rk4",
-  pars = NULL,
-  initial.state = self$getInitialState(),
-  k.ahead = 1,
-  return.k.ahead = 0:k.ahead,
-  return.covariance = TRUE,
-  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
-  silent = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
-can take \code{NA}-values.}
-
-\item{\code{method}}{\enumerate{
-\item The natural TMB-style formulation where latent states are considered random effects
-and are integrated out using the Laplace approximation. This method only yields the gradient
-of the (negative log) likelihood function with respect to the fixed effects for optimization.
-The method is slower although probably has some precision advantages, and allows for non-Gaussian
-observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-the package.
-\item (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-to handle potential non-linearities. This is computationally the fastest method.
-\item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.
-}
-
-All package features are currently available for the kalman filters, while TMB is limited to
-parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-with these methods (use the \code{predict} S3 method), and stochastic simulation is also available
-in the cases where long prediction horizons are sought, where the normality assumption will be
-inaccurate.}
-
-\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
-The defined step-size is used to calculate the number of steps between observation time-points as
-defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
-is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
-The step-size is used in the two following ways depending on the
-chosen method:
-\enumerate{
-\item Kalman filters: The time-step is used as the step-size in the
-numerical Forward-Euler scheme to compute the prior state mean and
-covariance estimate as the final time solution to the first and second
-order moment differential equations.
-\item TMB method: The time-step is used as the step-size in the Euler-Maruyama
-scheme for simulating a sample path of the stochastic differential equation,
-which serves to link together the latent (random effects) states.
-}}
-
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
-differential equations. The default "euler" is the Forward Euler method, alternatively the classical
-4th order Runge Kutta method is available via "rk4".}
-
-\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
-function has been run, then the default values will be those at the found optimum.}
-
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
-data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
-data updates).}
-
-\item{\code{return.k.ahead}}{numeric vector of integers specifying which n.ahead predictions to that
-should be returned.}
-
-\item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
-should be returned.}
-
-\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-the unscented transformation.}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
-'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
 }
 \if{html}{\out{</div>}}
 }

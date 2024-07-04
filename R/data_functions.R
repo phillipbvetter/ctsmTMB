@@ -47,7 +47,6 @@ check_and_set_data = function(data, unscented_hyperpars, self, private) {
 #######################################################
 #######################################################
 
-
 #######################################################
 # CHECK AND SET DATA BEFORE OPTIMIZATION
 #######################################################
@@ -337,10 +336,6 @@ set_simulation_timestep = function(data, self, private){
 
 set_ukf_parameters = function(unscented_hyperpars, self, private)
 {
-  # if(is.null(unscented_hyperpars))
-  # {
-  #   unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states)
-  # }
   
   if(!is.list(unscented_hyperpars)){
     stop("Please provide a list")
@@ -400,5 +395,7 @@ set_parameters = function(pars, silent, self, private){
     }
   }
   
-  return(pars)
+  private$pars = pars
+  
+  return(invisible(NULL))
 }

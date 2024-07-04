@@ -1,8 +1,445 @@
 #######################################################
-# MAKE RETURN DATA NICE AFTER OPTIMIZATION
+# MAIN CONSTRUCT MAKEADFUN FUNCTION THAT CALL OTHERS
 #######################################################
 
-create_return_fit = function(self, private, calculate.laplace.onestep.residuals) {
+construct_makeADFun = function(self, private){
+  
+  # TMB::openmp(max=TRUE, autopar=TRUE, DLL=private$modelname.with.method)
+  
+  if(any(private$method == c("ekf","ukf"))){
+    comptime <- system.time(construct_kalman_cpp_makeADFun(self, private))
+  }
+  
+  if(private$method == "ekf_rtmb"){
+    comptime <- system.time(construct_rtmb_ekf_makeADFun(self, private))
+  }
+  
+  if(private$method=="laplace"){
+    comptime <- system.time(construct_rtmb_laplace_makeADFun(self, private))
+  }
+  
+  comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
+  if(!private$silent) message("...took: ", comptime, " seconds.")
+  
+  return(invisible(self))
+}
+
+#######################################################
+# CONSTRUCT KALMAN MAKEADFUN
+#######################################################
+construct_kalman_cpp_makeADFun = function(self, private){
+  
+  ################################################
+  # Data
+  ################################################
+  
+  # add mandatory entries to data
+  tmb.data = list(
+    
+    # methods and purpose
+    estimation_method = switch(private$method, ekf = 1, ukf = 2),
+    ode_solver = private$ode.solver,
+    
+    # initial
+    stateVec = private$initial.state$x0,
+    covMat = private$initial.state$p0,
+    
+    # time-steps
+    ode_timestep_size = private$ode.timestep.size,
+    ode_timesteps = private$ode.timesteps,
+    ode_cumsum_timesteps = private$ode.timesteps.cumsum,
+    
+    # loss function
+    loss_function = private$loss$loss,
+    loss_threshold_value = private$loss$c,
+    tukey_loss_parameters = private$tukey.pars,
+    
+    # system size
+    number_of_state_eqs = private$number.of.states,
+    number_of_obs_eqs = private$number.of.observations,
+    number_of_diffusions = private$number.of.diffusions,
+    
+    # inputs
+    inputMat = as.matrix(private$data[private$input.names]),
+    
+    # observations
+    obsMat = as.matrix(private$data[private$obs.names])
+  )
+  
+  # unscented parameters
+  ukf_hyperpars_list = list()
+  if(private$method=="ukf")
+  {
+    ukf_hyperpars_list = list(
+      ukf_alpha = private$ukf_alpha,
+      ukf_beta = private$ukf_beta,
+      ukf_kappa = private$ukf_kappa
+    )
+  }
+  
+  # MAP Estimation?
+  tmb.map.data = list(
+    MAP_bool = 0L
+  )
+  if (!is.null(private$map)) {
+    bool = self$getParameters()[,"type"] == "free"
+    tmb.map.data = list(
+      MAP_bool = 1L,
+      map_mean__ = private$map$mean[bool],
+      map_cov__ = private$map$cov[bool,bool],
+      map_ints__ = as.numeric(bool),
+      sum_map_ints__ = sum(as.numeric(bool))
+    )
+  }
+  
+  # construct final data list
+  data = c(tmb.data, private$iobs, tmb.map.data, ukf_hyperpars_list)
+  
+  ################################################
+  # Parameters
+  ################################################
+  
+  parameters = lapply(private$parameters, function(x) x[["initial"]]) # Initial parameter values
+  
+  ################################################
+  # Construct Neg. Log-Likelihood
+  ################################################
+  
+  nll = TMB::MakeADFun(data = data,
+                       parameters = parameters,
+                       map = lapply(private$fixed.pars, function(x) x$factor),
+                       DLL = private$modelname.with.method,
+                       silent = TRUE)
+  
+  # save objective function
+  private$nll = nll
+  
+  # return
+  return(invisible(self))
+}
+
+#######################################################
+# CONSTRUCT KALMAN MAKEADFUN WITH RTMB
+#######################################################
+
+construct_rtmb_ekf_makeADFun = function(self, private)
+{
+  
+  ################################################
+  # Data
+  ################################################
+  
+  # methods and purpose
+  ode_solver = private$ode.solver
+  
+  # initial
+  stateVec = cbind(private$initial.state$x0)
+  covMat = private$initial.state$p0
+  
+  # loss function
+  loss_function = private$loss$loss
+  loss_threshold_value = private$loss$c
+  tukey_loss_parameters = private$tukey.pars
+  
+  # time-steps
+  ode_timestep_size = private$ode.timestep.size
+  ode_timesteps = private$ode.timesteps
+  ode_cumsum_timesteps = private$ode.timesteps.cumsum
+  
+  # system size
+  number_of_state_eqs = private$number.of.states
+  number_of_obs_eqs = private$number.of.observations
+  number_of_diffusions = private$number.of.diffusions
+  
+  # inputs
+  inputMat = as.matrix(private$data[private$input.names])
+  
+  # observations
+  obsMat = as.matrix(private$data[private$obs.names])
+  
+  # MAP Estimation?
+  MAP_bool = 0L
+  if (!is.null(private$map)) {
+    bool = self$getParameters()[,"type"] == "free"
+    MAP_bool = 1L
+    map_mean__ = private$map$mean[bool]
+    map_cov__ = private$map$cov[bool,bool]
+    map_ints__ = as.numeric(bool)
+    sum_map_ints__ = sum(as.numeric(bool))
+  }
+  
+  ################################################
+  # Initial Parameters
+  ################################################
+  
+  parameters = lapply(private$parameters, function(x) x[["initial"]])
+  
+  ################################################
+  # Define functions
+  ################################################
+  
+  # ODE Solver
+  ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt, ode_solver){
+    
+    # Initials
+    X0 = stateVec
+    P0 = covMat
+    
+    # Explicit Forward Euler
+    if(ode_solver==1){
+      X1 = X0 + f__(stateVec, parVec, inputVec) * dt
+      P1 = P0 + cov_ode_1step(covMat, stateVec, parVec, inputVec) * dt
+    }
+    
+    # Classical 4th Order Runge-Kutta Method
+    if(ode_solver==2){
+      
+      # 1. Approx Slope at Initial Point
+      k1 = f__(stateVec, parVec, inputVec)
+      c1 = cov_ode_1step(covMat, stateVec, parVec, inputVec)
+      
+      # 2. First Approx Slope at Midpoint
+      inputVec = inputVec + 0.5 * dinputVec
+      stateVec = X0 + 0.5 * dt * k1
+      covMat   = P0 + 0.5 * dt * c1
+      k2       = f__(stateVec, parVec, inputVec)
+      c2       = cov_ode_1step(covMat, stateVec, parVec, inputVec)   
+      
+      # 3. Second Approx Slope at Midpoint
+      stateVec = X0 + 0.5 * dt * k2
+      covMat   = P0 + 0.5 * dt * c2
+      k3       = f__(stateVec, parVec, inputVec)
+      c3       = cov_ode_1step(covMat, stateVec, parVec, inputVec)
+      
+      # 4. Approx Slope at End Point
+      inputVec = inputVec + 0.5 * dinputVec
+      stateVec = X0 + dt * k3
+      covMat   = P0 + dt * c3
+      k4       = f__(stateVec, parVec, inputVec)
+      c4       = cov_ode_1step(covMat, stateVec, parVec, inputVec)
+      
+      # ODE UPDATE
+      X1 = X0 + (k1 + 2.0*k2 + 2.0*k3 + k4)/6.0 * dt
+      P1 = P0 + (c1 + 2.0*c2 + 2.0*c3 + c4)/6.0 * dt
+    }
+    return(invisible(list(X1,P1)))
+  }
+  
+  # Covariance ODE 1-Step
+  cov_ode_1step = function(covMat, stateVec, parVec, inputVec){
+    A = dfdx__(stateVec, parVec, inputVec)
+    G = g__(stateVec, parVec, inputVec)
+    AcovMat = A %*% covMat
+    return(AcovMat + t(AcovMat) + G %*% t(G))
+  }
+  
+  for(i in seq_along(private$rtmb.function.strings)){
+    eval(parse(text=private$rtmb.function.strings[[i]]))
+  }
+  eval(parse(text=private$rtmb.nll.strings$ekf))
+  
+  ################################################
+  # Construct Neg. Log-Likelihood
+  ################################################
+  
+  nll = RTMB::MakeADFun(func = ekf.nll,
+                        parameters=parameters,
+                        map = lapply(private$fixed.pars, function(x) x$factor),
+                        silent=TRUE)
+  
+  # save objective function
+  private$nll = nll
+  
+  # return
+  return(invisible(self))
+  
+}
+
+#######################################################
+# CONSTRUCT LAPLACE MAKEADFUN WITH RTMB
+#######################################################
+
+construct_rtmb_laplace_makeADFun = function(self, private)
+{
+  
+  ################################################
+  # Data
+  ################################################
+  
+  # time-steps
+  ode_timestep_size = private$ode.timestep.size
+  ode_timesteps = private$ode.timesteps
+  ode_cumsum_timesteps = private$ode.timesteps.cumsum
+  
+  # system size
+  number_of_state_eqs = private$number.of.states
+  number_of_obs_eqs = private$number.of.observations
+  number_of_diffusions = private$number.of.diffusions
+  
+  # inputs
+  inputMat = as.matrix(private$data[private$input.names])
+  
+  # observations
+  obsMat = as.matrix(private$data[private$obs.names])
+  
+  # indices in state parameter vectors corresponding to indices in observations / inputs
+  # add 1 because too lazy to change private$iobs from 0-index to 1-indexed.
+  iobs = lapply(private$iobs,function(x) x+1)
+  
+  ################################################
+  # Parameters
+  ################################################
+  
+  parameters = c(
+    lapply(private$parameters, function(x) x[["initial"]]),
+    private$tmb.initial.state.for.parameters
+  )
+  
+  ################################################
+  # Functions
+  ################################################
+  
+  for(i in seq_along(private$rtmb.function.strings)){
+    eval(parse(text=private$rtmb.function.strings[[i]]))
+  }
+  eval(parse(text=private$rtmb.nll.strings$laplace))
+  
+  ################################################
+  # Construct Neg. Log-Likelihood
+  ################################################
+  
+  nll = RTMB::MakeADFun(func = laplace.nll, 
+                        parameters=parameters, 
+                        random=private$state.names,
+                        map = lapply(private$fixed.pars, function(x) x$factor),
+                        silent=TRUE)
+  
+  # save objective function
+  private$nll = nll
+  
+  # return
+  return(invisible(self))
+  
+}
+
+
+#######################################################
+# OPTIMISE AD FUN
+#######################################################
+
+perform_estimation = function(self, private) {
+  
+  # Parameter Bounds
+  lower.parameter.bound = unlist(lapply(private$free.pars, function(par) par$lower))
+  upper.parameter.bound = unlist(lapply(private$free.pars, function(par) par$upper))
+  if(private$unconstrained.optim){
+    lower.parameter.bound = -Inf
+    upper.parameter.bound = Inf
+  }
+  
+  # IF METHOD IS KALMAN FILTER
+  if (any(private$method==c("ekf","ukf","ekf_rtmb"))) {
+    
+    # use function, gradient and hessian
+    if (private$use.hessian) {
+      comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+                                                                           objective = private$nll$fn,
+                                                                           gradient = private$nll$gr,
+                                                                           hessian = private$nll$he,
+                                                                           lower = lower.parameter.bound,
+                                                                           upper = upper.parameter.bound,
+                                                                           control=private$control.nlminb))
+      )
+      # or just function and gradient
+    } else {
+      comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+                                                                           objective = private$nll$fn,
+                                                                           gradient = private$nll$gr,
+                                                                           lower = lower.parameter.bound,
+                                                                           upper = upper.parameter.bound,
+                                                                           control=private$control.nlminb))
+      )
+    }
+    
+  }
+  
+  # IF METHOD IS TMB
+  if (private$method =="laplace") {
+    comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+                                                                         objective = private$nll$fn,
+                                                                         gradient = private$nll$gr,
+                                                                         lower = lower.parameter.bound,
+                                                                         upper = upper.parameter.bound,
+                                                                         control=private$control.nlminb))
+    )
+  }
+  
+  # DID THE OPTIMIZATION FAIL?
+  if (inherits(opt,"try-error")) {
+    
+    message("The optimisation failed due to the following error: \n\n\t",opt)
+    
+    if(stringr::str_detect(opt,"NA/NaN")){
+      
+      message("You should consider the following to circumvent the error:
+              1. Reduce the ODE step-size via argument 'ode.timestep'.
+              2. Run the optimization with / without the hessian via argument 'use.hessian'.
+              3. Change / explore parameter initial values.
+              4. Extract the function handlers with the 'construct_nll' method and investigate outputs, or try other optimizers.
+              5. Change the optimization tolerances for 'nlminb' with the 'control' argument.")
+      
+    }
+    
+    private$opt = NULL
+    
+    return(invisible(self))
+  }
+  
+  # store optimization object
+  private$opt = opt
+  
+  # extract maxmimum gradient component, and format computation time to 5 digits
+  outer_mgc = max(abs(private$nll$gr(opt$par)))
+  comp.time = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
+  
+  # print convergence and timing result
+  if(!private$silent){
+    if(outer_mgc > 1){
+      message("BEWARE: THE MAXIMUM GRADIENT COMPONENT APPEARS TO BE LARGE ( > 1 ) - THE FOUND OPTIMUM MIGHT BE INVALID.")
+    }
+    message("\t Optimization finished!:
+            Elapsed time: ", comp.time, " seconds.
+            The objective value is: ",format(opt$objective,scientific=T),"
+            The maximum gradient component is: ",format(outer_mgc,digits=2,scientific=T),"
+            The convergence message is: ", opt$message,"
+            Iterations: ",opt$iterations,"
+            Evaluations: Fun: ",opt$evaluations["function"]," Grad: ",opt$evaluations[["gradient"]],"
+            See stats::nlminb for available tolerance/control arguments."
+    )
+  }
+  
+  # For TMB method: run sdreport
+  if (private$method=="laplace") {
+    if(!private$silent) message("Calculating random effects standard deviation...")
+    comptime = system.time(
+      private$sdr <- RTMB::sdreport(private$nll)
+    )
+    comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
+    if(!private$silent) message("...took: ", comptime, " seconds.")
+  }
+  
+  # return
+  return(invisible(self))
+}
+
+
+
+
+#######################################################
+# Create return fit after calling estimate 
+#######################################################
+
+create_fit = function(self, private, calculate.laplace.onestep.residuals) {
   
   if (is.null(private$opt)) {
     return(NULL)
@@ -18,7 +455,7 @@ create_return_fit = function(self, private, calculate.laplace.onestep.residuals)
   private$fit$convergence = private$opt$convergence
   
   # store the object in fit - these gives access to e.g.
-  private$fit$.__object__ = self$clone()
+  # private$fit$.__object__ = self$clone()
   
   ################################################
   # FOR KALMAN FILTERS
@@ -437,9 +874,9 @@ create_return_fit = function(self, private, calculate.laplace.onestep.residuals)
     if(calculate.laplace.onestep.residuals){
       message("Calculating one-step ahead residuls...")
       private$fit$residuals = RTMB::oneStepPredict(private$nll,
-                                 observation.name="obsMat",
-                                 method="oneStepGaussian",
-                                 trace=TRUE)
+                                                   observation.name="obsMat",
+                                                   method="oneStepGaussian",
+                                                   trace=TRUE)
     }
     
     # t-values and Pr( t > t_test )
@@ -452,152 +889,6 @@ create_return_fit = function(self, private, calculate.laplace.onestep.residuals)
   class(private$fit) = "ctsmTMB.fit"
   
   return(invisible(self))
-}
-
-construct_predict_rcpp_dataframe = function(pars, predict.list, data, return.covariance, return.k.ahead, self, private){
-  
-  # Simlify variable names
-  n = private$number.of.states
-  n.ahead = private$n.ahead
-  state.names = private$state.names
-  last.pred.index = private$last.pred.index
-  
-  # Create return data.frame
-  df.out = data.frame(matrix(nrow=last.pred.index*(n.ahead+1), ncol=5+n+n^2))
-  disp_names = sprintf(rep("cor.%s.%s",n^2),rep(state.names, each=n),rep(state.names,n))
-  disp_names[seq.int(1,n^2,by=n+1)] = sprintf(rep("var.%s",n),state.names)
-  var_bool = !stringr::str_detect(disp_names,"cor")
-  if(return.covariance){
-    disp_names = sprintf(rep("cov.%s.%s",n^2),rep(state.names,each=n),rep(state.names,n))
-    disp_names[seq.int(1,n^2,by=n+1)] = sprintf(rep("var.%s",n),state.names)
-  }
-  names(df.out) = c("i.","j.","t.i","t.j","k.ahead",state.names,disp_names)
-  
-  # Fill out data.frame
-  ran = 0:(last.pred.index-1)
-  df.out["i."] = rep(ran,each=n.ahead+1)
-  df.out["j."] = df.out["i."] + rep(0:n.ahead,last.pred.index)
-  df.out["t.i"] = rep(data$t[ran+1],each=n.ahead+1)
-  df.out["t.j"] = data$t[df.out[,"i."]+1+rep(0:n.ahead,last.pred.index)]
-  df.out["k.ahead"] = rep(0:n.ahead,last.pred.index)
-  df.obs = df.out[c("i.","j.","t.i","t.j","k.ahead")]
-  
-  ##### STATES PREDICTIONS ######
-  df.out[,state.names] = do.call(rbind,lapply(predict.list$Xpred, function(cur.list) do.call(rbind, cur.list)))
-  if(return.covariance){ #covariance
-    df.out[,disp_names] = do.call(rbind, lapply(predict.list$Ppred, function(cur.list){ do.call(rbind, lapply(cur.list, function(x) as.vector(x))) } ))
-  } else { #correlation
-    df.out[,disp_names] = do.call(rbind, lapply(predict.list$Ppred, function(cur.list){ do.call(rbind, lapply(cur.list, function(x) as.vector(cov2cor(x)))) } )) 
-    diag.ids = seq(from=1,to=n^2,by=n+1)
-    df.out[,disp_names[diag.ids]] = do.call(rbind, lapply(predict.list$Ppred, function(cur.list){ do.call(rbind, lapply(cur.list, function(x) as.vector(diag(x)))) } ))
-  }
-  
-  ##### OBSERVATION PREDICTIONS #####
-  # calculate observations at every time-step in predict
-  inputs.df = private$data[df.out[,"j."]+1,private$input.names]
-  
-  named.pars.list = as.list(pars)
-  names(named.pars.list) = names(private$free.pars)
-  # create environment
-  env.list = c(
-    # states
-    as.list(df.out[state.names]),
-    # inputs
-    as.list(inputs.df),
-    # free parameters
-    named.pars.list,
-    # fixed parameters
-    lapply(private$fixed.pars, function(x) x$initial)
-  )
-  
-  # calculate observations
-  obs.df.predict = as.data.frame(
-    lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = env.list)})
-  )
-  # names(obs.df.predict) = paste(private$obs.names,".predict",sep="")
-  names(obs.df.predict) = paste(private$obs.names)
-  # df.out = cbind(df.out, obs.df.predict)
-  
-  # add data observation to output data.frame 
-  obs.df.data = private$data[df.out[,"j."]+1, private$obs.names, drop=F]
-  names(obs.df.data) = paste(private$obs.names,".data",sep="")
-  # df.out = cbind(df.out, obs.df)
-  
-  df.obs = cbind(df.obs, obs.df.predict, obs.df.data)
-  
-  # return only specific n.ahead
-  df.out = df.out[df.out[,"k.ahead"] %in% return.k.ahead,]
-  df.obs = df.obs[df.obs[,"k.ahead"] %in% return.k.ahead,]
-  
-  list.out = list(states = df.out, observations = df.obs)
-  class(list.out) = c(class(list.out), "ctsmTMB.pred")
-  
-  return(list.out)
-}
-
-construct_simulate_rcpp_dataframe = function(pars, predict.list, data, return.k.ahead, n.sims, self, private){
-  
-  
-  list.out = vector("list",length=private$number.of.states)
-  names(list.out) = private$state.names
-  
-  setRownames = function(obj, nm){rownames(obj) = nm; return(obj)}
-  setColnames = function(obj, nm){colnames(obj) = nm; return(obj)}
-  
-
-  # for(i in seq_along(list.out)){
-  #   list.out[[i]] = stats::setNames(
-  #     lapply(predict.list, function(ls.outer){
-  #       # setRownames(
-  #       t(do.call(cbind, lapply(ls.outer, function(ls.inner) ls.inner[,i])))
-  #       # paste0("k.ahead", 0:private$n.ahead)
-  #       # )
-  #     }),
-  #     paste0("t", head(data$t, private$last.pred.index))
-  #   )
-  # }
-  
-  # Compute the prediction times for each horizon
-  ran = 0:(private$last.pred.index-1)
-  t.j = data$t[rep(ran,each=private$n.ahead+1)+1+rep(0:private$n.ahead,private$last.pred.index)]
-  t.j.splitlist = split(t.j, ceiling(seq_along(t.j)/(private$n.ahead+1)))
-  list.of.time.vectors = lapply(t.j.splitlist, function(x) data.frame(t.j=x))
-  # names(list.of.time.vectors) = names(list.out[[1]])
-  # list.out2 = c(list.out, list(prediction_times = list.of.time.vectors))
-  
-  for(i in seq_along(list.out)){
-    list.out[[i]] = stats::setNames(
-      lapply(predict.list, function(ls.outer){
-        # setRownames(
-        t(do.call(cbind, lapply(ls.outer, function(ls.inner) ls.inner[,i])))
-        # paste0("k.ahead", 0:private$n.ahead)
-        # )
-      }),
-      # paste0("t", head(data$t, private$last.pred.index))
-      paste0("i",ran)
-    )
-  }
-  
-  for(i in seq_along(list.out)){
-    for(j in seq_along(list.out[[i]])){
-      list.out[[i]][[j]] = data.frame(i=j-1, 
-                                      j=(j-1):(j+private$n.ahead-1), 
-                                      t.i=rep(data$t[i],private$n.ahead+1),
-                                      t.j=list.of.time.vectors[[j]][,"t.j"], 
-                                      k.ahead = 0:private$n.ahead,
-                                      list.out[[i]][[j]]
-                                      )
-      nams = paste0(private$state.names,1:n.sims)
-      names(list.out[[i]][[j]]) = c("i","j","t.i","t.j","k.ahead",nams)
-    }
-  }
-  
-  list.out2 = list(
-    states = list.out,
-    observations = list()
-  )
-  
-  return(list.out2)
 }
 
 
