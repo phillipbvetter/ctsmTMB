@@ -6,7 +6,7 @@
 # TOP-LAYER FUNCTION CALLING ALL OTHERS DEFINED IN THIS SCRIPT
 ###############################################################
 
-check_and_set_data = function(data, unscented_hyperpars, self, private) {
+check_and_set_data = function(data, self, private, k.ahead=1) {
   
   # is data provided, or does private$data hold any data?
   was_any_data_provided(data, self, private)
@@ -20,19 +20,22 @@ check_and_set_data = function(data, unscented_hyperpars, self, private) {
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)
   
+  # save data
+  # only store the obs.names, not the parsed data 
+  # example: if we have obs eq log(y) ~ y with name log_y, then we store log_y, but not y itself.
+  private$data = data[c(private$obs.names, private$input.names)]
+  
   # set timestep
   set_ode_timestep(data, self, private)
   set_simulation_timestep(data, self, private)
   
-  # ukf parameters
-  set_ukf_parameters(unscented_hyperpars, self, private)
-  
   # various calculations for tmb's laplace method
   set_data_for_laplace_method(data, self, private)
   
-  # only store the obs.names, not the parsed data 
-  # example: if we have obs eq log(y) ~ y with name log_y, then we store log_y, but not y itself.
-  private$data = data[c(private$obs.names, private$input.names)]
+  # k.ahead for predictions/simulations
+  if(any(private$procedure == c("prediction", "simulation"))){
+    set_n_ahead_and_last_pred_index(k.ahead, self, private)
+  }
   
   # Return
   return(invisible(self))
@@ -329,27 +332,6 @@ set_simulation_timestep = function(data, self, private){
   return(invisible(self))
 }
 
-
-#######################################################
-# SET UKF PARAMETERS
-#######################################################
-
-set_ukf_parameters = function(unscented_hyperpars, self, private)
-{
-  
-  if(!is.list(unscented_hyperpars)){
-    stop("Please provide a list")
-  }
-  
-  if(!(length(unscented_hyperpars)==3)){
-    stop("Please provide a named list of length 3 with entries 'alpha', 'beta' and 'kappa'")
-  }
-  
-  private$set_ukf_hyperpars(unscented_hyperpars)
-  
-  return(invisible(self))
-}
-
 was_any_data_provided = function(data, self, private)
 {
   ###### CHECK DATA #######
@@ -398,4 +380,31 @@ set_parameters = function(pars, silent, self, private){
   private$pars = pars
   
   return(invisible(NULL))
+}
+
+########################################################################
+# UTILITY FUNCTION: FOR SETTING PREDICTION AHEAD AND LAST PRED INDEX
+########################################################################
+# SET k step ahead and last pred index for obj$predict
+set_n_ahead_and_last_pred_index = function(n.ahead, self, private) {
+  
+  # check if n.ahead is positive with length 1
+  if (!(is.numeric(n.ahead)) | !(length(n.ahead==1)) | !(n.ahead >= 1)) {
+    stop("n.ahead must be a non-negative numeric integer")
+  }
+  
+  # Find last prediction index to avoid exciting boundary
+  last.pred.index = nrow(private$data) - n.ahead
+  if(last.pred.index < 1){
+    # message("The provided k.ahead is too large, setting it to the maximum value nrow(data)-1.")
+    n.ahead = nrow(private$data) - 1
+    last.pred.index = 1
+  }
+  
+  # set values
+  private$n.ahead = n.ahead
+  private$last.pred.index = nrow(private$data) - n.ahead
+  
+  # return values
+  return(invisible(self))
 }

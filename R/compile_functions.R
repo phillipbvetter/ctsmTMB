@@ -47,7 +47,6 @@ compile_cppfile = function(self, private) {
     write_method_cppfile(self, private)
     
     # Compile the C++ file with TMB
-    message("Compiling C++ likelihood function...")
     was.there.an.error = tryCatch(
       TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""), 
                    framework = "TMBad",

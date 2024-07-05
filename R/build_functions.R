@@ -5,10 +5,10 @@
 # MAIN BUILDING FUNCTION THAT CALLS ALL OTHER FUNCTIONS
 #######################################################
 
-build_model = function(self, private, prediction=FALSE) {
+build_model = function(self, private) {
   
   # check_model
-  basic_model_check(self, private, prediction)
+  basic_model_check(self, private)
   
   # set dimensions, diff processes, etc...
   set_model_settings(self, private)
@@ -41,7 +41,7 @@ build_model = function(self, private, prediction=FALSE) {
 # FIRST FUNCTION TO RUN WHEN BUILDING
 #######################################################
 
-basic_model_check = function(self, private, prediction=TRUE) {
+basic_model_check = function(self, private) {
   
   # system eqs
   if (length(private$sys.eqs) == 0) {
@@ -65,13 +65,13 @@ basic_model_check = function(self, private, prediction=TRUE) {
     stop("No parameters were specified.")
   }
   
-  # initial state
-  if(!prediction){
+  # initial state for estimation
+  # The same is handled in set_pred_initial_state for prediction/simulation
+  if(any(private$procedure == c("estimation","construction"))){
     if (is.null(private$initial.state)) {
       stop("You must set an initial state estimate and covariance")
     }
   }
-  
   
   return(invisible(self))
 }

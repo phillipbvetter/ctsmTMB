@@ -89,6 +89,12 @@ create_return_simulation = function(return.k.ahead, n.sims, self, private){
       )
       nams = paste0(private$state.names,1:n.sims)
       names(list.out[[i]][[j]]) = c("i","j","t.i","t.j","k.ahead",nams)
+      
+      # if(!is.null(return.k.ahead)){
+        
+        # bool = list.out[[i]][[j]][["k.ahead"]] %in% return.k.ahead
+        # list.out[[i]][[j]] = list.out[[i]][[j]][bool, ]
+      # }
     }
   }
   

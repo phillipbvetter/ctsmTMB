@@ -39,6 +39,9 @@ ctsmTMB = R6::R6Class(
       private$cppfile.path.with.method = NULL
       private$modelname.with.method = NULL
       
+      # estimation, prediction or simulation?
+      private$procedure = NULL
+      
       # model equations
       private$sys.eqs = NULL
       private$obs.eqs = NULL
@@ -464,6 +467,7 @@ ctsmTMB = R6::R6Class(
     #' used as initial guesses
     #' 
     setInitialState = function(initial.state, estimate=FALSE) {
+      
       if (is.null(private$sys.eqs)) {
         stop("Please specify system equations first")
       }
@@ -948,25 +952,23 @@ ctsmTMB = R6::R6Class(
     #' in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
     #' If the user makes changes to system equations, observation equations, observation variances, 
     #' algebraic relations or lamperi transformations then the C++ object should be recompiled.
-    #' @param method character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation 
-    #' method. The package has three available methods implemented:
+    #' @param method character vector specifying the filtering method used for state/likelihood calculations.
+    #' Must be one of either "ekf", "ekf_rtmb", ukf" or "laplace".
+    #' 
     #' 1. The natural TMB-style formulation where latent states are considered random effects
     #' and are integrated out using the Laplace approximation. This method only yields the gradient
     #' of the (negative log) likelihood function with respect to the fixed effects for optimization.
     #' The method is slower although probably has some precision advantages, and allows for non-Gaussian
     #' observation noise (not yet implemented). One-step / K-step residuals are not yet available in
     #' the package.
+    #' 
     #' 2. (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
     #' to handle potential non-linearities. This is computationally the fastest method.
+    #' 
     #' 3. (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
     #' which improves the mean and covariance estimates when the system display high nonlinearity, and
     #' circumvents the necessity to compute the jacobian of the drift and observation functions.
     #' 
-    #' All package features are currently available for the kalman filters, while TMB is limited to
-    #' parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-    #' with these methods (use the \code{predict} S3 method), and stochastic simulation is also available 
-    #' in the cases where long prediction horizons are sought, where the normality assumption will be 
-    #' inaccurate.
     #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
     #' the unscented transformation.
     #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
@@ -1005,29 +1007,34 @@ ctsmTMB = R6::R6Class(
                         compile = FALSE,
                         silent = FALSE){
       
-      # settings and flags
-      private$set_method(method)
-      private$set_ode_solver(ode.solver)
-      private$set_timestep(ode.timestep)
-      private$set_simulation_timestep(ode.timestep)
-      private$set_loss(loss, loss_c)
-      private$set_control(control)
-      private$use_hessian(use.hessian)
-      private$set_unconstrained_optim(unconstrained.optim)
-      private$set_compile(compile)
-      private$set_silence(silent)
+      # set flags
+      args = list(
+        method = method,
+        ode.solver = ode.solver,
+        ode.timestep = ode.timestep,
+        loss = loss,
+        loss_c = loss_c,
+        unscented_hyperpars = unscented_hyperpars,
+        control = control,
+        use.hessian = use.hessian,
+        laplace.residuals = laplace.residuals,
+        unconstrained.optim = unconstrained.optim,
+        compile = compile,
+        silent = silent
+      )
+      set_flags("estimation", args, self, private)
       
       # build model
       if(!private$silent) message("Building model...")
-      build_model(self ,private)
+      build_model(self, private)
       
       # compile model
       if(!private$silent) message("Compiling model...")
-      perform_compilation(self, private, type="estimation")
+      perform_compilation(self, private)
       
       # check and set data
       if(!private$silent) message("Checking data...")
-      check_and_set_data(data, unscented_hyperpars, self, private)
+      check_and_set_data(data, self, private)
       
       # construct neg. log-likelihood function
       if(!private$silent) message("Constructing objective function and derivative tables...")
@@ -1142,20 +1149,26 @@ ctsmTMB = R6::R6Class(
                              compile=FALSE,
                              silent=FALSE){
       
-      private$set_compile(compile)
-      private$set_method(method)
-      private$set_ode_solver(ode.solver)
-      private$set_timestep(ode.timestep)
-      private$set_simulation_timestep(ode.timestep)
-      private$set_loss(loss, loss_c)
-      
+      # set flags
+      args = list(
+        method = method,
+        ode.solver = ode.solver,
+        ode.timestep = ode.timestep,
+        loss = loss,
+        loss_c = loss_c,
+        unscented_hyperpars = unscented_hyperpars,
+        compile = compile,
+        silent = silent
+      )
+      set_flags("construction", args, self, private)
+    
       # build model
       if(!silent) message("Building model...")
       build_model(self, private)
       
       # check and set data
       if(!silent) message("Checking data...")
-      check_and_set_data(data, unscented_hyperpars, self, private)
+      check_and_set_data(data, self, private)
       
       # construct neg. log-likelihood
       if(!silent) message("Constructing objective function...")
@@ -1231,36 +1244,38 @@ ctsmTMB = R6::R6Class(
     #' 
     predict = function(data,
                        method = "ekf",
-                       ode.timestep = diff(data$t),
                        ode.solver = "rk4",
-                       pars = NULL,
+                       ode.timestep = diff(data$t),
                        initial.state = self$getInitialState(),
+                       unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
+                       silent = FALSE,
+                       pars = NULL,
                        k.ahead = 1,
                        return.k.ahead = 0:k.ahead,
-                       return.covariance = TRUE,
-                       unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-                       silent = FALSE){
+                       return.covariance = TRUE){
       
       
       
       if(method!="ekf"){ stop("The predict function is currently only implemented for method = 'ekf'.") }
       
-      ###### SET FLAGS #######
-      private$set_method(method)
-      private$set_ode_solver(ode.solver)
-      private$set_timestep(ode.timestep)
-      private$set_simulation_timestep(ode.timestep)
-      private$set_pred_initial_state(initial.state)
-      private$set_silence(silent)
+      # set flags
+      args = list(
+        method = method,
+        ode.solver = ode.solver,
+        ode.timestep = ode.timestep,
+        initial.state = initial.state,
+        unscented_hyperpars = unscented_hyperpars,
+        silent = silent
+      )
+      set_flags("prediction", args, self, private)
       
       ###### BUILD MODEL #######
       if(!private$silent) message("Building model...")
-      build_model(self, private, prediction=TRUE)
+      build_model(self, private)
       
       ###### CHECK AND SET DATA, PARS, ETC.  #######
       if(!private$silent) message("Checking data...")
-      check_and_set_data(data, unscented_hyperpars, self, private)
-      private$set_n_ahead_and_last_pred_index(k.ahead)
+      check_and_set_data(data, self, private, k.ahead)
       set_parameters(pars, silent, self, private)
       
       ##### COMPILE C++ FUNCTIONS #######
@@ -1347,38 +1362,41 @@ ctsmTMB = R6::R6Class(
     #' 
     simulate = function(data,
                         method = "ekf",
-                        ode.timestep = diff(data$t),
                         ode.solver = "rk4",
-                        pars = NULL,
-                        initial.state = self$getInitialState(),
-                        n.sims = 100,
+                        ode.timestep = diff(data$t),
                         simulation.timestep = diff(data$t),
-                        k.ahead = 1,
-                        return.k.ahead = NULL,
+                        initial.state = self$getInitialState(),
                         unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-                        silent = FALSE){
+                        silent = FALSE,
+                        pars = NULL,
+                        n.sims = 100,
+                        k.ahead = 1,
+                        return.k.ahead = 0:k.ahead){
       
       
       
       if(method!="ekf"){ stop("The simulate function is currently only implemented for method = 'ekf'.") }
       
-      ###### SET FLAGS #######
-      private$set_method(method)
-      private$set_ode_solver(ode.solver)
-      private$set_timestep(ode.timestep)
-      private$set_simulation_timestep(simulation.timestep)
-      private$set_pred_initial_state(initial.state)
-      private$set_silence(silent)
+      # set flags
+      args = list(
+        method = method,
+        ode.solver = ode.solver,
+        ode.timestep = ode.timestep,
+        simulation.timestep = simulation.timestep,
+        initial.state = initial.state,
+        unscented_hyperpars = unscented_hyperpars,
+        silent = silent
+      )
+      set_flags("simulation", args, self, private)
       
       
       ###### BUILD MODEL #######
       if(!private$silent) message("Building model...")
-      build_model(self, private, prediction=TRUE)
+      build_model(self, private)
       
       ###### CHECK AND SET DATA, PARS, ETC.  #######
       if(!private$silent) message("Checking data...")
-      check_and_set_data(data, unscented_hyperpars, self, private)
-      private$set_n_ahead_and_last_pred_index(k.ahead)
+      check_and_set_data(data, self, private, k.ahead)
       set_parameters(pars, silent, self, private)
       
       ###### PERFORM PREDICTION #######
@@ -1539,6 +1557,9 @@ ctsmTMB = R6::R6Class(
     cppfile.path = character(0),
     cppfile.path.with.method = NULL,
     modelname.with.method = NULL,
+    
+    # estimation, prediction or simulation?
+    procedure = NULL,
     
     # model equations
     sys.eqs = NULL,
@@ -1713,6 +1734,28 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # SET COMPILE
     ########################################################################
+    set_procedure = function(str) {
+      
+      # check logical
+      if (!is.character(str)) {
+        stop("The procedure must be a string - estimation / prediction / simulation")
+      }
+      
+      # set flag
+      switch(str,
+             estimation = {private$procedure <- "estimation"},
+             prediction = {private$procedure <- "prediction"},
+             simulation = {private$procedure <- "simulation"},
+             construction = {private$procedure <- "construction"},
+      )
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET COMPILE
+    ########################################################################
     set_compile = function(bool) {
       
       # check logical
@@ -1816,33 +1859,6 @@ ctsmTMB = R6::R6Class(
       }
       
       private$simulation.timestep = dt
-    },
-    
-    ########################################################################
-    # UTILITY FUNCTION: FOR SETTING PREDICTION AHEAD AND LAST PRED INDEX
-    ########################################################################
-    # SET k step ahead and last pred index for obj$predict
-    set_n_ahead_and_last_pred_index = function(n.ahead) {
-      
-      # check if n.ahead is positive with length 1
-      if (!(is.numeric(n.ahead)) | !(length(n.ahead==1)) | !(n.ahead >= 1)) {
-        stop("n.ahead must be a non-negative numeric integer")
-      }
-      
-      # Find last prediction index to avoid exciting boundary
-      last.pred.index = nrow(private$data) - n.ahead
-      if(last.pred.index < 1){
-        # message("The provided k.ahead is too large, setting it to the maximum value nrow(data)-1.")
-        n.ahead = nrow(private$data) - 1
-        last.pred.index = 1
-      }
-      
-      # set values
-      private$n.ahead = n.ahead
-      private$last.pred.index = nrow(private$data) - n.ahead
-      
-      # return values
-      return(invisible(self))
     },
     
     ########################################################################
@@ -2052,6 +2068,17 @@ ctsmTMB = R6::R6Class(
       # is the control a list?
       if (!(is.list(parlist))) {
         stop("Please provide a named list containing 'alpha', 'beta' and 'kappa'")
+      }
+  
+      # check if entries are numerics
+      if (!is.numeric(parlist[["alpha"]])){
+        stop("'alpha' must be a numeric")
+      }
+      if (!is.numeric(parlist[["beta"]])){
+        stop("'beta' must be a numeric")
+      }
+      if (!is.numeric(parlist[["kappa"]])){
+        stop("'kappa' must be a numeric")
       }
       
       # set parameters

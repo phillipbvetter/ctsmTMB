@@ -522,8 +522,8 @@ Estimate the fixed effects parameters in the specified model.
 \item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
 can take \code{NA}-values.}
 
-\item{\code{method}}{character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation
-method. The package has three available methods implemented:
+\item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
+Must be one of either "ekf", "ekf_rtmb", ukf" or "laplace".
 \enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects
 and are integrated out using the Laplace approximation. This method only yields the gradient
@@ -536,13 +536,7 @@ to handle potential non-linearities. This is computationally the fastest method.
 \item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
 which improves the mean and covariance estimates when the system display high nonlinearity, and
 circumvents the necessity to compute the jacobian of the drift and observation functions.
-}
-
-All package features are currently available for the kalman filters, while TMB is limited to
-parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-with these methods (use the \code{predict} S3 method), and stochastic simulation is also available
-in the cases where long prediction horizons are sought, where the normality assumption will be
-inaccurate.}
+}}
 
 \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
@@ -739,15 +733,15 @@ state estimate as the initial condition.
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$predict(
   data,
   method = "ekf",
-  ode.timestep = diff(data$t),
   ode.solver = "rk4",
-  pars = NULL,
+  ode.timestep = diff(data$t),
   initial.state = self$getInitialState(),
+  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
+  silent = FALSE,
+  pars = NULL,
   k.ahead = 1,
   return.k.ahead = 0:k.ahead,
-  return.covariance = TRUE,
-  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
-  silent = FALSE
+  return.covariance = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -777,6 +771,10 @@ with these methods (use the \code{predict} S3 method), and stochastic simulation
 in the cases where long prediction horizons are sought, where the normality assumption will be
 inaccurate.}
 
+\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+differential equations. The default "euler" is the Forward Euler method, alternatively the classical
+4th order Runge Kutta method is available via "rk4".}
+
 \item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
 The defined step-size is used to calculate the number of steps between observation time-points as
 defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
@@ -793,15 +791,17 @@ scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
 
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
-differential equations. The default "euler" is the Forward Euler method, alternatively the classical
-4th order Runge Kutta method is available via "rk4".}
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+
+\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
+the unscented transformation.}
+
+\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
 
 \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
 parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
 function has been run, then the default values will be those at the found optimum.}
-
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
 
 \item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
@@ -812,12 +812,6 @@ should be returned.}
 
 \item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
 should be returned.}
-
-\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-the unscented transformation.}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
-'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
 }
 \if{html}{\out{</div>}}
 }
@@ -838,16 +832,16 @@ state estimate as the initial condition.
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$simulate(
   data,
   method = "ekf",
-  ode.timestep = diff(data$t),
   ode.solver = "rk4",
-  pars = NULL,
-  initial.state = self$getInitialState(),
-  n.sims = 100,
+  ode.timestep = diff(data$t),
   simulation.timestep = diff(data$t),
-  k.ahead = 1,
-  return.k.ahead = NULL,
+  initial.state = self$getInitialState(),
   unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
-  silent = FALSE
+  silent = FALSE,
+  pars = NULL,
+  n.sims = 100,
+  k.ahead = 1,
+  return.k.ahead = 0:k.ahead
 )}\if{html}{\out{</div>}}
 }
 
@@ -877,6 +871,10 @@ with these methods (use the \code{predict} S3 method), and stochastic simulation
 in the cases where long prediction horizons are sought, where the normality assumption will be
 inaccurate}
 
+\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+differential equations. The default "euler" is the Forward Euler method, alternatively the classical
+4th order Runge Kutta method is available via "rk4".}
+
 \item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
 The defined step-size is used to calculate the number of steps between observation time-points as
 defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
@@ -893,19 +891,21 @@ scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
 
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
-differential equations. The default "euler" is the Forward Euler method, alternatively the classical
-4th order Runge Kutta method is available via "rk4".}
+\item{\code{simulation.timestep}}{timestep used in the euler-maruyama scheme}
+
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+
+\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
+the unscented transformation.}
+
+\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
 
 \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
 parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
 function has been run, then the default values will be those at the found optimum.}
 
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
 \item{\code{n.sims}}{number of simulations}
-
-\item{\code{simulation.timestep}}{timestep used in the euler-maruyama scheme}
 
 \item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
@@ -913,12 +913,6 @@ data updates).}
 
 \item{\code{return.k.ahead}}{numeric vector of integers specifying which n.ahead predictions to that
 should be returned.}
-
-\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-the unscented transformation.}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
-'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
 
 \item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
 should be returned.}
