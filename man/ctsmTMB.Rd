@@ -46,6 +46,7 @@ addObs(y ~ exp(x1) + exp(x2))
 \item \href{#method-ctsmTMB-setParameter}{\code{ctsmTMB$setParameter()}}
 \item \href{#method-ctsmTMB-setAlgebraics}{\code{ctsmTMB$setAlgebraics()}}
 \item \href{#method-ctsmTMB-setInitialState}{\code{ctsmTMB$setInitialState()}}
+\item \href{#method-ctsmTMB-setInitialVarianceScaling}{\code{ctsmTMB$setInitialVarianceScaling()}}
 \item \href{#method-ctsmTMB-setLamperti}{\code{ctsmTMB$setLamperti()}}
 \item \href{#method-ctsmTMB-setModelname}{\code{ctsmTMB$setModelname()}}
 \item \href{#method-ctsmTMB-set_cppfile_directory}{\code{ctsmTMB$set_cppfile_directory()}}
@@ -61,7 +62,7 @@ addObs(y ~ exp(x1) + exp(x2))
 \item \href{#method-ctsmTMB-getPrediction}{\code{ctsmTMB$getPrediction()}}
 \item \href{#method-ctsmTMB-getSimulation}{\code{ctsmTMB$getSimulation()}}
 \item \href{#method-ctsmTMB-estimate}{\code{ctsmTMB$estimate()}}
-\item \href{#method-ctsmTMB-construct_nll}{\code{ctsmTMB$construct_nll()}}
+\item \href{#method-ctsmTMB-constructNegLogLike}{\code{ctsmTMB$constructNegLogLike()}}
 \item \href{#method-ctsmTMB-predict}{\code{ctsmTMB$predict()}}
 \item \href{#method-ctsmTMB-simulate}{\code{ctsmTMB$simulate()}}
 \item \href{#method-ctsmTMB-print}{\code{ctsmTMB$print()}}
@@ -286,6 +287,25 @@ Declare the initial state values i.e. mean and covariance for the system states.
 \item{\code{estimate}}{boolean value which indicates whether or not the initial conditions
 shall be estimated as fixed effects parameters. The provided mean and covariance are then
 used as initial guesses}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-setInitialVarianceScaling"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setInitialVarianceScaling}{}}}
+\subsection{Method \code{setInitialVarianceScaling()}}{
+A scalar value that is multiplied onto the estimated
+intiial state covariance matrix. The scaling is only applied when the
+initial state/cov is estimated, not when it is set by the user.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setInitialVarianceScaling(scaling)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{scaling}}{a numeric scalar value.}
 }
 \if{html}{\out{</div>}}
 }
@@ -607,9 +627,9 @@ algebraic relations or lamperi transformations then the C++ object should be rec
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-construct_nll"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-construct_nll}{}}}
-\subsection{Method \code{construct_nll()}}{
+\if{html}{\out{<a id="method-ctsmTMB-constructNegLogLike"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-constructNegLogLike}{}}}
+\subsection{Method \code{constructNegLogLike()}}{
 Construct and extract function handlers for the negative
 log likelihood function.
 
@@ -617,7 +637,7 @@ The handlers from \code{TMB}'s \code{MakeADFun} are constructed and returned.
 This enables the user to e.g. choose their own optimization algorithm, or just
 have more control of the optimization workflow.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$construct_nll(
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$constructNegLogLike(
   data,
   method = "ekf",
   ode.solver = "rk4",
@@ -959,12 +979,7 @@ correlation matrix.}
 \subsection{Method \code{plot()}}{
 Function to print the model object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$plot(
-  plot.obs = 1,
-  pacf = FALSE,
-  extended = FALSE,
-  ggtheme = getggplot2theme()
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$plot(plot.obs = 1, ggtheme = getggplot2theme())}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -973,12 +988,12 @@ Function to print the model object
 \item{\code{plot.obs}}{a vector to indicate which observations should be plotted for. If multiple
 are chosen a list of plots for each observation is returned.}
 
+\item{\code{ggtheme}}{ggplot2 theme to use for creating the ggplot.}
+
 \item{\code{pacf}}{logical to indicate whether or not the partial autocorrelations should be returned.
 The default is FALSE in which case a histogram is returned instead.}
 
 \item{\code{extended}}{logical. if TRUE additional information is printed}
-
-\item{\code{ggtheme}}{ggplot2 theme to use for creating the ggplot.}
 }
 \if{html}{\out{</div>}}
 }

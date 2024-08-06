@@ -4,24 +4,18 @@
 \alias{plot.ctsmTMB.fit}
 \title{Basic summary of objects of class 'ctsmTMB'}
 \usage{
-\method{plot}{ctsmTMB.fit}(
-  fit,
-  plot.obs = 1,
-  pacf = FALSE,
-  extended = FALSE,
-  ggtheme = getggplot2theme()
-)
+\method{plot}{ctsmTMB.fit}(fit, plot.obs = 1, ggtheme = getggplot2theme())
 }
 \arguments{
 \item{plot.obs}{a vector to indicate which observations should be plotted for. If multiple
 are chosen a list of plots for each observation is returned.}
 
+\item{ggtheme}{ggplot2 theme to use for creating the ggplot.}
+
 \item{pacf}{logical to indicate whether or not the partial autocorrelations should be returned.
 The default is FALSE in which case a histogram is returned instead.}
 
 \item{extended}{logical. if TRUE additional information is printed}
-
-\item{ggtheme}{ggplot2 theme to use for creating the ggplot.}
 }
 \value{
 A list of plots

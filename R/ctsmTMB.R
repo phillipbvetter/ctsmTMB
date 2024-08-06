@@ -72,6 +72,8 @@ ctsmTMB = R6::R6Class(
       private$control.nlminb = list()
       private$ode.solver = NULL
       private$unconstrained.optim = NULL
+      private$estimate.initial = NULL
+      private$initial.variance.scaling = 1
       
       # hidden
       private$lock.model = FALSE
@@ -495,7 +497,7 @@ ctsmTMB = R6::R6Class(
       if (length(x0)!=length(private$sys.eqs)) {
         stop("The initial state vector should have length ",length(private$sys.eqs))
       }
-      
+
       if (!all(dim(p0)==c(length(private$sys.eqs),length(private$sys.eqs)))) {
         stop("The covariance matrix should be square with dimension ", length(private$sys.eqs))
       }
@@ -521,13 +523,35 @@ ctsmTMB = R6::R6Class(
         stop("The covariance matrix is symmetric")
       }
       
+      # Initial State
       private$initial.state = list(x0=x0, p0=as.matrix(p0))
       
-      # if(estimate){
-      # then we should add the states as fixed effects parameters?
-      # }
+      # Estimate?
+      if(!is.logical(estimate)){
+        stop("Estimate must be a logical.")
+      }
+      private$estimate.initial = estimate
       
       return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET INITIAL SCALING OF THE COVARIANCE MATRIX
+    ########################################################################
+    #' @description 
+    #' A scalar value that is multiplied onto the estimated
+    #' intiial state covariance matrix. The scaling is only applied when the
+    #' initial state/cov is estimated, not when it is set by the user.
+    #' @param scaling a numeric scalar value.
+    
+    setInitialVarianceScaling = function(scaling){
+      
+      if(!is.numeric(scaling)){
+        stop("The scaling must be a scalar numerical value.")
+      }
+      
+      private$initial.variance.scaling = scaling
+      return(invisible(NULL))
     },
     
     ########################################################################
@@ -858,11 +882,14 @@ ctsmTMB = R6::R6Class(
       # extract algebraic relation formulas
       if(is.null(private$fit)){
         message("There are no estimation results to be exctracted - run 'estimate'.")
-        return(NULL)
+        return(invisible(NULL))
       }
       
       # return
-      return(private$fit)
+      self.clone <- self$clone()
+      fit <- private$fit
+      fit$private = self.clone$.__enclos_env__$private
+      return(invisible(fit))
     },
     
     
@@ -875,12 +902,12 @@ ctsmTMB = R6::R6Class(
       
       # extract algebraic relation formulas
       if(is.null(private$nll)){
-        message("There are no likelihood function to be exctracted - run 'constructNegLogLike'.")
-        return(NULL)
+        message("No likelihood function has been created yet. Run either 'esitmate' or 'constructNegLogLike' first.")
+        return(invisible(NULL))
       }
       
       # return
-      return(private$nll)
+      return(invisible(private$nll))
     },
     
     ########################################################################
@@ -893,11 +920,11 @@ ctsmTMB = R6::R6Class(
       # extract algebraic relation formulas
       if(is.null(private$prediction)){
         message("There are no prediction results to be exctracted - run 'predict'.")
-        return(NULL)
+        return(invisible(NULL))
       }
       
       # return
-      return(private$prediction)
+      return(invisible(private$prediction))
     },
     
     ########################################################################
@@ -910,11 +937,11 @@ ctsmTMB = R6::R6Class(
       # extract algebraic relation formulas
       if(is.null(private$simulation)){
         message("There are no simulation results to be exctracted - run 'simulate'.")
-        return(NULL)
+        return(invisible(NULL))
       }
       
       # return
-      return(private$simulation)
+      return(invisible(private$simulation))
     },
     
     
@@ -1053,7 +1080,7 @@ ctsmTMB = R6::R6Class(
       if(!private$silent) message("Returning results...")
       create_fit(self, private, laplace.residuals)
       
-      # return fit
+      # return
       if(!private$silent) message("Finished!")
       return(invisible(private$fit))
     },
@@ -1139,7 +1166,7 @@ ctsmTMB = R6::R6Class(
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
-    construct_nll = function(data,
+    constructNegLogLike = function(data,
                              method = "ekf",
                              ode.solver = "rk4",
                              ode.timestep = diff(data$t),
@@ -1166,9 +1193,14 @@ ctsmTMB = R6::R6Class(
       if(!silent) message("Building model...")
       build_model(self, private)
       
+      # compile model
+      if(!private$silent) message("Compiling model...")
+      perform_compilation(self, private)
+      
       # check and set data
       if(!silent) message("Checking data...")
       check_and_set_data(data, self, private)
+      
       
       # construct neg. log-likelihood
       if(!silent) message("Constructing objective function...")
@@ -1450,7 +1482,7 @@ ctsmTMB = R6::R6Class(
         cat("\nObservation Equations:\n\n")
         for (i in 1:length(private$obs.eqs)) {
           bool = private$obs.names[i] %in% private$obsvar.names
-          bool2 = is.null(private$obs.var[[i]])
+          bool2 = !is.null(private$obs.var[[i]])
           if (bool & bool2) {
             cat("\t",paste(names(private$obs.eqs)[i],": ",sep=""),deparse1(private$obs.eqs[[i]]$form),"+ e", "\t","e ~ N(0,",paste0(deparse1(private$obs.var[[i]]$rhs),")"),"\n")
           } else {
@@ -1520,8 +1552,6 @@ ctsmTMB = R6::R6Class(
     #' @param extended logical. if TRUE additional information is printed
     #' @param ggtheme ggplot2 theme to use for creating the ggplot.
     plot = function(plot.obs=1, 
-                    pacf=FALSE,
-                    extended=FALSE,
                     ggtheme=getggplot2theme()){
       
       # check if the estimate method has been run i.e. and private$fit has been created
@@ -1532,8 +1562,6 @@ ctsmTMB = R6::R6Class(
       
       plotlist = plot(private$fit, 
                       plot.obs=plot.obs,
-                      pacf=pacf,
-                      extended=extended, 
                       ggtheme=ggtheme)
       
       # return
@@ -1605,6 +1633,8 @@ ctsmTMB = R6::R6Class(
     simulation.timestep.size = NULL,
     ode.solver = NULL,
     unconstrained.optim = NULL,
+    estimate.initial = NULL,
+    initial.variance.scaling = NULL,
     
     # hidden
     lock.model = FALSE,
