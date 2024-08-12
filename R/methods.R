@@ -293,12 +293,13 @@ plot.ctsmTMB.fit = function(fit,
 #' https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R
 #' @export
 profile.ctsmTMB.fit = function(fit, 
-                               parlist, 
-                               par.vals=fit$par.fixed, 
-                               silent=F, 
-                               trace=0, 
-                               control=list(trace=trace,iter.max=1e5,eval.max=1e5)
-                               ){
+                               parlist,
+                               grid.size = rep(10,length(parlist)),
+                               grid.qnt = rep(3,length(parlist)),
+                               hessian=FALSE,
+                               trace=0,
+                               control=list(trace=trace,iter.max=1e3,eval.max=1e3)
+){
   
   if(missing(fit)){
     stop("Please supply a fit from a ctsmTMB model.")
@@ -307,70 +308,91 @@ profile.ctsmTMB.fit = function(fit,
     stop("Please supply a named list of parameter values")
   }
   
-  # 1. names of parameters to be profiled
-  # 2. initial values for optimizer
-  
   # 1. Get likelihood function
   nll <- fit$private$nll
   
+  # Create parameter grid
+  parnames <- names(parlist)
+  id <- names(fit$par.fixed) %in% parnames
+  if(all(lapply(parlist,length) == 0)){
+    for(i in seq_along(parnames)){
+      p = fit$par.fixed[parnames[i]]
+      s = fit$sd.fixed[parnames[i]]
+      parlist[[parnames[i]]] = seq(p-grid.qnt[i]*s, p+grid.qnt[i]*s, length.out=grid.size[i])
+    }
+  }
   X <- do.call(expand.grid, rev(parlist))
-  names(X) <- rev(names(parlist))
+  names(X) <- rev(parnames)
+  n <- nrow(X)
+  # Create parameter grid and initiatize lists
+  
   n <- nrow(X)
   prof.nll <- numeric(n)
   prof.pars <- vector("list",length=n)
   opt.list <- vector("list",length=n)
   
-  # 2. Create parameter filter matrix that extracts only the non-profiled entries
-  # which needs to be optimized over
-  # Must map from length(par.fixed) to length(par.fixed) - length(parnames)
-  parnames <- names(parlist)
-  id <- names(fit$par.fixed) %in% parnames
+  # 2. Create parameter filter matrix C that extracts only the 
+  # non-profiled entries which needs to be optimized over.
+  # C maps from length(par.fixed) to length(par.fixed) - length(parnames)
+  # by multiplication.
   C <- diag(length(fit$par.fixed))[,!id,drop=F]
   
+  # Create optimization function that takes initial guess x0
+  # and finds the maximum profile likelihood estimate in the 
+  # reduced parameter space
   f.optim <- function(x0){
-    
-    # print(par)
     
     # objective function
     f <- function(x){
-      par0 <- par + as.numeric(C %*% x)
-      nll$fn(par0)
+      y <- par + as.numeric(C %*% x)
+      # print(y["Cm"])
+      nll$fn(y)
     }
     
     # gradient
     gr <- function(x){
-      par0 <- par + as.numeric(C %*% x)
-      as.numeric(nll$gr(par0) %*% C)
+      y <- par + as.numeric(C %*% x)
+      as.numeric(nll$gr(y) %*% C)
+    }
+    
+    # hessian
+    he <- function(x){
+      y <- par + as.numeric(C %*% x)
+      # t(C) %*% nll$he(y)[!id,!id] %*% C
+      nll$he(y)[!id,!id]
     }
     
     # optimize
-    opt <- nlminb(x0, f, gr, control=control)
-    
+    if(hessian) {
+      opt <- nlminb(x0, f, gr, he, control=control)
+    } else {
+      opt <- nlminb(x0, f, gr, control=control)
+    }
     return(opt)
   }
   
-  # Robustify f
+  # Robustify f.optim to handle NA cases
   f <- function(x0){
     y <- try_withWarningRecovery(f.optim(x0), silent=TRUE)
     if(is(y, "try-error")) y <- NA
     return(y)
   }
   
-  # Parameter values
-  par <- par.vals
-  x0 <- par[!id]
+  par <- fit$par.fixed
+  x0 <- fit$par.fixed[!id]
   par[!id] <- 0
-  partemp <- par.vals
+  # Run for-loop over all pairs
   for(i in 1:nrow(X)){
     par[id] <- unlist(X[i,])
     par.temp <- par
     # 
-    if(!silent){
-      cat("Iteration:", i, "/", n, "\n")
-    }
+    cat("Iteration:", i, "/", n, "\n")
+    # print(par)
+    # print(x0)
     opt <- f(x0)
     # 
     opt.list[[i]] <- opt
+    # store results and set new initial parameter guess
     if(any(is.na(opt))){
       prof.nll[i] <- NA
       prof.pars[[i]] <- NA
@@ -379,30 +401,24 @@ profile.ctsmTMB.fit = function(fit,
       prof.nll[i] <- opt$objective
       par.temp[!id] <- opt$par
       prof.pars[[i]] <- par.temp
+      # 
+      x0 <- opt$par
       if(opt$convergence==1) {
-        x0 <- fit$par.fixed
-      } else {
-        x0 <- opt$par 
+        x0 <- fit$par.fixed[!id]
       }
     }
   }
   
-  # test
-  # x <- par.vals[!(names(par.vals) %in% parnames)]
-  # new.f(x)
-  # new.gr(x)
-  
-  # run optimizer
-  # pars0 <- par.vals[!id]
-  # opt <- nlminb(pars0, f, gr)
+  # return
   returnlist = list(
-    profile.grid = cbind(X, profile.nll = prof.nll),
+    parameter.list = parlist,
+    profile.grid = X,
+    profile.nll = prof.nll,
     profile.pars = prof.pars,
     profile.opts = opt.list
   )
+  class(returnlist) <- "profile.ctsmTMB"
   
-  # return
-  # return(list(profileNegLogLikelihood = prof.nll, profileParameters = prof.pars, optLists=opt.list))
   return(returnlist)
 }
 

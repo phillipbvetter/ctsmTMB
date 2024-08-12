@@ -120,13 +120,13 @@ List ekf_simulation(
 
       // Kalman Filter
       H = h__(stateVec, parVec, inputVec);
-      Map<VectorXd> H_eigen = as<Map<VectorXd>>(H);
+      Map<VectorXd> H_eigen = as<Map<VectorXd> >(H);
       dHdX = dhdx__(stateVec, parVec, inputVec);
-      Map<MatrixXd> dHdX_eigen = as<Map<MatrixXd>>(dHdX);
+      Map<MatrixXd> dHdX_eigen = as<Map<MatrixXd> >(dHdX);
       C = E * dHdX_eigen;
       e = obsVec - E * H_eigen;
       Hvar = hvar__(stateVec, parVec, inputVec);
-      Map<MatrixXd> Hvar_eigen = as<Map<MatrixXd>>(Hvar);
+      Map<MatrixXd> Hvar_eigen = as<Map<MatrixXd> >(Hvar);
       V = E * Hvar_eigen * E.transpose();
       R = C * covMat * C.transpose() + V;
       Ri = R.inverse();

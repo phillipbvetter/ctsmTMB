@@ -126,9 +126,9 @@ List ekf_prediction(
       H = h__(stateVec, parVec, inputVec);
       dHdX = dhdx__(stateVec, parVec, inputVec);
       Hvar = hvar__(stateVec, parVec, inputVec);
-      Eigen::Map<Eigen::VectorXd> H_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd>>(H);
-      Eigen::Map<Eigen::MatrixXd> dHdX_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd>>(dHdX);
-      Eigen::Map<Eigen::MatrixXd> Hvar_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd>>(Hvar);
+      Eigen::Map<Eigen::VectorXd> H_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(H);
+      Eigen::Map<Eigen::MatrixXd> dHdX_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(dHdX);
+      Eigen::Map<Eigen::MatrixXd> Hvar_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(Hvar);
       
       // Kalman Filter
       C = E * dHdX_eigen;

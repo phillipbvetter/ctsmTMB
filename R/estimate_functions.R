@@ -462,9 +462,9 @@ perform_estimation = function(self, private) {
   
   # print convergence and timing result
   if(!private$silent){
-    if(outer_mgc > 1){
-      message("BEWARE: THE MAXIMUM GRADIENT COMPONENT APPEARS TO BE LARGE ( > 1 ) - THE FOUND OPTIMUM MIGHT BE INVALID.")
-    }
+    # if(outer_mgc > 1){
+      # message("BEWARE: THE MAXIMUM GRADIENT COMPONENT APPEARS TO BE LARGE ( > 1 ) - THE FOUND OPTIMUM MIGHT BE INVALID.")
+    # }
     message("\t Optimization finished!:
             Elapsed time: ", comp.time, " seconds.
             The objective value is: ",format(opt$objective,scientific=T),"
@@ -580,7 +580,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
       if(inherits(covariance,"try-error") && any(keep.ids)){
         
         covariance = temp.hessian[keep.ids, keep.ids]
-        covariance = try(solve(covariance, silent=T))
+        covariance = try(solve(covariance), silent=T)
         
         sd.fixed = rep(NA,length(private$fit$par.fixed))
         sd.fixed[keep.ids] = try_withWarningRecovery(sqrt(diag(covariance)))
@@ -829,7 +829,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
       if(inherits(covariance,"try-error") && any(keep.ids)){
         
         covariance = temp.hessian[keep.ids, keep.ids]
-        covariance = try(solve(covariance, silent=T))
+        covariance = try(solve(covariance), silent=T)
         
         sd.fixed = rep(NA,length(private$fit$par.fixed))
         sd.fixed[keep.ids] = try_withWarningRecovery(sqrt(diag(covariance)))

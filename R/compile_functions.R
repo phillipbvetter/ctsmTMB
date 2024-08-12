@@ -5,7 +5,6 @@ perform_compilation = function(self, private, type="estimation"){
     compile_cppfile(self, private)
   }
   
-  
   # prediction or simulation
   if(any(type==c("prediction","simulation"))){
     compile_rcpp_functions(self, private)
@@ -109,7 +108,7 @@ compile_cppfile = function(self, private) {
 compile_rcpp_functions = function(self, private){
   
   private$Rcppfunction_f <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_f, depends=c("RcppEigen","ctsmTMB"))
-  
+
   private$Rcppfunction_dfdx <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_dfdx, depends="RcppEigen")
   
   private$Rcppfunction_g <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_g, depends=c("RcppEigen"))

@@ -7,10 +7,11 @@
 \method{profile}{ctsmTMB.fit}(
   fit,
   parlist,
-  par.vals = fit$par.fixed,
-  silent = F,
+  grid.size = rep(10, length(parlist)),
+  grid.qnt = rep(3, length(parlist)),
+  hessian = FALSE,
   trace = 0,
-  control = list(trace = trace, iter.max = 1e+05, eval.max = 1e+05)
+  control = list(trace = trace, iter.max = 1000, eval.max = 1000)
 )
 }
 \arguments{

@@ -41,7 +41,7 @@ List ode_integrator(
   {
 
     Rcpp::NumericVector F = f__(stateVec, parVec, inputVec);
-    Eigen::Map<Eigen::VectorXd> F_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd>>(F);
+    Eigen::Map<Eigen::VectorXd> F_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(F);
     Eigen::MatrixXd P_rhs = cov_ode_1step(g__, dfdx__, covMat, stateVec, parVec, inputVec);
 
     X1 = stateVec + F_eigen * dt;
@@ -60,7 +60,7 @@ List ode_integrator(
 
     // /*1. Approx Slope at Initial Point*/
     k1_rcpp = f__(stateVec, parVec, inputVec);
-    Eigen::Map<Eigen::VectorXd> k1 = Rcpp::as<Eigen::Map<Eigen::VectorXd>>(k1_rcpp);
+    Eigen::Map<Eigen::VectorXd> k1 = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(k1_rcpp);
     c1 = cov_ode_1step(g__, dfdx__, covMat, stateVec, parVec, inputVec);
 
     /*2. First Approx Slope at Midpoint*/
@@ -68,14 +68,14 @@ List ode_integrator(
     stateVec = X0 + 0.5 * dt * k1;
     covMat   = P0 + 0.5 * dt * c1;
     k2_rcpp  = f__(stateVec, parVec, inputVec); 
-    Eigen::Map<Eigen::VectorXd> k2 = Rcpp::as<Eigen::Map<Eigen::VectorXd>>(k2_rcpp);
+    Eigen::Map<Eigen::VectorXd> k2 = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(k2_rcpp);
     c2       = cov_ode_1step(g__, dfdx__, covMat, stateVec, parVec, inputVec);
 
     /*3. Second Approx Slope at Midpoint*/
     stateVec = X0 + 0.5 * dt * k2;
     covMat   = P0 + 0.5 * dt * c2;
     k3_rcpp  = f__(stateVec, parVec, inputVec);
-    Eigen::Map<Eigen::VectorXd> k3 = Rcpp::as<Eigen::Map<Eigen::VectorXd>>(k3_rcpp); 
+    Eigen::Map<Eigen::VectorXd> k3 = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(k3_rcpp); 
     c3       = cov_ode_1step(g__, dfdx__, covMat, stateVec, parVec, inputVec);
 
     /*4. Approx Slope at End Point*/
@@ -83,7 +83,7 @@ List ode_integrator(
     stateVec = X0 + dt * k3;
     covMat   = P0 + dt * c3;
     k4_rcpp  = f__(stateVec, parVec, inputVec); 
-    Eigen::Map<Eigen::VectorXd> k4 = Rcpp::as<Eigen::Map<Eigen::VectorXd>>(k4_rcpp); 
+    Eigen::Map<Eigen::VectorXd> k4 = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(k4_rcpp); 
     c4       = cov_ode_1step(g__, dfdx__, covMat, stateVec, parVec, inputVec);
 
     /*ODE UPDATE*/
@@ -114,8 +114,8 @@ Eigen::MatrixXd cov_ode_1step(
   Rcpp::NumericMatrix G = g__(stateVec, parVec, inputVec);
 
   // Convert from NumericMatrix to Eigen matrices
-  Eigen::Map<Eigen::MatrixXd> A_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd>>(A);
-  Eigen::Map<Eigen::MatrixXd> G_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd>>(G);
+  Eigen::Map<Eigen::MatrixXd> A_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(A);
+  Eigen::Map<Eigen::MatrixXd> G_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(G);
 
   // Calculate the right-hand side of covariance moment differential equation
   Eigen::MatrixXd cov_ode_1step = A_eigen * covMat + covMat * A_eigen.transpose() + G_eigen * G_eigen.transpose();
@@ -154,9 +154,9 @@ MatrixXd euler_maruyama_simulation(
 
     // Convert F and G from Rcpp::Numeric to Eigen
     F = f__(stateVec, parVec, inputVec);
-    Eigen::Map<Eigen::VectorXd> F_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd>>(F);
+    Eigen::Map<Eigen::VectorXd> F_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(F);
     G = g__(stateVec, parVec, inputVec);
-    Eigen::Map<Eigen::MatrixXd> G_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd>>(G);
+    Eigen::Map<Eigen::MatrixXd> G_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(G);
 
     // Generate dW vector by sampling from standard normal
     for(int i=0; i < ng; i++){
