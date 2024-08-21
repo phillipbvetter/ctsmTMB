@@ -15,9 +15,9 @@ The package implements the following state/parameter estimation methods / filter
 3. The Laplace-style approach where latent states are considered random effects `laplace` (see e.g. [this example]( https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp))
 
 ### Laplace Approximation
-The Laplace Approximation is the natively built-into and completely handled by `TMB` and is this gained for free. The primary advantage of the method is
+The Laplace Approximation is the natively built-into and completely handled by `TMB`, and some noteworthy advantages of the method are:
 
-1. No C++ compilation needed, and an AD-compile time (MakeADFun) identical to that of similar compiled code.
+1. No C++ compilation needed. In addition the AD-compile time (the call to `TMB::MakeADFun`) identical to that of similar but compiled C++ code.
 
 2. Non-Gaussian (but Modal) assumption
 
