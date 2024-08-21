@@ -23,9 +23,6 @@ The Laplace Approximation is the natively built-into and completely handled by `
 
 3. The method produces smoothed state estimates, because states are integrated out simultaneously, conditioned on both past and future information / observation.
 
-4. 
-
-
 ### Kalman Filters
 
 The main advantage of the Kalman Filter implementations are a large increase in the computation speed, and access to the fixed effects hessian for improved convergence of the optimization. In these cases TMB just provides automatic differentiation.
