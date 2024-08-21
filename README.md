@@ -1,11 +1,12 @@
 # Continuous Time Stochastic Modelling using Template Model Builder (ctsmTMB)
 
 `ctsmTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, heavily inspired by [Continuous Time Stochastic Modelling](https://ctsm.info). 
-The package is essentially a wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) that frees the user from specifying the negative log-likelihood function themselves, rather the necessary C++ function (or R function in the case of [RTMB](https://github.com/kaskr/RTMB)) is generated automatically behind the scenes, based on a user-specified model. The model is specified using the provided R6 `ctsmTMB` class object and its associated methods e.g. `addSystem`, `addObs` etc. The states and parameters of the model may be estimated using the built-in `estimate` method which employs the robust `stats::nlminb`  quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965).
+The package is essentially a wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) that frees the user from specifying the negative log-likelihood function themselves, rather the necessary C++ function (or R function in the case of [RTMB](https://github.com/kaskr/RTMB)) is generated automatically behind the scenes, based on a user-specified model. The model is specified using the provided R6 `ctsmTMB` class object and its associated methods e.g. `addSystem`, `addObs` etc. 
 
-The package furthermore employs the `Rcpp` package universe to allow faster calculations of model predictions and stochastic simulation paths.
+The states and parameters of the model may be estimated using the built-in `estimate` method which employs the robust `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The package allow facilitates generating fast (deterministic) predictions and (stochastic) simulations whose implementation rely on the `Rcpp` package universe. Of particular importance of the speed is the use of the `RcppXPtrUtils` package which constructs and sends C++ function pointers of the user-specified model functions to the predition and simulation C++ functions, although this comes at the cost of a ~ 10 seconds compile time the first time either `predict` or `simulate` is called. 
 
-The package implements the following methods 
+## Estimation Methods
+The package implements the following state/parameter estimation methods / filters:
 
 1. The (Continous-Discrete) Extended Kalman Filter, `ekf`
 
