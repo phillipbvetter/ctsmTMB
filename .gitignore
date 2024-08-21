@@ -5,4 +5,4 @@
 *.so
 vignettes/ctsmTMB_cppfiles
 ctsmTMB_cppfiles
-git_push.rtf
+git_push.sh
