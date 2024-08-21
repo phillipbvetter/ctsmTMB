@@ -73,23 +73,33 @@ check_system_eqs = function(form, self, private) {
   if (!valid) { stop("There are illegal dt and dw cross terms") }
   
   # Check if any variables are outside scope like c in: f(.) * dt + g(.) * dw + c
-  pars = unique(all.vars(rhs))
-  pars.after = as.vector(c(diff.processes, unlist(lapply(diff.terms, all.vars))))
-  if (any(is.na(match(pars, pars.after)))) {
-    stop("You have illegally specified terms other than drifts (... * dt) and diffusions (... * dw).")
-  }
+  # pars = unique(all.vars(rhs))
+  # pars.after = as.vector(c(diff.processes, unlist(lapply(diff.terms, all.vars))))
+  # if (any(is.na(match(pars, pars.after)))) {
+  #   stop("You have illegally specified terms other than drifts (... * dt) and diffusions (... * dw).")
+  # }
+  
   # The above does not capture constants like the 5 in ' ... * dw + 5' so check that.
   # This is a bit annoying because you can't see numerics directly. We work around by
   # multiplying a variable onto, and the checking if there are any variables left after
   # setting the diffusions equal to zero
-  rhs.checker1 = parse(text=paste("(",deparse1(rhs),")","*K__",sep=""))[[1]]
+  # rhs.checker1 = parse(text=paste("(",deparse1(rhs),")","*K__",sep=""))[[1]]
+  # zero.list = as.list(numeric(length(diff.processes)))
+  # names(zero.list) = diff.processes
+  # rhs.checker2 = do.call(substitute,list(rhs.checker1,zero.list))
+  # rhs.checker3 = all.vars(Deriv::Simplify(rhs.checker2))
+  # if(length(rhs.checker3)>0){
+  #   stop("There are illegal terms outside of the drifts dt or diffusions dw(s).")
+  # }
+  
+  # Check for variables outside scope
   zero.list = as.list(numeric(length(diff.processes)))
   names(zero.list) = diff.processes
-  rhs.checker2 = do.call(substitute,list(rhs.checker1,zero.list))
-  rhs.checker3 = all.vars(Deriv::Simplify(rhs.checker2))
-  if(length(rhs.checker3)>0){
+  zero <- Deriv::Simplify(do.call(substitute,list(rhs, zero.list)))
+  if(zero != 0L) {
     stop("There are illegal terms outside of the drifts dt or diffusions dw(s).")
   }
+  
   
   # Check if any variables are called dt(something)
   pars = unique(all.vars(rhs))

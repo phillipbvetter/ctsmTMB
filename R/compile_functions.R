@@ -46,21 +46,25 @@ compile_cppfile = function(self, private) {
     write_method_cppfile(self, private)
     
     # Compile the C++ file with TMB
-    was.there.an.error = tryCatch(
+    comptime = tryCatch(
+      system.time(
       TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""), 
                    framework = "TMBad",
                    openmp = TRUE
+      )
       ),
       error = function(e){
         message("----------------------")
-        message("A compilation error occured. Here is the original error message: \n\t", 
+        message("A compilation error occured with the following error message: \n\t", 
                 conditionMessage(e))
-        message("Do you perhaps use spaces in the file-path? Please remove these.")
-        return(TRUE)
       })
-    if(was.there.an.error){
+    
+    if(inherits(comptime,"error")){
       stop("Compilation stopped.")
     }
+    
+    comptime = format(round(as.numeric(comptime["elapsed"])*1e2)/1e2,digits=5,scientific=F)
+    if(!private$silent) message("...took ", comptime, " seconds")
     
     # reload shared libraries
     # Suppress TMB output 'removing X pointers' with capture.output

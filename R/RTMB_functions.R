@@ -249,7 +249,7 @@ create_rtmb_laplace_string = function(self, private){
     stateVec = stateMat[ode_cumsum_timesteps[k]+1,]
     obsScalar = obsMat[k,i]
     
-    # Observation equation and varianace
+    # Observation equation and variance
     h_x = h__(stateVec, parVec, inputVec)[i]
     hvar_x = hvar__(stateVec, parVec, inputVec)[i]
     

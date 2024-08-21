@@ -30,7 +30,9 @@ check_and_set_data = function(data, self, private, k.ahead=1) {
   set_simulation_timestep(data, self, private)
   
   # various calculations for tmb's laplace method
-  set_data_for_laplace_method(data, self, private)
+  if(any(private$method == c("laplace","laplace_cpp"))){
+    set_data_for_laplace_method(data, self, private)
+  }
   
   # k.ahead for predictions/simulations
   if(any(private$procedure == c("prediction", "simulation"))){
@@ -236,25 +238,20 @@ set_data_for_laplace_method = function(data, self, private){
   names(iobs) = paste("iobs_",private$obs.names,sep="")
   private$iobs = iobs
   
-  # Did the user supply random effects initial values in the data?
-  # Otherwise construct from the set_initial value
+  # Set initial random effects values
   bool = !(private$state.names %in% names(data))
-  if(private$method=="laplace"){
-    if(any(bool)){
-      data[private$state.names[bool]] =
-        matrix(rep(private$initial.state$x0[bool], times=length(data$t)),ncol=sum(bool))
-    }
-    
-    # save state values as tmb initial state values
-    for(i in seq_along(private$state.names)){
-      
-      private$tmb.initial.state.for.parameters[[i]] =
-        rep(data[[private$state.names[i]]], times = c(private$ode.timesteps,1))
-      
-    }
-    names(private$tmb.initial.state.for.parameters) = private$state.names
-    
+  if(any(bool)){
+    data[private$state.names[bool]] =
+      matrix(rep(private$initial.state$x0[bool], times=length(data$t)), ncol=sum(bool))
   }
+  
+  # save state values as tmb initial state values
+  for(i in seq_along(private$state.names)){
+    private$tmb.initial.state.for.parameters[[i]] =
+      rep(data[[private$state.names[i]]], times = c(private$ode.timesteps,1))
+  }
+  names(private$tmb.initial.state.for.parameters) = private$state.names
+  
   
   # return
   return(invisible(self))

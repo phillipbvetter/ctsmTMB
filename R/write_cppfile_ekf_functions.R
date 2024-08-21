@@ -306,6 +306,7 @@ write_ekf_estimate = function(self, private){
   # Time-step
   txt = c(txt, "DATA_VECTOR(ode_timestep_size);")
   txt = c(txt, "DATA_IVECTOR(ode_timesteps);")
+  txt = c(txt, "DATA_INTEGER(ode_solver);")
   
   # Loss parameters
   txt = c(txt, "\n//// loss parameters ////")

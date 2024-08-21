@@ -1,13 +1,15 @@
 # Continuous Time Stochastic Modelling using Template Model Builder (ctsmTMB)
 
 `ctsmTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, heavily inspired by [Continuous Time Stochastic Modelling](https://ctsm.info). 
-The package is a user-friendly wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) that frees the user from writing the required C++ file containing the (negative log) likelihood function themselves. Instead, the C++ script is generated automatically based on a model specified by the user using the provided R6 `ctsmTMB` class object. The package furthermore employs the `Rcpp` package universe to allow faster calculations of model predictions and stochastic simulation paths.
+The package is essentially a wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) that frees the user from specifying the negative log-likelihood function themselves, rather the necessary C++ function (or R function in the case of [RTMB](https://github.com/kaskr/RTMB)) is generated automatically behind the scenes, based on a user-specified model. The model is specified using the provided R6 `ctsmTMB` class object and its associated methods e.g. `addSystem`, `addObs` etc. The states and parameters of the model may be estimated using the built-in `estimate` method which employs the robust `stats::nlminb`  quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965).
+
+The package furthermore employs the `Rcpp` package universe to allow faster calculations of model predictions and stochastic simulation paths.
 
 The package implements the following methods 
 
 1. The (Continous-Discrete) Extended Kalman Filter, `ekf`
 
-2. The (Continous-Discrete) Unscented Kalman Filter, `ukf`
+2. The (Continous-Discrete) Unscented Kalman Filter, `ukf` (as described in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242))
  
 3. The Laplace-style approach where latent states are considered random effects (see e.g. [this example]( https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp)), `laplace`
 
@@ -33,11 +35,10 @@ We note that `ctsmTMB` depends on the following packages:
 6. `R6`
 7. `Deriv`
 8. `stringr`
-9. `stats`
 
 The user must therefore have a working C++ compiler. In particular windows users should install Rtools, and Mac users should install Command Line Tools to get working C++ compilers. You must make sure that these are added to the `PATH` vislble to `R`. For further information see the `TMB` GitHub [here](https://github.com/kaskr/adcomp) and associated installation instructions [here](https://github.com/kaskr/adcomp/wiki/Download)
 
-Linux users need to make sure that GSL is installed for `RcppZiggurat`. You can try the following command, or google yourself.
+Linux users need to make sure that GSL is installed for `RcppZiggurat` which is necessary for the `simulate` method. You can try the following command, or google yourself.
 ``` bash
 sudo apt-get install libgsl-dev
 ```
@@ -50,7 +51,9 @@ You can access the documentation for all the available methods with
 ``` r
 ?ctsmTMB
 ```
-or individually (for a subset of methods) using i.e. `?ctsmTMB::addSystem`. The methods documentation is also available on the [homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
+or individually (for a subset of methods) using i.e. `?ctsmTMB::addSystem`. 
+
+The methods documentation is also available on the [homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
 ## Example Usage
 

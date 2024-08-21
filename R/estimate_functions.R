@@ -18,6 +18,10 @@ construct_makeADFun = function(self, private){
     comptime <- system.time(construct_rtmb_laplace_makeADFun(self, private))
   }
   
+  if(private$method=="laplace_cpp"){
+    comptime <- system.time(construct_laplace_cpp_makeADFun(self, private))
+  }
+  
   comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
   if(!private$silent) message("...took: ", comptime, " seconds.")
   
@@ -314,6 +318,65 @@ construct_rtmb_ekf_makeADFun = function(self, private)
 }
 
 #######################################################
+# CONSTRUCT LAPLACE C++ MAKEADFUN
+#######################################################
+construct_laplace_cpp_makeADFun = function(self, private){
+  
+  ################################################
+  # Data
+  ################################################
+  
+  # add mandatory entries to data
+  tmb.data = list(
+
+    # time-steps
+    ode_timestep_size = private$ode.timestep.size,
+    ode_timesteps = private$ode.timesteps,
+    ode_timesteps_cumsum = private$ode.timesteps.cumsum,
+    
+    # system size
+    number_of_state_eqs = private$number.of.states,
+    number_of_obs_eqs = private$number.of.observations,
+    number_of_diffusions = private$number.of.diffusions,
+
+    # inputs
+    inputMat = as.matrix(private$data[private$input.names]),
+    
+    # observations
+    obsMat = as.matrix(private$data[private$obs.names])
+  )
+  
+  # construct final data list
+  data = c(tmb.data, private$iobs)
+  
+  ################################################
+  # Parameters
+  ################################################
+  
+  parameters = c(
+    lapply(private$parameters, function(x) x[["initial"]]),
+    list(stateMat = do.call(cbind,private$tmb.initial.state.for.parameters))
+  )
+  
+  ################################################
+  # Construct Neg. Log-Likelihood
+  ################################################
+  
+  nll = TMB::MakeADFun(data = data,
+                       parameters = parameters,
+                       random="stateMat",
+                       map = lapply(private$fixed.pars, function(x) x$factor),
+                       DLL = private$modelname.with.method,
+                       silent = TRUE)
+  
+  # save objective function
+  private$nll = nll
+  
+  # return
+  return(invisible(self))
+}
+
+#######################################################
 # CONSTRUCT LAPLACE MAKEADFUN WITH RTMB
 #######################################################
 
@@ -365,6 +428,10 @@ construct_rtmb_laplace_makeADFun = function(self, private)
   ################################################
   # Construct Neg. Log-Likelihood
   ################################################
+  
+  # print(str(parameters))
+  # print(summary(ode_timesteps))
+  # print(summary(ode_cumsum_timesteps))
   
   nll = RTMB::MakeADFun(func = laplace.nll, 
                         parameters=parameters, 
@@ -422,7 +489,7 @@ perform_estimation = function(self, private) {
   }
   
   # IF METHOD IS TMB
-  if (private$method =="laplace") {
+  if (any(private$method == c("laplace","laplace_cpp"))) {
     comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
                                                                          objective = private$nll$fn,
                                                                          gradient = private$nll$gr,
@@ -463,7 +530,7 @@ perform_estimation = function(self, private) {
   # print convergence and timing result
   if(!private$silent){
     # if(outer_mgc > 1){
-      # message("BEWARE: THE MAXIMUM GRADIENT COMPONENT APPEARS TO BE LARGE ( > 1 ) - THE FOUND OPTIMUM MIGHT BE INVALID.")
+    # message("BEWARE: THE MAXIMUM GRADIENT COMPONENT APPEARS TO BE LARGE ( > 1 ) - THE FOUND OPTIMUM MIGHT BE INVALID.")
     # }
     message("\t Optimization finished!:
             Elapsed time: ", comp.time, " seconds.
@@ -477,10 +544,11 @@ perform_estimation = function(self, private) {
   }
   
   # For TMB method: run sdreport
-  if (private$method=="laplace") {
+  if (any(private$method== c("laplace","laplace_cpp"))) {
     if(!private$silent) message("Calculating random effects standard deviation...")
     comptime = system.time(
-      private$sdr <- RTMB::sdreport(private$nll, getJointPrecision=T)
+      # private$sdr <- RTMB::sdreport(private$nll, getJointPrecision=T)
+      private$sdr <- TMB::sdreport(private$nll, getJointPrecision=T)
       # NOTE: The state covariances can be retrived by inverting sdr$jointPrecision
       # but this takes very long time. Should it be an option?
     )
@@ -528,7 +596,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
     # objective value
     private$fit$nll = private$opt$objective
     
-    # gradient
+    # objective gradient
     private$fit$nll.gradient = try_withWarningRecovery(
       {
         nll.grad = as.vector(private$nll$gr(private$opt$par))
@@ -549,6 +617,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
         nll.hess
       }
     )
+    
     if (inherits(private$fit$nll.hessian, "try-error")) {
       private$fit$nll.hessian = NULL
     }
@@ -557,49 +626,61 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
     private$fit$par.fixed = private$opt$par
     
     # parameter std. error and full covariance by hessian inversion
-    if(!is.null(private$fit$nll.hessian)){
+    if (is.null(private$fit$nll.hessian)){
+      private$fit$cov.fixed <- NaN * diag(length(private$fit$par.fixed))
+      private$fit$sd.fixed <- rep(NaN,length(private$fit$par.fixed))
+    } else {
       
-      # Step 1 - invert full hessian
-      temp.hessian = private$fit$nll.hessian
-      covariance = try(solve(temp.hessian), silent=T)
+      ####### OPTION 0 #######
+      # This option tries to invert the full hessain
       
-      private$fit$cov.fixed = covariance
-      private$fit$sd.fixed = try_withWarningRecovery(sqrt(diag(covariance)))
-      
-      if(inherits(private$fit$sd.fixed,"try-error")){
-        private$fit$sd.fixed = rep(NA,length(private$fit$par.fixed))
+      full.hess = private$fit$nll.hessian
+      covar <- try_withWarningRecovery(solve(full.hess))
+      if (inherits(covar,"try-error")) {
+        private$fit$cov.fixed = NaN * full.hess
+        private$fit$sd.fixed = rep(NaN,length(private$fit$par.fixed))
+      } else {
+        private$fit$cov.fixed <- covar
+        private$fit$sd.fixed <- try_withWarningRecovery(sqrt(diag(private$fit$cov.fixed)))
       }
-      if(inherits(private$fit$cov.fixed,"try-error")){
-        private$fit$cov.fixed = matrix(NA,nrow=length(private$fit$par.fixed),ncol=length(private$fit$par.fixed))
-      }
       
-      # Options 1 - If the above fails, remove all row/cols where the diagonal
-      # elements in small than min.diag
+      ####### OPTION 1 #######
+      # This option filters out all row/cols of the hessian where the diagonal
+      # element is smaller than some set threshold
+      
       min.diag = 1e-8
-      keep.ids = !(diag(temp.hessian) < min.diag)
-      if(inherits(covariance,"try-error") && any(keep.ids)){
-        
-        covariance = temp.hessian[keep.ids, keep.ids]
-        covariance = try(solve(covariance), silent=T)
-        
-        sd.fixed = rep(NA,length(private$fit$par.fixed))
-        sd.fixed[keep.ids] = try_withWarningRecovery(sqrt(diag(covariance)))
-        private$fit$sd.fixed = sd.fixed
-        
-        cov.fixed = temp.hessian * NA
-        cov.fixed[keep.ids, keep.ids] = covariance
-        private$fit$cov.fixed = cov.fixed
+      keep.ids = !(diag(full.hess) < min.diag)
+      if(inherits(covar,"try-error") && any(keep.ids)){
+        reduced.hess <- full.hess[keep.ids, keep.ids]
+        cov <- try_withWarningRecovery(solve(reduced.hess))
+        private$fit$cov.fixed <- NaN * full.hess
+        private$fit$sd.fixed <- rep(NaN,length(private$fit$par.fixed))
+        if (!inherits(cov,"try-error")) {
+          private$fit$cov.fixed[keep.ids, keep.ids] <- cov
+          private$fit$sd.fixed[keep.ids] = try_withWarningRecovery(sqrt(diag(cov)))
+        }
       }
       
-      # Option 2 - Recursive remove the smallest parameter
-      # ids = sort(diag(temp.hessian), index.return=T)$ix
-      # i = 0
-      # while(inherits(hess,"try-error") && i < length(private$fit$par.fixed)){
-      #   i = i + 1
-      #   covariance = try(solve(temp.hessian[-ids[1:i],-ids[1:i]]), silent=T)
-      # }
-      
+      ####### OPTION 2 #######
+      # This option tries to invert the hessian by recursively removing row/cols
+      # of the hessian where the diagonal are smallest
+      if (inherits(covar,"try-error")) {
+        private$fit$cov.fixed <- NaN * full.hess
+        private$fit$sd.fixed <- rep(NaN,length(private$fit$par.fixed))
+        ids = sort(diag(full.hess), index.return=T)$ix
+        for(i in seq_along(ids)){
+          id <- ids[1:i]
+          hess <- full.hess[-id,-id]
+          cov <- try_withWarningRecovery(solve(hess))
+          if (!inherits(cov,"try-error")){
+            private$fit$cov.fixed[-id,-id] <- cov
+            private$fit$sd.fixed[-id] <- try_withWarningRecovery(sqrt(diag(cov)))
+            break
+          }
+        }
+      }
     }
+    
     
     ################################################
     # STATES, RESIDUALS, OBSERVATIONS ETC.
@@ -650,7 +731,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
       }
     }
     temp.res = cbind(private$data$t, temp.res)
-    temp.sd = cbind(private$data$t, sqrt(temp.var))
+    temp.sd = cbind(private$data$t, try_withWarningRecovery(sqrt(temp.var)))
     
     names(innovation.cov) = paste("t = ",private$data$t[-1],sep="")
     
@@ -899,7 +980,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
       }
     }
     temp.res = cbind(private$data$t[-1], temp.res)
-    temp.sd = cbind(private$data$t[-1], sqrt(temp.var))
+    temp.sd = cbind(private$data$t[-1], try_withWarningRecovery(sqrt(temp.var)))
     
     names(innovation.cov) = paste("t = ",private$data$t[-1],sep="")
     
@@ -1016,7 +1097,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
   # FOR TMB
   ################################################
   
-  if (private$method == "laplace") {
+  if (any(private$method == c("laplace","laplace_cpp"))) {
     
     n <- private$number.of.states
     m <- private$number.of.observations
@@ -1130,3 +1211,4 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
   return(invisible(self))
   
 }
+

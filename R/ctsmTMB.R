@@ -1829,13 +1829,15 @@ ctsmTMB = R6::R6Class(
       }
       
       # check if method is available
-      available_methods = c("ekf","ukf", "ekf_rtmb","laplace")
+      available_methods = c("ekf","ukf", "ekf_rtmb","laplace", "laplace_cpp")
       if (!(method %in% available_methods)) {
         stop("That method is not available. Please choose one of:
              1. 'ekf' - Extended Kalman Filter in C++ (Requires Compilation, but faster than 'ekf_rtmb')
              2. 'ekf_rtmb' - Extended Kalman Filter with RTMB (No Compilation)
              3. 'ukf' - Unscented Kalman Filter with C++ (Requires Compilation)
-             4. 'laplace' - Laplace Approximation using Random Effects Formulation with RTMB (No Compilation)"
+             4. 'laplace' - Laplace Approximation using Random Effects Formulation with RTMB (No Compilation)
+             5. 'laplace_cpp' - Laplace Approximation using Random Effects Formulation with TMB (Requires Compilation)"
+             
         )
       }
       

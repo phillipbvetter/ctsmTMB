@@ -327,11 +327,11 @@ write_ukf_estimate = function(self, private)
   
   # Observation Vectors
   txt = c(txt, "\n//// observations ////")
-  txt = c(txt, "DATA_MATRIX(obsMat)")
+  txt = c(txt, "DATA_MATRIX(obsMat);")
   
   # Input Vectors
   txt = c(txt, "\n//// inputs ////")
-  txt = c(txt, "DATA_MATRIX(inputMat)")
+  txt = c(txt, "DATA_MATRIX(inputMat);")
   
   # Initialize State
   txt = c(txt, "\n//// initial state ////")
@@ -342,6 +342,7 @@ write_ukf_estimate = function(self, private)
   # Time-step
   txt = c(txt, "DATA_VECTOR(ode_timestep_size);")
   txt = c(txt, "DATA_IVECTOR(ode_timesteps);")
+  txt = c(txt, "DATA_INTEGER(ode_solver);")
   
   # Loss parameters
   txt = c(txt, "\n//// loss parameters ////")

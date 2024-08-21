@@ -105,8 +105,10 @@ write_method_cppfile = function(self, private) {
   txt = c(txt, newtxt)
   
   # Various helper functions
-  newtxt = write_helper_cppfunctions()
-  txt = c(txt, newtxt)
+  if(!(private$method == "laplace_cpp")){
+    newtxt = write_helper_cppfunctions()
+    txt = c(txt, newtxt)
+  }
   
   # Specific method functions
   if(private$method=="ekf"){
@@ -117,11 +119,14 @@ write_method_cppfile = function(self, private) {
     newtxt = write_ukf_functions(self,private)
     txt = c(txt,newtxt)
   }
+  if(private$method=="laplace_cpp"){
+    newtxt = write_laplace_functions(self,private)
+    txt = c(txt,newtxt)
+  }
   
   # Initialize TMB Objective Function
   
   txt = c(txt,"template<class Type>\nType objective_function<Type>::operator() ()\n{")
-  txt = c(txt, "DATA_INTEGER(ode_solver);")
   txt = c(txt, "Type nll__ = 0;")
   
   # Specific estimation method
@@ -131,6 +136,10 @@ write_method_cppfile = function(self, private) {
   }
   if(private$method=="ukf"){
     newtxt = write_ukf_estimate(self, private)
+    txt = c(txt, newtxt)
+  }
+  if(private$method=="laplace_cpp"){
+    newtxt = write_laplace_estimate(self, private)
     txt = c(txt, newtxt)
   }
   
