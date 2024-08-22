@@ -12,14 +12,14 @@ The package implements the following state/parameter estimation methods / filter
 
 2. The (Continous-Discrete) Unscented Kalman Filter, `ukf` (as described in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242))
  
-3. The Laplace-style approach where latent states are considered random effects `laplace` (see e.g. [this example]( https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp))
+3. A smoothing filter based on the Laplace Approximation in which case latent states are random effects `laplace` (see e.g. [this example](https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp))
 
-### Laplace Approximation
-The Laplace Approximation is the natively built-into and completely handled by `TMB`, and some noteworthy features of the method are:
+### Laplace Filter
+The `laplace` method employs the Laplace Approximation which is natively built-into and completely handled by `TMB`, and some noteworthy features of the method are:
 
 1. No C++ compilation needed. In addition the AD-compile time (the call to `TMB::MakeADFun`) identical to that of similar but compiled C++ code.
 
-2. The possibility for non-Gaussian (but modal) observation densities to accommodate the need for e.g. heavier distribution tails with a t-distribution.
+2. The possibility for non-Gaussian (but modal) observation densities to accommodate the need for e.g. heavier distribution tails.
 
 3. The method produces smoothed state estimates, because states are integrated out simultaneously, conditioned on both past and future information / observation.
 
