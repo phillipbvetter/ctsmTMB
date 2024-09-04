@@ -210,7 +210,7 @@ create_rtmb_laplace_string = function(self, private){
     for(i in 1:(nrow(obsMat)-1)) {
     
     # Define inputs and use first order input interpolation
-    inputVec = RTMB::advector(inputMat[i,])
+    inputVec = inputMat[i,]
     dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
     
     ###### BETWEEN TIME POINTS LOOP START #######

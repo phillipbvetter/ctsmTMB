@@ -155,6 +155,9 @@ model$setParameter(
 model$setInitialState(list(x[1], 1e-1*diag(1)))
 
 # Carry out estimation using extended kalman filter method with stats::nlminb as optimizer
+fit <- model$estimate(data=.data, method="ekf")
+
+# Carry out estimation using extended kalman filter method with stats::nlminb as optimizer
 fit <- model$estimate(data=.data, 
                     method="ekf", 
                     use.hessian=T,
