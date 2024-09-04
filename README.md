@@ -156,6 +156,10 @@ model$setInitialState(list(x[1], 1e-1*diag(1)))
 
 # Carry out estimation using extended kalman filter method with stats::nlminb as optimizer
 fit <- model$estimate(data=.data, method="ekf")
+pred <- model$predict(data=.data, k.ahead=1)
+sim <- model$simulate(data=.data, k.ahead=1, n.sim=100)
+nll <- model$constructNegLogLike(data=.data, method="ekf")
+
 
 # Carry out estimation using extended kalman filter method with stats::nlminb as optimizer
 fit <- model$estimate(data=.data, 
