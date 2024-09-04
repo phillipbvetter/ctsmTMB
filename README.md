@@ -3,7 +3,7 @@
 `ctsmTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, heavily inspired by [Continuous Time Stochastic Modelling](https://ctsm.info). 
 The package is essentially a wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) that frees the user from specifying the negative log-likelihood function themselves, rather the necessary C++ function (or R function in the case of [RTMB](https://github.com/kaskr/RTMB)) is generated automatically behind the scenes, based on a user-specified model. The model is specified using the provided R6 `ctsmTMB` class object and its associated methods e.g. `addSystem`, `addObs` etc. 
 
-The states and parameters of the model may be estimated using the built-in `estimate` method which employs the robust `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The package also facilitates generating (deterministic) predictions and (stochastic) simulations whose implementation rely on the `Rcpp` package universe. Of particular importance to the computational speed of these is the use of the `RcppXPtrUtils` package which constructs and sends C++ function pointers of the user-specified model functions to the predition and simulation C++ functions, although this comes at the cost of a ~ 10 seconds compile time the first time either `predict` or `simulate` is called. 
+The states and parameters of the model may be estimated using the built-in `estimate` method which employs the robust `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The package also facilitates generating (deterministic) predictions and (stochastic) simulations (currently only available for the `ekf` method) whose implementation rely on the `Rcpp` package universe. Of particular importance to the computational speed of these is the use of the `RcppXPtrUtils` package which constructs and sends C++ function pointers of the user-specified model functions to the predition and simulation C++ functions, although this comes at the cost of a ~ 10 seconds compile time the first time either `predict` or `simulate` is called. 
 
 ## Estimation Methods
 The package implements the following state/parameter estimation methods / filters:
@@ -25,9 +25,9 @@ The `laplace` method employs the Laplace Approximation which is natively built-i
 
 ### Kalman Filters
 
-The main advantage of the Kalman Filter implementations are a large increase in the computation speed, and access to the fixed effects hessian for improved convergence of the optimization. In these cases TMB just provides automatic differentiation.
+The `ekf` and `ukf` Kalman Filters are ...
 
-A district advantage of the `laplace`-style implementation is its use of the Laplace approximation for likelihood calculations which allows state space formulations where the density of the observation residuals are non-Gaussian.
+The main advantage of the Kalman Filter implementations are a large increase in the computation speed, and access to the fixed effects hessian for improved convergence of the optimization. In these cases TMB just provides automatic differentiation.
 
 The package is currently mostly tailored towards the Kalman Filter, with its available methods `predict` and `simulate`  for k-step-ahead predictions and simulations. It also has an `S3 method` implementation of `plot` to be called on the `ctsmTMB.fit` class object returned from the `estimate` method, which plots a basic residuals analysis using the `ggplot2` package.
 

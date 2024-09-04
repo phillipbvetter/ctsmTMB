@@ -28,17 +28,20 @@ write_ukf_functions = function(self, private){
   ##################################################
   
   # Perform substitution of parameters, inputs and states
-  f = sapply( seq_along(private$state.names),
-              function(i){
-                drift.term = hat2pow(private$diff.terms[[i]]$dt)
-                new.drift.term = do.call(substitute, list(drift.term, subsList))
-                sprintf("f__(%i) = %s;",i-1,deparse1(new.drift.term))
-              })
-  
+  f <- c()
+  for(i in seq_along(private$state.names)){
+    drift.term <- Deriv::Simplify(private$diff.terms[[i]]$dt)
+    if(!(drift.term==0)){
+      drift.term = hat2pow(private$diff.terms[[i]]$dt)
+      new.drift.term = do.call(substitute, list(drift.term, subsList))
+      f <- c(f, sprintf("f__(%i) = %s;",i-1, deparse1(new.drift.term)))
+    }
+  }
   newtxt = "\n//////////// drift function //////////
   template<class Type>
   vector<Type> f__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     vector<Type> f__(%s);
+    f__.setZero();
     %s
     return f__;
   }"
@@ -53,9 +56,12 @@ write_ukf_functions = function(self, private){
   jac.f = c()
   for(i in seq_along(private$state.names)){
     for(j in seq_along(private$state.names)){
-      term = hat2pow(Deriv::Deriv(private$diff.terms[[i]]$dt,x=private$state.names[j], cache.exp=F))
-      new.term = do.call(substitute, list(term, subsList))
-      jac.f = c(jac.f, sprintf("dfdx__(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+      term <- Deriv::Simplify(Deriv::Deriv(private$diff.terms[[i]]$dt,x=private$state.names[j], cache.exp=F))
+      if(!(term==0)){
+        term = hat2pow(term)
+        new.term = do.call(substitute, list(term, subsList))
+        jac.f = c(jac.f, sprintf("dfdx__(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+      }
     }
   }
   
@@ -63,6 +69,7 @@ write_ukf_functions = function(self, private){
   template<class Type>
   matrix<Type> dfdx__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     matrix<Type> dfdx__(%s, %s);
+    dfdx__.setZero();
     %s
     return dfdx__;
   }"
@@ -77,15 +84,19 @@ write_ukf_functions = function(self, private){
   g = c()
   for(i in seq_along(private$state.names)){
     for(j in seq_along(private$diff.processes[-1])){
-      term = hat2pow(private$diff.terms[[i]][[j+1]])
-      new.term = do.call(substitute, list(term, subsList))
-      g = c(g, sprintf("g__(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+      term <- Deriv::Simplify(private$diff.terms[[i]][[j+1]])
+      if(!(term==0)){
+        term = hat2pow(term)
+        new.term = do.call(substitute, list(term, subsList))
+        g = c(g, sprintf("g__(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+      }
     }
   }
   newtxt = "\n//////////// diffusion function ///////////
   template<class Type>
   matrix<Type> g__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     matrix<Type> g__(%s, %s);
+    g__.setZero();
     %s
     return g__;
   }"
@@ -96,18 +107,22 @@ write_ukf_functions = function(self, private){
   # observation
   ##################################################
   
+  h <- c()
   # calculate all the terms and substitute variables
-  h = sapply(seq_along(private$obs.names), 
-             function(i){
-               term = hat2pow(private$obs.eqs.trans[[i]]$rhs)
-               new.term = do.call(substitute, list(term, subsList))
-               sprintf("h__(%s) = %s;",i-1, deparse1(new.term))
-             }) 
+  for(i in seq_along(private$obs.names)){
+    term <- Deriv::Simplify(private$obs.eqs.trans[[i]]$rhs)
+    if(term!=0){
+      term = hat2pow(term)
+      new.term = do.call(substitute, list(term, subsList))
+      h <- c(h, sprintf("h__(%s) = %s;",i-1, deparse1(new.term)))
+    }
+  }
   
   newtxt = "\n//////////// observation function ///////////
   template<class Type>
   vector<Type> h__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     vector<Type> h__(%s);
+    h__.setZero();
     %s
     return h__;
   }"
@@ -115,23 +130,55 @@ write_ukf_functions = function(self, private){
   txt = c(txt, newtxt)
   
   ##################################################
+  # observation jacobian
+  ##################################################
+  
+  # calculate all the terms and substitute variables
+  jac.h = c()
+  for(i in seq_along(private$obs.names)){
+    for(j in seq_along(private$state.names)){
+      term = Deriv::Simplify(private$diff.terms.obs[[i]][[j]])
+      if(term!=0){
+        term = hat2pow(term)
+        new.term = do.call(substitute, list(term, subsList))
+        jac.h = c(jac.h, sprintf("dhdx__(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+      }
+    }
+  }
+  
+  newtxt = "\n//////////// jacobian of obs function ///////////
+  template<class Type>
+  matrix<Type> dhdx__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
+    matrix<Type> dhdx__(%s, %s);
+    dhdx__.setZero();
+    %s
+    return dhdx__;
+  }"
+  newtxt = sprintf(newtxt, private$number.of.observations, private$number.of.states, paste(jac.h,collapse="\n\t\t"))
+  txt = c(txt, newtxt)
+  
+  ##################################################
   # observation variance
   ##################################################
   
-  obs.var = lapply(seq_along(private$obs.var.trans), 
-                   function(i) {
-                     term = hat2pow(private$obs.var.trans[[i]]$rhs)
-                     new.term = do.call(substitute, list(term, subsList))
-                     sprintf("hvar__(%s) = %s;", i-1, deparse1(new.term))
-                   })
+  hvar <- c()
+  for(i in seq_along(private$obs.var.trans)){
+    term <- Deriv::Simplify(private$obs.var.trans[[i]]$rhs)
+    if(term!=0){
+      term <- hat2pow(term)
+      new.term = do.call(substitute, list(term, subsList))
+      hvar <- c(hvar, sprintf("hvar__(%s) = %s;", i-1, deparse1(new.term)))
+    }
+  }
   newtxt = "\n//////////// observation variance matrix function ///////////
   template<class Type>
   vector<Type> hvar__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     vector<Type> hvar__(%s);
+    hvar__.setZero();
     %s
     return hvar__;
   }"
-  newtxt = sprintf(newtxt, private$number.of.observations, paste(obs.var,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$number.of.observations, paste(hvar,collapse="\n\t\t"))
   txt = c(txt, newtxt)
   
   # Construct sigma points function

@@ -67,6 +67,10 @@ construct_kalman_cpp_makeADFun = function(self, private){
     estimate_stationary_initials = as.numeric(private$estimate.initial),
     initial_variance_scaling = private$initial.variance.scaling,
     
+    # parameter bounds
+    par_lb = sapply(private$parameters, function(x) x$lower),
+    par_ub = sapply(private$parameters, function(x) x$lower),
+    
     # inputs
     inputMat = as.matrix(private$data[private$input.names]),
     
@@ -328,7 +332,7 @@ construct_laplace_cpp_makeADFun = function(self, private){
   
   # add mandatory entries to data
   tmb.data = list(
-
+    
     # time-steps
     ode_timestep_size = private$ode.timestep.size,
     ode_timesteps = private$ode.timesteps,
@@ -338,7 +342,7 @@ construct_laplace_cpp_makeADFun = function(self, private){
     number_of_state_eqs = private$number.of.states,
     number_of_obs_eqs = private$number.of.observations,
     number_of_diffusions = private$number.of.diffusions,
-
+    
     # inputs
     inputMat = as.matrix(private$data[private$input.names]),
     
@@ -423,7 +427,21 @@ construct_rtmb_laplace_makeADFun = function(self, private)
   for(i in seq_along(private$rtmb.function.strings)){
     eval(parse(text=private$rtmb.function.strings[[i]]))
   }
+  # f__ = function(stateVec, parVec, inputVec){
+  #   # print(inputVec)
+  #   # print(parVec)
+  #   # print(stateVec)
+  #   ans = c(
+  #     0,
+  #     parVec[1],
+  #     parVec[2]
+  #     # ((stateVec[2] - inputVec[4])/parVec[5] + parVec[1] * inputVec[2] * (stateVec[1] - stateVec[2]))/parVec[3],
+  #     # ((stateVec[3] - inputVec[4])/parVec[6] + parVec[1] * inputVec[3] * (stateVec[1] - stateVec[3]))/parVec[4]
+  #     )
+  #   return(ans)
+  # }
   eval(parse(text=private$rtmb.nll.strings$laplace))
+  
   
   ################################################
   # Construct Neg. Log-Likelihood

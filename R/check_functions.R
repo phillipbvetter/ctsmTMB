@@ -262,16 +262,15 @@ check_parameter_vector = function(par, parname, self, private) {
     names(par) = expected.names
   }
   
+  # Is the 3-vector named?, otherwise name it
+  if (is.null(names(par))){
+    names(par) = expected.names
+  }
+  
   # change parameter names to expected
   other.names = c("init","lb","ub")
   for(i in seq_along(par)){
     names(par)[names(par) %in%  other.names[i]] = expected.names[i]
-  }
-  
-  
-  # Is the 3-vector named?, otherwise name it
-  if (is.null(names(par))){
-    names(par) = expected.names
   }
   
   # if the 3-vector is already named, are all names present?

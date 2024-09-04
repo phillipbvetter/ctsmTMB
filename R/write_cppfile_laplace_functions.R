@@ -28,17 +28,20 @@ write_laplace_functions = function(self, private){
   ##################################################
   
   # Perform substitution of parameters, inputs and states
-  f = sapply( seq_along(private$state.names),
-              function(i){
-                drift.term = hat2pow(private$diff.terms[[i]]$dt)
-                new.drift.term = do.call(substitute, list(drift.term, subsList))
-                sprintf("f__(%i) = %s;",i-1,deparse1(new.drift.term))
-              })
-  
+  f <- c()
+  for(i in seq_along(private$state.names)){
+    drift.term <- Deriv::Simplify(private$diff.terms[[i]]$dt)
+    if(!(drift.term==0)){
+      drift.term = hat2pow(private$diff.terms[[i]]$dt)
+      new.drift.term = do.call(substitute, list(drift.term, subsList))
+      f <- c(f, sprintf("f__(%i) = %s;",i-1, deparse1(new.drift.term)))
+    }
+  }
   newtxt = "\n//////////// drift function //////////
   template<class Type>
   vector<Type> f__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     vector<Type> f__(%s);
+    f__.setZero();
     %s
     return f__;
   }"
@@ -53,15 +56,19 @@ write_laplace_functions = function(self, private){
   g = c()
   for(i in seq_along(private$state.names)){
     for(j in seq_along(private$diff.processes[-1])){
-      term = hat2pow(private$diff.terms[[i]][[j+1]])
-      new.term = do.call(substitute, list(term, subsList))
-      g = c(g, sprintf("g__(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+      term <- Deriv::Simplify(private$diff.terms[[i]][[j+1]])
+      if(!(term==0)){
+        term = hat2pow(term)
+        new.term = do.call(substitute, list(term, subsList))
+        g = c(g, sprintf("g__(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+      }
     }
   }
   newtxt = "\n//////////// diffusion function ///////////
   template<class Type>
   matrix<Type> g__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     matrix<Type> g__(%s, %s);
+    g__.setZero();
     %s
     return g__;
   }"
@@ -72,18 +79,22 @@ write_laplace_functions = function(self, private){
   # observation
   ##################################################
   
+  h <- c()
   # calculate all the terms and substitute variables
-  h = sapply(seq_along(private$obs.names), 
-             function(i){
-               term = hat2pow(private$obs.eqs.trans[[i]]$rhs)
-               new.term = do.call(substitute, list(term, subsList))
-               sprintf("h__(%s) = %s;",i-1, deparse1(new.term))
-             }) 
+  for(i in seq_along(private$obs.names)){
+    term <- Deriv::Simplify(private$obs.eqs.trans[[i]]$rhs)
+    if(term!=0){
+      term = hat2pow(term)
+      new.term = do.call(substitute, list(term, subsList))
+      h <- c(h, sprintf("h__(%s) = %s;",i-1, deparse1(new.term)))
+    }
+  }
   
   newtxt = "\n//////////// observation function ///////////
   template<class Type>
   vector<Type> h__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     vector<Type> h__(%s);
+    h__.setZero();
     %s
     return h__;
   }"
@@ -94,20 +105,44 @@ write_laplace_functions = function(self, private){
   # observation variance
   ##################################################
   
-  obs.var = lapply(seq_along(private$obs.var.trans), 
-                   function(i) {
-                     term = hat2pow(private$obs.var.trans[[i]]$rhs)
-                     new.term = do.call(substitute, list(term, subsList))
-                     sprintf("hvar__(%s) = %s;", i-1, deparse1(new.term))
-                   })
+  # obs.var = lapply(seq_along(private$obs.var.trans), 
+  #                  function(i) {
+  #                    term = hat2pow(private$obs.var.trans[[i]]$rhs)
+  #                    new.term = do.call(substitute, list(term, subsList))
+  #                    sprintf("hvar__(%s) = %s;", i-1, deparse1(new.term))
+  #                  })
+  # newtxt = "\n//////////// observation variance matrix function ///////////
+  # template<class Type>
+  # vector<Type> hsqrt__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
+  #   vector<Type> hvar__(%s);
+  #   %s
+  #   return sqrt(hvar__);
+  # }"
+  # newtxt = sprintf(newtxt, private$number.of.observations, paste(obs.var,collapse="\n\t\t"))
+  # txt = c(txt, newtxt)
+  
+  ##################################################
+  # observation variance
+  ##################################################
+  
+  hvar <- c()
+  for(i in seq_along(private$obs.var.trans)){
+    term <- Deriv::Simplify(private$obs.var.trans[[i]]$rhs)
+    if(term!=0){
+      term <- hat2pow(term)
+      new.term = do.call(substitute, list(term, subsList))
+      hvar <- c(hvar, sprintf("hvar__(%s) = %s;", i-1, deparse1(new.term)))
+    }
+  }
   newtxt = "\n//////////// observation variance matrix function ///////////
   template<class Type>
   vector<Type> hsqrt__(vector<Type> stateVec, vector<Type> parVec, vector<Type> inputVec){
     vector<Type> hvar__(%s);
+    hvar__.setZero();
     %s
     return sqrt(hvar__);
   }"
-  newtxt = sprintf(newtxt, private$number.of.observations, paste(obs.var,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$number.of.observations, paste(hvar,collapse="\n\t\t"))
   txt = c(txt, newtxt)
   
 }
@@ -224,9 +259,9 @@ write_laplace_estimate = function(self, private){
   # 
   
   # Data Likelihood Contribution
+  txt = c(txt, "Type obsScalar, obsScalarMean, obsScalarStd;")
+  txt = c(txt, "int idy;")
   for(i in 1:private$number.of.observations){
-    txt = c(txt, "Type obsScalar, obsScalarMean, obsScalarStd;")
-    txt = c(txt, "int idy;")
     nam = paste("iobs_",private$obs.names[i], sep="")
     txt = c(txt, sprintf("for(int i=0 ; i < %s.size() ; i++){", nam))
     txt = c(txt, sprintf("idy = %s(i);", nam))
