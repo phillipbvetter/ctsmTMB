@@ -158,7 +158,7 @@ model$setInitialState(list(x[1], 1e-1*diag(1)))
 fit <- model$estimate(data=.data, method="ekf")
 # State ODE prediction
 pred <- model$predict(data=.data, k.ahead=1)
-# State SDE prediction
+# State SDE simulation
 sim <- model$simulate(data=.data, k.ahead=1, n.sim=100)
 # Extract likelihod function, gradient and hessian
 nll <- model$constructNegLogLike(data=.data, method="ekf")
