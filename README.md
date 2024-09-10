@@ -1,6 +1,6 @@
 # Continuous Time Stochastic Modelling using Template Model Builder (ctsmTMB)
 
-`ctsmTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, an intended successor of, and heavily inspired by, [Continuous Time Stochastic Modelling](https://ctsm.info). The package is essentially a wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) which automatically constructs the necessary *(negative log)* likelihood function themselves behind the scenes, based on a user-specified stochastic state space model model. This model is specified using the implemented `ctsmTMB` class (based on the **R6** package) and its associated methods e.g. `addSystem`, `addObs`, and `setVariance`.
+`ctsmTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, an intended successor of, and heavily inspired by, [**CTSM**(Continuous Time Stochastic Modelling)](https://ctsm.info). The package is essentially a wrapper for [**TMB** (Template Model Builder)](https://github.com/kaskr/adcomp) which automatically constructs the necessary *(negative log)* likelihood function themselves behind the scenes, based on a user-specified stochastic state space model model. This model is specified using the implemented `ctsmTMB` class (based on the **R6** package) and its associated methods e.g. `addSystem`, `addObs`, and `setVariance`.
 
 The model states and parameters may be estimated with the `estimate` method which employs the `nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965) from the **stats** package.
 
@@ -9,29 +9,24 @@ The package alsp provides the `predict` and `simulate` methods for integrating m
 ## Estimation Methods
 The following state reconstruction algorithms are currently available:
 
-1. The (Continous-Discrete) Extended Kalman Filter, `ekf` (based on ).
+1. The (Continous-Discrete) Extended Kalman Filter, `ekf`.
 
-2. The (Continous-Discrete) Unscented Kalman Filter, `ukf` (based on [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242))
+2. The (Continous-Discrete) Unscented Kalman Filter, `ukf`.
  
 3. The (Continuous-Discrete) Laplace Approximation `laplace`.
 
 ### Laplace Filter
-The state-reconstructions based on the `laplace` method are *smoothed* estimates, meaning that state values are optimizes simultaneously, given all available observations (past, present and future). The mathematical details are provided [here]()
+The state-reconstructions based on the `laplace` method are *smoothed* estimates, meaning that all states are optimized jointly, given all observations in the data. For further mathematicals details, see [this](https://phillipbvetter.github.io/ctsmTMB/articles/laplace_approx.html) article on the package webpage. The Laplace Approximation is natively built-into and completely handled by **TMB**. A few noteworthy advantages are:
 
+1. There is no C++ compilation needed (using **RTMB**). In addition the AD-compile time i.e. the call to `RTMB::MakeADFun`, is identical to that of pre-compiled **C++** code.
 
-(see e.g. [this example](https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp))
+2. The possibility for non-Gaussian (but unimodal) observation densities to accommodate the need for e.g. heavier distribution tails.
 
-The `laplace` method employs the Laplace Approximation which is natively built-into and completely handled by `TMB`, and some noteworthy features of the method are:
+The method *may* be less useful in the context of model-training towards forecasting because the likelihood contributions are based on these smoothed estimates, rather than one-step predictions (as is the case of the Kalman filters). 
 
-1. No C++ compilation needed. In addition the AD-compile time (the call to `TMB::MakeADFun`) identical to that of similar but compiled C++ code.
+### Extended/Unscented Kalman Filter
 
-2. The possibility for non-Gaussian (but modal) observation densities to accommodate the need for e.g. heavier distribution tails.
-
-3. The method produces smoothed state estimates, because states are integrated out simultaneously, conditioned on both past and future information / observation.
-
-### Kalman Filters
-
-The `ekf` and `ukf` Kalman Filters are ...
+The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242))
 
 The main advantage of the Kalman Filter implementations are a large increase in the computation speed, and access to the fixed effects hessian for improved convergence of the optimization. In these cases TMB just provides automatic differentiation.
 
