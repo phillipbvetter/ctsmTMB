@@ -15,9 +15,17 @@ The following state reconstruction algorithms are currently available:
  
 3. The (Continuous-Discrete) Laplace Approximation `laplace`.
 
-### Extended/Unscented Kalman Filter
+### Kalman Filters
 
-The main advantage of the Kalman Filter implementations are a large increase in the computation speed, and access to the fixed effects hessian for improved convergence of the optimization. In these cases TMB just provides automatic differentiation.
+The package is currently mostly tailored towards the Kalman Filter. The advantages of the methods are:
+
+1. The hessian of the likelihood function (w.r.t parameters) is available.
+
+2. The model residuals are easier to compute for e.g. model validation.
+
+3. Multi-step predictions / simulations with state updates are easier to compute.
+
+In these cases **TMB** simply provides an easy framework for automatic differentiation.
 
 The package is currently mostly tailored towards the Kalman Filter, with its available methods `predict` and `simulate`  for k-step-ahead predictions and simulations. It also has an `S3 method` implementation of `plot` to be called on the `ctsmTMB.fit` class object returned from the `estimate` method, which plots a basic residuals analysis using the `ggplot2` package.
 
