@@ -3,8 +3,10 @@ title: ctsmTMB
 url: ~
 
 template:
+  light-switch: true
+  #
   bootstrap: 5
-  #bootswatch: quartz
+  #
   bslib:
     base_font: {google: "Mukta"}
     code_font: {google: "Source Code Pro"}
@@ -12,9 +14,42 @@ template:
     bg: '#FFFFFF'
     fg: '#424242'
     primary: '#0075FD'
+  #
+  math-rendering: mathjax
+
 
 navbar:
   bg: light
+  ### Components Start
+  components:
+    # Vignettes Start
+    vignettes:
+      text: Vignettes
+      menu:
+      - text: Estimation
+        href: articles/estimate.html
+      - text: Prediction
+        href: articles/predict.html
+      - text: Simulation
+        href: articles/simulate.html
+      - text: Extracting Likelihood Function
+        href: articles/negative_log_likelihood.html
+    # Vignettes End
+    # Math Start
+    mathematics:
+      text: Math Details
+      menu:
+      - text: Laplace Approximation
+        href: articles/laplace_approx.html
+      - text: Extended Kalmn Filter
+        href: articles/extended_kalman_filter.html
+      - text: Unscented Kalman Filter
+        href: articles/unscented_kalman_filter.html
+    # Math End
+  ### Components End
+  structure:
+    left: [intro, vignettes, mathematics, reference, news]
+    right: [search, github, lightswitch]
 
 
 

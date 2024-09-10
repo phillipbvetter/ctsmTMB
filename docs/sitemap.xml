@@ -7,6 +7,9 @@
     <loc>/TODO.html</loc>
   </url>
   <url>
+    <loc>/articles/constructNegLogLike.html</loc>
+  </url>
+  <url>
     <loc>/articles/construct_nll.html</loc>
   </url>
   <url>
@@ -16,7 +19,16 @@
     <loc>/articles/estimate.html</loc>
   </url>
   <url>
+    <loc>/articles/extended_kalman_filter.html</loc>
+  </url>
+  <url>
     <loc>/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>/articles/laplace_approx.html</loc>
+  </url>
+  <url>
+    <loc>/articles/negative_log_likelihood.html</loc>
   </url>
   <url>
     <loc>/articles/observation_equations.html</loc>
@@ -25,7 +37,10 @@
     <loc>/articles/predict.html</loc>
   </url>
   <url>
-    <loc>/articles/sdeTMB.html</loc>
+    <loc>/articles/simulate.html</loc>
+  </url>
+  <url>
+    <loc>/articles/unscented_kalman_filter.html</loc>
   </url>
   <url>
     <loc>/authors.html</loc>
@@ -62,6 +77,12 @@
   </url>
   <url>
     <loc>/reference/add_systems.html</loc>
+  </url>
+  <url>
+    <loc>/reference/create_return_prediction.html</loc>
+  </url>
+  <url>
+    <loc>/reference/create_return_simulation.html</loc>
   </url>
   <url>
     <loc>/reference/ctsmTMB.html</loc>
@@ -104,6 +125,18 @@
   </url>
   <url>
     <loc>/reference/print.sdeTMB.html</loc>
+  </url>
+  <url>
+    <loc>/reference/profile.ctsmTMB.fit.html</loc>
+  </url>
+  <url>
+    <loc>/reference/profile0.ctsmTMB.fit.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rcpp_prediction.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rcpp_simulation.html</loc>
   </url>
   <url>
     <loc>/reference/sdeTMB.html</loc>

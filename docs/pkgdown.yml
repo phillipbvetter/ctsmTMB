@@ -1,11 +1,15 @@
 pandoc: 3.1.11
-pkgdown: 2.0.7
+pkgdown: 2.0.9
 pkgdown_sha: ~
 articles:
-  construct_nll: construct_nll.html
   ctsmTMB: ctsmTMB.html
   estimate: estimate.html
+  extended_kalman_filter: extended_kalman_filter.html
+  laplace_approx: laplace_approx.html
+  negative_log_likelihood: negative_log_likelihood.html
   observation_equations: observation_equations.html
   predict: predict.html
-last_built: 2024-07-02T20:49Z
+  simulate: simulate.html
+  unscented_kalman_filter: unscented_kalman_filter.html
+last_built: 2024-09-10T09:48Z
 

@@ -40,20 +40,16 @@
 <li class="nav-item">
   <a class="nav-link" href="../articles/ctsmTMB.html">Get started</a>
 </li>
-<li class="active nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="../articles/construct_nll.html">Extracting likelihood function, gradient and using custom optimizers</a>
-    <a class="dropdown-item" href="../articles/estimate.html">estimate: Estimating model parameters and states</a>
-    <a class="dropdown-item" href="../articles/laplace_approx.html">Math Guide</a>
-    <a class="dropdown-item" href="../articles/observation_equations.html">observations: Using functions on the left-hand side</a>
-    <a class="dropdown-item" href="../articles/predict.html">predict: Forecasting the model states and observations.</a>
+<li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-vignettes">Vignettes</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-vignettes">
+    <a class="dropdown-item" href="../articles/estimate.html">Estimation</a>
   </div>
 </li>
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-math-details">Math Details</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-math-details">
-    <h6 class="dropdown-header" data-toc-skip>Laplace Approximation</h6>
+    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Approximation</a>
   </div>
 </li>
 <li class="nav-item">
@@ -90,8 +86,8 @@
                         <h4 data-toc-skip class="author"></h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/phillipbvetter/ctsmTMB/blob/HEAD/vignettes/construct_nll.Rmd" class="external-link"><code>vignettes/construct_nll.Rmd</code></a></small>
-      <div class="d-none name"><code>construct_nll.Rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/phillipbvetter/ctsmTMB/blob/HEAD/vignettes/constructNegLogLike.Rmd" class="external-link"><code>vignettes/constructNegLogLike.Rmd</code></a></small>
+      <div class="d-none name"><code>constructNegLogLike.Rmd</code></div>
     </div>
 
     
@@ -201,7 +197,7 @@ run the optimization scheme using the built-in optimization which uses
 <pre><code><span><span class="co">## Compiling model...</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.042 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.054 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
 <pre><code><span><span class="co">##   0:     921.77031:  1.60944  0.00000 -2.30259 -2.30259</span></span>
 <span><span class="co">##   1:     86.857795:  1.06416 0.614170 -1.83281 -1.97888</span></span>
@@ -224,7 +220,7 @@ run the optimization scheme using the built-in optimization which uses
 <span><span class="co">##  18:    -39.346636:  2.80285  1.07748 0.202480 -2.32692</span></span>
 <span><span class="co">##  19:    -39.346636:  2.80285  1.07748 0.202482 -2.32692</span></span></code></pre>
 <pre><code><span><span class="co">##   Optimization finished!:</span></span>
-<span><span class="co">##             Elapsed time: 0.028 seconds.</span></span>
+<span><span class="co">##             Elapsed time: 0.029 seconds.</span></span>
 <span><span class="co">##             The objective value is: -3.934664e+01</span></span>
 <span><span class="co">##             The maximum gradient component is: 1.3e-04</span></span>
 <span><span class="co">##             The convergence message is: relative convergence (4)</span></span>
@@ -255,7 +251,7 @@ its derivatives. The method takes arguments similar to those of
 <pre><code><span><span class="co">## Compiling model...</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.04 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.039 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Succesfully returned function handlers</span></span></code></pre>
 <p>The initial parameters (supplied by the user) are stored here</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">

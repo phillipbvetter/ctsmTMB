@@ -1,0 +1,18 @@
+---
+title: "Laplace Approximation"
+author: "Phillip Brinck Veter"
+date: ""
+output: html_document
+---
+
+The likelihood function is the joint density of the observations i.e.
+
+$$
+L(\theta) = f(Y)
+$$
+Now consider instead the joint density of both states $X$ and observations $Y$. This can be written as
+
+$$
+f(Y) = \int_{X} f(X,Y) \, \mathrm{d}X = \int_{X} \exp \log f(X,Y) \, \mathrm{d}X 
+$$
+
