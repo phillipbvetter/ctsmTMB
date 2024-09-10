@@ -2,15 +2,9 @@
 
 **ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html) is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, an intended successor of, and heavily inspired by the **CTSM** package [(Continuous Time Stochastic Modelling)](https://ctsm.info). The package is essentially a wrapper for **TMB** package [(Template Model Builder)](https://github.com/kaskr/adcomp) which automatically constructs the necessary *(negative log)* likelihood function behind the scenes, based on a user-specified stochastic state space model model. This model is specified using the implemented **R6** `ctsmTMB` class and its associated methods e.g. `addSystem` and `addObs`.
 
-The primary three work-horse functions of **ctsmTMB** are
+The primary work-horse method of **ctsmTMB** is `estimate`, used for estimating parameters (and states) with the `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The underlying reconstruction methods available are presented in the following section.
 
-1. `estimate`
-
-2. `predict`
-
-3. `simulate`
-
-The former method is used for estimating parameters (and states) with the `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The latter two are methods for integrating the stochastic differential equation forward in time, either using (first and second order) moment differential equations or by stochastic (euler-maruyama) simulations. The implementation of these two methods are based on **C++** code using the `Rcpp` package universe. The computation speed is in particular aided by the use of the `RcppXPtrUtils` package which facilities creating and sending **C++** pointers of the model-specific functions (drift, diffusion, observation and associated jacobians) rather than sending (slow) **R** functions to the **C++** side.
+The secondary work-horse methods are `predict` and `simulate`. These are used for integrating the stochastic differential equation forward in time, either using (first and second order) moment differential equations or by stochastic (euler-maruyama) simulations. The implementation of these two methods are based on **C++** code using the `Rcpp` package universe. The computation speed is in particular aided by the use of the `RcppXPtrUtils` package which facilities creating and sending **C++** pointers of the model-specific functions (drift, diffusion, observation and associated jacobians) rather than sending (slow) **R** functions to the **C++** side.
 
 ## Estimation Methods
 The following state reconstruction algorithms are currently available:
@@ -21,6 +15,14 @@ The following state reconstruction algorithms are currently available:
  
 3. The (Continuous-Discrete) Laplace Approximation `laplace`.
 
+### Extended/Unscented Kalman Filter
+
+The main advantage of the Kalman Filter implementations are a large increase in the computation speed, and access to the fixed effects hessian for improved convergence of the optimization. In these cases TMB just provides automatic differentiation.
+
+The package is currently mostly tailored towards the Kalman Filter, with its available methods `predict` and `simulate`  for k-step-ahead predictions and simulations. It also has an `S3 method` implementation of `plot` to be called on the `ctsmTMB.fit` class object returned from the `estimate` method, which plots a basic residuals analysis using the `ggplot2` package.
+
+The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242).
+
 ### Laplace Filter
 The state-reconstructions based on the `laplace` method are *smoothed* estimates, meaning that all states are optimized jointly, given all observations in the data. For further mathematicals details, see [this](https://phillipbvetter.github.io/ctsmTMB/articles/laplace_approx.html) article on the package webpage. The Laplace Approximation is natively built-into and completely handled by **TMB**. A few noteworthy advantages are:
 
@@ -29,14 +31,6 @@ The state-reconstructions based on the `laplace` method are *smoothed* estimates
 2. The possibility for non-Gaussian (but unimodal) observation densities to accommodate the need for e.g. heavier distribution tails.
 
 The method *may* be less useful in the context of model-training towards forecasting because the likelihood contributions are based on these smoothed estimates, rather than one-step predictions (as is the case of the Kalman filters). 
-
-### Extended/Unscented Kalman Filter
-
-The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242).
-
-The main advantage of the Kalman Filter implementations are a large increase in the computation speed, and access to the fixed effects hessian for improved convergence of the optimization. In these cases TMB just provides automatic differentiation.
-
-The package is currently mostly tailored towards the Kalman Filter, with its available methods `predict` and `simulate`  for k-step-ahead predictions and simulations. It also has an `S3 method` implementation of `plot` to be called on the `ctsmTMB.fit` class object returned from the `estimate` method, which plots a basic residuals analysis using the `ggplot2` package.
 
 ## Installation
 
