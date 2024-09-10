@@ -18,7 +18,7 @@ The following state reconstruction algorithms are currently available:
 ### Laplace Filter
 The state-reconstructions based on the `laplace` method are *smoothed* estimates, meaning that state values are optimizes simultaneously, given all available observations (past, present and future).
 
-$$ L(\theta) = \int_{X} f_{X,Y} \, dX $$ 
+$$ L(\theta) = \int_{X} f_{X,Y} \vspace{1pt} dX $$ 
 
 (see e.g. [this example](https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp))
 
