@@ -2,9 +2,15 @@
 
 **ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html) is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, an intended successor of, and heavily inspired by the **CTSM** package [(Continuous Time Stochastic Modelling)](https://ctsm.info). The package is essentially a wrapper for **TMB** package [(Template Model Builder)](https://github.com/kaskr/adcomp) which automatically constructs the necessary *(negative log)* likelihood function behind the scenes, based on a user-specified stochastic state space model model. This model is specified using the implemented **R6** `ctsmTMB` class and its associated methods e.g. `addSystem`, `addObs`, and `setVariance`.
 
-The model states and parameters may be estimated with the `estimate` method which employs the `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965).
+The primary three work-horse functions of **ctsmTMB** are
 
-`ctsmTMB` also provides the `predict` and `simulate` methods for integrating the stochastic differential equation forward in time, either using (first and second order) moment differential equations or by stochastic (euler-maruyama) simulations. The implementation of these two methods are based on **C++** code using the `Rcpp` package universe. The computation speed is in particular aided by the use of the `RcppXPtrUtils` package which facilities creating and sending **C++** pointers of the model-specific functions (drift, diffusion, observation and associated jacobians) rather than sending (slow) **R** functions to the **C++** side.
+1. `estimate`
+
+2. `predict`
+
+3. `simulate`
+
+The former method is used for estimating parameters (and states) with the `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The latter two are methods for integrating the stochastic differential equation forward in time, either using (first and second order) moment differential equations or by stochastic (euler-maruyama) simulations. The implementation of these two methods are based on **C++** code using the `Rcpp` package universe. The computation speed is in particular aided by the use of the `RcppXPtrUtils` package which facilities creating and sending **C++** pointers of the model-specific functions (drift, diffusion, observation and associated jacobians) rather than sending (slow) **R** functions to the **C++** side.
 
 ## Estimation Methods
 The following state reconstruction algorithms are currently available:
@@ -56,7 +62,7 @@ Linux users need to make sure that GSL is installed for `RcppZiggurat` which is 
 sudo apt-get install libgsl-dev
 ```
 
-## How to get started
+## Getting Started
 You can visit the package [webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and browse the vignettes for example uses, in particular see [Getting Started](https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html).
 
 ## Help
