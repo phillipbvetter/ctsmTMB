@@ -1,20 +1,27 @@
 # Continuous Time Stochastic Modelling using Template Model Builder (ctsmTMB)
 
-`ctsmTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, heavily inspired by [Continuous Time Stochastic Modelling](https://ctsm.info). 
-The package is essentially a wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) that frees the user from specifying the negative log-likelihood function themselves, rather the necessary C++ function (or R function in the case of [RTMB](https://github.com/kaskr/RTMB)) is generated automatically behind the scenes, based on a user-specified model. The model is specified using the provided R6 `ctsmTMB` class object and its associated methods e.g. `addSystem`, `addObs` etc. 
+`ctsmTMB` is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, an intended successor of, and heavily inspired by, [Continuous Time Stochastic Modelling](https://ctsm.info). The package is essentially a wrapper for [Template Model Builder](https://github.com/kaskr/adcomp) which automatically constructs the necessary *(negative log)* likelihood function themselves behind the scenes, based on a user-specified stochastic state space model model. This model is specified using the implemented `ctsmTMB` class (based on the **R6** package) and its associated methods e.g. `addSystem`, `addObs`, and `setVariance`.
 
-The states and parameters of the model may be estimated using the built-in `estimate` method which employs the robust `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The package also facilitates generating (deterministic) predictions and (stochastic) simulations (currently only available for the `ekf` method) whose implementation rely on the `Rcpp` package universe. Of particular importance to the computational speed of these is the use of the `RcppXPtrUtils` package which constructs and sends C++ function pointers of the user-specified model functions to the predition and simulation C++ functions, although this comes at the cost of a ~ 10 seconds compile time the first time either `predict` or `simulate` is called. 
+The model states and parameters may be estimated with the `estimate` method which employs the `nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965) from the **stats** package.
+
+The package alsp provides the `predict` and `simulate` methods for integrating moment equations forward in time, and for stochastic euler-maruyama simulations, respectively. The implementation of these methods are based on the `Rcpp` package universe, and of particular importance to the computational speed is the use of the `RcppXPtrUtils` package. The facilities creating and sending **C++** pointers of the model-specific functions (drift, diffusion, observation and associated jacobians) for speed-up over sending **R** functions.
 
 ## Estimation Methods
-The package implements the following state/parameter estimation methods / filters:
+The following state reconstruction algorithms are currently available:
 
-1. The (Continous-Discrete) Extended Kalman Filter, `ekf`
+1. The (Continous-Discrete) Extended Kalman Filter, `ekf` (based on ).
 
-2. The (Continous-Discrete) Unscented Kalman Filter, `ukf` (as described in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242))
+2. The (Continous-Discrete) Unscented Kalman Filter, `ukf` (based on [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242))
  
-3. A smoothing filter based on the Laplace Approximation in which case latent states are random effects `laplace` (see e.g. [this example](https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp))
+3. The (Continuous-Discrete) Laplace Approximation `laplace`.
 
 ### Laplace Filter
+The state-reconstructions based on the `laplace` method are *smoothed* estimates, meaning that state values are optimizes simultaneously, given all available observations (past, present and future).
+
+$$ L(\theta) = \int_(X) f_{X,Y} \diff X $$ 
+
+(see e.g. [this example](https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp))
+
 The `laplace` method employs the Laplace Approximation which is natively built-into and completely handled by `TMB`, and some noteworthy features of the method are:
 
 1. No C++ compilation needed. In addition the AD-compile time (the call to `TMB::MakeADFun`) identical to that of similar but compiled C++ code.
@@ -94,7 +101,7 @@ for(i in 1:(length(t.sim)-1)) {
 }
 
 # Extract observations and add noise
-dt.obs = 1e-1
+dt.obs = 1e-2
 ids = seq(1,length(t.sim),by=round(dt.obs / dt.sim))
 t.obs = t.sim[ids]
 y = x[ids] + pars[4] * rnorm(length(t.obs))
@@ -154,22 +161,8 @@ model$setParameter(
 # Set initial state mean and covariance
 model$setInitialState(list(x[1], 1e-1*diag(1)))
 
-# Estimate parameters
+# Carry out estimation with default settings (extended kalman filter)
 fit <- model$estimate(data=.data, method="ekf")
-# State ODE prediction
-pred <- model$predict(data=.data, k.ahead=1)
-# State SDE simulation
-sim <- model$simulate(data=.data, k.ahead=1, n.sim=100)
-# Extract likelihod function, gradient and hessian
-nll <- model$constructNegLogLike(data=.data, method="ekf")
-
-
-# Carry out estimation using extended kalman filter method with stats::nlminb as optimizer
-fit <- model$estimate(data=.data, 
-                    method="ekf", 
-                    use.hessian=T,
-                    ode.timestep=1e-2
-)
 
 # Check parameter estimates against truth
 p0 = fit$par.fixed
