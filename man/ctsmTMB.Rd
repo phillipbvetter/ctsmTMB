@@ -263,9 +263,9 @@ for \code{logtheta} now instead of \code{theta} when declaring parameters throug
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{form}}{formula specifying the stochastic differential equation(s) to be added to the system.}
+\item{\code{form}}{algebraic formula}
 
-\item{\code{...}}{additional formulas similar to \code{form} for specifying multiple equations at once.}
+\item{\code{...}}{additional formulas}
 }
 \if{html}{\out{</div>}}
 }

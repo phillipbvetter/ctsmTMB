@@ -436,8 +436,8 @@ ctsmTMB = R6::R6Class(
     #' for \code{logtheta} now instead of \code{theta} when declaring parameters through 
     #' \code{setParameter}
     #' 
-    #' @param form formula specifying the stochastic differential equation(s) to be added to the system.
-    #' @param ... additional formulas similar to \code{form} for specifying multiple equations at once.
+    #' @param form algebraic formula
+    #' @param ... additional formulas
     setAlgebraics = function(form,...) {
       
       # You are not allowed to change the model after you add algebraics

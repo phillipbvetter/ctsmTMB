@@ -116,9 +116,17 @@ apply_algebraics_and_define_trans_equations = function(self, private) {
   alg.rhs = lapply(private$alg.eqs, function(x) x$rhs)
   
   # apply algebraics with substitute
-  sys.rhs = lapply(sys.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
-  obs.rhs = lapply(obs.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
-  obs.var.rhs = lapply(obs.var.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
+  # sys.rhs = lapply(sys.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
+  # obs.rhs = lapply(obs.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
+  # obs.var.rhs = lapply(obs.var.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
+  
+  for(i in seq_along(alg.rhs)){
+    this.alg <- alg.rhs[i]
+    sys.rhs = lapply(sys.rhs, function(x) do.call(substitute, list(x, this.alg)))
+    obs.rhs = lapply(obs.rhs, function(x) do.call(substitute, list(x, this.alg)))
+    obs.var.rhs = lapply(obs.var.rhs, function(x) do.call(substitute, list(x, this.alg)))
+  }
+  
   
   # replace rhs in the already defined system, obs, obs.var equations and
   # add these to the transformed systems/obs/obs.var private fields
