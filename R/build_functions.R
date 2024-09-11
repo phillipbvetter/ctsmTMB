@@ -120,7 +120,7 @@ apply_algebraics_and_define_trans_equations = function(self, private) {
   # obs.rhs = lapply(obs.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
   # obs.var.rhs = lapply(obs.var.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
   
-  for(i in seq_along(alg.rhs)){
+  for(i in rev(seq_along(alg.rhs))){
     this.alg <- alg.rhs[i]
     sys.rhs = lapply(sys.rhs, function(x) do.call(substitute, list(x, this.alg)))
     obs.rhs = lapply(obs.rhs, function(x) do.call(substitute, list(x, this.alg)))
