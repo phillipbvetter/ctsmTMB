@@ -5,10 +5,6 @@ using namespace Rcpp;
 using namespace Eigen;
 // [[Rcpp::depends(RcppEigen)]]
 
-/*double invlogit(double x){
-  return 1/(1+exp(-x));
-}*/
-
 Eigen::MatrixXd construct_permutation_matrix(int number_of_available_obs, int number_of_obs_eqs, Eigen::VectorXi bool_is_not_na_obsVec){
   Eigen::MatrixXd E(number_of_available_obs, number_of_obs_eqs);
   E.setZero();
@@ -93,7 +89,7 @@ List ekf_prediction(
         ode_1step_integration = ode_integrator(f__, g__, dfdx__, covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size(i+k), ode_solver);
         stateVec = ode_1step_integration["X1"];
         covMat = ode_1step_integration["P1"];
-        //inputVec += dinputVec;
+        inputVec += dinputVec;
       }
 
       // Save the prediction

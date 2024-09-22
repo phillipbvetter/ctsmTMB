@@ -40,7 +40,8 @@ create_rtmb_function_strings = function(self, private)
   dfdx.elements = c()
   for(i in seq_along(private$state.names)){
     for(j in seq_along(private$state.names)){
-      term = Deriv::Deriv(private$diff.terms[[i]]$dt,x=private$state.names[j], cache.exp=F)
+      term = ctsmTMB.Deriv(f=private$diff.terms[[i]]$dt, x=private$state.names[j])
+      # term = Deriv::Deriv(private$diff.terms[[i]]$dt,x=private$state.names[j], cache.exp=F)
       dfdx.elements = c(dfdx.elements, deparse1(do.call(substitute, list(term, subsList))))
     }
   }

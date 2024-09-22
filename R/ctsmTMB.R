@@ -99,6 +99,7 @@ ctsmTMB = R6::R6Class(
       private$diff.processes = NULL
       private$diff.terms = NULL
       private$diff.terms.obs = NULL
+      private$diff.terms.drift = NULL
       
       # data, nll, opt
       private$data = NULL
@@ -336,7 +337,7 @@ ctsmTMB = R6::R6Class(
     #' @param ... a named vector or matrix as described above.
     setParameter = function(...) {
       
-      if(nargs()==0L){stop("No arguments received")}
+      if(nargs() == 0L) stop("setParameter requires at least one parameter vector or matrix")
       
       arglist = list(...)
       argnames = names(arglist)
@@ -412,7 +413,7 @@ ctsmTMB = R6::R6Class(
           ##### ELSE STOP #####  
         } else {
           
-          stop("You can only supply parameter vectors or matrices/data.frames")
+          stop("setParameter only expects vectors or matrices")
           
         }
         
@@ -1065,7 +1066,15 @@ ctsmTMB = R6::R6Class(
       
       # construct neg. log-likelihood function
       if(!private$silent) message("Constructing objective function and derivative tables...")
+      if(private$method=="ekf_rcpp"){
+        compile_rcpp_functions(self, private)
+      }
       construct_makeADFun(self, private)
+      
+      # TEST TEST TEST
+      if(private$method=="ekf_rcpp"){
+        return(private$prediction)
+      }
       
       # estimate
       if(!private$silent) message("Minimizing the negative log-likelihood...")
@@ -1653,6 +1662,7 @@ ctsmTMB = R6::R6Class(
     diff.processes = NULL,
     diff.terms = NULL,
     diff.terms.obs = NULL,
+    diff.terms.drift = NULL,
     
     # data, nll, opt
     data = NULL,
@@ -1706,6 +1716,7 @@ ctsmTMB = R6::R6Class(
         name = name,
         form = form,
         rhs = rhs,
+        diff.dt = ctsmTMB.Deriv(f=rhs, x="dt"),
         allvars = variables,
         diff = private$sys.eqs[[name]]$diff
       )
@@ -1829,15 +1840,15 @@ ctsmTMB = R6::R6Class(
       }
       
       # check if method is available
-      available_methods = c("ekf","ukf", "ekf_rtmb","laplace", "laplace_cpp")
+      available_methods = c("ekf","ukf", "ekf_rtmb","laplace", "laplace_cpp", "ekf_rcpp")
       if (!(method %in% available_methods)) {
         stop("That method is not available. Please choose one of:
              1. 'ekf' - Extended Kalman Filter in C++ (Requires Compilation, but faster than 'ekf_rtmb')
              2. 'ekf_rtmb' - Extended Kalman Filter with RTMB (No Compilation)
              3. 'ukf' - Unscented Kalman Filter with C++ (Requires Compilation)
              4. 'laplace' - Laplace Approximation using Random Effects Formulation with RTMB (No Compilation)
-             5. 'laplace_cpp' - Laplace Approximation using Random Effects Formulation with TMB (Requires Compilation)"
-             
+             5. 'laplace_cpp' - Laplace Approximation using Random Effects Formulation with TMB (Requires Compilation)
+             6. 'ekf_rcpp' - Extended Kalman Filter in pure Rcpp (No AD) Code."
         )
       }
       

@@ -2,6 +2,11 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #'@ export
+ekf_rcpp_likelihood <- function(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, n, m, ode_solver) {
+    .Call('_ctsmTMB_ekf_rcpp_likelihood', PACKAGE = 'ctsmTMB', f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, n, m, ode_solver)
+}
+
+#'@ export
 execute_ekf_prediction <- function(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, n, m, last_pred_id, k_step_ahead, ode_solver) {
     .Call('_ctsmTMB_execute_ekf_prediction', PACKAGE = 'ctsmTMB', f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, n, m, last_pred_id, k_step_ahead, ode_solver)
 }

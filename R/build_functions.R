@@ -22,12 +22,12 @@ build_model = function(self, private) {
   apply_lamperti(self, private) 
   calculate_diff_terms(self, private)
   
-  # create rtmb functions
+  # RTMB
   create_rtmb_function_strings(self, private)
   create_rtmb_laplace_string(self, private)
   create_rtmb_ekf_string(self, private)
   
-  # rcpp
+  # Rcpp
   create_rcpp_function_strings(self, private)
   
   # last check
@@ -114,6 +114,7 @@ apply_algebraics_and_define_trans_equations = function(self, private) {
   obs.rhs = lapply(private$obs.eqs,function(x) x$rhs)
   obs.var.rhs = lapply(private$obs.var,function(x) x$rhs)
   alg.rhs = lapply(private$alg.eqs, function(x) x$rhs)
+  # alg.rhs$pi = base::pi
   
   # apply algebraics with substitute
   # sys.rhs = lapply(sys.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
@@ -130,7 +131,6 @@ apply_algebraics_and_define_trans_equations = function(self, private) {
   
   # replace rhs in the already defined system, obs, obs.var equations and
   # add these to the transformed systems/obs/obs.var private fields
-  
   # system
   for(i in seq_along(private$sys.eqs)) {
     temp.form = private$sys.eqs[[i]]$form
@@ -170,15 +170,25 @@ calculate_diff_terms = function(self, private) {
     
     # must use cache.exp=FALSE to prevent renaming variables
     private$diff.terms[[i]] = lapply(private$diff.processes, 
-                                     function(x) Deriv::Deriv(private$sys.eqs.trans[[i]]$rhs, x, cache.exp=FALSE))
+                                     function(x) ctsmTMB.Deriv(f=private$sys.eqs.trans[[i]]$rhs, x=x))
+    # function(x) Deriv::Deriv(private$sys.eqs.trans[[i]]$rhs, x, cache.exp=FALSE))
     names(private$diff.terms[[i]]) = private$diff.processes
   }
   names(private$diff.terms) = private$state.names
   
+  # Calculate Drift Jacobian
+  for(i in seq_along(private$sys.eqs.trans)){
+    private$diff.terms.drift[[i]] = lapply(private$state.names,
+                                           function(x) ctsmTMB.Deriv(f=private$sys.eqs.trans[[i]]$diff.dt, x=x))
+    names(private$diff.terms.drift[[i]]) = private$state.names
+  }
+  names(private$diff.terms.drift) = private$state.names
+  
   # OBSERVATION EQUATIONS WRT STATES
   for(i in seq_along(private$obs.eqs.trans)){
     private$diff.terms.obs[[i]] = lapply(private$state.names,
-                                         function(x) Deriv::Deriv(private$obs.eqs.trans[[i]]$rhs, x, cache.exp=F))
+                                         function(x) ctsmTMB.Deriv(f=private$obs.eqs.trans[[i]]$rhs, x=x))
+    # function(x) Deriv::Deriv(private$obs.eqs.trans[[i]]$rhs, x, cache.exp=F))
     names(private$diff.terms.obs[[i]]) = private$state.names
   }
   names(private$diff.terms.obs) = private$obs.names
@@ -385,7 +395,7 @@ final_build_check = function(self, private) {
   vars[[2]] = unlist(lapply(private$obs.eqs.trans, function(x) x$allvars))
   vars[[3]] = unlist(lapply(private$obs.var.trans, function(x) x$allvars))
   rhs.vars = unique(unlist(vars))
-  given.vars = c( private$parameter.names, private$input.names, private$state.names)
+  given.vars = c("pi", private$parameter.names, private$input.names, private$state.names)
   bool = rhs.vars %in% given.vars
   if (any(!bool)) {
     stop("Error: The following variables(s) in the model have not been declared as parameters, inputs or states: \n\t ",

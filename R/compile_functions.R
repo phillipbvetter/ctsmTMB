@@ -26,7 +26,7 @@ compile_cppfile = function(self, private) {
   
   # Start Check:
   # - Exit if the method uses RTMB and does not need C++ compilation.
-  bool = any(private$method == c("laplace", "ekf_rtmb"))
+  bool = any(private$method == c("laplace", "ekf_rtmb", "ekf_rcpp"))
   if(bool){
     return(invisible(self))
   }
@@ -48,7 +48,9 @@ compile_cppfile = function(self, private) {
     # Compile the C++ file with TMB
     comptime = tryCatch(
       system.time(
-      TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""), 
+      TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""),
+                   # flags = paste0("-I", system.file("include", package = "ctsmTMB")),
+                   # framework = "CppAD",
                    framework = "TMBad",
                    openmp = TRUE
       )
@@ -57,10 +59,11 @@ compile_cppfile = function(self, private) {
         message("----------------------")
         message("A compilation error occured with the following error message: \n\t", 
                 conditionMessage(e))
+        return(e)
       })
     
     if(inherits(comptime,"error")){
-      stop("Compilation stopped.")
+      stop("Stopping because compilation failed.")
     }
     
     comptime = format(round(as.numeric(comptime["elapsed"])*1e2)/1e2,digits=5,scientific=F)
@@ -111,16 +114,21 @@ compile_cppfile = function(self, private) {
 
 compile_rcpp_functions = function(self, private){
   
-  private$Rcppfunction_f <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_f, depends=c("RcppEigen","ctsmTMB"))
+  .depends <- c(
+    "RcppEigen",
+    "ctsmTMB"
+  )
+  
+  private$Rcppfunction_f <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_f, depends=.depends)
 
-  private$Rcppfunction_dfdx <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_dfdx, depends="RcppEigen")
+  private$Rcppfunction_dfdx <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_dfdx, depends=.depends)
   
-  private$Rcppfunction_g <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_g, depends=c("RcppEigen"))
+  private$Rcppfunction_g <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_g, depends=.depends)
   
-  private$Rcppfunction_h <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_h, depends="RcppEigen")
+  private$Rcppfunction_h <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_h, depends=.depends)
   
-  private$Rcppfunction_dhdx <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_dhdx, depends="RcppEigen")
+  private$Rcppfunction_dhdx <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_dhdx, depends=.depends)
   
-  private$Rcppfunction_hvar <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_hvar, depends="RcppEigen")
+  private$Rcppfunction_hvar <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_hvar, depends=.depends)
   
 }

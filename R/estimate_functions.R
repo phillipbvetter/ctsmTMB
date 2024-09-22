@@ -14,6 +14,10 @@ construct_makeADFun = function(self, private){
     comptime <- system.time(construct_rtmb_ekf_makeADFun(self, private))
   }
   
+  if(private$method == "ekf_rcpp"){
+    comptime <- system.time(rcpp_ekf_estimate(self, private))
+  }
+  
   if(private$method=="laplace"){
     comptime <- system.time(construct_rtmb_laplace_makeADFun(self, private))
   }
@@ -299,6 +303,12 @@ construct_rtmb_ekf_makeADFun = function(self, private)
     return(AcovMat + t(AcovMat) + G %*% t(G))
   }
   
+  # error function in terms of pnorm
+  erf = function(x){
+    y <- sqrt(2) * x
+    2*RTMB::pnorm(y)-1
+  }
+  
   for(i in seq_along(private$rtmb.function.strings)){
     eval(parse(text=private$rtmb.function.strings[[i]]))
   }
@@ -427,29 +437,18 @@ construct_rtmb_laplace_makeADFun = function(self, private)
   for(i in seq_along(private$rtmb.function.strings)){
     eval(parse(text=private$rtmb.function.strings[[i]]))
   }
-  # f__ = function(stateVec, parVec, inputVec){
-  #   # print(inputVec)
-  #   # print(parVec)
-  #   # print(stateVec)
-  #   ans = c(
-  #     0,
-  #     parVec[1],
-  #     parVec[2]
-  #     # ((stateVec[2] - inputVec[4])/parVec[5] + parVec[1] * inputVec[2] * (stateVec[1] - stateVec[2]))/parVec[3],
-  #     # ((stateVec[3] - inputVec[4])/parVec[6] + parVec[1] * inputVec[3] * (stateVec[1] - stateVec[3]))/parVec[4]
-  #     )
-  #   return(ans)
-  # }
   eval(parse(text=private$rtmb.nll.strings$laplace))
   
+  # error function in terms of pnorm
+  erf = function(x){
+    y <- sqrt(2) * x
+    2*RTMB::pnorm(y)-1
+  }
   
   ################################################
   # Construct Neg. Log-Likelihood
   ################################################
   
-  # print(str(parameters))
-  # print(summary(ode_timesteps))
-  # print(summary(ode_cumsum_timesteps))
   
   nll = RTMB::MakeADFun(func = laplace.nll, 
                         parameters=parameters, 
@@ -699,7 +698,6 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
       }
     }
     
-    
     ################################################
     # STATES, RESIDUALS, OBSERVATIONS ETC.
     ################################################
@@ -767,7 +765,6 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
     
     ### Observations ###
     
-    
     # We need all states, inputs and parameter values to evaluate the observation
     # put them in a list
     listofvariables.prior = c(
@@ -831,11 +828,14 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
     # prior
     obsvar.prior <- list()
     for(i in seq_along(private$data$t)){
+      list.of.states <- as.list(private$fit$states$mean$prior[i,-1,drop=F])
+      state.cov <- list(xCov = private$fit$states$cov$prior[[i]])
+      list.of.inputs <- as.list(private$data[i,-1,drop=F])
       obsvar.prior[[i]] <- eval(expr = yCov,
                                 envir = c(list.of.parameters, 
-                                          as.list(private$fit$states$mean$prior[i,-1]),
-                                          list(xCov = private$fit$states$cov$prior[[i]]),
-                                          as.list(private$data[i,-1])
+                                          list.of.states,
+                                          state.cov,
+                                          list.of.inputs
                                 ))
     }
     names(obsvar.prior) <- names(private$fit$states$cov$prior)
@@ -847,11 +847,14 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
     # posterior
     obsvar.post <- list()
     for(i in seq_along(private$data$t)){
+      list.of.states <- as.list(private$fit$states$mean$posterior[i,-1,drop=F])
+      state.cov <- list(xCov = private$fit$states$cov$posterior[[i]])
+      list.of.inputs <- as.list(private$data[i,-1,drop=F])
       obsvar.post[[i]] <- eval(expr = yCov,
                                envir = c(list.of.parameters, 
-                                         as.list(private$fit$states$mean$posterior[i,-1]),
-                                         list(xCov = private$fit$states$cov$posterior[[i]]),
-                                         as.list(private$data[i,-1])
+                                         list.of.states,
+                                         state.cov,
+                                         list.of.inputs
                                ))
     }
     names(obsvar.post) <- names(private$fit$states$cov$posterior)

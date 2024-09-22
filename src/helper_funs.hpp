@@ -4,6 +4,7 @@
 using namespace Rcpp;
 using namespace Eigen;
 static Ziggurat::Ziggurat::Ziggurat zigg; //zigg.norm() draws from a normal distribution?
+const double pi = M_PI;
 
 //#ifndef _HELPERFUNS_ 
 //#define _HELPERFUNS_

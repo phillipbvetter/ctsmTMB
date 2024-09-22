@@ -39,7 +39,8 @@ create_rcpp_function_strings = function(self, private){
   dfdx = c()
   for(i in seq_along(private$state.names)){
     for(j in seq_along(private$state.names)){
-      term = hat2pow(Deriv::Deriv(private$diff.terms[[i]]$dt,x=private$state.names[j], cache.exp=F))
+      # term = hat2pow(Deriv::Deriv(private$diff.terms[[i]]$dt, x=private$state.names[j], cache.exp=F))
+      term = hat2pow(ctsmTMB.Deriv(f=private$diff.terms[[i]]$dt, x=private$state.names[j]))
       new.term = do.call(substitute, list(term, subsList))
       dfdx = c(dfdx, sprintf("dfdx(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
     }
