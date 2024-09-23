@@ -10,7 +10,7 @@ write_method_cppfile = function(self, private) {
   # Header etc...
   txt = c(
     "#include <TMB.hpp>",
-    # '#include <mytest_helperfuns.hpp>',
+    '#include <ctsmTMB_customfuns.hpp>',
     "using namespace density;"
   )
   # txt = '#include mytest_helperfuns.hpp'
@@ -22,8 +22,8 @@ write_method_cppfile = function(self, private) {
   txt = c(txt, newtxt)
   
   # Custom extra functions
-  newtxt = write_custom_functions()
-  txt = c(txt, newtxt)
+  # newtxt = write_custom_functions()
+  # txt = c(txt, newtxt)
   
   # Various helper functions
   if(any(private$method == c("ekf","ukf"))){
