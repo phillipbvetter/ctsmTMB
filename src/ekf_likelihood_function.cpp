@@ -14,15 +14,15 @@ List ekf_likelihood(
   T4 h__,
   T5 dhdx__,
   T6 hvar__,
-  Eigen::MatrixXd obsMat,
-  Eigen::MatrixXd inputMat,
-  Eigen::VectorXd parVec,
+  const Eigen::MatrixXd obsMat,
+  const Eigen::MatrixXd inputMat,
+  const Eigen::VectorXd parVec,
   Eigen::MatrixXd covMat, 
   Eigen::VectorXd stateVec,
-  Eigen::VectorXd ode_timestep_size,
-  Eigen::VectorXd ode_timesteps,
-  Eigen::MatrixXi bool_is_not_na_obsMat,
-  Eigen::VectorXi number_of_available_obs,
+  const Eigen::VectorXd ode_timestep_size,
+  const Eigen::VectorXd ode_timesteps,
+  const Eigen::MatrixXi bool_is_not_na_obsMat,
+  const Eigen::VectorXi number_of_available_obs,
   int n,
   int m,
   int ode_solver)
@@ -43,11 +43,11 @@ List ekf_likelihood(
   Rcpp::NumericMatrix Hvar, dHdX;
 
   // storage for predictions
-  Rcpp::List xPrior(tsize),xPost(tsize),pPrior(tsize),pPost(tsize);
+  //Rcpp::List xPrior(tsize),xPost(tsize),pPrior(tsize),pPost(tsize);
   Rcpp::List ode_1step_integration;
 
-  xPrior[0] = stateVec;
-  pPrior[0] = covMat;
+  //xPrior[0] = stateVec;
+  //pPrior[0] = covMat;
 
   //////////// DATA-UPDATE ///////////
   // Only update if there is any available data
@@ -80,13 +80,13 @@ List ekf_likelihood(
     covMat = (I - K * C) * covMat * (I - K * C).transpose() + K*V*K.transpose();
 
     // Likelihood Contribution
-    // Rdet = R.llt().matrixL().determinant();
-    // numberOfObs = number_of_available_obs(0);
-    // nll += 0.5 * Rdet + 0.5 * e.transpose() * Ri * e + half_log2PI * numberOfObs;
+    Rdet = R.llt().matrixL().determinant();
+    numberOfObs = number_of_available_obs(0);
+    nll += 0.5 * log(Rdet) + 0.5 * e.transpose() * Ri * e + half_log2PI * numberOfObs;
   }
 
-  xPost[0] = stateVec;
-  pPost[0] = covMat;
+  //xPost[0] = stateVec;
+  //pPost[0] = covMat;
 
   //////////// MAIN LOOP OVER TIME POINTS ///////////
   for(int i=0 ; i < tsize-1 ; i++){
@@ -102,8 +102,8 @@ List ekf_likelihood(
       inputVec += dinputVec;
     }
 
-    xPrior[i+1] = stateVec;
-    pPrior[i+1] = covMat;
+    //xPrior[i+1] = stateVec; 
+    //pPrior[i+1] = covMat;
 
     //////////// DATA-UPDATE ///////////
     // Only update if there is any available data
@@ -134,17 +134,22 @@ List ekf_likelihood(
       K = covMat * C.transpose() * Ri;
       stateVec = stateVec + K * e;
       covMat = (I - K * C) * covMat * (I - K * C).transpose() + K*V*K.transpose();
+
+      // Likelihood Contribution
+    Rdet = R.llt().matrixL().determinant();
+    numberOfObs = number_of_available_obs(i+1);
+    nll += 0.5 * log(Rdet) + 0.5 * e.transpose() * Ri * e + half_log2PI * numberOfObs;
     }
 
-    xPost[i+1] = stateVec;
-    pPost[i+1] = covMat;
+    //xPost[i+1] = stateVec;
+    //pPost[i+1] = covMat;
   }
   
   return List::create(
-    Named("xPrior") = xPrior, 
-    Named("xPost") = xPost, 
-    Named("pPrior") = pPrior,
-    Named("pPost") = pPost,
+    //Named("xPrior") = xPrior, 
+    //Named("xPost") = xPost, 
+    //Named("pPrior") = pPrior,
+    //Named("pPost") = pPost,
     Named("nll") = nll
     );
 }

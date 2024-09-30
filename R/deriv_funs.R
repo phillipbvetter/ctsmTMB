@@ -9,7 +9,6 @@ get.Deriv.env = function(){
   e <- new.env()
   
   # add custom functions
-  e$erf = function(x) NULL
   
   # return
   return(e)
@@ -62,6 +61,16 @@ ctsmTMB.Deriv = function(
 #' @title Error Function
 #' @description
 #' Error function used internally in the package when returning results etc...matches error function on C++ side.
-erf = function(x){
-  2 * pnorm(sqrt(2)*x) - 1
-}
+erf = function(x) 2 * pnorm(sqrt(2)*x) - 1
+
+#' @title Logit
+logit = function(x) log(x/(1-x))
+
+#' @title Inverse Logit
+invlogit = function(x) 1/(1+exp(-x))
+
+# NOTE:
+# WE COULD ADD THE FUNCTIONS TO THE ENVIROMENT OF DERIV BUT
+# BECAUSE THEY ARE NEEDED ALSO FOR RTMB AND FOR RETURNING FIT RESULTS
+# WE CAN DEFINE THEM GLOBALLY IN THE PACKAGE AS ABOVE AND THEREBY
+# WE DO NOT NEED TO SPECIFY THEM IN THE DERIV ENVIROMENT...

@@ -6,3 +6,6 @@
 vignettes/ctsmTMB_cppfiles
 ctsmTMB_cppfiles
 git_push.sh
+src/*.o
+src/*.so
+backup

@@ -46,13 +46,10 @@ compile_cppfile = function(self, private) {
     write_method_cppfile(self, private)
     
     # Compile the C++ file with TMB
-    flags <- paste0("-I", system.file("include", package = "ctsmTMB"))
-    print(flags)
     comptime = tryCatch(
       system.time(
       TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""),
-                   flags = flags,
-                   # framework = "CppAD",
+                   flags = paste0("-I", system.file("include", package = "ctsmTMB")),
                    framework = "TMBad",
                    openmp = TRUE
       )

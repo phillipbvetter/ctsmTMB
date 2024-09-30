@@ -20,14 +20,9 @@ simplify_formula = function(form) {
 }
 
 #######################################################
-# EXTRA FUNCTIONS FOR DERIV THAT ALSO WORKS IN TMB
+# USED IN TUKEY
 #######################################################
 
-# this only works because logit and invlogit is already defined in TMB
-# if not they must be defined in the c++ file
-
-logit = function(x) log(x/(1-x))
-invlogit = function(x) 1/(1+exp(-x))
 invlogit2 = function(x,a,b) 1/(1+exp(-a*(x-b)))
 
 #######################################################

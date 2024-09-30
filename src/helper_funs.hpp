@@ -65,7 +65,7 @@ List ode_integrator(
     c1 = cov_ode_1step(g__, dfdx__, covMat, stateVec, parVec, inputVec);
 
     /*2. First Approx Slope at Midpoint*/
-    //inputVec += 0.5 * dinputVec;
+    inputVec += 0.5 * dinputVec;
     stateVec = X0 + 0.5 * dt * k1;
     covMat   = P0 + 0.5 * dt * c1;
     k2_rcpp  = f__(stateVec, parVec, inputVec); 
@@ -80,7 +80,7 @@ List ode_integrator(
     c3       = cov_ode_1step(g__, dfdx__, covMat, stateVec, parVec, inputVec);
 
     /*4. Approx Slope at End Point*/
-    //inputVec += 0.5 * dinputVec;
+    inputVec += 0.5 * dinputVec;
     stateVec = X0 + dt * k3;
     covMat   = P0 + dt * c3;
     k4_rcpp  = f__(stateVec, parVec, inputVec); 
