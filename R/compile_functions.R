@@ -50,7 +50,7 @@ compile_cppfile = function(self, private) {
       comptime = tryCatch(
         system.time(
           TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""),
-                       flags = paste("O1",paste0("-I", system.file("include", package = "ctsmTMB"))),
+                       flags = paste("-O1",paste0("-I", system.file("include", package = "ctsmTMB"))),
                        framework = "TMBad",
                        openmp = TRUE
           )
