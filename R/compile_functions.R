@@ -45,21 +45,41 @@ compile_cppfile = function(self, private) {
     # Create the C++ file
     write_method_cppfile(self, private)
     
-    # Compile the C++ file with TMB
-    comptime = tryCatch(
-      system.time(
-      TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""),
-                   flags = paste0("-I", system.file("include", package = "ctsmTMB")),
-                   framework = "TMBad",
-                   openmp = TRUE
-      )
-      ),
-      error = function(e){
-        message("----------------------")
-        message("A compilation error occured with the following error message: \n\t", 
-                conditionMessage(e))
-        return(e)
-      })
+    # We need optimization level 1 to avoid compilation errors on windows
+    if (.Platform$OS.type=="windows") {
+      comptime = tryCatch(
+        system.time(
+          TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""),
+                       flags = paste("O1",paste0("-I", system.file("include", package = "ctsmTMB"))),
+                       framework = "TMBad",
+                       openmp = TRUE
+          )
+        ),
+        error = function(e){
+          message("----------------------")
+          message("A compilation error occured with the following error message: \n\t", 
+                  conditionMessage(e))
+          return(e)
+        })
+    }
+    
+    # We need optimization level 1 to avoid compilation errors on windows
+    if (.Platform$OS.type=="unix") {
+      comptime = tryCatch(
+        system.time(
+          TMB::compile(file = paste(private$cppfile.path.with.method,".cpp",sep=""),
+                       flags = paste0("-I", system.file("include", package = "ctsmTMB")),
+                       framework = "TMBad",
+                       openmp = TRUE
+          )
+        ),
+        error = function(e){
+          message("----------------------")
+          message("A compilation error occured with the following error message: \n\t", 
+                  conditionMessage(e))
+          return(e)
+        })
+    }
     
     if(inherits(comptime,"error")){
       stop("Stopping because compilation failed.")
@@ -119,7 +139,7 @@ compile_rcpp_functions = function(self, private){
   )
   
   private$Rcppfunction_f <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_f, depends=.depends)
-
+  
   private$Rcppfunction_dfdx <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_dfdx, depends=.depends)
   
   private$Rcppfunction_g <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_g, depends=.depends)

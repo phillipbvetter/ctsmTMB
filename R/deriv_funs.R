@@ -1,6 +1,6 @@
 #' @title Create Deriv::Deriv enviroment
 #' @description
-#' This functions returns an environment for Deriv, used in the myDeriv function.
+#' This functions returns an environment for Deriv, used in the ctsmTMB.Deriv function.
 #' @details
 #' Deriv requires e.g. that the "erf" function is specified, even though it does
 #' not need to do numeric calculations (in our case) - just symbolics. This is 
@@ -17,7 +17,7 @@ get.Deriv.env = function(){
 #' @title Create Deriv::Deriv custom drule
 #' @description
 #' This functions returns a table of derivatives for symbolic differentiation
-#' with Deriv, used in the myDeriv function.
+#' with Deriv, used in the ctsmTMB.Deriv function.
 get.Deriv.drule = function(){
   
   # get standard library
@@ -58,9 +58,15 @@ ctsmTMB.Deriv = function(
   )
 }
 
+# --------------------------------------------------------------------
+# Global Exotic Functions
+# --------------------------------------------------------------------
+# NOTE:
+# Rather than specifying these functions only in the environment of Deriv,
+# they are specified globally here. That way Deriv sees them, but they can also
+# be seen by RTMB, and also when computing various statistics of the return fit
+
 #' @title Error Function
-#' @description
-#' Error function used internally in the package when returning results etc...matches error function on C++ side.
 erf = function(x) 2 * pnorm(sqrt(2)*x) - 1
 
 #' @title Logit
@@ -68,9 +74,3 @@ logit = function(x) log(x/(1-x))
 
 #' @title Inverse Logit
 invlogit = function(x) 1/(1+exp(-x))
-
-# NOTE:
-# WE COULD ADD THE FUNCTIONS TO THE ENVIROMENT OF DERIV BUT
-# BECAUSE THEY ARE NEEDED ALSO FOR RTMB AND FOR RETURNING FIT RESULTS
-# WE CAN DEFINE THEM GLOBALLY IN THE PACKAGE AS ABOVE AND THEREBY
-# WE DO NOT NEED TO SPECIFY THEM IN THE DERIV ENVIROMENT...
