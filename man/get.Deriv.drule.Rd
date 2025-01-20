@@ -8,5 +8,5 @@ get.Deriv.drule()
 }
 \description{
 This functions returns a table of derivatives for symbolic differentiation
-with Deriv, used in the myDeriv function.
+with Deriv, used in the ctsmTMB.Deriv function.
 }

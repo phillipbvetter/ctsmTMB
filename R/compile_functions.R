@@ -42,10 +42,11 @@ compile_cppfile = function(self, private) {
       dir.create(private$cppfile.directory)
     } 
     
-    # Create the C++ file
+    # Write the C++ file
     write_method_cppfile(self, private)
     
-    # We need optimization level 1 to avoid compilation errors on windows
+    # Compile C++ File
+    # we need optimization level 1 to avoid compilation errors on windows
     if (.Platform$OS.type=="windows") {
       comptime = tryCatch(
         system.time(
@@ -63,7 +64,7 @@ compile_cppfile = function(self, private) {
         })
     }
     
-    # We need optimization level 1 to avoid compilation errors on windows
+    # No optimization flag needed on unix
     if (.Platform$OS.type=="unix") {
       comptime = tryCatch(
         system.time(
@@ -133,10 +134,7 @@ compile_cppfile = function(self, private) {
 
 compile_rcpp_functions = function(self, private){
   
-  .depends <- c(
-    "RcppEigen",
-    "ctsmTMB"
-  )
+  .depends <- c("RcppEigen","ctsmTMB")
   
   private$Rcppfunction_f <- RcppXPtrUtils::cppXPtr(private$Rcppfunction_f, depends=.depends)
   

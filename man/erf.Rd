@@ -7,5 +7,5 @@
 erf(x)
 }
 \description{
-Error function used internally in the package when returning results etc...matches error function on C++ side.
+Error Function
 }

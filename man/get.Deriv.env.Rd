@@ -7,7 +7,7 @@
 get.Deriv.env()
 }
 \description{
-This functions returns an environment for Deriv, used in the myDeriv function.
+This functions returns an environment for Deriv, used in the ctsmTMB.Deriv function.
 }
 \details{
 Deriv requires e.g. that the "erf" function is specified, even though it does

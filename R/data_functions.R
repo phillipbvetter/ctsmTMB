@@ -22,7 +22,7 @@ check_and_set_data = function(data, self, private, k.ahead=1) {
   
   # save data
   # only store the obs.names, not the parsed data 
-  # example: if we have obs eq log(y) ~ y with name log_y, then we store log_y, but not y itself.
+  # example: if we have obs eq log(y) ~ x with name log_y, then we store log_y, but not y itself.
   private$data = data[c(private$obs.names, private$input.names)]
   
   # set timestep
