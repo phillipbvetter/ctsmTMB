@@ -74,7 +74,7 @@ or individually (for a subset of methods) using i.e. `?ctsmTMB::addSystem`.
 
 The methods documentation is also available on the [homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
-## Example Usage
+## Code Example - Inference in 1D Ornstein-Uhlenbeck
 
 ```r
 library(ggplot2)
