@@ -48,14 +48,11 @@ remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
 ```
 
 We note that `ctsmTMB` depends on the following packages:
-1. `TMB`
-2. `Rcpp`
-3. `RcppEigen`
-4. `RcppXPtrUtils`
-5. `RcppZiggurat`
-6. `R6`
-7. `Deriv`
-8. `stringr`
+1. `TMB` and `RTMB` 
+2. `Rcpp`, `RcppEigen`, `RcppXPtrUtils` and `RcppZiggurat`
+3. `R6`
+4. `Deriv`
+5. `stringr`
 
 The user must therefore have a working C++ compiler. In particular windows users should install Rtools, and Mac users should install Command Line Tools to get working C++ compilers. You must make sure that these are added to the `PATH` vislble to `R`. For further information see the `TMB` GitHub [here](https://github.com/kaskr/adcomp) and associated installation instructions [here](https://github.com/kaskr/adcomp/wiki/Download)
 
