@@ -9,3 +9,4 @@ git_push.sh
 src/*.o
 src/*.so
 backup
+maintenance
