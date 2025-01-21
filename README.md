@@ -47,19 +47,20 @@ You can install the package by copying the command below into `R`.
 remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
 ```
 
+The user must have a working C++ compiler. In particular windows users should install Rtools, and Mac users should install Command Line Tools to get working C++ compilers. You must make sure that these are added to the `PATH` vislble to `R`. For further information see the `TMB` GitHub [here](https://github.com/kaskr/adcomp) and associated installation instructions [here](https://github.com/kaskr/adcomp/wiki/Download)
+
+Linux users need to make sure that GSL is installed for `RcppZiggurat` which is necessary for the `simulate` method. You can try the following command, or google yourself.
+``` bash
+sudo apt-get install libgsl-dev
+```
+
+## Package Dependencies
 We note that `ctsmTMB` depends on the following packages:
 1. `TMB` and `RTMB` 
 2. `Rcpp`, `RcppEigen`, `RcppXPtrUtils` and `RcppZiggurat`
 3. `R6`
 4. `Deriv`
 5. `stringr`
-
-The user must therefore have a working C++ compiler. In particular windows users should install Rtools, and Mac users should install Command Line Tools to get working C++ compilers. You must make sure that these are added to the `PATH` vislble to `R`. For further information see the `TMB` GitHub [here](https://github.com/kaskr/adcomp) and associated installation instructions [here](https://github.com/kaskr/adcomp/wiki/Download)
-
-Linux users need to make sure that GSL is installed for `RcppZiggurat` which is necessary for the `simulate` method. You can try the following command, or google yourself.
-``` bash
-sudo apt-get install libgsl-dev
-```
 
 ## Getting Started
 You can visit the package [webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and browse the vignettes for example uses, in particular see [Getting Started](https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html).
