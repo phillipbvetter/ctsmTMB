@@ -198,7 +198,7 @@ construct_rtmb_ekf_makeADFun = function(self, private)
   logdet <- RTMB::ADjoint(
     function(x) {
       dim(x) <- rep(sqrt(length(x)), 2)
-      determinant(x, log=TRUE)$modulus
+      log(det(x))
     },
     function(x, y, dy) {
       dim(x) <- rep(sqrt(length(x)), 2)

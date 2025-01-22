@@ -4,7 +4,7 @@
 \alias{print.ctsmTMB.fit}
 \title{Basic print of objects of class 'ctsmTMB'}
 \usage{
-\method{print}{ctsmTMB.fit}(fit)
+\method{print}{ctsmTMB.fit}(fit, ...)
 }
 \value{
 A huge amount of information

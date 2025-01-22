@@ -17,9 +17,9 @@ print.ctsmTMB = function(object,...) {
 #' Basic print of objects of class 'ctsmTMB'
 #' @returns A huge amount of information
 #' @export
-print.ctsmTMB.fit = function(fit) {
+print.ctsmTMB.fit = function(fit,...) {
   
-  mat = cbind(fit$par.fixed,fit$sd.fixed,fit$tvalue,fit$Pr.tvalue)
+  mat = cbind(fit$par.fixed, fit$sd.fixed, fit$tvalue, fit$Pr.tvalue)
   colnames(mat) = c("Estimate","Std. Error","t value","Pr(>|t|)")
   cat("Coefficent Matrix \n")
   stats::printCoefmat(mat)
@@ -95,7 +95,7 @@ getggplot2theme = function() {
 
 getggplot2colors = function(n) {
   hues = seq(15, 375, length = n + 1)
-  ggcolors = hcl(h = hues, l = 65, c = 100)[1:n]
+  ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
   return(ggcolors)
 }
 
@@ -374,7 +374,7 @@ profile.ctsmTMB.fit = function(fit,
   # Robustify f.optim to handle NA cases
   f <- function(x0){
     y <- try_withWarningRecovery(f.optim(x0), silent=TRUE)
-    if(is(y, "try-error")) y <- NA
+    if(inherits(y,"try-error")) y <- NA
     return(y)
   }
   
@@ -420,79 +420,4 @@ profile.ctsmTMB.fit = function(fit,
   class(returnlist) <- "profile.ctsmTMB"
   
   return(returnlist)
-}
-
-#' #' Inner profile likelihood calculation
-#' @param parnames a vector of parameter names to be profiled.
-#' @param initial values for all parameters
-#' This is inspired by the TMB implementation at
-#' https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R
-#' @export
-profile0.ctsmTMB.fit = function(fit, parnames, par.vals=fit$par.fixed){
-  
-  if(missing(fit)){
-    stop("Please supply a fit from a ctsmTMB model.")
-  }
-  if(missing(parnames)){
-    stop("Please supply a parameter names")
-  }
-  
-  # 1. names of parameters to be profiled
-  # 2. initial values for optimizer
-  
-  # 1. Get likelihood function
-  nll <- fit$private$nll
-  
-  # Parameter values
-  par <- par.vals
-  x0 <- par[!id]
-  par[!id] <- 0
-  
-  # 2. Create parameter filter matrix that extracts only the non-profiled entries
-  # which needs to be optimized over
-  # Must map from length(par.fixed) to length(par.fixed) - length(parnames)
-  id <- names(fit$par.fixed) %in% parnames
-  C <- diag(length(fit$par.fixed))[,!id,drop=F]
-  
-  
-  f.optim <- function(x0){
-    
-    # objective function
-    f <- function(x){
-      par0 <- par + as.numeric(C %*% x)
-      nll$fn(par0)
-    }
-    
-    # gradient
-    gr <- function(x){
-      par0 <- par + as.numeric(C %*% x)
-      as.numeric(nll$gr(par0) %*% C)
-    }
-    
-    # optimize
-    opt <- nlminb(x0, f, gr, control=list(trace=1))
-    opt$objective
-  }
-  
-  # Create hessian for optimizer
-  
-  # Robustify f
-  f <- function(x0){
-    # y <- try(f.optim(x0), silent=TRUE)
-    y <- try_withWarningRecovery(f.optim(x0), silent=TRUE)
-    if(is(y, "try-error")) y <- NA
-    y
-  }
-  
-  # test
-  # x <- par.vals[!(names(par.vals) %in% parnames)]
-  # new.f(x)
-  # new.gr(x)
-  
-  # run optimizer
-  # pars0 <- par.vals[!id]
-  # opt <- nlminb(pars0, f, gr)
-  
-  # return
-  f(x0)
 }

@@ -21,18 +21,17 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Config/testthat/edition: 3
 Depends:
-	R (>= 3.0.0)
+	R (>= 4.0.0)
 Imports:
 	TMB,
 	RTMB,
 	R6,
 	Deriv,
 	stringr,
-	stats,
 	Rcpp,
 	RcppEigen,
 	RcppXPtrUtils,
-	RcppZiggurat
+	RcppZiggurat,
 LinkingTo:
 	Rcpp,
 	RcppEigen,
@@ -41,6 +40,7 @@ Suggests:
 	testthat (>= 3.0.0),
 	patchwork,
 	ggplot2,
-	ggfortify
+	ggfortify,
+	grDevices
 URL: 
 	https://github.com/phillipbvetter/ctsmTMB

@@ -8,5 +8,6 @@ ctsmTMB_cppfiles
 git_push.sh
 src/*.o
 src/*.so
+src/*.tmp
 backup
 maintenance

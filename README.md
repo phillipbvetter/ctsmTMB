@@ -1,82 +1,168 @@
-# Package Overview
 
-**ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html) is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, an intended successor of, and heavily inspired by the **CTSM** package [(Continuous Time Stochastic Modelling)](https://ctsm.info). The package is essentially a wrapper around the **TMB**/**RTMB** packages [(Template Model Builder)](https://github.com/kaskr/adcomp) used to automatically constructs the underlying *(negative log)* likelihood function behind the scenes (based on a user-specified model). The model is specified using the implemented OOP-style **R6** `ctsmTMB` class, with its methods for e.g. specifying system equations (`addSystem`) and observation equations (`addObs`).
+<!-- README.md is generated from README.Rmd. -->
+<!-- Logo -->
 
-The primary work-horse method of **ctsmTMB** is `estimate`, used for estimating parameters (and states) with the `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The available inference methods are non-linear Kalman filters and the Laplace approxmation.
+# ctsmTMB <img src='logo/logo.png' align="right" height="200" />
 
-The secondary work-horse methods are `predict` and `simulate`. These are used for integrating the stochastic differential equation forward in time, either using (first and second order) moment differential equations or by stochastic (euler-maruyama) simulations. The implementation of these two methods are based on **C++** code using the `Rcpp` package universe. The computation speed is in particular aided by the use of the `RcppXPtrUtils` package which facilities creating and sending **C++** pointers of the model-specific functions (drift, diffusion, observation and associated jacobians) rather than sending (slow) **R** functions to the **C++** side.
+<!-- Badges -->
+
+[![CRAN
+status](https://www.r-pkg.org/badges/version/geomtextpath)](https://CRAN.R-project.org/package=geomtextpath)
+[![R-CMD-check](https://github.com/AllanCameron/geomtextpath/workflows/R-CMD-check/badge.svg)](https://github.com/AllanCameron/geomtextpath/actions)
+[![Codecov test
+coverage](https://codecov.io/gh/AllanCameron/geomtextpath/branch/main/graph/badge.svg)](https://app.codecov.io/gh/AllanCameron/geomtextpath?branch=main)
+[![metacran
+downloads](https://cranlogs.r-pkg.org/badges/geomtextpath)](https://cran.r-project.org/package=geomtextpath)
+
+<!-- Package Description -->
+
+## Overview
+
+**ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model
+Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html) is an R
+package for parameter estimation, state filtration and forecasting in
+stochastic state space models, an intended successor of, and heavily
+inspired by the **CTSM** package [(Continuous Time Stochastic
+Modelling)](https://ctsm.info). The package is essentially a wrapper
+around the **TMB**/**RTMB** packages [(Template Model
+Builder)](https://github.com/kaskr/adcomp) used to automatically
+constructs the underlying *(negative log)* likelihood function behind
+the scenes (based on a user-specified model). The model is specified
+using the implemented OOP-style **R6** `ctsmTMB` class, with its methods
+for e.g. specifying system equations (`addSystem`) and observation
+equations (`addObs`).
+
+The primary work-horse method of **ctsmTMB** is `estimate`, used for
+estimating parameters (and states) with the `stats::nlminb` quasi-Newton
+optimizer due to [D.
+Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The available
+inference methods are non-linear Kalman filters and the Laplace
+approxmation.
+
+The secondary work-horse methods are `predict` and `simulate`. These are
+used for integrating the stochastic differential equation forward in
+time, either using (first and second order) moment differential
+equations or by stochastic (euler-maruyama) simulations. The
+implementation of these two methods are based on **C++** code using the
+`Rcpp` package universe. The computation speed is in particular aided by
+the use of the `RcppXPtrUtils` package which facilities creating and
+sending **C++** pointers of the model-specific functions (drift,
+diffusion, observation and associated jacobians) rather than sending
+(slow) **R** functions to the **C++** side.
 
 ## Estimation Methods
+
 The following state reconstruction algorithms are currently available:
 
-1. The (Continous-Discrete) Extended Kalman Filter, `ekf`.
+1.  The (Continous-Discrete) Extended Kalman Filter, `ekf`.
 
-2. The (Continous-Discrete) Unscented Kalman Filter, `ukf`.
- 
-3. The (Continuous-Discrete) Laplace Approximation `laplace`.
+2.  The (Continous-Discrete) Unscented Kalman Filter, `ukf`.
+
+3.  The (Continuous-Discrete) Laplace Approximation `laplace`.
 
 ### Kalman Filters
 
-The package is currently mostly tailored towards the Kalman Filter. The advantages of the methods are:
+The package is currently mostly tailored towards the Kalman Filter. The
+advantages of the methods are:
 
-1. The hessian of the likelihood function (w.r.t parameters) is available.
+1.  The hessian of the likelihood function (w.r.t parameters) is
+    available.
 
-2. The model residuals are easier to compute for e.g. model validation.
+2.  The model residuals are easier to compute for e.g. model validation.
 
-3. Multi-step predictions / simulations with state updates are easier to compute.
+3.  Multi-step predictions / simulations with state updates are easier
+    to compute.
 
-In these cases **TMB** simply provides an easy framework for automatic differentiation.
+In these cases **TMB** simply provides an easy framework for automatic
+differentiation.
 
-The package is currently mostly tailored towards the Kalman Filter, with its available methods `predict` and `simulate`  for k-step-ahead predictions and simulations. It also has an `S3 method` implementation of `plot` to be called on the `ctsmTMB.fit` class object returned from the `estimate` method, which plots a basic residuals analysis using the `ggplot2` package.
+The package is currently mostly tailored towards the Kalman Filter, with
+its available methods `predict` and `simulate` for k-step-ahead
+predictions and simulations. It also has an `S3 method` implementation
+of `plot` to be called on the `ctsmTMB.fit` class object returned from
+the `estimate` method, which plots a basic residuals analysis using the
+`ggplot2` package.
 
-The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242).
+The Unscented Kalman Filter implementation is based on *Algorithm 4.7*
+in [S. Särkkä,
+2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242).
 
 ### Laplace Filter
-The state-reconstructions based on the `laplace` method are *smoothed* estimates, meaning that all states are optimized jointly, given all observations in the data. For further mathematicals details, see [this](https://phillipbvetter.github.io/ctsmTMB/articles/laplace_approx.html) article on the package webpage. The Laplace Approximation is natively built-into and completely handled by **TMB**. A few noteworthy advantages are:
 
-1. There is no C++ compilation needed (using **RTMB**). In addition the AD-compile time i.e. the call to `RTMB::MakeADFun`, is identical to that of pre-compiled **C++** code.
+The state-reconstructions based on the `laplace` method are *smoothed*
+estimates, meaning that all states are optimized jointly, given all
+observations in the data. For further mathematicals details, see
+[this](https://phillipbvetter.github.io/ctsmTMB/articles/laplace_approx.html)
+article on the package webpage. The Laplace Approximation is natively
+built-into and completely handled by **TMB**. A few noteworthy
+advantages are:
 
-2. The possibility for non-Gaussian (but unimodal) observation densities to accommodate the need for e.g. heavier distribution tails.
+1.  There is no C++ compilation needed (using **RTMB**). In addition the
+    AD-compile time i.e. the call to `RTMB::MakeADFun`, is identical to
+    that of pre-compiled **C++** code.
 
-The method *may* be less useful in the context of model-training towards forecasting because the likelihood contributions are based on these smoothed estimates, rather than one-step predictions (as is the case of the Kalman filters). 
+2.  The possibility for non-Gaussian (but unimodal) observation
+    densities to accommodate the need for e.g. heavier distribution
+    tails.
+
+The method *may* be less useful in the context of model-training towards
+forecasting because the likelihood contributions are based on these
+smoothed estimates, rather than one-step predictions (as is the case of
+the Kalman filters).
 
 ## Installation
 
 You can install the package by copying the command below into `R`.
+
 ``` r
 remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
 ```
 
-The user must have a working C++ compiler. In particular windows users should install Rtools, and Mac users should install Command Line Tools to get working C++ compilers. You must make sure that these are added to the `PATH` vislble to `R`. For further information see the `TMB` GitHub [here](https://github.com/kaskr/adcomp) and associated installation instructions [here](https://github.com/kaskr/adcomp/wiki/Download)
+The user must have a working C++ compiler. In particular windows users
+should install Rtools, and Mac users should install Command Line Tools
+to get working C++ compilers. You must make sure that these are added to
+the `PATH` vislble to `R`. For further information see the `TMB` GitHub
+[here](https://github.com/kaskr/adcomp) and associated installation
+instructions [here](https://github.com/kaskr/adcomp/wiki/Download)
 
-Linux users need to make sure that GSL is installed for `RcppZiggurat` which is necessary for the `simulate` method. You can try the following command, or google yourself.
+Linux users need to make sure that GSL is installed for `RcppZiggurat`
+which is necessary for the `simulate` method. You can try the following
+command, or google yourself.
+
 ``` bash
 sudo apt-get install libgsl-dev
 ```
 
 ## Package Dependencies
-We note that `ctsmTMB` depends on the following packages:
-1. `TMB` and `RTMB` 
-2. `Rcpp`, `RcppEigen`, `RcppXPtrUtils` and `RcppZiggurat`
-3. `R6`
-4. `Deriv`
-5. `stringr`
+
+We note that `ctsmTMB` depends on the following packages: 1. `TMB` and
+`RTMB` 2. `Rcpp`, `RcppEigen`, `RcppXPtrUtils` and `RcppZiggurat` 3.
+`R6` 4. `Deriv` 5. `stringr`
 
 ## Getting Started
-You can visit the package [webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and browse the vignettes for example uses, in particular see [Getting Started](https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html).
+
+You can visit the package
+[webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and
+browse the vignettes for example uses, in particular see [Getting
+Started](https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html).
 
 ## Help
+
 You can access the documentation for all the available methods with
+
 ``` r
 ?ctsmTMB
 ```
-or individually (for a subset of methods) using i.e. `?ctsmTMB::addSystem`. 
 
-The methods documentation is also available on the [homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
+or individually (for a subset of methods) using
+i.e. `?ctsmTMB::addSystem`.
+
+The methods documentation is also available on the
+[homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
 ## Code Example - Inference in 1D Ornstein-Uhlenbeck
 
-```r
+``` r
 library(ggplot2)
 library(patchwork)
 library(dplyr)
@@ -230,5 +316,3 @@ patchwork::wrap_plots(plot1, plot2, plot3, ncol=1)
 # Plot one-step-ahead residual analysis using the command below
 # plot(fit)
 ```
-
-

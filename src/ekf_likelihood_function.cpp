@@ -1,6 +1,6 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
-#include "helper_funs.hpp"
+#include "helper_funs.h"
 using namespace Rcpp;
 using namespace Eigen;
 // [[Rcpp::depends(RcppEigen)]]
