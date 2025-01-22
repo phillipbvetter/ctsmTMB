@@ -15,8 +15,10 @@ coverage](https://codecov.io/gh/AllanCameron/geomtextpath/branch/main/graph/badg
 downloads](https://cranlogs.r-pkg.org/badges/geomtextpath)](https://cran.r-project.org/package=geomtextpath)
 
 <!-- Package Description -->
-
-## Overview
+<p style="font-size:30px">
+<strong>Overview</strong>
+</p>
+<!-- ## Overview -->
 
 **ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model
 Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html) is an R
