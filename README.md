@@ -2,7 +2,7 @@
 <!-- README.md is generated from README.Rmd. -->
 <!-- Logo -->
 
-# ctsmTMB <img src='logo/logo.png' align="right" height="200" />
+# ctsmTMB <img src='logo/logo.png' align="right" height="160" />
 
 <!-- Badges -->
 
@@ -15,10 +15,8 @@ coverage](https://codecov.io/gh/AllanCameron/geomtextpath/branch/main/graph/badg
 downloads](https://cranlogs.r-pkg.org/badges/geomtextpath)](https://cran.r-project.org/package=geomtextpath)
 
 <!-- Package Description -->
-<p style="font-size:30px">
-<strong>Overview</strong>
-</p>
-<!-- ## Overview -->
+
+## Overview
 
 **ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model
 Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html) is an R
