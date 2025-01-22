@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 
 
 <!-- Logo -->
-# ctsmTMB <img src='logo/logo.png' align="right" height="140" />
+# ctsmTMB <img src='logo/logo.png' align="right" height="150" />
 
 <!-- Badges -->
 [![CRAN status](https://www.r-pkg.org/badges/version/geomtextpath)](https://CRAN.R-project.org/package=geomtextpath)

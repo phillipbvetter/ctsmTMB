@@ -2,7 +2,7 @@
 <!-- README.md is generated from README.Rmd. -->
 <!-- Logo -->
 
-# ctsmTMB <img src='logo/logo.png' align="right" height="160" />
+# ctsmTMB <img src='logo/logo.png' align="right" height="150" />
 
 <!-- Badges -->
 
