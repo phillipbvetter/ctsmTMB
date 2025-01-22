@@ -1,6 +1,9 @@
 .Rhistory
 .Rbuildignore
 .DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
 *.o
 *.so
 vignettes/ctsmTMB_cppfiles
