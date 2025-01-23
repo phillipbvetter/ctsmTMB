@@ -1,0 +1,10 @@
+^README.Rmd
+^_pkgdown.yml
+^ctsmTMB.Rproj
+^docs
+^git_push.sh
+^include
+^logo
+^maintenance
+^\.github$
+^.\vignettes\ctsmTMB_cppfiles
