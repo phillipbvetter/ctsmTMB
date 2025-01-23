@@ -74,8 +74,7 @@ governs the differential evolution of states in the specified model.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">addSystem</span><span class="op">(</span><span class="va">form</span>,</span>
-<span>            <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">addSystem</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -105,18 +104,6 @@ of the <code>Deriv</code> package, and 2) undestood by <em>TMB</em> on the <em>C
 
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example 1 - Linear System</span></span></span>
-<span class="r-in"><span><span class="fu">addSystem</span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">x</span> <span class="op">+</span> <span class="va">u</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in addSystem(dx ~ theta * (mu - x + u) * dt + sigma * dw):</span> could not find function "addSystem"</span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Example 2 - Non-Linear System</span></span></span>
-<span class="r-in"><span><span class="fu">addSystem</span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span> <span class="op">+</span> <span class="va">u</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma</span> <span class="op">*</span> <span class="va">x</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in addSystem(dx ~ theta * (mu - exp(x)^2 + u) * dt + sigma * x *     (1 - x) * dw):</span> could not find function "addSystem"</span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 

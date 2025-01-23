@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{profile.ctsmTMB.fit}
 \alias{profile.ctsmTMB.fit}
-\title{#' Full multi-dimensional profile likelihood calculations}
+\title{#' Performs full multi-dimensional profile likelihood calculations}
 \usage{
 \method{profile}{ctsmTMB.fit}(
   fit,
@@ -15,12 +15,32 @@
 )
 }
 \arguments{
-\item{parnames}{a named list of parameter values, one for each a vector of parameter names to be profiled.}
+\item{fit}{a ctmsTMB fit object}
 
-\item{initial}{values for all parameters
-This is inspired by the TMB implementation at
-https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R}
+\item{parlist}{a named-list of parameters to profile over. The user can either
+supply grid-values in the list or leave it empty. If the any one list is empty
+then grid-values will be calculated using the estimated parameter mean value
+and standard deviation.}
+
+\item{grid.size}{a vector of \code{length(parlist)} indicating the number
+of grid-points along each parameter direction. This is only used if the
+\code{parlist} is empty.}
+
+\item{grid.qnt}{a vector of \code{length(parlist)} determining the width of
+the grid points from the mean value in multiples of the standard deviation.}
+
+\item{hessian}{a boolean indicating whether to use the hessian or not during
+the profile optimization.}
+
+\item{trace}{the optimization output flag (see \link[stats]{nlminb}) given to
+the \code{control} argument.}
+
+\item{control}{a list of optimization output controls (see \link[stats]{nlminb})}
 }
 \description{
-#' Full multi-dimensional profile likelihood calculations
+#' Performs full multi-dimensional profile likelihood calculations
+}
+\note{
+The implemetation was modified from that of
+https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R
 }

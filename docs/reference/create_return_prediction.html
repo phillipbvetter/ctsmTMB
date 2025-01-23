@@ -76,12 +76,23 @@
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
-    <dl><dt>self</dt>
-<dd><p>model object</p></dd>
+    <dl><dt>return.covariance</dt>
+<dd><p>A boolean indicating whether or not to return the
+state covariances at each time-step. The default behaviour is to return the
+correlations.</p></dd>
+
+
+<dt>return.k.ahead</dt>
+<dd><p>a vector of integers indicating which k.ahead prediction
+that should be returned out of the 1:k.ahead that were calculated.</p></dd>
+
+
+<dt>self</dt>
+<dd><p>The R6 ctsmTMB model object</p></dd>
 
 
 <dt>private</dt>
-<dd><p>model object private fields</p></dd>
+<dd><p>The private fields of an R6 ctsmTMB model object</p></dd>
 
 </dl></div>
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{execute_ekf_simulation}
 \alias{execute_ekf_simulation}
-\title{export}
+\title{Function exported to R that performs stochastic simulations with (Extended Kalman) filtering updates}
 \usage{
 execute_ekf_simulation(
   f__R,
@@ -31,6 +31,55 @@ execute_ekf_simulation(
   nsims
 )
 }
+\arguments{
+\item{f__R}{user-defined drift-function}
+
+\item{g__R}{user-defined diffusion-function}
+
+\item{dfdx__R}{jacobian of f__R}
+
+\item{h__R}{user-defined observation-function}
+
+\item{dhdx__R}{jacobian of h__R}
+
+\item{hvar__R}{user-defined observation-variance-function}
+
+\item{obsMat}{matrix of observations (column-wise)}
+
+\item{inputMat}{matrix of inputs (column-wise)}
+
+\item{parVec}{parameter vector}
+
+\item{covMat}{state covariance matrix}
+
+\item{stateVec}{state vector}
+
+\item{ode_timestep_size}{vector of doubles determining the ODE time-step sizes}
+
+\item{ode_timesteps}{vector of integers determining number of ODE timesteps}
+
+\item{simulation_timestep_size}{vector of doubles determining the simlatuon time-step sizes}
+
+\item{simulation_timesteps}{vector of integers determining number of simulation timesteps}
+
+\item{bool_is_not_na_obsMat}{matrix of integers determining which observations are NA}
+
+\item{number_of_available_obs}{vector of integers determining number of non-NA observations in each iteration}
+
+\item{n}{dimension of state vector}
+
+\item{m}{dimension of observation vector}
+
+\item{ng}{dimension of diffusion process}
+
+\item{last_pred_id}{integer determining last index for which k-ahead prediction is possible}
+
+\item{k_step_ahead}{number of prediction steps to perform in each iteration}
+
+\item{ode_solver}{integer indicating which ODE solver to use (Euler vs RK4)}
+
+\item{nsims}{integer indicating the number of stochastic simulations to perform}
+}
 \description{
-export
+Function exported to R that performs stochastic simulations with (Extended Kalman) filtering updates
 }

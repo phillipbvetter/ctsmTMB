@@ -15,6 +15,23 @@ ctsmTMB.Deriv(
   drule = get.Deriv.drule()
 )
 }
+\arguments{
+\item{f}{see \link[Deriv]{Deriv} documentation}
+
+\item{x}{see \link[Deriv]{Deriv} documentation}
+
+\item{env}{see \link[Deriv]{Deriv} documentation}
+
+\item{use.D}{see \link[Deriv]{Deriv} documentation}
+
+\item{cache.exp}{see \link[Deriv]{Deriv} documentation}
+
+\item{nderiv}{see \link[Deriv]{Deriv} documentation}
+
+\item{combine}{see \link[Deriv]{Deriv} documentation}
+
+\item{drule}{see \link[Deriv]{Deriv} documentation}
+}
 \description{
 We create our own Deriv function based on Deriv::Deriv with custom environment and
 drules to support new functions e.g erf

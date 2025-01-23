@@ -10,6 +10,9 @@ rcpp_simulation(self, private, n.sims)
 \item{self}{model object}
 
 \item{private}{model object private fields}
+
+\item{n.sims}{An integer giving the number of stochastic simulations to be
+performed}
 }
 \description{
 Stochastic Euler-Maruyama simulation function that calls the underlying Rcpp simulation function

@@ -2,24 +2,24 @@
 % Please edit documentation in R/methods.R
 \name{plot.ctsmTMB}
 \alias{plot.ctsmTMB}
-\title{Basic summary of objects of class 'ctsmTMB'}
+\title{This function creates residual plots for an estimated ctsmTMB object}
 \usage{
-\method{plot}{ctsmTMB}(object, plot.obs = 1, ggtheme = getggplot2theme())
+\method{plot}{ctsmTMB}(x, plot.obs = 1, ggtheme = getggplot2theme(), ...)
 }
 \arguments{
-\item{plot.obs}{a vector to indicate which observations should be plotted for. If multiple
-are chosen a list of plots for each observation is returned.}
+\item{x}{A R6 ctsmTMB object}
+
+\item{plot.obs}{a vector of integers to indicate which observations should be
+plotted. When multiple are requested a list of plots, one for each observation
+is returned instead.}
 
 \item{ggtheme}{ggplot2 theme to use for creating the ggplot.}
 
-\item{pacf}{logical to indicate whether or not the partial autocorrelations should be returned.
-The default is FALSE in which case a histogram is returned instead.}
-
-\item{extended}{logical. if TRUE additional information is printed}
+\item{...}{additional arguments}
 }
 \value{
-A huge amount of information
+a (list of) ggplot residual plot(s)
 }
 \description{
-Basic summary of objects of class 'ctsmTMB'
+This function creates residual plots for an estimated ctsmTMB object
 }

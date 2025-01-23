@@ -1,8 +1,12 @@
 ---
 title: "Laplace Approximation"
-author: "Phillip Brinck Veter"
+author: ""
 date: ""
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Laplace Approximation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 The likelihood function is the joint density of the observations i.e.

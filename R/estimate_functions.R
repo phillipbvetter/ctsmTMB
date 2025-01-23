@@ -195,6 +195,17 @@ construct_rtmb_ekf_makeADFun = function(self, private)
   # Define functions
   ################################################
   
+  
+  
+  
+  # user-defined functions ---------------------------
+  for(i in seq_along(private$rtmb.function.strings)){
+    eval(parse(text=private$rtmb.function.strings[[i]]))
+  }
+  
+  eval(parse(text=private$rtmb.nll.strings$ekf))
+  
+  # adjoints ----------------------------------------
   logdet <- RTMB::ADjoint(
     function(x) {
       dim(x) <- rep(sqrt(length(x)), 2)
@@ -308,11 +319,6 @@ construct_rtmb_ekf_makeADFun = function(self, private)
     y <- sqrt(2) * x
     2*RTMB::pnorm(y)-1
   }
-  
-  for(i in seq_along(private$rtmb.function.strings)){
-    eval(parse(text=private$rtmb.function.strings[[i]]))
-  }
-  eval(parse(text=private$rtmb.nll.strings$ekf))
   
   ################################################
   # Construct Neg. Log-Likelihood

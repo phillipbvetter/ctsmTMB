@@ -3,29 +3,31 @@
 #######################################################
 
 
-#' Basic print of objects of class 'ctsmTMB'
-#' @returns A huge amount of information
+#' Basic print of ctsmTMB objects
+#' @param x a R6 ctsmTMB model object
+#' @param ... additional arguments
+#' @returns Print of ctsmTMB model object
 #' @export
-print.ctsmTMB = function(object,...) {
+print.ctsmTMB = function(x,...) {
+  obj <- x
+  output <- obj$print()
   
-  obj = object$print()
-  #
-  return(invisible(obj))
-  
+  return(invisible(output))
 }
 
-#' Basic print of objects of class 'ctsmTMB'
-#' @returns A huge amount of information
+#' Basic print of objects ctsmTMB fit objects
+#' @param x a ctsmTMB fit object
+#' @param ... additional arguments
+#' @returns Print of ctsmTMB fit object
 #' @export
-print.ctsmTMB.fit = function(fit,...) {
-  
+print.ctsmTMB.fit = function(x,...) {
+  fit <- x #method consistency (argument must be called x)
   mat = cbind(fit$par.fixed, fit$sd.fixed, fit$tvalue, fit$Pr.tvalue)
   colnames(mat) = c("Estimate","Std. Error","t value","Pr(>|t|)")
   cat("Coefficent Matrix \n")
   stats::printCoefmat(mat)
   
   return(invisible(mat))
-  
 }
 
 
@@ -34,20 +36,32 @@ print.ctsmTMB.fit = function(fit,...) {
 #######################################################
 
 #' Basic summary of objects of class 'ctsmTMB'
-#' @returns A huge amount of information
+#' @param object a R6 ctsmTMB model object
+#' @param correlation a boolean to indicate whether to return parameter correlations
+#' @param ... additional arguments
+#' @returns a summary of the model object
 #' @export
-summary.ctsmTMB = function(object,correlation=FALSE) {
-  
+summary.ctsmTMB = function(object,
+                           correlation = FALSE,
+                           ...) {
   obj = object$summary(correlation)
-  #
-  return(invisible(obj))
   
+  return(invisible(obj))
 }
 
-#' @returns summary of fit object from \code{obj$estimate()}
+#' Basic summary of ctsmTMB fit object
+#' @param object a ctsmTMB fit object
+#' @param correlation boolean indicating whether or not to display the
+#' parameter correlation structure
+#' @param ... additional arguments
+#' @returns a summary of the estimated ctsmTMB model fit
 #' @export
-summary.ctsmTMB.fit = function(fit, correlation=FALSE) {
+summary.ctsmTMB.fit = function(object, 
+                               correlation = FALSE,
+                               ...) {
   
+  fit <- object #method consistency (argument must be called 'object')
+
   if (!is.logical(correlation)) {
     stop("correlation must be logical")
   }
@@ -68,7 +82,7 @@ summary.ctsmTMB.fit = function(fit, correlation=FALSE) {
     # cor[!lower.tri(cor)] <- ""
     # print(cor[-1, -(dim(cor)[1]), drop = FALSE], quote = FALSE)
   }
-  
+
   return(invisible(list(parameters=mat)))
 }
 
@@ -103,70 +117,79 @@ getggplot2colors = function(n) {
 # Plot - S3 Method
 #######################################################
 
-#' Basic summary of objects of class 'ctsmTMB.pred' from predict
+#' Plot of k-step predictions from a ctsmTMB prediction object
+#' @param x prediction \code{data.frame} from a ctsmTMB prediction
+#' @param n.ahead an integer indicating which n-ahead predictions to plot
+#' @param state.name a string indicating which states to plot
+#' @param ... additional arguments
 #' @returns A huge amount of information
 #' @export
-plot.ctsmTMB.pred = function(pred.data,
-                             n.ahead=0,
-                             state.name=NULL,
+plot.ctsmTMB.pred = function(x,
+                             n.ahead = 0,
+                             state.name = NULL,
                              ...) {
+
+  # method consistency
+  pred.data <- x
   
   # check n.ahead
-  if(!any(n.ahead %in% unique(pred$n.ahead))){
+  if(!any(n.ahead %in% unique(pred.data$n.ahead))){
     stop("n.ahead not found in the prediction data frame")
   }
-  
+
   # set state name to plot
   if(is.null(state.name)){
-    state.name = colnames(pred)[6]
+    state.name = colnames(pred.data)[6]
   }
-  
+
   # filter and plot
-  bool = pred$n.ahead==n.ahead
-  x = pred[bool,"t_{k+i}"]
-  y = pred[bool,state.name]
+  bool = pred.data$n.ahead==n.ahead
+  x = pred.data[bool,"t_{k+i}"]
+  y = pred.data[bool,state.name]
   plot(x=x, y=y, type="l",...)
-  
-  
+
+
   return(invisible(NULL))
 }
 
 
-#' Basic summary of objects of class 'ctsmTMB'
-#' @param plot.obs a vector to indicate which observations should be plotted for. If multiple
-#' are chosen a list of plots for each observation is returned.
-#' @param pacf logical to indicate whether or not the partial autocorrelations should be returned.
-#' The default is FALSE in which case a histogram is returned instead.
-#' @param extended logical. if TRUE additional information is printed
+#' This function creates residual plots for an estimated ctsmTMB object
+#' @param x A R6 ctsmTMB object
+#' @param plot.obs a vector of integers to indicate which observations should be
+#' plotted. When multiple are requested a list of plots, one for each observation
+#' is returned instead.
 #' @param ggtheme ggplot2 theme to use for creating the ggplot.
-#' @returns A huge amount of information
+#' @param ... additional arguments
+#' @returns a (list of) ggplot residual plot(s)
 #' @export
-plot.ctsmTMB = function(object,
+plot.ctsmTMB = function(x,
                         plot.obs=1,
-                        ggtheme=getggplot2theme()) {
+                        ggtheme=getggplot2theme(),
+                        ...) {
   
+  object <- x
   object$plot(plot.obs=plot.obs, ggtheme=ggtheme)
-  
+
   return(invisible(NULL))
 }
 
-#' Basic summary of objects of class 'ctsmTMB'
-#' @param plot.obs a vector to indicate which observations should be plotted for. If multiple
-#' are chosen a list of plots for each observation is returned.
-#' @param pacf logical to indicate whether or not the partial autocorrelations should be returned.
-#' The default is FALSE in which case a histogram is returned instead.
-#' @param extended logical. if TRUE additional information is printed
+#' This function creates residual plots for an estimated ctsmTMB object
+#' @param x A R6 ctsmTMB fit object
+#' @param plot.obs a vector of integers to indicate which observations should be
+#' plotted. When multiple are requested a list of plots, one for each observation
+#' is returned instead.
 #' @param ggtheme ggplot2 theme to use for creating the ggplot.
-#' @returns A list of plots
+#' @param ... additional arguments
+#' @returns a (list of) ggplot residual plot(s)
 #' @export
-#' @importFrom stats frequency fft spec.taper
-plot.ctsmTMB.fit = function(fit,
+plot.ctsmTMB.fit = function(x,
                             plot.obs=1,
-                            ggtheme=getggplot2theme()) {
-  
-  # get private fields from object
+                            ggtheme=getggplot2theme(),
+                            ...) {
+
+  fit <- x
   private <- fit$private
-  
+
   if (!(inherits(ggtheme,"theme") & inherits(ggtheme,"gg"))) {
     stop("ggtheme must be a ggplot2 theme")
   }
@@ -177,14 +200,14 @@ plot.ctsmTMB.fit = function(fit,
     message("Can't plot state ", plot.obs, " because there's only ", private$number.of.states, " state(s). Setting plot.obs = ",private$number.of.states)
     plot.obs = private$number.of.states
   }
-  
+
   if(private$method == "laplace"){
     message("'plot' is not available for method 'laplace' yet.")
     return(NULL)
   }
-  
+
   # retrieve user default parameter settings
-  
+
   # use ggplot to plot
   mycolor = getggplot2colors(2)[2]
   # if (use.ggplot) {
@@ -196,7 +219,7 @@ plot.ctsmTMB.fit = function(fit,
     e = e[id]
     t = t[id]
     nam = private$obs.names[i]
-    
+
     # time vs residuals
     plot.res =
       ggplot2::ggplot(data=data.frame(t,e)) +
@@ -244,7 +267,7 @@ plot.ctsmTMB.fit = function(fit,
       )
     # pacf
     mypacf = stats::pacf(e,na.action=na.pass,plot=FALSE)
-    plot.pacf = 
+    plot.pacf =
       ggplot2::ggplot(data=data.frame(lag=mypacf$lag[-1], pacf=mypacf$acf[-1])) +
       ggplot2::geom_errorbar(ggplot2::aes(x=lag,ymax=pacf,ymin=0),width=0,color=mycolor) +
       ggplot2::geom_hline(yintercept=0) +
@@ -265,52 +288,65 @@ plot.ctsmTMB.fit = function(fit,
         y = "",
         x = "Lag"
       )
-    
-    plots[[i]] = patchwork::wrap_plots(plot.res, 
+
+    plots[[i]] = patchwork::wrap_plots(plot.res,
                                        plot.hist,
                                        plot.qq,
                                        plot.cpgram,
-                                       plot.acf, 
-                                       plot.pacf , 
+                                       plot.acf,
+                                       plot.pacf ,
                                        nrow=3) +
       patchwork::plot_annotation(title=paste("Residual Analysis for ", nam),
                                  theme= ggtheme + ggplot2::theme(text=ggplot2::element_text("Avenir Next Condensed", size=18, face="bold"))
       )
-    
+
     # return plot list, and print one of the plots
     print(plots[[plot.obs]])
     return(invisible(plots))
   }
-  
+
   # return
   return(invisible(NULL))
 }
 
-#' #' Full multi-dimensional profile likelihood calculations
-#' @param parnames a named list of parameter values, one for each a vector of parameter names to be profiled.
-#' @param initial values for all parameters
-#' This is inspired by the TMB implementation at
+#' #' Performs full multi-dimensional profile likelihood calculations
+#' @param fit a ctmsTMB fit object
+#' @param parlist a named-list of parameters to profile over. The user can either
+#' supply grid-values in the list or leave it empty. If the any one list is empty
+#' then grid-values will be calculated using the estimated parameter mean value
+#' and standard deviation.
+#' @param grid.size a vector of \code{length(parlist)} indicating the number
+#' of grid-points along each parameter direction. This is only used if the
+#' \code{parlist} is empty.
+#' @param grid.qnt a vector of \code{length(parlist)} determining the width of
+#' the grid points from the mean value in multiples of the standard deviation.
+#' @param hessian a boolean indicating whether to use the hessian or not during
+#' the profile optimization.
+#' @param trace the optimization output flag (see \link[stats]{nlminb}) given to
+#' the \code{control} argument.
+#' @param control a list of optimization output controls (see \link[stats]{nlminb})
+#' @note The implemetation was modified from that of
 #' https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R
 #' @export
-profile.ctsmTMB.fit = function(fit, 
+profile.ctsmTMB.fit = function(fit,
                                parlist,
-                               grid.size = rep(10,length(parlist)),
-                               grid.qnt = rep(3,length(parlist)),
+                               grid.size = rep(10, length(parlist)),
+                               grid.qnt = rep(3, length(parlist)),
                                hessian=FALSE,
                                trace=0,
                                control=list(trace=trace,iter.max=1e3,eval.max=1e3)
 ){
-  
+
   if(missing(fit)){
     stop("Please supply a fit from a ctsmTMB model.")
   }
   if(missing(parlist)){
     stop("Please supply a named list of parameter values")
   }
-  
+
   # 1. Get likelihood function
   nll <- fit$private$nll
-  
+
   # Create parameter grid
   parnames <- names(parlist)
   id <- names(fit$par.fixed) %in% parnames
@@ -324,44 +360,41 @@ profile.ctsmTMB.fit = function(fit,
   X <- do.call(expand.grid, rev(parlist))
   names(X) <- rev(parnames)
   n <- nrow(X)
-  # Create parameter grid and initiatize lists
-  
-  n <- nrow(X)
   prof.nll <- numeric(n)
   prof.pars <- vector("list",length=n)
   opt.list <- vector("list",length=n)
-  
-  # 2. Create parameter filter matrix C that extracts only the 
+
+  # 2. Create parameter filter matrix C that extracts only the
   # non-profiled entries which needs to be optimized over.
   # C maps from length(par.fixed) to length(par.fixed) - length(parnames)
   # by multiplication.
   C <- diag(length(fit$par.fixed))[,!id,drop=F]
-  
+
   # Create optimization function that takes initial guess x0
-  # and finds the maximum profile likelihood estimate in the 
+  # and finds the maximum profile likelihood estimate in the
   # reduced parameter space
   f.optim <- function(x0){
-    
+
     # objective function
     f <- function(x){
       y <- par + as.numeric(C %*% x)
       # print(y["Cm"])
       nll$fn(y)
     }
-    
+
     # gradient
     gr <- function(x){
       y <- par + as.numeric(C %*% x)
       as.numeric(nll$gr(y) %*% C)
     }
-    
+
     # hessian
     he <- function(x){
       y <- par + as.numeric(C %*% x)
       # t(C) %*% nll$he(y)[!id,!id] %*% C
       nll$he(y)[!id,!id]
     }
-    
+
     # optimize
     if(hessian) {
       opt <- nlminb(x0, f, gr, he, control=control)
@@ -370,14 +403,14 @@ profile.ctsmTMB.fit = function(fit,
     }
     return(opt)
   }
-  
+
   # Robustify f.optim to handle NA cases
   f <- function(x0){
     y <- try_withWarningRecovery(f.optim(x0), silent=TRUE)
     if(inherits(y,"try-error")) y <- NA
     return(y)
   }
-  
+
   par <- fit$par.fixed
   x0 <- fit$par.fixed[!id]
   par[!id] <- 0
@@ -385,12 +418,10 @@ profile.ctsmTMB.fit = function(fit,
   for(i in 1:nrow(X)){
     par[id] <- unlist(X[i,])
     par.temp <- par
-    # 
+    #
     cat("Iteration:", i, "/", n, "\n")
-    # print(par)
-    # print(x0)
     opt <- f(x0)
-    # 
+    #
     opt.list[[i]] <- opt
     # store results and set new initial parameter guess
     if(any(is.na(opt))){
@@ -401,14 +432,14 @@ profile.ctsmTMB.fit = function(fit,
       prof.nll[i] <- opt$objective
       par.temp[!id] <- opt$par
       prof.pars[[i]] <- par.temp
-      # 
+      #
       x0 <- opt$par
       if(opt$convergence==1) {
         x0 <- fit$par.fixed[!id]
       }
     }
   }
-  
+
   # return
   returnlist = list(
     parameter.list = parlist,
@@ -418,6 +449,6 @@ profile.ctsmTMB.fit = function(fit,
     profile.opts = opt.list
   )
   class(returnlist) <- "profile.ctsmTMB"
-  
+
   return(returnlist)
 }

@@ -7,9 +7,9 @@
 rcpp_prediction(self, private)
 }
 \arguments{
-\item{self}{model object}
+\item{self}{The R6 ctsmTMB model object}
 
-\item{private}{model object private fields}
+\item{private}{The private fields of an R6 ctsmTMB model object}
 }
 \description{
 Prediction function that calls the underlying Rcpp prediction function

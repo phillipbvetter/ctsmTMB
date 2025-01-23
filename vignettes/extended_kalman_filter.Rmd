@@ -1,8 +1,12 @@
 ---
-title: "Laplace Approximation"
+title: "Extended Kalman Filter"
 author: "Phillip Brinck Veter"
 date: ""
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Extended Kalman Filter}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 The likelihood function is the joint density of the observations i.e.

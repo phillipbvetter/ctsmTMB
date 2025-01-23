@@ -1,7 +1,7 @@
 #' Prediction function that calls the underlying Rcpp prediction function
 #' 
-#' @param private model object private fields
-#' @param self model object
+#' @param private The private fields of an R6 ctsmTMB model object
+#' @param self The R6 ctsmTMB model object
 rcpp_prediction = function(self, private){
   
   # observation/input matrix
@@ -46,8 +46,13 @@ rcpp_prediction = function(self, private){
 
 #' Generates a user-friendly data.frame of prediction results from private$prediction
 #' 
-#' @param private model object private fields
-#' @param self model object
+#' @param return.covariance A boolean indicating whether or not to return the 
+#' state covariances at each time-step. The default behaviour is to return the 
+#' correlations.
+#' @param return.k.ahead a vector of integers indicating which k.ahead prediction
+#' that should be returned out of the 1:k.ahead that were calculated.
+#' @param private The private fields of an R6 ctsmTMB model object
+#' @param self The R6 ctsmTMB model object
 create_return_prediction = function(return.covariance, return.k.ahead, self, private){
   
   # Simlify variable names

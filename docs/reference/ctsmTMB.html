@@ -157,13 +157,6 @@ multiple equations at once.</p></dd>
 
 </dl><p></p></div>
 </div>
-<div class="section">
-<h4 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a></h4>
-<p></p><div class="r example copy"><div class="sourceCode"><pre><code><span><span class="co"># Specify Ornstein-Uhlenbeck Process</span></span>
-<span><span class="fu"><a href="../reference/addSystem.html">addSystem</a></span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">x</span> <span class="op">+</span> <span class="va">u</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span>
-<span>             </span></code></pre></div><p></p></div>
-</div>
-
 
 </div><p></p><hr><a id="method-ctsmTMB-addObs"></a><div class="section">
 <h3 id="method-addobs-">Method <code><a href="addObs.html">addObs()</a></code><a class="anchor" aria-label="anchor" href="#method-addobs-"></a></h3>
@@ -196,16 +189,6 @@ given a name on the form obs__# where # is a number, unless obsnames is provided
 
 </dl><p></p></div>
 </div>
-<div class="section">
-<h4 id="examples-1">Examples<a class="anchor" aria-label="anchor" href="#examples-1"></a></h4>
-<p></p><div class="r example copy"><div class="sourceCode"><pre><code>#Specify observation directly as a latent state
-addObs(y ~ x)
-
-Specify observation as the sum of exponentials of two latent states
-addObs(y ~ exp(x1) + exp(x2))
-</code></pre></div><p></p></div>
-</div>
-
 
 </div><p></p><hr><a id="method-ctsmTMB-setVariance"></a><div class="section">
 <h3 id="method-setvariance-">Method <code><a href="setVariance.html">setVariance()</a></code><a class="anchor" aria-label="anchor" href="#method-setvariance-"></a></h3>
@@ -300,11 +283,11 @@ for <code>logtheta</code> now instead of <code>theta</code> when declaring param
 <div class="section">
 <h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>form</code></dt>
-<dd><p>formula specifying the stochastic differential equation(s) to be added to the system.</p></dd>
+<dd><p>algebraic formula</p></dd>
 
 
 <dt><code>...</code></dt>
-<dd><p>additional formulas similar to <code>form</code> for specifying multiple equations at once.</p></dd>
+<dd><p>additional formulas</p></dd>
 
 
 </dl><p></p></div>
@@ -1087,10 +1070,6 @@ The default is FALSE in which case a histogram is returned instead.</p></dd>
 
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    
-    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 

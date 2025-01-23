@@ -83,38 +83,49 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="continuous-time-stochastic-modelling-using-template-model-builder-ctsmtmb">Continuous Time Stochastic Modelling using Template Model Builder (ctsmTMB)<a class="anchor" aria-label="anchor" href="#continuous-time-stochastic-modelling-using-template-model-builder-ctsmtmb"></a>
+<div class="page-header"><h1 id="ctsmtmb-">ctsmTMB <img src="logo/logo.png" align="right" height="150"><a class="anchor" aria-label="anchor" href="#ctsmtmb-"></a>
 </h1></div>
-<p><code>ctsmTMB</code> is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, an intended successor of, and heavily inspired by, <a href="https://ctsm.info" class="external-link">Continuous Time Stochastic Modelling</a>. The package is essentially a wrapper for <a href="https://github.com/kaskr/adcomp" class="external-link">Template Model Builder</a> which automatically constructs the necessary <em>(negative log)</em> likelihood function themselves behind the scenes, based on a user-specified stochastic state space model model. This model is specified using the implemented <code>ctsmTMB</code> class (based on the <strong>R6</strong> package) and its associated methods e.g. <code>addSystem</code>, <code>addObs</code>, and <code>setVariance</code>.</p>
-<p>The model states and parameters may be estimated with the <code>estimate</code> method which employs the <code>nlminb</code> quasi-Newton optimizer due to <a href="https://dl.acm.org/doi/pdf/10.1145/355958.355965" class="external-link">D. Gay</a> from the <strong>stats</strong> package.</p>
-<p>The package alsp provides the <code>predict</code> and <code>simulate</code> methods for integrating moment equations forward in time, and for stochastic euler-maruyama simulations, respectively. The implementation of these methods are based on the <code>Rcpp</code> package universe, and of particular importance to the computational speed is the use of the <code>RcppXPtrUtils</code> package. The facilities creating and sending <strong>C++</strong> pointers of the model-specific functions (drift, diffusion, observation and associated jacobians) for speed-up over sending <strong>R</strong> functions.</p>
+<!-- Badges -->
+<p><a href="https://CRAN.R-project.org/package=geomtextpath" class="external-link"><img src="https://www.r-pkg.org/badges/version/geomtextpath" alt="CRAN status"></a> <a href="https://github.com/AllanCameron/geomtextpath/actions" class="external-link"><img src="https://github.com/AllanCameron/geomtextpath/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://app.codecov.io/gh/AllanCameron/geomtextpath?branch=main" class="external-link"><img src="https://codecov.io/gh/AllanCameron/geomtextpath/branch/main/graph/badge.svg" alt="Codecov test coverage"></a> <a href="https://cran.r-project.org/package=geomtextpath" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/geomtextpath" alt="metacran downloads"></a></p>
+<!-- Package Description -->
+<div class="section level2">
+<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h2>
+<p><strong>ctsmTMB</strong> <a href="https://phillipbvetter.github.io/ctsmTMB/index.html" class="external-link">(Continuous Time Stochastic Modelling using Template Model Builder)</a> is an R package for parameter estimation, state filtration and forecasting in stochastic state space models, an intended successor of, and heavily inspired by the <strong>CTSM</strong> package <a href="https://ctsm.info" class="external-link">(Continuous Time Stochastic Modelling)</a>. The package is essentially a wrapper around the <strong>TMB</strong>/<strong>RTMB</strong> packages <a href="https://github.com/kaskr/adcomp" class="external-link">(Template Model Builder)</a> used to automatically constructs the underlying <em>(negative log)</em> likelihood function behind the scenes (based on a user-specified model). The model is specified using the implemented OOP-style <strong>R6</strong> <code>ctsmTMB</code> class, with its methods for e.g. specifying system equations (<code>addSystem</code>) and observation equations (<code>addObs</code>).</p>
+<p>The primary work-horse method of <strong>ctsmTMB</strong> is <code>estimate</code>, used for estimating parameters (and states) with the <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code> quasi-Newton optimizer due to <a href="https://dl.acm.org/doi/pdf/10.1145/355958.355965" class="external-link">D. Gay</a>. The available inference methods are non-linear Kalman filters and the Laplace approxmation.</p>
+<p>The secondary work-horse methods are <code>predict</code> and <code>simulate</code>. These are used for integrating the stochastic differential equation forward in time, either using (first and second order) moment differential equations or by stochastic (euler-maruyama) simulations. The implementation of these two methods are based on <strong>C++</strong> code using the <code>Rcpp</code> package universe. The computation speed is in particular aided by the use of the <code>RcppXPtrUtils</code> package which facilities creating and sending <strong>C++</strong> pointers of the model-specific functions (drift, diffusion, observation and associated jacobians) rather than sending (slow) <strong>R</strong> functions to the <strong>C++</strong> side.</p>
+</div>
 <div class="section level2">
 <h2 id="estimation-methods">Estimation Methods<a class="anchor" aria-label="anchor" href="#estimation-methods"></a>
 </h2>
 <p>The following state reconstruction algorithms are currently available:</p>
 <ol style="list-style-type: decimal">
-<li><p>The (Continous-Discrete) Extended Kalman Filter, <code>ekf</code> (based on ).</p></li>
-<li><p>The (Continous-Discrete) Unscented Kalman Filter, <code>ukf</code> (based on <a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242" class="external-link">S. Särkkä, 2007</a>)</p></li>
+<li><p>The (Continous-Discrete) Extended Kalman Filter, <code>ekf</code>.</p></li>
+<li><p>The (Continous-Discrete) Unscented Kalman Filter, <code>ukf</code>.</p></li>
 <li><p>The (Continuous-Discrete) Laplace Approximation <code>laplace</code>.</p></li>
 </ol>
 <div class="section level3">
-<h3 id="laplace-filter">Laplace Filter<a class="anchor" aria-label="anchor" href="#laplace-filter"></a>
-</h3>
-<p>The state-reconstructions based on the <code>laplace</code> method are <em>smoothed</em> estimates, meaning that state values are optimizes simultaneously, given all available observations (past, present and future).</p>
-<p>(see e.g. <a href="https://github.com/kaskr/adcomp/blob/master/tmb_examples/sde_linear.cpp" class="external-link">this example</a>)</p>
-<p>The <code>laplace</code> method employs the Laplace Approximation which is natively built-into and completely handled by <code>TMB</code>, and some noteworthy features of the method are:</p>
-<ol style="list-style-type: decimal">
-<li><p>No C++ compilation needed. In addition the AD-compile time (the call to <code><a href="https://rdrr.io/pkg/TMB/man/MakeADFun.html" class="external-link">TMB::MakeADFun</a></code>) identical to that of similar but compiled C++ code.</p></li>
-<li><p>The possibility for non-Gaussian (but modal) observation densities to accommodate the need for e.g. heavier distribution tails.</p></li>
-<li><p>The method produces smoothed state estimates, because states are integrated out simultaneously, conditioned on both past and future information / observation.</p></li>
-</ol>
-</div>
-<div class="section level3">
 <h3 id="kalman-filters">Kalman Filters<a class="anchor" aria-label="anchor" href="#kalman-filters"></a>
 </h3>
-<p>The <code>ekf</code> and <code>ukf</code> Kalman Filters are …</p>
-<p>The main advantage of the Kalman Filter implementations are a large increase in the computation speed, and access to the fixed effects hessian for improved convergence of the optimization. In these cases TMB just provides automatic differentiation.</p>
+<p>The package is currently mostly tailored towards the Kalman Filter. The advantages of the methods are:</p>
+<ol style="list-style-type: decimal">
+<li><p>The hessian of the likelihood function (w.r.t parameters) is available.</p></li>
+<li><p>The model residuals are easier to compute for e.g. model validation.</p></li>
+<li><p>Multi-step predictions / simulations with state updates are easier to compute.</p></li>
+</ol>
+<p>In these cases <strong>TMB</strong> simply provides an easy framework for automatic differentiation.</p>
 <p>The package is currently mostly tailored towards the Kalman Filter, with its available methods <code>predict</code> and <code>simulate</code> for k-step-ahead predictions and simulations. It also has an <code>S3 method</code> implementation of <code>plot</code> to be called on the <code>ctsmTMB.fit</code> class object returned from the <code>estimate</code> method, which plots a basic residuals analysis using the <code>ggplot2</code> package.</p>
+<p>The Unscented Kalman Filter implementation is based on <em>Algorithm 4.7</em> in <a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242" class="external-link">S. Särkkä, 2007</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="laplace-filter">Laplace Filter<a class="anchor" aria-label="anchor" href="#laplace-filter"></a>
+</h3>
+<p>The state-reconstructions based on the <code>laplace</code> method are <em>smoothed</em> estimates, meaning that all states are optimized jointly, given all observations in the data. For further mathematicals details, see <a href="https://phillipbvetter.github.io/ctsmTMB/articles/laplace_approx.html" class="external-link">this</a> article on the package webpage. The Laplace Approximation is natively built-into and completely handled by <strong>TMB</strong>. A few noteworthy advantages are:</p>
+<ol style="list-style-type: decimal">
+<li><p>There is no C++ compilation needed (using <strong>RTMB</strong>). In addition the AD-compile time i.e. the call to <code>RTMB::MakeADFun</code>, is identical to that of pre-compiled <strong>C++</strong> code.</p></li>
+<li><p>The possibility for non-Gaussian (but unimodal) observation densities to accommodate the need for e.g. heavier distribution tails.</p></li>
+</ol>
+<p>The method <em>may</em> be less useful in the context of model-training towards forecasting because the likelihood contributions are based on these smoothed estimates, rather than one-step predictions (as is the case of the Kalman filters).</p>
 </div>
 </div>
 <div class="section level2">
@@ -123,13 +134,17 @@
 <p>You can install the package by copying the command below into <code>R</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span>repo<span class="op">=</span><span class="st">"phillipbvetter/ctsmTMB"</span>, dependencies<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>We note that <code>ctsmTMB</code> depends on the following packages: 1. <code>TMB</code> 2. <code>Rcpp</code> 3. <code>RcppEigen</code> 4. <code>RcppXPtrUtils</code> 5. <code>RcppZiggurat</code> 6. <code>R6</code> 7. <code>Deriv</code> 8. <code>stringr</code></p>
-<p>The user must therefore have a working C++ compiler. In particular windows users should install Rtools, and Mac users should install Command Line Tools to get working C++ compilers. You must make sure that these are added to the <code>PATH</code> vislble to <code>R</code>. For further information see the <code>TMB</code> GitHub <a href="https://github.com/kaskr/adcomp" class="external-link">here</a> and associated installation instructions <a href="https://github.com/kaskr/adcomp/wiki/Download" class="external-link">here</a></p>
+<p>The user must have a working C++ compiler. In particular windows users should install Rtools, and Mac users should install Command Line Tools to get working C++ compilers. You must make sure that these are added to the <code>PATH</code> vislble to <code>R</code>. For further information see the <code>TMB</code> GitHub <a href="https://github.com/kaskr/adcomp" class="external-link">here</a> and associated installation instructions <a href="https://github.com/kaskr/adcomp/wiki/Download" class="external-link">here</a></p>
 <p>Linux users need to make sure that GSL is installed for <code>RcppZiggurat</code> which is necessary for the <code>simulate</code> method. You can try the following command, or google yourself.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">sudo</span> apt-get install libgsl-dev</span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="how-to-get-started">How to get started<a class="anchor" aria-label="anchor" href="#how-to-get-started"></a>
+<h2 id="package-dependencies">Package Dependencies<a class="anchor" aria-label="anchor" href="#package-dependencies"></a>
+</h2>
+<p>We note that <code>ctsmTMB</code> depends on the following packages: 1. <code>TMB</code> and <code>RTMB</code> 2. <code>Rcpp</code>, <code>RcppEigen</code>, <code>RcppXPtrUtils</code> and <code>RcppZiggurat</code> 3. <code>R6</code> 4. <code>Deriv</code> 5. <code>stringr</code></p>
+</div>
+<div class="section level2">
+<h2 id="getting-started">Getting Started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
 </h2>
 <p>You can visit the package <a href="https://phillipbvetter.github.io/ctsmTMB/index.html" class="external-link">webpage</a> and browse the vignettes for example uses, in particular see <a href="https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html" class="external-link">Getting Started</a>.</p>
 </div>
@@ -143,7 +158,7 @@
 <p>The methods documentation is also available on the <a href="https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html" class="external-link">homepage</a>.</p>
 </div>
 <div class="section level2">
-<h2 id="example-usage">Example Usage<a class="anchor" aria-label="anchor" href="#example-usage"></a>
+<h2 id="code-example---inference-in-1d-ornstein-uhlenbeck">Code Example - Inference in 1D Ornstein-Uhlenbeck<a class="anchor" aria-label="anchor" href="#code-example---inference-in-1d-ornstein-uhlenbeck"></a>
 </h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>

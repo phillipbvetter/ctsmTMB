@@ -180,7 +180,32 @@ List ekf_simulation(
 // Function typedefs
 typedef SEXP (*funPtr)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
 
-//'@ export
+//' Function exported to R that performs stochastic simulations with (Extended Kalman) filtering updates
+//' @param f__R user-defined drift-function 
+//' @param g__R user-defined diffusion-function
+//' @param dfdx__R jacobian of f__R
+//' @param h__R user-defined observation-function
+//' @param dhdx__R jacobian of h__R
+//' @param hvar__R user-defined observation-variance-function
+//' @param obsMat matrix of observations (column-wise)
+//' @param inputMat matrix of inputs (column-wise)
+//' @param parVec parameter vector
+//' @param covMat state covariance matrix
+//' @param stateVec state vector
+//' @param ode_timestep_size vector of doubles determining the ODE time-step sizes
+//' @param ode_timesteps vector of integers determining number of ODE timesteps
+//' @param simulation_timestep_size vector of doubles determining the simlatuon time-step sizes
+//' @param simulation_timesteps vector of integers determining number of simulation timesteps
+//' @param bool_is_not_na_obsMat matrix of integers determining which observations are NA
+//' @param number_of_available_obs vector of integers determining number of non-NA observations in each iteration
+//' @param n dimension of state vector
+//' @param m dimension of observation vector
+//' @param ng dimension of diffusion process
+//' @param last_pred_id integer determining last index for which k-ahead prediction is possible
+//' @param k_step_ahead number of prediction steps to perform in each iteration
+//' @param ode_solver integer indicating which ODE solver to use (Euler vs RK4)
+//' @param nsims integer indicating the number of stochastic simulations to perform
+//' @export
 // [[Rcpp::export]]
 List execute_ekf_simulation(
   SEXP f__R, 

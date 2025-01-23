@@ -7,9 +7,16 @@
 create_return_prediction(return.covariance, return.k.ahead, self, private)
 }
 \arguments{
-\item{self}{model object}
+\item{return.covariance}{A boolean indicating whether or not to return the
+state covariances at each time-step. The default behaviour is to return the
+correlations.}
 
-\item{private}{model object private fields}
+\item{return.k.ahead}{a vector of integers indicating which k.ahead prediction
+that should be returned out of the 1:k.ahead that were calculated.}
+
+\item{self}{The R6 ctsmTMB model object}
+
+\item{private}{The private fields of an R6 ctsmTMB model object}
 }
 \description{
 Generates a user-friendly data.frame of prediction results from private$prediction

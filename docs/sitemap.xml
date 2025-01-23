@@ -85,7 +85,16 @@
     <loc>/reference/create_return_simulation.html</loc>
   </url>
   <url>
+    <loc>/reference/ctsmTMB.Deriv.html</loc>
+  </url>
+  <url>
     <loc>/reference/ctsmTMB.html</loc>
+  </url>
+  <url>
+    <loc>/reference/ekf_rcpp_likelihood.html</loc>
+  </url>
+  <url>
+    <loc>/reference/erf.html</loc>
   </url>
   <url>
     <loc>/reference/execute_ekf_prediction.html</loc>
@@ -94,7 +103,22 @@
     <loc>/reference/execute_ekf_simulation.html</loc>
   </url>
   <url>
+    <loc>/reference/get.Deriv.drule.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get.Deriv.env.html</loc>
+  </url>
+  <url>
     <loc>/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>/reference/invlogit.html</loc>
+  </url>
+  <url>
+    <loc>/reference/invlogit2.html</loc>
+  </url>
+  <url>
+    <loc>/reference/logit.html</loc>
   </url>
   <url>
     <loc>/reference/plot.ctsmTMB.fit.html</loc>
@@ -133,6 +157,9 @@
     <loc>/reference/profile0.ctsmTMB.fit.html</loc>
   </url>
   <url>
+    <loc>/reference/rcpp_ekf_estimate.html</loc>
+  </url>
+  <url>
     <loc>/reference/rcpp_prediction.html</loc>
   </url>
   <url>
@@ -155,6 +182,9 @@
   </url>
   <url>
     <loc>/reference/set_initial_state.html</loc>
+  </url>
+  <url>
+    <loc>/reference/summary.ctsmTMB.fit.html</loc>
   </url>
   <url>
     <loc>/reference/summary.ctsmTMB.html</loc>

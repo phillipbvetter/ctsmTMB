@@ -4,8 +4,7 @@
 \alias{setVariance}
 \title{Add observation variances to the model object.}
 \usage{
-setVariance(form,
-                          ...)
+setVariance(form, ...)
 }
 \arguments{
 \item{form}{formula class specifying the obsevation equation to be added
@@ -16,12 +15,4 @@ multiple formulas by comma-seperation rather than providing a list.}
 }
 \description{
 Specify the observation variance of an existing observation equation.
-}
-\examples{
-# Example 1
-setVariance(y ~ sigma_y^2). 
-
-# Example 2 
-setVariance(y ~ 0.1 + x * exp(logsigma_y)^2). 
-
 }

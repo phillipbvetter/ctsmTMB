@@ -19,6 +19,7 @@ License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Depends:
 	R (>= 4.0.0)
@@ -37,10 +38,12 @@ LinkingTo:
 	RcppEigen,
 	RcppZiggurat
 Suggests:
-	testthat (>= 3.0.0),
-	patchwork,
-	ggplot2,
-	ggfortify,
-	grDevices
+    testthat (>= 3.0.0),
+    patchwork,
+    ggplot2,
+    ggfortify,
+    grDevices,
+    knitr,
+    rmarkdown
 URL: 
 	https://github.com/phillipbvetter/ctsmTMB

@@ -2,7 +2,11 @@
 title: "predict: Forecasting the model states and observations."
 author: ""
 date: ""
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{predict: Forecasting the model states and observations.}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include=FALSE}

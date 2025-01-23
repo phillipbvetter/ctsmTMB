@@ -14,11 +14,3 @@ in the defined system which should be treated as input variables.}
 Declare whether a variable contained in system, observation or observation
 variance equations is an input variable.
 }
-\examples{
-# Example 1
-addInput(u)
-
-# Example 2
-addInput(u1, u2, u3)
-
-}

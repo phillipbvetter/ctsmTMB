@@ -2,13 +2,18 @@
 % Please edit documentation in R/methods.R
 \name{print.ctsmTMB}
 \alias{print.ctsmTMB}
-\title{Basic print of objects of class 'ctsmTMB'}
+\title{Basic print of ctsmTMB objects}
 \usage{
-\method{print}{ctsmTMB}(object, ...)
+\method{print}{ctsmTMB}(x, ...)
+}
+\arguments{
+\item{x}{a R6 ctsmTMB model object}
+
+\item{...}{additional arguments}
 }
 \value{
-A huge amount of information
+Print of ctsmTMB model object
 }
 \description{
-Basic print of objects of class 'ctsmTMB'
+Basic print of ctsmTMB objects
 }

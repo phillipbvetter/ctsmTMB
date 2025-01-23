@@ -2,13 +2,22 @@
 % Please edit documentation in R/methods.R
 \name{plot.ctsmTMB.pred}
 \alias{plot.ctsmTMB.pred}
-\title{Basic summary of objects of class 'ctsmTMB.pred' from predict}
+\title{Plot of k-step predictions from a ctsmTMB prediction object}
 \usage{
-\method{plot}{ctsmTMB.pred}(pred.data, n.ahead = 0, state.name = NULL, ...)
+\method{plot}{ctsmTMB.pred}(x, n.ahead = 0, state.name = NULL, ...)
+}
+\arguments{
+\item{x}{prediction \code{data.frame} from a ctsmTMB prediction}
+
+\item{n.ahead}{an integer indicating which n-ahead predictions to plot}
+
+\item{state.name}{a string indicating which states to plot}
+
+\item{...}{additional arguments}
 }
 \value{
 A huge amount of information
 }
 \description{
-Basic summary of objects of class 'ctsmTMB.pred' from predict
+Plot of k-step predictions from a ctsmTMB prediction object
 }

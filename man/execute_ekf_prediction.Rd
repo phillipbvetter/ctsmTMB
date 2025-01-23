@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{execute_ekf_prediction}
 \alias{execute_ekf_prediction}
-\title{export}
+\title{Function exported to R that performs (Extended Kalman) filtering}
 \usage{
 execute_ekf_prediction(
   f__R,
@@ -27,6 +27,47 @@ execute_ekf_prediction(
   ode_solver
 )
 }
+\arguments{
+\item{f__R}{user-defined drift-function}
+
+\item{g__R}{user-defined diffusion-function}
+
+\item{dfdx__R}{jacobian of f__R}
+
+\item{h__R}{user-defined observation-function}
+
+\item{dhdx__R}{jacobian of h__R}
+
+\item{hvar__R}{user-defined observation-variance-function}
+
+\item{obsMat}{matrix of observations (column-wise)}
+
+\item{inputMat}{matrix of inputs (column-wise)}
+
+\item{parVec}{parameter vector}
+
+\item{covMat}{state covariance matrix}
+
+\item{stateVec}{state vector}
+
+\item{ode_timestep_size}{vector of doubles determining the ODE time-step sizes}
+
+\item{ode_timesteps}{vector of integers determining number of ODE timesteps}
+
+\item{bool_is_not_na_obsMat}{matrix of integers determining which observations are NA}
+
+\item{number_of_available_obs}{vector of integers determining number of non-NA observations in each iteration}
+
+\item{n}{dimension of state vector}
+
+\item{m}{dimension of observation vector}
+
+\item{last_pred_id}{integer determining last index for which k-ahead prediction is possible}
+
+\item{k_step_ahead}{number of prediction steps to perform in each iteration}
+
+\item{ode_solver}{integer indicating which ODE solver to use (Euler vs RK4)}
+}
 \description{
-export
+Function exported to R that performs (Extended Kalman) filtering
 }

@@ -17,18 +17,10 @@ matrices. The first entry is the initial value, the second entry is the lower
 bound and the third entry is the upper bound. Providing only a first entry
 fixes the particular parameter to that value.
 }
-\examples{
-# Example 1
-setParameter(
-alpha = c(initial=0, lower=-10, upper=10),
-beta = c(2, 0, 5),
-gamma = 5)
-)
-
-# Example 2
+\section{Example 2}{
 parmat = matrix(rep(c(0,-10,10),times=3),ncol=3,byrow=T)
 rownames(parmat) = c("a","b","c")
 colnames(parmat) = c("initial","lower","upper")
 setParameter(parmat)
-
 }
+

@@ -8,7 +8,7 @@
 #' @returns The function returns an object of class \code{R6} and \code{ctsmTMB}, 
 #' which can be used to define a stochastic state space system.
 #' 
-#' @docType package
+# #' @docType package
 #' @name ctsmTMB
 #' @export
 ctsmTMB = R6::R6Class(
@@ -143,10 +143,6 @@ ctsmTMB = R6::R6Class(
     #'                                            
     #' where \code{f} is the drift, and \code{g1, g2, ..., gN} are diffusions, with 
     #' differential brownian motions dw1, dw2, ..., dwN.
-    #' 
-    #' @examples 
-    #' # Specify Ornstein-Uhlenbeck Process
-    #' addSystem(dx ~ theta * (mu - x + u) * dt + sigma * dw)
     #'              
     #' @param form formula specifying the stochastic differential equation to be 
     #' added to the system.
@@ -188,13 +184,7 @@ ctsmTMB = R6::R6Class(
     #' distributed noise with zero mean and variance to be specified. The 
     #' observation variable should be present in the data provided when calling
     #' \code{estimate(.data)} for parameter estimation.
-    #'  
-    #' @examples
-    #' #Specify observation directly as a latent state
-    #' addObs(y ~ x)
     #' 
-    #' Specify observation as the sum of exponentials of two latent states
-    #' addObs(y ~ exp(x1) + exp(x2))
     #' @param form formula class specifying the obsevation equation to be added to the system.
     #' @param ... additional formulas identical to \code{form} to specify multiple observation equations at a time.
     #' @param obsnames character vector specifying the name of the observation. When the observation left-hand side

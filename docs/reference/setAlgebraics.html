@@ -77,8 +77,7 @@ positivity (log-transform).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">form</span>,</span>
-<span>               <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -101,17 +100,6 @@ and <code>link{setParameter}</code> should therefore specify values for the
 new parameters.</p>
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example 1</span></span></span>
-<span class="r-in"><span><span class="fu">setAlgebraics</span><span class="op">(</span></span></span>
-<span class="r-in"><span><span class="va">sigma</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logsigma</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span><span class="va">theta</span> <span class="op">~</span> <span class="fu">invlogit</span><span class="op">(</span><span class="va">alpha</span> <span class="op">+</span> <span class="va">beta</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in setAlgebraics(sigma ~ exp(logsigma), theta ~ invlogit(alpha +     beta)):</span> could not find function "setAlgebraics"</span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 

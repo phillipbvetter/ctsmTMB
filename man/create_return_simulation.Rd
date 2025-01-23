@@ -7,6 +7,12 @@
 create_return_simulation(return.k.ahead, n.sims, self, private)
 }
 \arguments{
+\item{return.k.ahead}{a vector of integers indicating which k.ahead prediction
+that should be returned out of the 1:k.ahead that were calculated.}
+
+\item{n.sims}{An integer number indicating the number of stochastic
+simulations}
+
 \item{self}{model object}
 
 \item{private}{model object private fields}

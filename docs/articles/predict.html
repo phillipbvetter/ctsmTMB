@@ -237,21 +237,21 @@ based from the predicted state values.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred</span><span class="op">$</span><span class="va">states</span><span class="op">)</span> </span></code></pre></div>
 <pre><code><span><span class="co">##   i. j.  t.i  t.j k.ahead        x       var.x</span></span>
-<span><span class="co">## 1  0  0 0.00 0.00       0 3.000000 0.100000000</span></span>
-<span><span class="co">## 2  0  1 0.00 0.01       1 2.853688 0.090578913</span></span>
-<span><span class="co">## 3  1  1 0.01 0.01       0 2.704116 0.009005756</span></span>
-<span><span class="co">## 4  1  2 0.01 0.02       1 2.572235 0.008243908</span></span>
-<span><span class="co">## 5  2  2 0.02 0.02       0 2.600410 0.004518718</span></span>
-<span><span class="co">## 6  2  3 0.02 0.03       1 2.473587 0.004183868</span></span></code></pre>
+<span><span class="co">## 1  0  0 0.00 0.00       0 3.095456 0.009090909</span></span>
+<span><span class="co">## 2  0  1 0.00 0.01       1 2.944489 0.008320958</span></span>
+<span><span class="co">## 3  1  1 0.01 0.01       0 2.827817 0.004541770</span></span>
+<span><span class="co">## 4  1  2 0.01 0.02       1 2.689903 0.004204726</span></span>
+<span><span class="co">## 5  2  2 0.02 0.02       0 2.673529 0.002960090</span></span>
+<span><span class="co">## 6  2  3 0.02 0.03       1 2.543140 0.002773563</span></span></code></pre>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred</span><span class="op">$</span><span class="va">observations</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##     i. j.  t.i  t.j k.ahead        y   y.data</span></span>
-<span><span class="co">## 1    0  0 0.00 0.00       0 3.000000 3.105001</span></span>
-<span><span class="co">## 2    0  1 0.00 0.01       1 2.853688 2.687603</span></span>
-<span><span class="co">## 2.1  1  1 0.01 0.01       0 2.704116 2.687603</span></span>
-<span><span class="co">## 3    1  2 0.01 0.02       1 2.572235 2.634588</span></span>
-<span><span class="co">## 3.1  2  2 0.02 0.02       0 2.600410 2.634588</span></span>
-<span><span class="co">## 4    2  3 0.02 0.03       1 2.473587 2.267096</span></span></code></pre>
+<span><span class="co">## 1    0  0 0.00 0.00       0 3.095456 3.105001</span></span>
+<span><span class="co">## 2    0  1 0.00 0.01       1 2.944489 2.687603</span></span>
+<span><span class="co">## 2.1  1  1 0.01 0.01       0 2.827817 2.687603</span></span>
+<span><span class="co">## 3    1  2 0.01 0.02       1 2.689903 2.634588</span></span>
+<span><span class="co">## 3.1  2  2 0.02 0.02       0 2.673529 2.634588</span></span>
+<span><span class="co">## 4    2  3 0.02 0.03       1 2.543140 2.267096</span></span></code></pre>
 <p>The indices <code>i.</code> and <code>j.</code> in the table refer to
 expectation and variance of the state vector <span class="math display">\[
 \mathrm{E}(x_{t_{i}} | x_{t_{j}}, y_{t_{j}}) \\
@@ -281,21 +281,21 @@ argument can be used to indicate which should be kept in the output.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred1</span><span class="op">$</span><span class="va">states</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##   i. j.  t.i  t.j k.ahead        x       var.x</span></span>
-<span><span class="co">## 1  0  0 0.00 0.00       0 3.000000 0.100000000</span></span>
-<span><span class="co">## 2  0  1 0.00 0.01       1 2.853688 0.090578913</span></span>
-<span><span class="co">## 3  0  2 0.00 0.02       2 2.714512 0.082054359</span></span>
-<span><span class="co">## 4  1  1 0.01 0.01       0 2.704116 0.009005756</span></span>
-<span><span class="co">## 5  1  2 0.01 0.02       1 2.572235 0.008243908</span></span>
-<span><span class="co">## 6  1  3 0.01 0.03       2 2.446786 0.007554560</span></span></code></pre>
+<span><span class="co">## 1  0  0 0.00 0.00       0 3.095456 0.009090909</span></span>
+<span><span class="co">## 2  0  1 0.00 0.01       1 2.944489 0.008320958</span></span>
+<span><span class="co">## 3  0  2 0.00 0.02       2 2.800884 0.007624277</span></span>
+<span><span class="co">## 4  1  1 0.01 0.01       0 2.827817 0.004541770</span></span>
+<span><span class="co">## 5  1  2 0.01 0.02       1 2.689903 0.004204726</span></span>
+<span><span class="co">## 6  1  3 0.01 0.03       2 2.558715 0.003899757</span></span></code></pre>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred2</span><span class="op">$</span><span class="va">states</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##    i. j.  t.i  t.j k.ahead        x       var.x</span></span>
-<span><span class="co">## 3   0  2 0.00 0.02       2 2.714512 0.082054359</span></span>
-<span><span class="co">## 6   0  5 0.00 0.05       5 2.336402 0.061046563</span></span>
-<span><span class="co">## 9   0  8 0.00 0.08       8 2.010960 0.045483600</span></span>
-<span><span class="co">## 14  1  3 0.01 0.03       2 2.446786 0.007554560</span></span>
-<span><span class="co">## 17  1  6 0.01 0.06       5 2.105968 0.005855739</span></span>
-<span><span class="co">## 20  1  9 0.01 0.09       8 1.812623 0.004597221</span></span></code></pre>
+<span><span class="co">## 3   0  2 0.00 0.02       2 2.800884 0.007624277</span></span>
+<span><span class="co">## 6   0  5 0.00 0.05       5 2.410743 0.005907387</span></span>
+<span><span class="co">## 9   0  8 0.00 0.08       8 2.074946 0.004635482</span></span>
+<span><span class="co">## 14  1  3 0.01 0.03       2 2.558715 0.003899757</span></span>
+<span><span class="co">## 17  1  6 0.01 0.06       5 2.202306 0.003148193</span></span>
+<span><span class="co">## 20  1  9 0.01 0.09       8 1.895543 0.002591421</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="set-the-model-parameters-used">Set the model parameters used<a class="anchor" aria-label="anchor" href="#set-the-model-parameters-used"></a>

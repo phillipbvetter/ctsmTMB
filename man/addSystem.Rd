@@ -4,8 +4,7 @@
 \alias{addSystem}
 \title{Add state equations to model object}
 \usage{
-addSystem(form,
-            ...)
+addSystem(form, ...)
 }
 \arguments{
 \item{form}{formula specifying the stochastic differential equation to be
@@ -26,12 +25,4 @@ The formulas can contain most elementary functions such as \code{log},
 functions are only those that are both 1) defined in the derivative table
 of the \code{Deriv} package, and 2) undestood by \emph{TMB} on the \emph{C++} side.
 }
-}
-\examples{
-# Example 1 - Linear System
-addSystem(dx ~ theta * (mu - x + u) * dt + sigma * dw)
-
-# Example 2 - Non-Linear System
-addSystem(dx ~ theta * (mu - exp(x)^2 + u) * dt + sigma * x * (1-x) * dw)
-
 }

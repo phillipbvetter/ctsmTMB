@@ -1,15 +1,19 @@
 ---
-title: "predict: Forecasting the model states and observations."
+title: "simulate: Forecasting the model states and observations."
 author: ""
 date: ""
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{simulate: Forecasting the model states and observations.}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include=FALSE}
 library(ctsmTMB)
 ```
 
-We demonstate how to use the `predict` method to obtain k-step ahead predictions / forecasts of a model object, and the observations.
+We demonstate how to use the `simulate` method to obtain k-step ahead predictions / forecasts of a model object, and the observations.
 
 A prediction in this context is considered to be a prior estimate of the state mean and covariance i.e. an estimate obtained without incorporating information from future observations. We denote these
 

@@ -2,7 +2,11 @@
 title: "observations: Using functions on the left-hand side"
 author: ""
 date: ""
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{observations: Using functions on the left-hand side}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include=FALSE}

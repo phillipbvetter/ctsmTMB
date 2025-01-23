@@ -2,13 +2,18 @@
 % Please edit documentation in R/methods.R
 \name{print.ctsmTMB.fit}
 \alias{print.ctsmTMB.fit}
-\title{Basic print of objects of class 'ctsmTMB'}
+\title{Basic print of objects ctsmTMB fit objects}
 \usage{
-\method{print}{ctsmTMB.fit}(fit, ...)
+\method{print}{ctsmTMB.fit}(x, ...)
+}
+\arguments{
+\item{x}{a ctsmTMB fit object}
+
+\item{...}{additional arguments}
 }
 \value{
-A huge amount of information
+Print of ctsmTMB fit object
 }
 \description{
-Basic print of objects of class 'ctsmTMB'
+Basic print of objects ctsmTMB fit objects
 }

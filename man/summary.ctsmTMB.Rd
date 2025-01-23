@@ -4,10 +4,17 @@
 \alias{summary.ctsmTMB}
 \title{Basic summary of objects of class 'ctsmTMB'}
 \usage{
-\method{summary}{ctsmTMB}(object, correlation = FALSE)
+\method{summary}{ctsmTMB}(object, correlation = FALSE, ...)
+}
+\arguments{
+\item{object}{a R6 ctsmTMB model object}
+
+\item{correlation}{a boolean to indicate whether to return parameter correlations}
+
+\item{...}{additional arguments}
 }
 \value{
-A huge amount of information
+a summary of the model object
 }
 \description{
 Basic summary of objects of class 'ctsmTMB'

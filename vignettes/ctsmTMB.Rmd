@@ -1,8 +1,12 @@
 ---
-title: "Getting started"
+title: "Getting Started"
 author: ""
 date: ""
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 Let's get starting using `ctsmTMB`!

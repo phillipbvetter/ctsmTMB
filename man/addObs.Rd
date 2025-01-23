@@ -4,9 +4,7 @@
 \alias{addObs}
 \title{Add observation equations to model object}
 \usage{
-addObs(form,
-                 ...,
-                 obsnames=NULL)
+addObs(form, ..., obsnames = NULL)
 }
 \arguments{
 \item{form}{formula specifying the observation equation to be added to the
@@ -33,17 +31,4 @@ is then handled internally.
 
 The supported functions are those discussed in the \code{\link{addSystem}}.
 }
-}
-\examples{
-# Example 1
-addObs(y ~ x)
-
-# Example 2
-Specify observation as the sum of exponentials of two latent states
-addObs(y ~ exp(x1) + exp(x2))
-
-# Example 3
-Specify observation as the sum of exponentials of two latent states
-addObs(log(y) ~ x, obsnames = "logy")
-
 }

@@ -4,8 +4,7 @@
 \alias{setAlgebraics}
 \title{Add algebraic relationships to the model object.}
 \usage{
-setAlgebraics(form,
-               ...)
+setAlgebraics(form, ...)
 }
 \arguments{
 \item{form}{formula specifying algebraic relation.}
@@ -24,12 +23,4 @@ should be overwritten with the expression on the right-hand side. This also
 means that the left-hand side parameter will vanish from the model formulation
 and \code{link{setParameter}} should therefore specify values for the
 new parameters.
-}
-\examples{
-# Example 1
-setAlgebraics(
-sigma ~ exp(logsigma),
-theta ~ invlogit(alpha + beta)
-)
-
 }

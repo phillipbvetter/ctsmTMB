@@ -1,7 +1,9 @@
 #' Stochastic Euler-Maruyama simulation function that calls the underlying Rcpp simulation function
 #' 
-#' @param private model object private fields
 #' @param self model object
+#' @param private model object private fields
+#' @param n.sims An integer giving the number of stochastic simulations to be
+#' performed
 rcpp_simulation = function(self, private, n.sims){
   
   # observation/input matrix
@@ -48,6 +50,10 @@ rcpp_simulation = function(self, private, n.sims){
 
 #' Generates a user-friendly data.frame of prediction results from private$prediction
 #' 
+#' @param return.k.ahead a vector of integers indicating which k.ahead prediction
+#' that should be returned out of the 1:k.ahead that were calculated.
+#' @param n.sims An integer number indicating the number of stochastic 
+#' simulations
 #' @param private model object private fields
 #' @param self model object
 create_return_simulation = function(return.k.ahead, n.sims, self, private){

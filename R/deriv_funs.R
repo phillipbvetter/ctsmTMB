@@ -35,6 +35,14 @@ get.Deriv.drule = function(){
 #' @description
 #' We create our own Deriv function based on Deriv::Deriv with custom environment and
 #' drules to support new functions e.g erf
+#' @param f see \link[Deriv]{Deriv} documentation
+#' @param x see \link[Deriv]{Deriv} documentation
+#' @param env see \link[Deriv]{Deriv} documentation
+#' @param use.D see \link[Deriv]{Deriv} documentation
+#' @param cache.exp see \link[Deriv]{Deriv} documentation
+#' @param nderiv see \link[Deriv]{Deriv} documentation
+#' @param combine see \link[Deriv]{Deriv} documentation
+#' @param drule see \link[Deriv]{Deriv} documentation
 ctsmTMB.Deriv = function(
     f,
     x = if (is.function(f)) NULL else all.vars(if (is.character(f)) parse(text = f) else
@@ -57,20 +65,3 @@ ctsmTMB.Deriv = function(
     drule = drule
   )
 }
-
-# --------------------------------------------------------------------
-# Global Exotic Functions
-# --------------------------------------------------------------------
-# NOTE:
-# Rather than specifying these functions only in the environment of Deriv,
-# they are specified globally here. That way Deriv sees them, but they can also
-# be seen by RTMB, and also when computing various statistics of the return fit
-
-#' @title Error Function
-erf = function(x) 2 * pnorm(sqrt(2)*x) - 1
-
-#' @title Logit
-logit = function(x) log(x/(1-x))
-
-#' @title Inverse Logit
-invlogit = function(x) 1/(1+exp(-x))
