@@ -197,3 +197,6 @@ data.frame(external=t(nll$gr(opt$par)), internal=t(nll$gr(fit$par.fixed)))
 ```
 
 
+```{r remove files after vignette has been compiled, include=FALSE}
+unlink(paste0(getwd(),"/ctsmTMB_cppfiles"), recursive=TRUE)
+```

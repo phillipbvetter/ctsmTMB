@@ -78,3 +78,7 @@ obj$addObs(
   obsnames = c("log_y", NA, "y2_plus_z3")
 )
 ```
+
+```{r remove files after vignette has been compiled, include=FALSE}
+unlink(paste0(getwd(),"/ctsmTMB_cppfiles"), recursive=TRUE)
+```

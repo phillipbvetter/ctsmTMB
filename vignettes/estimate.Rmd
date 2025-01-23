@@ -176,3 +176,7 @@ This argument determines the time-step used in the ODE solvers
 # Argument: `control`
 
 ---
+
+```{r remove files after vignette has been compiled, include=FALSE}
+unlink(paste0(getwd(),"/ctsmTMB_cppfiles"), recursive=TRUE)
+```

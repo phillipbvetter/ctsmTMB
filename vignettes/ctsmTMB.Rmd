@@ -8,32 +8,32 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-
-Let's get starting using `ctsmTMB`!
-
-We shall assume that you have some time series `data`, and a stochastic differential equation model which you believe can be used to model that data (or some latent variable that can be linked to your data). 
-
-Here we consider the Ornstein-Uhlenbeck process
-$$ 
-\mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \, \mathrm{d}B_{t} 
-$$
-where $\theta$, $\mu$ and $\sigma_x$ are (fixed effects) parameters in the model to be estimated. 
-
-We assume that we have direct observations of the state $X_{t}$ i.e. the observation equation is
-$$
-Y_{t_{k}} = X_{t_{k}} + \varepsilon_{t_{k}} \qquad \varepsilon_{t_{k}} \sim \mathcal{N}(0,\sigma_{Y}^{2} \cdot U_{t_{k}})
-$$
-and the residuals are normally distributed with variance $\sigma_{Y}^{2} \cdot U_{t}$, where $\sigma_{Y}$ is a fixed effect (parameter) which should also be estimated, and $U_{t}$ is an input. The input is added purely for the sake of this example. It could for instance be a vector 
-$$
-U_{t_{i}} = \left\{ 1,2,1,2,1,2,\cdots \right\}
-$$
-so that some observations have a larger variance than others, i.e. we believe them to be a less accurate measurement of $Y$.
-
-# Initialising
-
----
-
-We initialise a `ctsmTMB` model object using
+  
+  Let's get starting using `ctsmTMB`!
+  
+  We shall assume that you have some time series `data`, and a stochastic differential equation model which you believe can be used to model that data (or some latent variable that can be linked to your data). 
+  
+  Here we consider the Ornstein-Uhlenbeck process
+  $$ 
+  \mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \, \mathrm{d}B_{t} 
+  $$
+  where $\theta$, $\mu$ and $\sigma_x$ are (fixed effects) parameters in the model to be estimated. 
+  
+  We assume that we have direct observations of the state $X_{t}$ i.e. the observation equation is
+  $$
+  Y_{t_{k}} = X_{t_{k}} + \varepsilon_{t_{k}} \qquad \varepsilon_{t_{k}} \sim \mathcal{N}(0,\sigma_{Y}^{2} \cdot U_{t_{k}})
+  $$
+  and the residuals are normally distributed with variance $\sigma_{Y}^{2} \cdot U_{t}$, where $\sigma_{Y}$ is a fixed effect (parameter) which should also be estimated, and $U_{t}$ is an input. The input is added purely for the sake of this example. It could for instance be a vector 
+  $$
+  U_{t_{i}} = \left\{ 1,2,1,2,1,2,\cdots \right\}
+  $$
+  so that some observations have a larger variance than others, i.e. we believe them to be a less accurate measurement of $Y$.
+  
+  # Initialising
+  
+  ---
+  
+  We initialise a `ctsmTMB` model object using
 ```{r}
 library(ctsmTMB)
 obj = ctsmTMB$new()
@@ -140,7 +140,7 @@ We are now ready to perform state filtration and parameter estimation. We first 
 # Choosing parameters
 set.seed(10)
 theta=10; mu=1; sigma_x=1; sigma_y=1e-1
- 
+
 # Creating simulation path
 dt.sim = 1e-3
 t.sim = seq(0,1,by=dt.sim)
@@ -293,4 +293,12 @@ The parameter settings for `theta` are not automatically transformed into `logth
 obj$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
 ```
 
+```{r}
+print(getwd())
+```
+
+
+```{r remove files after vignette has been compiled, include=FALSE}
+unlink(paste0(getwd(),"/ctsmTMB_cppfiles"), recursive=TRUE)
+```
 
