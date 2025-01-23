@@ -7,4 +7,4 @@
 ^logo
 ^maintenance
 ^\.github$
-^.\vignettes\ctsmTMB_cppfiles
+^vignettes\ctsmTMB_cppfiles
