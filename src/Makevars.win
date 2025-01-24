@@ -1,2 +1,9 @@
+## This assumes that the LIB_GSL variable points to working GSL libraries
+
+
+# Only necessary to introduce GSL if headers needed
+# PKG_CPPFLAGS = -I$(LIB_GSL)/include -I/../inst/include
+
+
 PKG_CPPFLAGS = -I/../inst/include
-PKG_LIBS = -lgsl
+PKG_LIBS=-L$(LIB_GSL)/lib -lgsl -lgslcblas 
