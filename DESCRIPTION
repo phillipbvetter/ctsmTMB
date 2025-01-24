@@ -32,8 +32,7 @@ Imports:
 	Rcpp,
 	RcppEigen,
 	RcppXPtrUtils,
-	RcppZiggurat,
-	RcppGSL
+	RcppZiggurat
 LinkingTo:
 	Rcpp,
 	RcppEigen,

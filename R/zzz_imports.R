@@ -4,5 +4,6 @@
 #' @import R6
 #' @rawNamespace import(Rcpp, except=LdFlags)
 #' @rawNamespace import(RcppEigen, except=c(fastLmPure, fastLm))
-#' @import RcppZiggurat RcppGSL
+#' @import RcppZiggurat
+# #' @import RcppGSL
 NULL
