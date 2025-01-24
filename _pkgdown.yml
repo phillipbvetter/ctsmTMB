@@ -22,6 +22,9 @@ navbar:
   bg: light
   ### Components Start
   components:
+    intro:
+      text: Getting Started
+      href: articles/ctsmTMB.html
     # Vignettes Start
     vignettes:
       text: Vignettes

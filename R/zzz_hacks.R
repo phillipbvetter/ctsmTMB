@@ -12,3 +12,9 @@ g__ <- function(stateVec, parVec, inputVec) NULL
 ekf.nll <- function(p) NULL
 laplace.nll <- function(p) NULL
 x <- NULL
+
+
+
+# The vignettes generate cpp and dynamic libraries, but this gives
+# errors on github windows. We remove the files with the following 
+# function 

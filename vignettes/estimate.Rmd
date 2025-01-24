@@ -97,6 +97,10 @@ obj$setParameter(
 obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
+```{r, include=FALSE}
+obj$setCppfilesDirectory("../vignette_sourcefiles")
+```
+
 # Using `estimate` - default settings
 
 ---
@@ -176,7 +180,3 @@ This argument determines the time-step used in the ODE solvers
 # Argument: `control`
 
 ---
-
-```{r remove files after vignette has been compiled, include=FALSE}
-unlink(paste0(getwd(),"/ctsmTMB_cppfiles"), recursive=TRUE)
-```

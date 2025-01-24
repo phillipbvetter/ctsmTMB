@@ -27,7 +27,7 @@ thus must be functions of at least one state.
 \item \href{#method-ctsmTMB-setInitialVarianceScaling}{\code{ctsmTMB$setInitialVarianceScaling()}}
 \item \href{#method-ctsmTMB-setLamperti}{\code{ctsmTMB$setLamperti()}}
 \item \href{#method-ctsmTMB-setModelname}{\code{ctsmTMB$setModelname()}}
-\item \href{#method-ctsmTMB-set_cppfile_directory}{\code{ctsmTMB$set_cppfile_directory()}}
+\item \href{#method-ctsmTMB-setCppfilesDirectory}{\code{ctsmTMB$setCppfilesDirectory()}}
 \item \href{#method-ctsmTMB-setMAP}{\code{ctsmTMB$setMAP()}}
 \item \href{#method-ctsmTMB-getSystems}{\code{ctsmTMB$getSystems()}}
 \item \href{#method-ctsmTMB-getObservations}{\code{ctsmTMB$getObservations()}}
@@ -303,7 +303,7 @@ is currently supported
 Set modelname used to create the C++ file for TMB
 
 When calling \code{TMB::MakeADFun} the (negative log) likelihood function
-is created in the directory specified by the \code{set_cppfile_directory}
+is created in the directory specified by the \code{setCppfilesDirectory}
 method with name \code{<modelname>.cpp}
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setModelname(name)}\if{html}{\out{</div>}}
@@ -318,15 +318,15 @@ method with name \code{<modelname>.cpp}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-set_cppfile_directory"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-set_cppfile_directory}{}}}
-\subsection{Method \code{set_cppfile_directory()}}{
+\if{html}{\out{<a id="method-ctsmTMB-setCppfilesDirectory"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setCppfilesDirectory}{}}}
+\subsection{Method \code{setCppfilesDirectory()}}{
 Set the path directory where the constructed C++ file is created.
 You should specify the entire path, unless you want to construct a subfolder
 in the current working directory - then you can call e.g.
-\code{set_cppfile_directory("folder_in_current_wd")}.
+\code{setCppfilesDirectory("folder_in_current_wd")}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$set_cppfile_directory(directory)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setCppfilesDirectory(directory)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

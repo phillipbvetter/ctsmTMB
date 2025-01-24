@@ -28,6 +28,9 @@ obj$addSystem(
 )
 ```
 
+```{r, include=FALSE}
+obj$setCppfilesDirectory("../vignette_sourcefiles")
+```
 # Adding observation equations
 
 ---
@@ -77,8 +80,4 @@ obj$addObs(
   y^2+z^3 ~ x,
   obsnames = c("log_y", NA, "y2_plus_z3")
 )
-```
-
-```{r remove files after vignette has been compiled, include=FALSE}
-unlink(paste0(getwd(),"/ctsmTMB_cppfiles"), recursive=TRUE)
 ```

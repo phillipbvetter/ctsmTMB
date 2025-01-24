@@ -7,3 +7,4 @@
 ^logo
 ^maintenance
 ^\.github$
+^vignettes_sourcefiles

@@ -639,7 +639,7 @@ ctsmTMB = R6::R6Class(
     #' @description Set modelname used to create the C++ file for TMB
     #'
     #' When calling \code{TMB::MakeADFun} the (negative log) likelihood function 
-    #' is created in the directory specified by the \code{set_cppfile_directory} 
+    #' is created in the directory specified by the \code{setCppfilesDirectory} 
     #' method with name \code{<modelname>.cpp}
     #' 
     #' @param name string defining the model name.
@@ -664,10 +664,10 @@ ctsmTMB = R6::R6Class(
     #' @description Set the path directory where the constructed C++ file is created.
     #' You should specify the entire path, unless you want to construct a subfolder
     #' in the current working directory - then you can call e.g. 
-    #' \code{set_cppfile_directory("folder_in_current_wd")}.
+    #' \code{setCppfilesDirectory("folder_in_current_wd")}.
     #'
     #' @param directory string specifying a local directory
-    set_cppfile_directory = function(directory) {
+    setCppfilesDirectory = function(directory) {
       
       # Check if string
       if (!is.character(directory)) {

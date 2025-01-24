@@ -8,6 +8,11 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+```{r setup}
+knitr::opts_knit$set(root.dir = "/Users/pbrve/github/ctsmTMB/vignettes")
+```
+
   
   Let's get starting using `ctsmTMB`!
   
@@ -38,6 +43,12 @@ vignette: >
 library(ctsmTMB)
 obj = ctsmTMB$new()
 ```
+
+```{r, include=FALSE}
+obj$setModelname("ornstein_uhlenbeck")
+obj$setCppfilesDirectory("../vignette_sourcefiles")
+```
+
 
 We can print the object to see what kind of model it contains
 ```{r}
@@ -291,14 +302,5 @@ obj$setAlgebraics(theta ~ exp(logtheta))
 The parameter settings for `theta` are not automatically transformed into `logtheta`, so they must be redefined:
 ```{r}
 obj$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
-```
-
-```{r}
-print(getwd())
-```
-
-
-```{r remove files after vignette has been compiled, include=FALSE}
-unlink(paste0(getwd(),"/ctsmTMB_cppfiles"), recursive=TRUE)
 ```
 

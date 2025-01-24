@@ -125,6 +125,10 @@ obj$setParameter(
 obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
+```{r, include=FALSE}
+obj$setCppfilesDirectory("../vignette_sourcefiles")
+```
+
 # Predict
 
 ---
@@ -309,6 +313,3 @@ ggplot() +
   mytheme
 ```
 
-```{r remove files after vignette has been compiled, include=FALSE}
-unlink(paste0(getwd(),"/ctsmTMB_cppfiles"), recursive=TRUE)
-```

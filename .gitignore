@@ -14,3 +14,4 @@ src/*.tmp
 backup
 maintenance
 inst/doc
+vignette_sourcefiles
