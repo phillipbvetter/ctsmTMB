@@ -98,7 +98,7 @@ obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
 ```{r, include=FALSE}
-obj$setCppfilesDirectory("../vignette_sourcefiles")
+obj$setCppfilesDirectory("../vignettes_sourcefiles")
 ```
 
 # Using `estimate` - default settings

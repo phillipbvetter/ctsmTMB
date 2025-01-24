@@ -29,7 +29,7 @@ obj$addSystem(
 ```
 
 ```{r, include=FALSE}
-obj$setCppfilesDirectory("../vignette_sourcefiles")
+obj$setCppfilesDirectory("../vignettes_sourcefiles")
 ```
 # Adding observation equations
 
