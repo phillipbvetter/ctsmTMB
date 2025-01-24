@@ -6,10 +6,10 @@ articles:
   estimate: estimate.html
   extended_kalman_filter: extended_kalman_filter.html
   laplace_approx: laplace_approx.html
-  negative_log_likelihood: negative_log_likelihood.html
   observation_equations: observation_equations.html
   predict: predict.html
   simulate: simulate.html
   unscented_kalman_filter: unscented_kalman_filter.html
-last_built: 2025-01-24T10:01Z
+  using_another_optimizer: using_another_optimizer.html
+last_built: 2025-01-24T10:24Z
 

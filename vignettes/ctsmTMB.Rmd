@@ -9,11 +9,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup}
-knitr::opts_knit$set(root.dir = "/Users/pbrve/github/ctsmTMB/vignettes")
-```
-
-  
   Let's get starting using `ctsmTMB`!
   
   We shall assume that you have some time series `data`, and a stochastic differential equation model which you believe can be used to model that data (or some latent variable that can be linked to your data). 
@@ -45,7 +40,7 @@ obj = ctsmTMB$new()
 ```
 
 ```{r, include=FALSE}
-obj$setModelname("ornstein_uhlenbeck")
+obj$setModelname("GettingStarted_model")
 obj$setCppfilesDirectory("../vignette_sourcefiles")
 ```
 

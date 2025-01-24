@@ -1,10 +1,10 @@
 ---
-title: "Using another Optimizater - Extracting the Objective Function"
+title: "Using another Optimizer"
 author: ""
 date: ""
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using another Optimizater - Extracting the Objective Function}
+  %\VignetteIndexEntry{Using another Optimizer}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -13,9 +13,7 @@ vignette: >
 library(ctsmTMB)
 ```
 
-In this document we show how to use the `constructNegLogLike` method to obtain function handlers for the objective function, gradient, and hessian (the latter is only avaible when there are no random effects in your model).
-
-These handlers can be parsed to an optimization algorithm of your own choice, or you can regularize the objective function using a wrapper function in `R` around the objective function. This last step is however at the cost of the automatic differentiation so probably not worth it.
+In this document we show how to use the `constructNegLogLike` method to obtain function handlers for the objective function, and gradient, (and hessian if there are no random efects in your model formulation). These handlers can then be parsed to an optimization algorithm of your own choice.
 
 # Simulate from the Ornstein-Uhlenbeck process
 

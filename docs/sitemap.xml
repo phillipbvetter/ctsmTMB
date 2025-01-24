@@ -4,15 +4,6 @@
     <loc>/404.html</loc>
   </url>
   <url>
-    <loc>/TODO.html</loc>
-  </url>
-  <url>
-    <loc>/articles/constructNegLogLike.html</loc>
-  </url>
-  <url>
-    <loc>/articles/construct_nll.html</loc>
-  </url>
-  <url>
     <loc>/articles/ctsmTMB.html</loc>
   </url>
   <url>
@@ -28,9 +19,6 @@
     <loc>/articles/laplace_approx.html</loc>
   </url>
   <url>
-    <loc>/articles/negative_log_likelihood.html</loc>
-  </url>
-  <url>
     <loc>/articles/observation_equations.html</loc>
   </url>
   <url>
@@ -41,6 +29,9 @@
   </url>
   <url>
     <loc>/articles/unscented_kalman_filter.html</loc>
+  </url>
+  <url>
+    <loc>/articles/using_another_optimizer.html</loc>
   </url>
   <url>
     <loc>/authors.html</loc>
@@ -59,24 +50,6 @@
   </url>
   <url>
     <loc>/reference/addSystem.html</loc>
-  </url>
-  <url>
-    <loc>/reference/add_algebraics.html</loc>
-  </url>
-  <url>
-    <loc>/reference/add_inputs.html</loc>
-  </url>
-  <url>
-    <loc>/reference/add_observation_variances.html</loc>
-  </url>
-  <url>
-    <loc>/reference/add_observations.html</loc>
-  </url>
-  <url>
-    <loc>/reference/add_parameters.html</loc>
-  </url>
-  <url>
-    <loc>/reference/add_systems.html</loc>
   </url>
   <url>
     <loc>/reference/create_return_prediction.html</loc>
@@ -130,31 +103,13 @@
     <loc>/reference/plot.ctsmTMB.pred.html</loc>
   </url>
   <url>
-    <loc>/reference/plot.sdeTMB.fit.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot.sdeTMB.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot.sdeTMB.pred.html</loc>
-  </url>
-  <url>
     <loc>/reference/print.ctsmTMB.fit.html</loc>
   </url>
   <url>
     <loc>/reference/print.ctsmTMB.html</loc>
   </url>
   <url>
-    <loc>/reference/print.sdeTMB.fit.html</loc>
-  </url>
-  <url>
-    <loc>/reference/print.sdeTMB.html</loc>
-  </url>
-  <url>
     <loc>/reference/profile.ctsmTMB.fit.html</loc>
-  </url>
-  <url>
-    <loc>/reference/profile0.ctsmTMB.fit.html</loc>
   </url>
   <url>
     <loc>/reference/rcpp_ekf_estimate.html</loc>
@@ -164,9 +119,6 @@
   </url>
   <url>
     <loc>/reference/rcpp_simulation.html</loc>
-  </url>
-  <url>
-    <loc>/reference/sdeTMB.html</loc>
   </url>
   <url>
     <loc>/reference/setAlgebraics.html</loc>
@@ -181,15 +133,9 @@
     <loc>/reference/setVariance.html</loc>
   </url>
   <url>
-    <loc>/reference/set_initial_state.html</loc>
-  </url>
-  <url>
     <loc>/reference/summary.ctsmTMB.fit.html</loc>
   </url>
   <url>
     <loc>/reference/summary.ctsmTMB.html</loc>
-  </url>
-  <url>
-    <loc>/reference/summary.sdeTMB.html</loc>
   </url>
 </urlset>

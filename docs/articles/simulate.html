@@ -53,7 +53,7 @@
     <a class="dropdown-item" href="../articles/estimate.html">Estimation</a>
     <a class="dropdown-item" href="../articles/predict.html">Prediction</a>
     <a class="dropdown-item" href="../articles/simulate.html">Simulation</a>
-    <a class="dropdown-item" href="../articles/negative_log_likelihood.html">Extracting Likelihood Function</a>
+    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Using another Optimizer</a>
   </div>
 </li>
 <li class="nav-item dropdown">
@@ -222,16 +222,16 @@ Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim
 <span></span>
 <span><span class="co"># Set initial state mean and covariance</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="predict">Predict<a class="anchor" aria-label="anchor" href="#predict"></a>
-</h2>
-<hr>
-<p>We can use the predict function without having called
-<code>estimate</code> first, in which case the initial value of the
-parameters provided during <code>add_parameters</code> are used.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
+<pre><code>
+# Predict
+
+---
+
+We can use the predict function without having called `estimate` first, in which case the initial value of the parameters provided during `add_parameters` are used.
+
+
+``` r
+pred = obj$predict(.data)</code></pre>
 <p>The output of <code>predict</code> is a list of two data.frames, one
 for states and one for observations. The two data.frames share the same
 five initial columns that contain indices <code>i</code> and
@@ -409,7 +409,7 @@ and return only these values.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>color<span class="op">=</span><span class="st">""</span>,x<span class="op">=</span><span class="st">"Time"</span>,y<span class="op">=</span><span class="st">""</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="co"># coord_cartesian(xlim=c(0,0.1)) +</span></span>
 <span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-16-1.png" width="700">
+<p><img src="simulate_files/figure-html/unnamed-chunk-17-1.png" width="700">
 We notice that because these are 10-step predictions the state
 uncertainty (95%) is much larger than for the filtered posterior state
 estimates from <code>fit</code> i.e.</p>
@@ -424,7 +424,7 @@ estimates from <code>fit</code> i.e.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">data</span><span class="op">$</span><span class="va">t</span>,<span class="va">data</span><span class="op">$</span><span class="va">y</span>,color<span class="op">=</span><span class="st">"Observations"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">""</span>, color<span class="op">=</span><span class="st">""</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-17-1.png" width="700">
+<p><img src="simulate_files/figure-html/unnamed-chunk-18-1.png" width="700">
 We can calculate the RMSE prediction score for each prediction step as
 follows:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
@@ -447,7 +447,7 @@ follows:</p>
 <span>    y <span class="op">=</span> <span class="st">"Root-Mean-Square Errors"</span></span>
 <span>    <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-18-1.png" width="700"></p>
+<p><img src="simulate_files/figure-html/unnamed-chunk-19-1.png" width="700"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

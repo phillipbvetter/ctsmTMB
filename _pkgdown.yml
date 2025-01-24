@@ -35,8 +35,8 @@ navbar:
         href: articles/predict.html
       - text: Simulation
         href: articles/simulate.html
-      - text: Extracting Likelihood Function
-        href: articles/negative_log_likelihood.html
+      - text: Using another Optimizer
+        href: articles/using_another_optimizer.html
     # Vignettes End
     # Math Start
     mathematics:
