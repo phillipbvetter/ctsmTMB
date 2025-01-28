@@ -58,5 +58,6 @@ try_withWarningRecovery = function(expr, silent=TRUE){
 
 # This creates a temporary folder path used in the vignettes
 create_temp_folder <- function(){
-  folder_path <- here::here(base::tempdir(),"ctsmTMB_cppfiles")
+  # folder_path <- here::here(base::tempdir(),"ctsmTMB_cppfiles")
+  folder_path <- paste0(tempdir(),"/ctsmTMB_cppfiles")
 }
