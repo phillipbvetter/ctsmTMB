@@ -29,8 +29,7 @@ obj$addSystem(
 ```
 
 ```{r, include=FALSE}
-tmpdir <- tempdir()
-folder_path = paste0(tmpdir,"/ctsmTMB_cppfiles")
+folder_path <- ctsmTMB:::create_temp_folder()
 obj$setCppfilesDirectory(folder_path)
 ```
 

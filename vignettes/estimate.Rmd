@@ -1,10 +1,10 @@
 ---
-title: "estimate: Estimating model parameters and states"
+title: "Estimating parameters and latent states"
 author: ""
 date: ""
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{estimate: Estimating model parameters and states}
+  %\VignetteIndexEntry{Estimating parameters and latent states}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -98,8 +98,7 @@ obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
 ```{r, include=FALSE}
-tmpdir <- tempdir()
-folder_path = paste0(tmpdir,"/ctsmTMB_cppfiles")
+folder_path <- ctsmTMB:::create_temp_folder()
 obj$setCppfilesDirectory(folder_path)
 ```
 

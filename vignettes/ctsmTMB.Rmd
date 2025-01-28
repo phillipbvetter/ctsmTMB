@@ -21,7 +21,7 @@ vignette: >
   
   We assume that we have direct observations of the state $X_{t}$ i.e. the observation equation is
   $$
-  Y_{t_{k}} = X_{t_{k}} + \varepsilon_{t_{k}} \qquad \varepsilon_{t_{k}} \sim \mathcal{N}(0,\sigma_{Y}^{2} \cdot U_{t_{k}})
+  Y_{t_{k}} = X_{t_{k}} + \varepsilon_{t_{k}} \qquad \varepsilon_{t_{k}} \sim N(0,\sigma_{Y}^{2} \cdot U_{t_{k}})
   $$
   and the residuals are normally distributed with variance $\sigma_{Y}^{2} \cdot U_{t}$, where $\sigma_{Y}$ is a fixed effect (parameter) which should also be estimated, and $U_{t}$ is an input. The input is added purely for the sake of this example. It could for instance be a vector 
   $$
@@ -29,11 +29,10 @@ vignette: >
   $$
   so that some observations have a larger variance than others, i.e. we believe them to be a less accurate measurement of $Y$.
   
-  # Initialising
+# Initialising
   
-  ---
-  
-  We initialise a `ctsmTMB` model object using
+We initialise a `ctsmTMB` model object using
+
 ```{r}
 library(ctsmTMB)
 obj = ctsmTMB$new()
@@ -45,20 +44,19 @@ We set the model name, which is used to generate the underlying C++ files
 obj$setModelname("GettingStarted")
 ```
 
-By default the files are stored in the current working directory in a directory called *ctsmTMB_cppfiles*. Another file path can be specified using
+By default the files are saved in a directory called *ctsmTMB_cppfiles* in the current working directory. The files can be stored in another location by specifying another directory as below:
 
 ```{r, eval=FALSE}
 obj$setCppfilesDirectory("some_path_to_a_directory")
 ```
 
 ```{r, include=FALSE}
-tmpdir <- tempdir()
-folder_path = paste0(tmpdir,"/ctsmTMB_cppfiles")
+folder_path <- ctsmTMB:::create_temp_folder()
 obj$setCppfilesDirectory(folder_path)
 ```
 
+Now that the object is created let us first inspect it's printout:
 
-We can print the object to see what kind of model it contains
 ```{r}
 print(obj)
 ```

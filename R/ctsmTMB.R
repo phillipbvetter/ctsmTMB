@@ -34,8 +34,10 @@ ctsmTMB = R6::R6Class(
     initialize = function() {
       # modelname and path
       private$modelname = "ctsmTMB_model"
-      private$cppfile.directory = paste(getwd(),"/","ctsmTMB_cppfiles", sep="")
-      private$cppfile.path = paste(private$cppfile.directory,"/",private$modelname,sep="")
+      # private$cppfile.directory = paste(getwd(),"/","ctsmTMB_cppfiles", sep="")
+      private$cppfile.directory = here::here(getwd(),"ctsmTMB_cppfiles")
+      # private$cppfile.path = paste(private$cppfile.directory,"/",private$modelname,sep="")
+      private$cppfile.path = here::here(private$cppfile.directory,private$modelname)
       private$cppfile.path.with.method = NULL
       private$modelname.with.method = NULL
       
