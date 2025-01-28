@@ -41,7 +41,7 @@ obj = ctsmTMB$new()
 We set the model name, which is used to generate the underlying C++ files
 
 ```{r}
-obj$setModelname("ornstein_uhlenbeck")
+obj$setModelname("myFirstModel")
 ```
 
 By default the files are saved in a directory called *ctsmTMB_cppfiles* in the current working directory. The files can be stored in another location by specifying another directory as below:
