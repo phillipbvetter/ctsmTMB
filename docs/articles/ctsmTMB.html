@@ -137,7 +137,7 @@ others, i.e. we believe them to be a less accurate measurement of <span class="
 <p>We set the model name, which is used to generate the underlying C++
 files</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="st">"GettingStarted"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="st">"ornstein_uhlenbeck"</span><span class="op">)</span></span></code></pre></div>
 <p>By default the files are saved in a directory called
 <em>ctsmTMB_cppfiles</em> in the current working directory. The files
 can be stored in another location by specifying another directory as
@@ -148,13 +148,13 @@ below:</p>
 printout:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Stochastic State Space Model:                           </span></span>
-<span><span class="co">## Name         GettingStarted</span></span>
-<span><span class="co">## States                    0</span></span>
-<span><span class="co">## Diffusions                0</span></span>
-<span><span class="co">## Observations              0</span></span>
-<span><span class="co">## Inputs                    0</span></span>
-<span><span class="co">## Parameters                0</span></span></code></pre>
+<pre><code><span><span class="co">## Stochastic State Space Model:                               </span></span>
+<span><span class="co">## Name         ornstein_uhlenbeck</span></span>
+<span><span class="co">## States                        0</span></span>
+<span><span class="co">## Diffusions                    0</span></span>
+<span><span class="co">## Observations                  0</span></span>
+<span><span class="co">## Inputs                        0</span></span>
+<span><span class="co">## Parameters                    0</span></span></code></pre>
 <p>We see that the model is called <code>sde_model</code> (default), and
 there are no states, diffusions, observations, inputs or parameters
 currently registered. The name is used to name the <code>C++</code> file
@@ -197,13 +197,13 @@ variance is associated with that observation equation.</p>
 <p>Let’s inspect the model object again</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Stochastic State Space Model:                           </span></span>
-<span><span class="co">## Name         GettingStarted</span></span>
-<span><span class="co">## States                    1</span></span>
-<span><span class="co">## Diffusions                1</span></span>
-<span><span class="co">## Observations              1</span></span>
-<span><span class="co">## Inputs                    0</span></span>
-<span><span class="co">## Parameters                0</span></span>
+<pre><code><span><span class="co">## Stochastic State Space Model:                               </span></span>
+<span><span class="co">## Name         ornstein_uhlenbeck</span></span>
+<span><span class="co">## States                        1</span></span>
+<span><span class="co">## Diffusions                    1</span></span>
+<span><span class="co">## Observations                  1</span></span>
+<span><span class="co">## Inputs                        0</span></span>
+<span><span class="co">## Parameters                    0</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## System Equations:</span></span>
 <span><span class="co">## </span></span>
@@ -253,13 +253,13 @@ practice, so lets assume that we want to fix <span class="math inline">\(\sigma_
 parameters (both non-fixed and fixed) have been registered.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Stochastic State Space Model:                           </span></span>
-<span><span class="co">## Name         GettingStarted</span></span>
-<span><span class="co">## States                    1</span></span>
-<span><span class="co">## Diffusions                1</span></span>
-<span><span class="co">## Observations              1</span></span>
-<span><span class="co">## Inputs                    1</span></span>
-<span><span class="co">## Parameters                4</span></span>
+<pre><code><span><span class="co">## Stochastic State Space Model:                               </span></span>
+<span><span class="co">## Name         ornstein_uhlenbeck</span></span>
+<span><span class="co">## States                        1</span></span>
+<span><span class="co">## Diffusions                    1</span></span>
+<span><span class="co">## Observations                  1</span></span>
+<span><span class="co">## Inputs                        1</span></span>
+<span><span class="co">## Parameters                    4</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## System Equations:</span></span>
 <span><span class="co">## </span></span>
@@ -340,10 +340,10 @@ objective function hessian unlike e.g. ‘stats::optim’</p>
 <pre><code><span><span class="co">## Note: Using Makevars in /Users/pbrve/.R/Makevars</span></span></code></pre>
 <pre><code><span><span class="co">## using C++ compiler: 'Apple clang version 15.0.0 (clang-1500.3.9.4)'</span></span></code></pre>
 <pre><code><span><span class="co">## using SDK: 'MacOSX14.4.sdk'</span></span></code></pre>
-<pre><code><span><span class="co">## ...took 11.03 seconds</span></span></code></pre>
+<pre><code><span><span class="co">## ...took 11.19 seconds</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.044 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.045 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
 <pre><code><span><span class="co">##   0:     823.96514:  5.00000  0.00000 0.100000</span></span>
 <span><span class="co">##   1:    -23.631306:  4.97573 0.143302  1.08938</span></span>
@@ -368,7 +368,7 @@ objective function hessian unlike e.g. ‘stats::optim’</p>
 <span><span class="co">##  20:    -35.157143:  16.2572  1.07244  1.21186</span></span>
 <span><span class="co">##  21:    -35.157143:  16.2572  1.07244  1.21186</span></span></code></pre>
 <pre><code><span><span class="co">##   Optimization finished!:</span></span>
-<span><span class="co">##             Elapsed time: 0.027 seconds.</span></span>
+<span><span class="co">##             Elapsed time: 0.029 seconds.</span></span>
 <span><span class="co">##             The objective value is: -3.515714e+01</span></span>
 <span><span class="co">##             The maximum gradient component is: 2.9e-06</span></span>
 <span><span class="co">##             The convergence message is: relative convergence (4)</span></span>
