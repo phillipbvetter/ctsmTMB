@@ -29,8 +29,11 @@ obj$addSystem(
 ```
 
 ```{r, include=FALSE}
-obj$setCppfilesDirectory("../vignettes_sourcefiles")
+tmpdir <- tempdir()
+folder_path = paste0(tmpdir,"/ctsmTMB_cppfiles")
+obj$setCppfilesDirectory(folder_path)
 ```
+
 # Adding observation equations
 
 ---
@@ -80,4 +83,8 @@ obj$addObs(
   y^2+z^3 ~ x,
   obsnames = c("log_y", NA, "y2_plus_z3")
 )
+```
+
+```{r clean up, include=FALSE}
+unlink(folder_path, recursive=TRUE)
 ```

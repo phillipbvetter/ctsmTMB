@@ -39,9 +39,22 @@ library(ctsmTMB)
 obj = ctsmTMB$new()
 ```
 
+We set the model name, which is used to generate the underlying C++ files
+
+```{r}
+obj$setModelname("GettingStarted")
+```
+
+By default the files are stored in the current working directory in a directory called *ctsmTMB_cppfiles*. Another file path can be specified using
+
+```{r, eval=FALSE}
+obj$setCppfilesDirectory("some_path_to_a_directory")
+```
+
 ```{r, include=FALSE}
-obj$setModelname("GettingStarted_model")
-obj$setCppfilesDirectory("../vignettes_sourcefiles")
+tmpdir <- tempdir()
+folder_path = paste0(tmpdir,"/ctsmTMB_cppfiles")
+obj$setCppfilesDirectory(folder_path)
 ```
 
 
@@ -254,7 +267,7 @@ mytheme =
 ```
 
 
-```{r}
+```{r, fig.height=7,fig.width=7}
 t         = fit$states$mean$posterior$t
 xprior    = fit$states$mean$prior$X
 xpost     = fit$states$mean$posterior$X
@@ -276,7 +289,7 @@ ggplot() +
 
 We can display a standard residual analysis for the observations by calling `plot` on the `fit` object, which invokes the `S3` `plot.ctsmTMB.fit` method of `plot`. This includes a quantile-quantile plot, histogram, auto-correlations and cumulative periodogram.
 
-```{r, fig.height=7}
+```{r, fig.height=7, fig.width=7}
 plot(fit)
 ```
 The residuals (both standard and normalized) can be extracted as well, together with their standard deviation and covariance matrix via `fit$residuals`
@@ -297,5 +310,9 @@ obj$setAlgebraics(theta ~ exp(logtheta))
 The parameter settings for `theta` are not automatically transformed into `logtheta`, so they must be redefined:
 ```{r}
 obj$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
+```
+
+```{r clean up, include=FALSE}
+unlink(folder_path, recursive=TRUE)
 ```
 

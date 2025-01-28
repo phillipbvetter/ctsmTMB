@@ -126,7 +126,9 @@ obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
 ```{r, include=FALSE}
-obj$setCppfilesDirectory("../vignettes_sourcefiles")
+tmpdir <- tempdir()
+folder_path = paste0(tmpdir,"/ctsmTMB_cppfiles")
+obj$setCppfilesDirectory(folder_path)
 ```
 
 # Predict
@@ -313,3 +315,6 @@ ggplot() +
   mytheme
 ```
 
+```{r clean up, include=FALSE}
+unlink(folder_path, recursive=TRUE)
+```

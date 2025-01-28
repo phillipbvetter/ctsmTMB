@@ -1,7 +1,4 @@
-#' Estimate function that calls the underlying Rcpp estimate ekf function
-#' 
-#' @param private model object private fields
-#' @param self model object
+# Estimate function that calls the underlying Rcpp estimate ekf function
 rcpp_ekf_estimate = function(self, private){
   
   message("Estimating using the ekf Rcpp script")

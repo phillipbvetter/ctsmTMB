@@ -105,7 +105,9 @@ obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
 ```{r, include=FALSE}
-obj$setCppfilesDirectory("../vignettes_sourcefiles")
+tmpdir <- tempdir()
+folder_path = paste0(tmpdir,"/ctsmTMB_cppfiles")
+obj$setCppfilesDirectory(folder_path)
 ```
 
 # Estimation
@@ -196,4 +198,8 @@ data.frame(external=opt$value, internal=fit$nll)
 
 # Gradient components
 data.frame(external=t(nll$gr(opt$par)), internal=t(nll$gr(fit$par.fixed)))
+```
+
+```{r clean up, include=FALSE}
+unlink(folder_path, recursive=TRUE)
 ```

@@ -409,7 +409,7 @@ and return only these values.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>color<span class="op">=</span><span class="st">""</span>,x<span class="op">=</span><span class="st">"Time"</span>,y<span class="op">=</span><span class="st">""</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="co"># coord_cartesian(xlim=c(0,0.1)) +</span></span>
 <span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="predict_files/figure-html/unnamed-chunk-17-1.png" width="700">
+<p><img src="predict_files/figure-html/unnamed-chunk-16-1.png" width="700">
 We notice that because these are 10-step predictions the state
 uncertainty (95%) is much larger than for the filtered posterior state
 estimates from <code>fit</code> i.e.</p>
@@ -424,7 +424,7 @@ estimates from <code>fit</code> i.e.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">data</span><span class="op">$</span><span class="va">t</span>,<span class="va">data</span><span class="op">$</span><span class="va">y</span>,color<span class="op">=</span><span class="st">"Observations"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">""</span>, color<span class="op">=</span><span class="st">""</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="predict_files/figure-html/unnamed-chunk-18-1.png" width="700">
+<p><img src="predict_files/figure-html/unnamed-chunk-17-1.png" width="700">
 We can calculate the RMSE prediction score for each prediction step as
 follows:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
@@ -447,7 +447,7 @@ follows:</p>
 <span>    y <span class="op">=</span> <span class="st">"Root-Mean-Square Errors"</span></span>
 <span>    <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="predict_files/figure-html/unnamed-chunk-19-1.png" width="700"></p>
+<p><img src="predict_files/figure-html/unnamed-chunk-18-1.png" width="700"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>
