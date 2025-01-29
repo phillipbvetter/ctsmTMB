@@ -5,7 +5,8 @@
 write_method_cppfile = function(self, private) {
   
   #Initialize C++ file
-  fileconn = file(paste0(private$cppfile.path.with.method,".cpp"))
+  fileconn = file(normalizePath(file.path(paste0(private$cppfile.path.with.method,".cpp")),mustWork=FALSE))
+  
   
   # Header etc...
   txt = c(

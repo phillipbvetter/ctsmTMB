@@ -38,15 +38,17 @@ compile_cppfile = function(self, private) {
   if(private$compile){
     
     # Create folder if it doesnt exist
+    # This is necessary because no folder was created if model$setCppfilesDirectory 
+    # was not envoked by the user 
     if(!dir.exists(private$cppfile.directory)){
-      dir.create(private$cppfile.directory)
-    } 
+      dir.create(private$cppfile.directory, recursive=TRUE)
+    }
     
     # Write the C++ file
     write_method_cppfile(self, private)
     
     # Compile C++ File
-    # we need optimization level 1 to avoid compilation errors on windows
+    # we need optimization level 1 to avoid compilation errors on windows(?)
     if (.Platform$OS.type=="windows") {
       comptime = tryCatch(
         system.time(

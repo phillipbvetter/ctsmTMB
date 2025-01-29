@@ -105,8 +105,8 @@ obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
 ```{r, include=FALSE}
-folder_path <- ctsmTMB:::create_temp_folder()
-obj$setCppfilesDirectory(folder_path)
+temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"))
+obj$setCppfilesDirectory(temporary_directory)
 ```
 
 # Estimation
@@ -200,5 +200,5 @@ data.frame(external=t(nll$gr(opt$par)), internal=t(nll$gr(fit$par.fixed)))
 ```
 
 ```{r clean up, include=FALSE}
-unlink(folder_path, recursive=TRUE)
+unlink(temporary_directory, recursive=TRUE)
 ```

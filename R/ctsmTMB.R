@@ -32,12 +32,10 @@ ctsmTMB = R6::R6Class(
     #' @description 
     #' Initialize private fields
     initialize = function() {
-      # modelname and path
+      # modelname, directory and path (directory+name)
       private$modelname = "ctsmTMB_model"
-      private$cppfile.directory = paste(getwd(),"/","ctsmTMB_cppfiles", sep="")
-      # private$cppfile.directory = here::here(getwd(),"ctsmTMB_cppfiles")
-      private$cppfile.path = paste(private$cppfile.directory,"/",private$modelname,sep="")
-      # private$cppfile.path = here::here(private$cppfile.directory,private$modelname)
+      private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE)
+      private$cppfile.path = normalizePath(file.path(private$cppfile.directory, private$modelname), mustWork=FALSE)
       private$cppfile.path.with.method = NULL
       private$modelname.with.method = NULL
       
@@ -654,7 +652,7 @@ ctsmTMB = R6::R6Class(
       
       # set options
       private$modelname = name
-      private$cppfile.path = paste(private$cppfile.directory,"/",name,sep="")
+      private$cppfile.path <- normalizePath(file.path(private$cppfile.directory, name))
       
       # return
       return(invisible(self))
@@ -676,14 +674,17 @@ ctsmTMB = R6::R6Class(
         stop("You must pass a string")
       }
       
+      # overwrite to proper file.path
+      directory <- normalizePath(file.path(directory))
+      
       # create directory if it does not exist
       if (!dir.exists(directory)) {
-        message("The specified directory does not exist - creating it")
-        dir.create(directory)
+        # message("The specified directory does not exist - creating it")
+        dir.create(directory, recursive=TRUE)
       }
       private$cppfile.directory = directory
       
-      # update private$cppfile.path by calling set_modelname
+      # update private$cppfile.path by calling setModelname
       self$setModelname(private$modelname)
       
       # return
@@ -696,7 +697,7 @@ ctsmTMB = R6::R6Class(
     #' @description Enable maximum a posterior (MAP) estimation.
     #'
     #' Adds a maximum a posterior contribution to the (negative log) likelihood 
-    #' function by evaluating the fixed effects parameters in a multivariate Gaussian 
+    #' function by  evaluating the fixed effects parameters in a multivariate Gaussian 
     #' with \code{mean} and \code{covariance} as provided.
     #' 
     #' @param mean mean vector of the Gaussian prior parameter distribution
@@ -1849,7 +1850,8 @@ ctsmTMB = R6::R6Class(
       
       # set file with method flag
       private$modelname.with.method = paste0(private$modelname,sprintf("_%s",private$method))
-      private$cppfile.path.with.method = paste0(private$cppfile.path,sprintf("_%s",private$method))
+      private$cppfile.path.with.method <- normalizePath(file.path(paste0(private$cppfile.path,sprintf("_%s",private$method))), mustWork=FALSE)
+      # private$cppfile.path.with.method = paste0(private$cppfile.path,sprintf("_%s",private$method))
       
       # return
       return(invisible(self))

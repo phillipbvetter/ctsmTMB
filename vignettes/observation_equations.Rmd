@@ -29,8 +29,8 @@ obj$addSystem(
 ```
 
 ```{r, include=FALSE}
-folder_path <- ctsmTMB:::create_temp_folder()
-obj$setCppfilesDirectory(folder_path)
+temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"))
+obj$setCppfilesDirectory(temporary_directory)
 ```
 
 # Adding observation equations
@@ -85,5 +85,5 @@ obj$addObs(
 ```
 
 ```{r clean up, include=FALSE}
-unlink(folder_path, recursive=TRUE)
+unlink(temporary_directory, recursive=TRUE)
 ```

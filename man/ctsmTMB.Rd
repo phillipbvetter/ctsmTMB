@@ -344,7 +344,7 @@ in the current working directory - then you can call e.g.
 Enable maximum a posterior (MAP) estimation.
 
 Adds a maximum a posterior contribution to the (negative log) likelihood
-function by evaluating the fixed effects parameters in a multivariate Gaussian
+function by  evaluating the fixed effects parameters in a multivariate Gaussian
 with \code{mean} and \code{covariance} as provided.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setMAP(mean, cov)}\if{html}{\out{</div>}}

@@ -111,9 +111,12 @@ of an observation equation.</p>
 <span><span class="va">obj</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Set name of model (and the created .cpp file)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="st">"ornstein_uhlenbeck"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add system equations</span></span>
+<span><span class="va">obj</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="st">"ornstein_uhlenbeck"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Warning in normalizePath(file.path(private$cppfile.directory, name)):</span></span>
+<span><span class="co">## path[1]="/Users/pbrve/github/ctsmTMB/vignettes/ctsmTMB_cppfiles/ornstein_uhlenbeck":</span></span>
+<span><span class="co">## No such file or directory</span></span></code></pre>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Add system equations</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span></span>
 <span>  <span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span><span class="op">*</span><span class="va">dw</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -128,7 +131,7 @@ conditioned on <span class="math inline">\(x_{t}\)</span> i.e. <span class="math
 <code>y</code> in the provided <code>data.frame</code> to
 e.g. <code>estimate</code> or <code>predict</code> by adding the
 following observation equation</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span> <span class="op">~</span> <span class="va">x</span>, obsnames <span class="op">=</span> <span class="st">"log_y"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -144,13 +147,13 @@ explicitly named using the <code>obsnames</code> argument.</p>
 are needed to specify the observation variance. As an example the code
 below does not work, because the observation was named
 <code>log_y</code></p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span></span>
 <span>  <span class="va">y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Error in check_observation_variance_eqs(form, self, private): Please add an observation equation for y before specifying its variance</span></span></code></pre>
 <p>So the correct way to add the observation variance is this:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span></span>
 <span>  <span class="va">log_y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -162,7 +165,7 @@ below does not work, because the observation was named
 <p>You must supply multiple <code>obsnames</code> if you are supplying
 multiple observatin equations, although the name will only be used if
 the left-hand side is not just a single variable i.e.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span> <span class="op">~</span> <span class="va">x</span>,</span>
 <span>  <span class="va">y</span> <span class="op">~</span> <span class="va">x</span>,</span>
