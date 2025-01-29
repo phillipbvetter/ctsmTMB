@@ -433,5 +433,5 @@ create_rtmb_ekf_string = function(self, private){
   
   private$rtmb.nll.strings$ekf = ekf.text
   
-  
+  return(invisible(NULL))
 }
