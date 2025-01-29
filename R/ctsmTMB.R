@@ -34,8 +34,7 @@ ctsmTMB = R6::R6Class(
     initialize = function() {
       # modelname, directory and path (directory+name)
       private$modelname = "ctsmTMB_model"
-      private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE)
-      # private$cppfile.path = normalizePath(file.path(private$cppfile.directory, private$modelname), mustWork=FALSE)
+      private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE, winslash = "/")
       private$cppfile.path = NULL
       private$cppfile.path.with.method = NULL
       private$modelname.with.method = NULL
@@ -678,7 +677,7 @@ ctsmTMB = R6::R6Class(
       }
 
       # overwrite to proper file.path
-      directory <- normalizePath(file.path(directory), mustWork=FALSE)
+      directory <- normalizePath(file.path(directory), mustWork=FALSE, winslash = "/")
       
       # create directory if it does not exist
       # if (!dir.exists(directory)) {
