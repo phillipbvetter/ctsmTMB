@@ -51,9 +51,9 @@ obj$setCppfilesDirectory("some_path_to_a_directory")
 ```
 
 ```{r, include=FALSE}
-# temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"))
+temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMBcppfiles"))
 # temporary_directory <- normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"))
-# obj$setCppfilesDirectory(temporary_directory)
+obj$setCppfilesDirectory(temporary_directory)
 ```
 
 Now that the object is created let us first inspect it's printout:
@@ -312,6 +312,6 @@ obj$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
 ```
 
 ```{r clean up, include=FALSE}
-unlink(temporary_directory, recursive=TRUE)
+# unlink(temporary_directory, recursive=TRUE)
 ```
 
