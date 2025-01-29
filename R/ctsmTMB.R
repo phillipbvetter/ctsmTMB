@@ -676,7 +676,7 @@ ctsmTMB = R6::R6Class(
       if (!is.character(directory)) {
         stop("You must pass a string")
       }
-      print(private$cppfile.directory)
+
       # overwrite to proper file.path
       directory <- normalizePath(file.path(directory), mustWork=FALSE)
       
@@ -686,7 +686,6 @@ ctsmTMB = R6::R6Class(
       #   dir.create(directory, recursive=TRUE)
       # }
       private$cppfile.directory = directory
-      print(private$cppfile.directory)
       
       # update path-field
       # private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
@@ -1856,6 +1855,9 @@ ctsmTMB = R6::R6Class(
       private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
       private$cppfile.path.with.method <- file.path(paste0(private$cppfile.path, sprintf("_%s",private$method)))
       private$modelname.with.method <- paste0(private$modelname, sprintf("_%s",private$method))
+      # private$cppfile.path <- paste0(private$cppfile.directory,"\\",private$modelname)
+      # private$cppfile.path.with.method <- file.path(paste0(private$cppfile.path, sprintf("_%s",private$method)))
+      # private$modelname.with.method <- paste0(private$modelname, sprintf("_%s",private$method))
       
       # return
       return(invisible(self))
