@@ -35,7 +35,8 @@ ctsmTMB = R6::R6Class(
       # modelname, directory and path (directory+name)
       private$modelname = "ctsmTMB_model"
       private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE)
-      private$cppfile.path = normalizePath(file.path(private$cppfile.directory, private$modelname), mustWork=FALSE)
+      # private$cppfile.path = normalizePath(file.path(private$cppfile.directory, private$modelname), mustWork=FALSE)
+      private$cppfile.path = NULL
       private$cppfile.path.with.method = NULL
       private$modelname.with.method = NULL
       
@@ -488,7 +489,7 @@ ctsmTMB = R6::R6Class(
       if (length(x0)!=length(private$sys.eqs)) {
         stop("The initial state vector should have length ",length(private$sys.eqs))
       }
-
+      
       if (!all(dim(p0)==c(length(private$sys.eqs),length(private$sys.eqs)))) {
         stop("The covariance matrix should be square with dimension ", length(private$sys.eqs))
       }
@@ -650,9 +651,11 @@ ctsmTMB = R6::R6Class(
         stop("The modelname must be a string")
       }
       
-      # set options
+      # set name field
       private$modelname = name
-      private$cppfile.path <- normalizePath(file.path(private$cppfile.directory, name))
+      
+      # update path-field
+      # private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
       
       # return
       return(invisible(self))
@@ -673,19 +676,20 @@ ctsmTMB = R6::R6Class(
       if (!is.character(directory)) {
         stop("You must pass a string")
       }
-      
+      print(private$cppfile.directory)
       # overwrite to proper file.path
-      directory <- normalizePath(file.path(directory))
+      directory <- normalizePath(file.path(directory), mustWork=FALSE)
       
       # create directory if it does not exist
-      if (!dir.exists(directory)) {
-        # message("The specified directory does not exist - creating it")
-        dir.create(directory, recursive=TRUE)
-      }
+      # if (!dir.exists(directory)) {
+      #   # message("The specified directory does not exist - creating it")
+      #   dir.create(directory, recursive=TRUE)
+      # }
       private$cppfile.directory = directory
+      print(private$cppfile.directory)
       
-      # update private$cppfile.path by calling setModelname
-      self$setModelname(private$modelname)
+      # update path-field
+      # private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
       
       # return
       return(invisible(self))
@@ -1169,14 +1173,14 @@ ctsmTMB = R6::R6Class(
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     constructNegLogLike = function(data,
-                             method = "ekf",
-                             ode.solver = "rk4",
-                             ode.timestep = diff(data$t),
-                             loss = "quadratic",
-                             loss_c = 3,
-                             unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-                             compile=FALSE,
-                             silent=FALSE){
+                                   method = "ekf",
+                                   ode.solver = "rk4",
+                                   ode.timestep = diff(data$t),
+                                   loss = "quadratic",
+                                   loss_c = 3,
+                                   unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
+                                   compile=FALSE,
+                                   silent=FALSE){
       
       # set flags
       args = list(
@@ -1190,7 +1194,7 @@ ctsmTMB = R6::R6Class(
         silent = silent
       )
       set_flags("construction", args, self, private)
-    
+      
       # build model
       if(!silent) message("Building model...")
       build_model(self, private)
@@ -1849,9 +1853,9 @@ ctsmTMB = R6::R6Class(
       private$method = method
       
       # set file with method flag
-      # private$modelname.with.method = paste0(private$modelname,sprintf("_%s",private$method))
-      private$modelname.with.method = paste0(private$modelname,sprintf("%s",private$method))
-      private$cppfile.path.with.method <- normalizePath(file.path(paste0(private$cppfile.path,sprintf("%s",private$method))), mustWork=FALSE)
+      private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
+      private$cppfile.path.with.method <- file.path(paste0(private$cppfile.path, sprintf("_%s",private$method)))
+      private$modelname.with.method <- paste0(private$modelname, sprintf("_%s",private$method))
       
       # return
       return(invisible(self))
@@ -2106,7 +2110,7 @@ ctsmTMB = R6::R6Class(
       if (!(is.list(parlist))) {
         stop("Please provide a named list containing 'alpha', 'beta' and 'kappa'")
       }
-  
+      
       # check if entries are numerics
       if (!is.numeric(parlist[["alpha"]])){
         stop("'alpha' must be a numeric")
