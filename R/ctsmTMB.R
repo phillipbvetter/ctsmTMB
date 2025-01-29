@@ -1849,9 +1849,9 @@ ctsmTMB = R6::R6Class(
       private$method = method
       
       # set file with method flag
-      private$modelname.with.method = paste0(private$modelname,sprintf("_%s",private$method))
-      private$cppfile.path.with.method <- normalizePath(file.path(paste0(private$cppfile.path,sprintf("_%s",private$method))), mustWork=FALSE)
-      # private$cppfile.path.with.method = paste0(private$cppfile.path,sprintf("_%s",private$method))
+      # private$modelname.with.method = paste0(private$modelname,sprintf("_%s",private$method))
+      private$modelname.with.method = paste0(private$modelname,sprintf("%s",private$method))
+      private$cppfile.path.with.method <- normalizePath(file.path(paste0(private$cppfile.path,sprintf("%s",private$method))), mustWork=FALSE)
       
       # return
       return(invisible(self))
