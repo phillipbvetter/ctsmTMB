@@ -51,7 +51,8 @@ obj$setCppfilesDirectory("some_path_to_a_directory")
 ```
 
 ```{r, include=FALSE}
-temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMBcppfiles"))
+temporary_directory <- normalizePath(file.path(getwd()))
+# temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMBcppfiles"))
 # temporary_directory <- normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"))
 obj$setCppfilesDirectory(temporary_directory)
 ```
