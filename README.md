@@ -8,46 +8,62 @@
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/geomtextpath)](https://CRAN.R-project.org/package=geomtextpath) -->
 
 [![R-CMD-check](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml)
-<!-- [![Codecov test coverage](https://codecov.io/gh/AllanCameron/geomtextpath/branch/main/graph/badge.svg)](https://app.codecov.io/gh/AllanCameron/geomtextpath?branch=main) -->
 <!-- [![metacran downloads](https://cranlogs.r-pkg.org/badges/geomtextpath)](https://cran.r-project.org/package=geomtextpath) -->
-
 <!-- Package Description -->
 
-## Overview
+# Overview
 
-**ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model
-Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html) is an R
-package for parameter estimation, state filtration and forecasting in
-stochastic state space models, an intended successor of, and heavily
-inspired by the **CTSM** package [(Continuous Time Stochastic
-Modelling)](https://ctsm.info). The package is essentially a wrapper
-around the **TMB**/**RTMB** packages [(Template Model
-Builder)](https://github.com/kaskr/adcomp) used to automatically
-constructs the underlying *(negative log)* likelihood function behind
-the scenes (based on a user-specified model). The model is specified
-using the implemented OOP-style **R6** `ctsmTMB` class, with its methods
-for e.g. specifying system equations (`addSystem`) and observation
-equations (`addObs`).
+Welcome to this GitHub repository which hosts **ctsmTMB** [(Continuous
+Time Stochastic Modelling using Template Model
+Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html), the
+intended successor of, and heavily inspired by, the **CTSM** package
+[(Continuous Time Stochastic Modelling)](https://ctsm.info). The purpose
+of the package is to facilitate a user-friendly tool for (state and
+parameter) inference, and forecasting, in (multi-dimensional)
+continuous-discrete stochastic state space systems, i.e. systems on the
+form $$
+\begin{align}
+dx_{t} & = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t} \\
+y_{t_k} & = h(t, x_t, u_t, \theta)
+\end{align}
+$$ Here the latent state $x_t$ evolves continuously in time, governed by
+a set of stochastic differential equations, and information about the
+system is available at discrete times through the observations
+$y_{t_k}$.
 
-The primary work-horse method of **ctsmTMB** is `estimate`, used for
-estimating parameters (and states) with the `stats::nlminb` quasi-Newton
-optimizer due to [D.
-Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The available
-inference methods are non-linear Kalman filters and the Laplace
-approxmation.
+The **ctsmTMB** package is essentially “just” a convience wrapper for
+the **TMB**/**RTMB** packages [(Template Model
+Builder)](https://github.com/kaskr/adcomp) that provide automatic
+differentiation of the likelihood function, and access to other
+computational tools such as the Laplace approximation. The likelihood
+function is constructed based on the (symbolic) user-provided state
+space equations, which may be specified using the implemented OOP-style
+**R6** `ctsmTMB` class, with methods such as `addSystem` (for defining
+system equations), and `addObs` (for defining observation equations).
 
-The secondary work-horse methods are `predict` and `simulate`. These are
-used for integrating the stochastic differential equation forward in
-time, either using (first and second order) moment differential
-equations or by stochastic (euler-maruyama) simulations. The
-implementation of these two methods are based on **C++** code using the
-`Rcpp` package universe. The computation speed is in particular aided by
-the use of the `RcppXPtrUtils` package which facilities creating and
-sending **C++** pointers of the model-specific functions (drift,
-diffusion, observation and associated jacobians) rather than sending
-(slow) **R** functions to the **C++** side.
+The primary work-horse of **ctsmTMB** is the `estimate` method, which
+carries out inference by minimizing the (negative log) likelihood using
+the `stats::nlminb` quasi-Newton optimizer due to [D.
+Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The resulting
+object contains the maximum likelihood parameter and state estimates,
+and associated marginal uncertainties. The available inference methods
+are non-linear Kalman filters (EKF and UKF) and filtration by the
+Laplace approxmation in a random-effects setting. The user can extract
+the likelihood function handles (function, gradient and hessian) with
+the `likelihood` method if e.g. they want to use another optimizer.
 
-## Estimation Methods
+The package facilities forecasting through the `predict` and `simulate`
+methods (state updates for k-step ahead forecasts are currently only
+available using Kalman filters). The difference between the two is that
+the former produces moment predictions (mean and covariance) while the
+latter produces stochastic path simulations (distributions). The
+calculations are carried out in **C++** through the `Rcpp` package
+universe, in particular using the `RcppXPtrUtils` package for sending
+**C++** pointers of the model-specific functions (drift, diffusion,
+observation and jacobians) rather than sending (slow to evaluate) **R**
+functions.
+
+# Estimation Methods
 
 The following state reconstruction algorithms are currently available:
 
@@ -57,7 +73,7 @@ The following state reconstruction algorithms are currently available:
 
 3.  The (Continuous-Discrete) Laplace Approximation `laplace`.
 
-### Kalman Filters
+## Kalman Filters
 
 The package is currently mostly tailored towards the Kalman Filter. The
 advantages of the methods are:
@@ -84,7 +100,7 @@ The Unscented Kalman Filter implementation is based on *Algorithm 4.7*
 in [S. Särkkä,
 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242).
 
-### Laplace Filter
+## Laplace Filter
 
 The state-reconstructions based on the `laplace` method are *smoothed*
 estimates, meaning that all states are optimized jointly, given all
@@ -107,7 +123,7 @@ forecasting because the likelihood contributions are based on these
 smoothed estimates, rather than one-step predictions (as is the case of
 the Kalman filters).
 
-## Installation
+# Installation
 
 You can install the package by copying the command below into `R`.
 
@@ -115,47 +131,78 @@ You can install the package by copying the command below into `R`.
 remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
 ```
 
-The user must have a working C++ compiler. In particular windows users
-should install Rtools, and Mac users should install Command Line Tools
-to get working C++ compilers. You must make sure that these are added to
-the `PATH` vislble to `R`. For further information see the `TMB` GitHub
-[here](https://github.com/kaskr/adcomp) and associated installation
-instructions [here](https://github.com/kaskr/adcomp/wiki/Download)
+It is important to note that users must have working C++ compilers to
+install and use **ctsmTMB**.
 
-Linux users need to make sure that GSL is installed for `RcppZiggurat`
-which is necessary for the `simulate` method. You can try the following
-command, or google yourself.
+## Windows
 
+C++ compilation in R requires **Rtools**:
+
+1.  Go to <https://cran.r-project.org/bin/windows/Rtools/> and find the
+    latest version.
+
+2.  Go to “Control Panel -\> System -\>”Advanced” (tab) -\> “Environment
+    Variables” -\> Highlight “Path” -\> “Edit” -\> Add to the character
+    string in “Variable Value” the path to your Rtools folder
+    **C:\Rtools\bin;C:\Rtools\MinGW\bin**.
+
+## Mac / Unix
+
+Mac users should install *Command Line Tools*. Run the following command
+in the Terminal
+
+``` bash
+xcode-select --install
+```
+
+<!---
+Linux also need to make sure that GSL is installed for `RcppZiggurat` which is necessary for the `simulate` method. You can try the following command, or google yourself.
+&#10;
 ``` bash
 sudo apt-get install libgsl-dev
 ```
+--->
 
-## Package Dependencies
+## Test the Installation
 
-We note that `ctsmTMB` depends on the following packages: 1. `TMB` and
-`RTMB` 2. `Rcpp`, `RcppEigen`, `RcppXPtrUtils` and `RcppZiggurat` 3.
-`R6` 4. `Deriv` 5. `stringr`
+Once you have installed the package is it a good idea to test whether
+**TMB** and C++ compilation works. You should be able to run all
+examples without compilation errors:
 
-## Getting Started
+``` r
+library(TMB)
+runExample(all=TRUE)
+```
+
+For further information see the [TMB
+GitHub](https://github.com/kaskr/adcomp) and its associated
+[installation
+instructions](https://github.com/kaskr/adcomp/wiki/Download).
+
+# Getting Started
 
 You can visit the package
 [webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and
 browse the vignettes for example uses, in particular see [Getting
 Started](https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html).
 
-## Help
+## Documentation
 
-You can access the documentation for all the available methods with
+You can access the documentation for all methods with
 
 ``` r
 ?ctsmTMB
 ```
 
-or individually (for a subset of methods) using
-i.e. `?ctsmTMB::addSystem`.
+or invidually using the standard syntax
 
-The methods documentation is also available on the
-[homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
+``` r
+?ctsmTMB::addSystem
+?ctsmTMB::estimate
+```
+
+The methods documentation is also available on the [package
+homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
 ## Code Example - Inference in 1D Ornstein-Uhlenbeck
 

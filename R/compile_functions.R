@@ -26,7 +26,7 @@ compile_cppfile = function(self, private) {
   
   # Start Check:
   # - Exit if the method uses RTMB and does not need C++ compilation.
-  bool = any(private$method == c("laplace", "ekf_rtmb", "ekf_rcpp"))
+  bool = any(private$method == c("laplace", "ekf", "ekf_rcpp"))
   if(bool){
     return(invisible(self))
   }

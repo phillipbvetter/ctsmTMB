@@ -675,7 +675,7 @@ ctsmTMB = R6::R6Class(
       if (!is.character(directory)) {
         stop("You must pass a string")
       }
-
+      
       # overwrite to proper file.path
       directory <- normalizePath(file.path(directory), mustWork=FALSE, winslash = "/")
       
@@ -893,12 +893,12 @@ ctsmTMB = R6::R6Class(
     # GET NEG LOG LIKE (MakeADFUN)
     ########################################################################
     #' @description Retrieve initially set state and covariance
-    getNegLogLike = function() {
+    getLikelihood = function() {
       
       
       # extract algebraic relation formulas
       if(is.null(private$nll)){
-        message("No likelihood function has been created yet. Run either 'esitmate' or 'constructNegLogLike' first.")
+        message("There is no likelihood function to be exctrated - run 'estimate' or 'likelihood'.")
         return(invisible(NULL))
       }
       
@@ -915,7 +915,7 @@ ctsmTMB = R6::R6Class(
       
       # extract algebraic relation formulas
       if(is.null(private$prediction)){
-        message("There are no prediction results to be exctracted - run 'predict'.")
+        message("There are no prediction results to be extracted - run 'predict'.")
         return(invisible(NULL))
       }
       
@@ -932,7 +932,7 @@ ctsmTMB = R6::R6Class(
       
       # extract algebraic relation formulas
       if(is.null(private$simulation)){
-        message("There are no simulation results to be exctracted - run 'simulate'.")
+        message("There are no simulation results to be extracted - run 'simulate'.")
         return(invisible(NULL))
       }
       
@@ -976,8 +976,7 @@ ctsmTMB = R6::R6Class(
     #' If the user makes changes to system equations, observation equations, observation variances, 
     #' algebraic relations or lamperi transformations then the C++ object should be recompiled.
     #' @param method character vector specifying the filtering method used for state/likelihood calculations.
-    #' Must be one of either "ekf", "ekf_rtmb", ukf" or "laplace".
-    #' 
+    #' Must be one of either "ekf", ukf" or "laplace".
     #' 1. The natural TMB-style formulation where latent states are considered random effects
     #' and are integrated out using the Laplace approximation. This method only yields the gradient
     #' of the (negative log) likelihood function with respect to the fixed effects for optimization.
@@ -1133,7 +1132,7 @@ ctsmTMB = R6::R6Class(
     #' in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
     #' If the user makes changes to system equations, observation equations, observation variances, 
     #' algebraic relations or lamperi transformations then the C++ object should be recompiled.
-    #' @param method character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation 
+    #' @param method character vector - one of either "ekf", "ukf" or "laplace". Sets the estimation 
     #' method. The package has three available methods implemented:
     #' 1. The natural TMB-style formulation where latent states are considered random effects
     #' and are integrated out using the Laplace approximation. This method only yields the gradient
@@ -1170,15 +1169,15 @@ ctsmTMB = R6::R6Class(
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
-    constructNegLogLike = function(data,
-                                   method = "ekf",
-                                   ode.solver = "rk4",
-                                   ode.timestep = diff(data$t),
-                                   loss = "quadratic",
-                                   loss_c = 3,
-                                   unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-                                   compile=FALSE,
-                                   silent=FALSE){
+    likelihood = function(data,
+                          method = "ekf",
+                          ode.solver = "rk4",
+                          ode.timestep = diff(data$t),
+                          loss = "quadratic",
+                          loss_c = 3,
+                          unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
+                          compile=FALSE,
+                          silent=FALSE){
       
       # set flags
       args = list(
@@ -1835,15 +1834,14 @@ ctsmTMB = R6::R6Class(
       }
       
       # check if method is available
-      available_methods = c("ekf","ukf", "ekf_rtmb","laplace", "laplace_cpp", "ekf_rcpp")
+      available_methods = c("ekf","ukf","laplace", "ekf_cpp", "ekf_rcpp")
       if (!(method %in% available_methods)) {
         stop("That method is not available. Please choose one of:
-             1. 'ekf' - Extended Kalman Filter in C++ (Requires Compilation, but faster than 'ekf_rtmb')
-             2. 'ekf_rtmb' - Extended Kalman Filter with RTMB (No Compilation)
-             3. 'ukf' - Unscented Kalman Filter with C++ (Requires Compilation)
-             4. 'laplace' - Laplace Approximation using Random Effects Formulation with RTMB (No Compilation)
-             5. 'laplace_cpp' - Laplace Approximation using Random Effects Formulation with TMB (Requires Compilation)
-             6. 'ekf_rcpp' - Extended Kalman Filter in pure Rcpp (No AD) Code."
+             1. 'ekf' - Extended Kalman Filter with RTMB (No Compilation)
+             2. 'ukf' - Unscented Kalman Filter with C++ (Requires Compilation)
+             3. 'laplace' - Laplace Approximation using Random Effects Formulation with RTMB (No Compilation)
+             4. 'ekf_cpp' - Extended Kalman Filter in C++ (Requires Compilation)"
+             
         )
       }
       

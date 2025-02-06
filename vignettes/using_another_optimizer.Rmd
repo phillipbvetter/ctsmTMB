@@ -13,13 +13,13 @@ vignette: >
 library(ctsmTMB)
 ```
 
-In this document we show how to use the `constructNegLogLike` method to obtain function handlers for the objective function, and gradient, (and hessian if there are no random efects in your model formulation). These handlers can then be parsed to an optimization algorithm of your own choice.
+In this document we show how to use the `likelihood` method to obtain function handlers for the objective function, and gradient, (and hessian if there are no random efects in your model formulation). These handlers can then be parsed to an optimization algorithm of your own choice.
 
 # Simulate from the Ornstein-Uhlenbeck process
 
 ---
 
-We use the common Ornstein-Uhlenbeck process to showcase the use of `constructNegLogLike`. 
+We use the common Ornstein-Uhlenbeck process to showcase the use of `likelihood`. 
 
 $$
 \mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \, \mathrm{d}B_{t} 
@@ -130,10 +130,10 @@ opt = stats::nlminb(start=nll$par, objective=nll$fn, grad=nll$gr, hessian=nll$he
 
 ---
 
-The `constructNegLogLike` method allows you to retrieve the `nll` object that holds the negative log-likelihood, and its derivatives. The method takes arguments similar to those of `estimate`.
+The `likelihood` method allows you to retrieve the `nll` object that holds the negative log-likelihood, and its derivatives. The method takes arguments similar to those of `estimate`.
 
 ```{r}
-nll = obj$constructNegLogLike(.data)
+nll = obj$likelihood(.data)
 ```
 
 The initial parameters (supplied by the user) are stored here

@@ -104,17 +104,17 @@
 
     
     
-<p>In this document we show how to use the
-<code>constructNegLogLike</code> method to obtain function handlers for
-the objective function, and gradient, (and hessian if there are no
-random efects in your model formulation). These handlers can then be
-parsed to an optimization algorithm of your own choice.</p>
+<p>In this document we show how to use the <code>likelihood</code>
+method to obtain function handlers for the objective function, and
+gradient, (and hessian if there are no random efects in your model
+formulation). These handlers can then be parsed to an optimization
+algorithm of your own choice.</p>
 <div class="section level2">
 <h2 id="simulate-from-the-ornstein-uhlenbeck-process">Simulate from the Ornstein-Uhlenbeck process<a class="anchor" aria-label="anchor" href="#simulate-from-the-ornstein-uhlenbeck-process"></a>
 </h2>
 <hr>
 <p>We use the common Ornstein-Uhlenbeck process to showcase the use of
-<code>constructNegLogLike</code>.</p>
+<code>likelihood</code>.</p>
 <p><span class="math display">\[
 \mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \,
 \mathrm{d}B_{t}
@@ -206,10 +206,10 @@ run the optimization scheme using the built-in optimization which uses
 <pre><code><span><span class="co">## Note: Using Makevars in /Users/pbrve/.R/Makevars</span></span></code></pre>
 <pre><code><span><span class="co">## using C++ compiler: 'Apple clang version 15.0.0 (clang-1500.3.9.4)'</span></span></code></pre>
 <pre><code><span><span class="co">## using SDK: 'MacOSX14.4.sdk'</span></span></code></pre>
-<pre><code><span><span class="co">## ...took 10.46 seconds</span></span></code></pre>
+<pre><code><span><span class="co">## ...took 10.29 seconds</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.045 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.044 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
 <pre><code><span><span class="co">##   0:     921.77031:  1.60944  0.00000 -2.30259 -2.30259</span></span>
 <span><span class="co">##   1:     86.857795:  1.06416 0.614170 -1.83281 -1.97888</span></span>
@@ -253,17 +253,17 @@ the fixed parameters using the construction function handlers from
 <h2 id="extract-function-handlers">Extract function handlers<a class="anchor" aria-label="anchor" href="#extract-function-handlers"></a>
 </h2>
 <hr>
-<p>The <code>constructNegLogLike</code> method allows you to retrieve
-the <code>nll</code> object that holds the negative log-likelihood, and
-its derivatives. The method takes arguments similar to those of
+<p>The <code>likelihood</code> method allows you to retrieve the
+<code>nll</code> object that holds the negative log-likelihood, and its
+derivatives. The method takes arguments similar to those of
 <code>estimate</code>.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">nll</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">constructNegLogLike</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">nll</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">likelihood</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Building model...</span></span></code></pre>
 <pre><code><span><span class="co">## Compiling model...</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.042 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.041 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Succesfully returned function handlers</span></span></code></pre>
 <p>The initial parameters (supplied by the user) are stored here</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">

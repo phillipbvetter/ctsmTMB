@@ -36,11 +36,11 @@ thus must be functions of at least one state.
 \item \href{#method-ctsmTMB-getInitialState}{\code{ctsmTMB$getInitialState()}}
 \item \href{#method-ctsmTMB-getParameters}{\code{ctsmTMB$getParameters()}}
 \item \href{#method-ctsmTMB-getEstimate}{\code{ctsmTMB$getEstimate()}}
-\item \href{#method-ctsmTMB-getNegLogLike}{\code{ctsmTMB$getNegLogLike()}}
+\item \href{#method-ctsmTMB-getLikelihood}{\code{ctsmTMB$getLikelihood()}}
 \item \href{#method-ctsmTMB-getPrediction}{\code{ctsmTMB$getPrediction()}}
 \item \href{#method-ctsmTMB-getSimulation}{\code{ctsmTMB$getSimulation()}}
 \item \href{#method-ctsmTMB-estimate}{\code{ctsmTMB$estimate()}}
-\item \href{#method-ctsmTMB-constructNegLogLike}{\code{ctsmTMB$constructNegLogLike()}}
+\item \href{#method-ctsmTMB-likelihood}{\code{ctsmTMB$likelihood()}}
 \item \href{#method-ctsmTMB-predict}{\code{ctsmTMB$predict()}}
 \item \href{#method-ctsmTMB-simulate}{\code{ctsmTMB$simulate()}}
 \item \href{#method-ctsmTMB-print}{\code{ctsmTMB$print()}}
@@ -440,12 +440,12 @@ Retrieve initially set state and covariance
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-getNegLogLike"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-getNegLogLike}{}}}
-\subsection{Method \code{getNegLogLike()}}{
+\if{html}{\out{<a id="method-ctsmTMB-getLikelihood"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getLikelihood}{}}}
+\subsection{Method \code{getLikelihood()}}{
 Retrieve initially set state and covariance
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getNegLogLike()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getLikelihood()}\if{html}{\out{</div>}}
 }
 
 }
@@ -499,7 +499,7 @@ Estimate the fixed effects parameters in the specified model.
 can take \code{NA}-values.}
 
 \item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
-Must be one of either "ekf", "ekf_rtmb", ukf" or "laplace".
+Must be one of either "ekf", ukf" or "laplace".
 \enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects
 and are integrated out using the Laplace approximation. This method only yields the gradient
@@ -583,9 +583,9 @@ algebraic relations or lamperi transformations then the C++ object should be rec
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-constructNegLogLike"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-constructNegLogLike}{}}}
-\subsection{Method \code{constructNegLogLike()}}{
+\if{html}{\out{<a id="method-ctsmTMB-likelihood"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-likelihood}{}}}
+\subsection{Method \code{likelihood()}}{
 Construct and extract function handlers for the negative
 log likelihood function.
 
@@ -593,7 +593,7 @@ The handlers from \code{TMB}'s \code{MakeADFun} are constructed and returned.
 This enables the user to e.g. choose their own optimization algorithm, or just
 have more control of the optimization workflow.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$constructNegLogLike(
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$likelihood(
   data,
   method = "ekf",
   ode.solver = "rk4",
@@ -612,7 +612,7 @@ have more control of the optimization workflow.
 \item{\code{data}}{a data.frame containing time-vector 't', observations and inputs.
 The observations can take \code{NA}-values.}
 
-\item{\code{method}}{character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation
+\item{\code{method}}{character vector - one of either "ekf", "ukf" or "laplace". Sets the estimation
 method. The package has three available methods implemented:
 \enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects

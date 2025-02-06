@@ -14,9 +14,6 @@ write_method_cppfile = function(self, private) {
     '#include <ctsmTMB_customfuns.hpp>',
     "using namespace density;"
   )
-  # txt = '#include mytest_helperfuns.hpp'
-  # newtxt = "using namespace density;"
-  # txt = c(txt, newtxt)
   
   # Define constants
   newtxt = "const double pi = M_PI;"
@@ -27,22 +24,18 @@ write_method_cppfile = function(self, private) {
   # txt = c(txt, newtxt)
   
   # Various helper functions
-  if(any(private$method == c("ekf","ukf"))){
+  if(any(private$method == c("ekf_cpp","ukf"))){
     newtxt = write_helper_cppfunctions()
     txt = c(txt, newtxt)
   }
   
   # Specific method functions
-  if(private$method=="ekf"){
+  if(private$method=="ekf_cpp"){
     newtxt = write_ekf_functions(self, private)
     txt = c(txt, newtxt)
   }
   if(private$method=="ukf"){
     newtxt = write_ukf_functions(self,private)
-    txt = c(txt,newtxt)
-  }
-  if(private$method=="laplace_cpp"){
-    newtxt = write_laplace_functions(self,private)
     txt = c(txt,newtxt)
   }
   
@@ -52,16 +45,12 @@ write_method_cppfile = function(self, private) {
   txt = c(txt, "Type nll__ = 0;")
   
   # Specific estimation method
-  if(private$method=="ekf"){
+  if(private$method=="ekf_cpp"){
     newtxt = write_ekf_estimate(self, private)
     txt = c(txt, newtxt)
   }
   if(private$method=="ukf"){
     newtxt = write_ukf_estimate(self, private)
-    txt = c(txt, newtxt)
-  }
-  if(private$method=="laplace_cpp"){
-    newtxt = write_laplace_estimate(self, private)
     txt = c(txt, newtxt)
   }
   

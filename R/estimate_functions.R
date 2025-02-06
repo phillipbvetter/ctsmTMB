@@ -6,11 +6,11 @@ construct_makeADFun = function(self, private){
   
   # TMB::openmp(max=TRUE, autopar=TRUE, DLL=private$modelname.with.method)
   
-  if(any(private$method == c("ekf","ukf"))){
+  if(any(private$method == c("ekf_cpp","ukf"))){
     comptime <- system.time(construct_kalman_cpp_makeADFun(self, private))
   }
   
-  if(private$method == "ekf_rtmb"){
+  if(private$method == "ekf"){
     comptime <- system.time(construct_rtmb_ekf_makeADFun(self, private))
   }
   
@@ -20,10 +20,6 @@ construct_makeADFun = function(self, private){
   
   if(private$method=="laplace"){
     comptime <- system.time(construct_rtmb_laplace_makeADFun(self, private))
-  }
-  
-  if(private$method=="laplace_cpp"){
-    comptime <- system.time(construct_laplace_cpp_makeADFun(self, private))
   }
   
   comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
@@ -45,7 +41,7 @@ construct_kalman_cpp_makeADFun = function(self, private){
   tmb.data = list(
     
     # methods and purpose
-    estimation_method = switch(private$method, ekf = 1, ukf = 2),
+    # estimation_method = switch(private$method, ekf = 1, ukf = 2),
     ode_solver = private$ode.solver,
     
     # initial
@@ -55,7 +51,6 @@ construct_kalman_cpp_makeADFun = function(self, private){
     # time-steps
     ode_timestep_size = private$ode.timestep.size,
     ode_timesteps = private$ode.timesteps,
-    # ode_cumsum_timesteps = private$ode.timesteps.cumsum,
     
     # loss function
     loss_function = private$loss$loss,
@@ -109,7 +104,6 @@ construct_kalman_cpp_makeADFun = function(self, private){
   }
   
   # construct final data list
-  # data = c(tmb.data, private$iobs, tmb.map.data, ukf_hyperpars_list)
   data = c(tmb.data, tmb.map.data, ukf_hyperpars_list)
   
   ################################################
@@ -195,15 +189,10 @@ construct_rtmb_ekf_makeADFun = function(self, private)
   # Define functions
   ################################################
   
-  
-  
-  
   # user-defined functions ---------------------------
   for(i in seq_along(private$rtmb.function.strings)){
     eval(parse(text=private$rtmb.function.strings[[i]]))
   }
-  
-  eval(parse(text=private$rtmb.nll.strings$ekf))
   
   # adjoints ----------------------------------------
   logdet <- RTMB::ADjoint(
@@ -318,6 +307,119 @@ construct_rtmb_ekf_makeADFun = function(self, private)
   erf = function(x){
     y <- sqrt(2) * x
     2*RTMB::pnorm(y)-1
+  }
+  
+  NUMBER_OF_STATES <- private$number.of.states
+  NUMBER_OF_OBSERVATIONS <- private$number.of.observations
+  NUMBER_OF_PARS <- private$number.of.pars
+  
+  ekf.nll = function(p){
+    
+    "[<-" <- RTMB::ADoverload("[<-")
+    "diag<-" <- RTMB::ADoverload("diag<-")
+    "c" <- RTMB::ADoverload("c")
+    
+    ####### INITIALIZATION #######
+    xPrior <- pPrior <- xPost <- pPost <- Innovation <- InnovationCovariance <- vector("list",length=nrow(obsMat))
+    xPrior[[1]] <- stateVec
+    pPrior[[1]] <- covMat
+    I0 <- diag(NUMBER_OF_STATES)
+    E0 <- diag(NUMBER_OF_OBSERVATIONS)
+    nll <- 0
+    parVec <- do.call(c, p[1:NUMBER_OF_PARS])
+    
+    ####### INITIAL VALUES FROM STATIONARY SOLUTION #######
+    # inputVec = inputMat[1,]
+    # F <- RTMB::MakeTape(function(x) f__(x, inputVec, parVec)^2, numeric(NUMBER_OF_STATES))
+    # X0 <- F$newton(1:NUMBER_OF_STATES)
+    # X1 <- X0(numeric(0))
+    # stateVec <- X1
+    # A <- dfdx__(stateVec, parVec, inputVec)
+    # G <- g__(stateVec, parVec, inputVec)
+    # Q <- G %*% t(G)
+    # I <- diag(rep(1, nrow(A)))
+    # P <- kron_left(A) + kron_right(A)
+    # X <- -RTMB::solve(P, as.numeric(Q))
+    # covMat <- X
+    
+    ######## FIRST DATA UPDATE ######## 
+    obsVec = obsMat[1,]
+    inputVec = inputMat[1,]
+    obsVec_bool = !is.na(obsVec)
+    if(any(obsVec_bool)){
+      y = obsVec[obsVec_bool]
+      E = E0[obsVec_bool,, drop=FALSE]
+      C = E %*% dhdx__(stateVec, parVec, inputVec)
+      e = y - E %*% h__(stateVec, parVec, inputVec)
+      V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
+      R = C %*% covMat %*% t(C) + V
+      K = covMat %*% t(C) %*% RTMB::solve(R)
+      # Likelihood Contribution
+      nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+      # Update State/Cov
+      stateVec = stateVec + K %*% e
+      covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
+      # Store innovation and covariance
+      Innovation[[1]] = e
+      InnovationCovariance[[1]] = R
+    }
+    xPost[[1]] <- stateVec
+    pPost[[1]] <- covMat
+    
+    # ###### TIME LOOP START #######
+    for(i in 1:(nrow(obsMat)-1)){
+      
+      # # Define inputs and use first order input interpolation
+      inputVec = inputMat[i,]
+      dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+      
+      ###### TIME UPDATE - ODE SOLVER #######
+      for(j in 1:ode_timesteps[i]){
+        sol = ode_integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size[i], ode_solver)
+        stateVec = sol[[1]]
+        covMat = sol[[2]]
+        inputVec = inputVec + dinputVec
+      }
+      xPrior[[i+1]] = stateVec
+      pPrior[[i+1]] = covMat
+      
+      ######## DATA UPDATE ######## 
+      obsVec = obsMat[i+1,]
+      inputVec = inputMat[i+1,]
+      obsVec_bool = !is.na(obsVec)
+      if(any(obsVec_bool)){
+        y = obsVec[obsVec_bool]
+        E = E0[obsVec_bool,, drop=FALSE] #permutation matrix with rows removed
+        C = E %*% dhdx__(stateVec, parVec, inputVec)
+        e = y - E %*% h__(stateVec, parVec, inputVec)
+        V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
+        R = C %*% covMat %*% t(C) + V
+        K = covMat %*% t(C) %*% RTMB::solve(R)
+        # Likelihood Contribution
+        nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+        # Update State/Cov
+        stateVec = stateVec + K %*% e
+        covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
+        # Store innovation and covariance
+        Innovation[[i+1]] = e
+        InnovationCovariance[[i+1]] = R
+      }
+      xPost[[i+1]] = stateVec
+      pPost[[i+1]] = covMat
+    }
+    
+    # ###### MAXIMUM A POSTERIOR #######
+    
+    ##### REPORT #######
+    RTMB::REPORT(Innovation)
+    RTMB::REPORT(InnovationCovariance)
+    RTMB::REPORT(xPrior)
+    RTMB::REPORT(xPost)
+    RTMB::REPORT(pPrior)
+    RTMB::REPORT(pPost)
+    
+    # ###### RETURN #######
+    return(nll)
   }
   
   ################################################
@@ -443,14 +545,91 @@ construct_rtmb_laplace_makeADFun = function(self, private)
   for(i in seq_along(private$rtmb.function.strings)){
     eval(parse(text=private$rtmb.function.strings[[i]]))
   }
-  eval(parse(text=private$rtmb.nll.strings$laplace))
   
   # error function in terms of pnorm
   erf = function(x){
     y <- sqrt(2) * x
     2*RTMB::pnorm(y)-1
   }
-  
+
+  NUMBER_OF_STATES <- private$number.of.states
+  NUMBER_OF_OBSERVATIONS <- private$number.of.observations
+  NUMBER_OF_PARS <- private$number.of.pars
+
+  laplace.nll = function(p){
+
+    "[<-" <- RTMB::ADoverload("[<-")
+    "diag<-" <- RTMB::ADoverload("diag<-")
+    "c" <- RTMB::ADoverload("c")
+
+    # set negative log-likelihood
+    nll = 0
+
+    # small identity matrix
+    small_identity = diag(1e-8, nrow=NUMBER_OF_STATES, ncol=NUMBER_OF_STATES)
+
+    # fixed effects parameter vector
+    parVec <- do.call(c, p[1:NUMBER_OF_PARS])
+    
+    # extract state random effects
+    stateMat <- do.call(cbind, p[(NUMBER_OF_PARS+1):length(p)])
+
+
+    ###### TIME LOOP START #######
+    for(i in 1:(nrow(obsMat)-1)) {
+
+      # Define inputs and use first order input interpolation
+      inputVec = inputMat[i,]
+      dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+
+      ###### BETWEEN TIME POINTS LOOP START #######
+      for(j in 1:ode_timesteps[i]){
+
+        # grab current and next state
+        x_now = stateMat[ode_cumsum_timesteps[i]+j,]
+        x_next = stateMat[ode_cumsum_timesteps[i]+j+1,]
+
+        # compute drift (vector) and diffusion (matrix)
+        f = f__(x_now, parVec, inputVec)
+        g = g__(x_now, parVec, inputVec)
+        inputVec = inputVec + dinputVec
+
+        # assume multivariate gauss distribution according to euler-step
+        # and calculate the likelihood
+        z = x_next - (x_now + f * ode_timestep_size[i])
+        v = (g %*% t(g) + small_identity) * ode_timestep_size[i]
+        nll = nll - RTMB::dmvnorm(z, Sigma=v, log=TRUE)
+      }
+      ###### BETWEEN TIME POINTS LOOP END #######
+    }
+    ###### TIME LOOP END #######
+
+    obsMat = RTMB::OBS(obsMat)
+    ###### DATA UPDATE START #######
+    for(i in 1:NUMBER_OF_OBSERVATIONS){
+      for(j in 1:length(iobs[[i]])){
+
+        # Get index where observation is available
+        k = iobs[[i]][j]
+
+        # Get corresponding input, state and observation
+        inputVec = inputMat[k,]
+        stateVec = stateMat[ode_cumsum_timesteps[k]+1,]
+        obsScalar = obsMat[k,i]
+
+        # Observation equation and variance
+        h_x = h__(stateVec, parVec, inputVec)[i]
+        hvar_x = hvar__(stateVec, parVec, inputVec)[i]
+
+        # likelihood contribution
+        nll = nll - RTMB::dnorm(obsScalar, mean=h_x, sd=sqrt(hvar_x), log=TRUE)
+      }}
+    ###### DATA UPDATE END #######
+
+    # return
+    return(invisible(nll))
+  }
+
   ################################################
   # Construct Neg. Log-Likelihood
   ################################################
@@ -486,7 +665,7 @@ perform_estimation = function(self, private) {
   }
   
   # IF METHOD IS KALMAN FILTER
-  if (any(private$method==c("ekf","ukf","ekf_rtmb"))) {
+  if (any(private$method==c("ekf","ukf","ekf_cpp"))) {
     
     # use function, gradient and hessian
     if (private$use.hessian) {
@@ -512,7 +691,7 @@ perform_estimation = function(self, private) {
   }
   
   # IF METHOD IS TMB
-  if (any(private$method == c("laplace","laplace_cpp"))) {
+  if (any(private$method == c("laplace"))) {
     comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
                                                                          objective = private$nll$fn,
                                                                          gradient = private$nll$gr,
@@ -567,7 +746,7 @@ perform_estimation = function(self, private) {
   }
   
   # For TMB method: run sdreport
-  if (any(private$method== c("laplace","laplace_cpp"))) {
+  if (any(private$method== c("laplace"))) {
     if(!private$silent) message("Calculating random effects standard deviation...")
     comptime = system.time(
       # private$sdr <- RTMB::sdreport(private$nll, getJointPrecision=T)
@@ -609,7 +788,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
   # FOR KALMAN FILTERS
   ################################################
   
-  if (any(private$method == c("ekf","ukf"))) {
+  if (any(private$method == c("ekf_cpp","ukf"))) {
     
     
     ################################################
@@ -875,7 +1054,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
     private$fit$Pr.tvalue = 2*pt(q=abs(private$fit$tvalue),df=sum(sumrowNAs),lower.tail=FALSE)
   }
   
-  if (any(private$method == c("ekf_rtmb"))) {
+  if (any(private$method == c("ekf"))) {
     
     
     ################################################
@@ -1124,7 +1303,7 @@ create_fit = function(self, private, calculate.laplace.onestep.residuals) {
   # FOR TMB
   ################################################
   
-  if (any(private$method == c("laplace","laplace_cpp"))) {
+  if (any(private$method == c("laplace"))) {
     
     n <- private$number.of.states
     m <- private$number.of.observations

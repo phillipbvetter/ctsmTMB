@@ -48,7 +48,7 @@ $$
 
 
 $$
-Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim \mathcal{N}\left(0,\sigma_{Y}^{2}\right)  
+Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim N\left(0,\sigma_{Y}^{2}\right)  
 $$
 We first create data by simulating the process
 
@@ -126,8 +126,8 @@ obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
 ```{r, include=FALSE}
-temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"))
-obj$setCppfilesDirectory(temporary_directory)
+# temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"),mustWork=F)
+# obj$setCppfilesDirectory(temporary_directory)
 ```
 
 # Predict
@@ -227,9 +227,7 @@ In other words: if there it takes $3.561$ time-steps to get from $t_{i}$ to $t_{
 We provide these arguments via
 ```{r, eval=FALSE}
 
-obj$predict(.data,
-            ode.timestep = min(diff(.data$t))
-)
+obj$predict(.data, ode.timestep = min(diff(.data$t)))
 ```
 
 # Use-case
@@ -267,7 +265,7 @@ pred10 = pred.states[pred.states$k.ahead==10,]
 ```
 
 
-```{r}
+```{r, fig.height=7, fig.width=7}
 data = .data
 ggplot() +
   geom_line(aes(x=pred10$t.j,y=pred10$x,color="10-Step Predictions")) +
@@ -279,7 +277,7 @@ ggplot() +
 ```
 We notice that because these are 10-step predictions the state uncertainty (95\%) is much larger than for the filtered posterior state estimates from `fit` i.e.
 
-```{r}
+```{r, fig.height=7, fig.width=7}
 t         = fit$states$mean$posterior$t
 xpost     = fit$states$mean$posterior$x
 xpost_sd  = fit$states$sd$posterior$x
@@ -287,12 +285,12 @@ xpost_sd  = fit$states$sd$posterior$x
 ggplot() +
   geom_line(aes(x=t,y=xpost,color="0-Step Predictions (Posterior State Estimates)"),lwd=1) +
   geom_ribbon(aes(x=t,ymin=xpost-2*xpost_sd,ymax=xpost+2*xpost_sd),fill="grey",alpha=0.5) +
-  geom_point(aes(x=data$t,data$y,color="Observations")) +
+  geom_point(aes(x=data$t,y=data$y,color="Observations")) +
   labs(x = "Time", y = "", color="") +
   mytheme
 ```
 We can calculate the RMSE prediction score for each prediction step as follows:
-```{r}
+```{r, fig.height=7, fig.width=7}
 rmse = c()
 k.ahead = 1:10
 for(i in k.ahead){
@@ -315,5 +313,5 @@ ggplot() +
 ```
 
 ```{r clean up, include=FALSE}
-unlink(temporary_directory, recursive=TRUE)
+# unlink(temporary_directory, recursive=TRUE)
 ```

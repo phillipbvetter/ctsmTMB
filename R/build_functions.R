@@ -24,8 +24,6 @@ build_model = function(self, private) {
   
   # RTMB
   create_rtmb_function_strings(self, private)
-  create_rtmb_laplace_string(self, private)
-  create_rtmb_ekf_string(self, private)
   
   # Rcpp
   create_rcpp_function_strings(self, private)

@@ -30,7 +30,7 @@ check_and_set_data = function(data, self, private, k.ahead=1) {
   set_simulation_timestep(data, self, private)
   
   # various calculations for tmb's laplace method
-  if(any(private$method == c("laplace","laplace_cpp"))){
+  if(any(private$method == c("laplace"))){
     set_data_for_laplace_method(data, self, private)
   }
   

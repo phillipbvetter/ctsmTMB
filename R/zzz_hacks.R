@@ -9,6 +9,8 @@
 f__ <- function(stateVec, parVec, inputVec) NULL
 dfdx__ <- function(stateVec, parVec, inputVec) NULL
 g__ <- function(stateVec, parVec, inputVec) NULL
-ekf.nll <- function(p) NULL
-laplace.nll <- function(p) NULL
+dhdx__ <- function(stateVec, parVec, inputVec) NULL
+h__ <- function(stateVec, parVec, inputVec) NULL
+hvar__ <- function(stateVec, parVec, inputVec) NULL
+hvar__matrix <- function(stateVec, parVec, inputVec) NULL
 x <- NULL
