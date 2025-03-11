@@ -8,9 +8,6 @@
 
 check_and_set_data = function(data, self, private, k.ahead=1) {
   
-  # is data provided, or does private$data hold any data?
-  was_any_data_provided(data, self, private)
-  
   # convert to data.frame
   data = as.data.frame(data)
   
@@ -30,7 +27,7 @@ check_and_set_data = function(data, self, private, k.ahead=1) {
   set_simulation_timestep(data, self, private)
   
   # various calculations for tmb's laplace method
-  if(any(private$method == c("laplace"))){
+  if(private$method=="laplace"){
     set_data_for_laplace_method(data, self, private)
   }
   
@@ -230,27 +227,34 @@ set_ode_timestep = function(data, self, private){
 
 set_data_for_laplace_method = function(data, self, private){
   
-  # Create vector to avoid using 'is.na' in TMB objective function in C++
+  # create iobs vector  ------------------------------------
   iobs = list()
   for (i in seq_along(private$obs.names)) {
-    iobs[[i]] = seq_along(data$t)[!is.na(data[[private$obs.names[i]]])] - 1 # -1 because C++ 0-indexed
+    iobs[[i]] = seq_along(data$t)[!is.na(data[[private$obs.names[i]]])]
   }
   names(iobs) = paste("iobs_",private$obs.names,sep="")
   private$iobs = iobs
   
-  # Set initial random effects values
-  bool = !(private$state.names %in% names(data))
-  if(any(bool)){
-    data[private$state.names[bool]] =
-      matrix(rep(private$initial.state$x0[bool], times=length(data$t)), ncol=sum(bool))
-  }
+  # initial guess on random effects  ------------------------------------
   
-  # save state values as tmb initial state values
+  # set state values using only initial guess
+  tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$number.of.states))
+  names(tempdata) <- private$state.names
   for(i in seq_along(private$state.names)){
-    private$tmb.initial.state.for.parameters[[i]] =
-      rep(data[[private$state.names[i]]], times = c(private$ode.timesteps,1))
+    tempdata[i] <- rep(private$initial.state$x0[i], nrow(data)) 
   }
-  names(private$tmb.initial.state.for.parameters) = private$state.names
+  # now overwrite if initial guesses were provided in the data
+  bool <- private$state.names %in% names(data)
+  tempdata[private$state.names[bool]] <- data[private$state.names[bool]]
+  
+  # next we need to repeat these each of these state values to create 
+  #intermediate points determined by the user-selected ode.timestep variable
+  private$tmb.initial.state <- vector("list",length=private$number.of.states)
+  for(i in seq_along(private$state.names)){
+    private$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$ode.timesteps,1))
+  }
+  names(private$tmb.initial.state) = private$state.names
+  private$tmb.initial.state <- as.data.frame(private$tmb.initial.state)
   
   
   # return
@@ -329,22 +333,6 @@ set_simulation_timestep = function(data, self, private){
   return(invisible(self))
 }
 
-was_any_data_provided = function(data, self, private)
-{
-  ###### CHECK DATA #######
-  if(is.null(data)){
-    if(is.null(private$data)){
-      stop("Please supply data.")
-    } else {
-      message("No new data was provided, reusing the lastest provided data.")
-      data = private$data
-    }
-  }
-  
-  # return
-  return(invisible(self))
-}
-
 
 #######################################################
 # SET PARAMETERS
@@ -353,11 +341,12 @@ set_parameters = function(pars, silent, self, private){
   
   ###### PARAMETERS #######
   if(is.null(pars)){
-    if(!silent) message("No parameters were supplied - using estimated or initial values")
     # if the estimation has been run, then use these parameters
     if(!is.null(private$fit)){
+      # if(!silent) message("Using estimated parameter values")
       pars = self$getParameters(value="estimate")
     } else {
+      # if(!silent) message("Using initial parameter values")
       pars = self$getParameters(value="initial")
     }
   } else {

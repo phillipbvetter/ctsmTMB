@@ -7,6 +7,8 @@
 
 build_model = function(self, private) {
   
+  if(!private$rebuild.model) return(invisible(self))
+  
   # check_model
   basic_model_check(self, private)
   
@@ -22,21 +24,21 @@ build_model = function(self, private) {
   apply_lamperti(self, private) 
   calculate_diff_terms(self, private)
   
-  # RTMB
+  # function strings
   create_rtmb_function_strings(self, private)
-  
-  # Rcpp
+  create_rtmb_function_strings_new(self, private)
+  create_rekf_function_strings(self, private)
   create_rcpp_function_strings(self, private)
   
   # last check
   final_build_check(self, private)
   
   # set initial state
-  if(any(private$procedure == c("estimation","construction"))){
-    if(is.null(private$estimate.initial)){
-      self$setInitialState(list(rep(0,private$number.of.states), 1*diag(private$number.of.states)), TRUE)
-    }
-  }
+  # if(any(private$procedure == c("estimation","construction"))){
+  #   if(is.null(private$estimate.initial)){
+  #     self$setInitialState(list(rep(0,private$number.of.states), 1*diag(private$number.of.states)), TRUE)
+  #   }
+  # }
   
   # return
   return(invisible(self))
@@ -72,11 +74,11 @@ basic_model_check = function(self, private) {
   
   # initial state for estimation
   # The same is handled in set_pred_initial_state for prediction/simulation
-  # if(any(private$procedure == c("estimation","construction"))){
-  #   if (is.null(private$initial.state)) {
-  #     stop("You must set an initial state estimate and covariance")
-  #   }
-  # }
+  if(any(private$procedure == c("estimation","construction"))){
+    if (is.null(private$initial.state)) {
+      stop("You must set an initial state estimate and covariance")
+    }
+  }
   
   return(invisible(self))
 }
@@ -112,12 +114,6 @@ apply_algebraics_and_define_trans_equations = function(self, private) {
   obs.rhs = lapply(private$obs.eqs,function(x) x$rhs)
   obs.var.rhs = lapply(private$obs.var,function(x) x$rhs)
   alg.rhs = lapply(private$alg.eqs, function(x) x$rhs)
-  # alg.rhs$pi = base::pi
-  
-  # apply algebraics with substitute
-  # sys.rhs = lapply(sys.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
-  # obs.rhs = lapply(obs.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
-  # obs.var.rhs = lapply(obs.var.rhs, function(x) do.call(substitute, list(x,alg.rhs)))
   
   for(i in rev(seq_along(alg.rhs))){
     this.alg <- alg.rhs[i]

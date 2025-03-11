@@ -21,13 +21,23 @@ intended successor of, and heavily inspired by, the **CTSM** package
 of the package is to facilitate a user-friendly tool for (state and
 parameter) inference, and forecasting, in (multi-dimensional)
 continuous-discrete stochastic state space systems, i.e. systems on the
-form $$
-\begin{align}
-dx_{t} & = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t} \\
-y_{t_k} & = h(t, x_t, u_t, \theta)
-\end{align}
-$$ Here the latent state $x_t$ evolves continuously in time, governed by
-a set of stochastic differential equations, and information about the
+form
+
+<!-- $$ -->
+<!-- \begin{align} -->
+<!-- dx_{t} & = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t} \\ -->
+<!-- y_{t_k} & = h(t, x_t, u_t, \theta) -->
+<!-- \end{align} -->
+<!-- $$ -->
+
+$$
+dx_{t} = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t}
+$$ $$
+y_{t_k} = h(t, x_t, u_t, \theta)
+$$
+
+Here the latent state $x_t$ evolves continuously in time, governed by a
+set of stochastic differential equations, and information about the
 system is available at discrete times through the observations
 $y_{t_k}$.
 
@@ -62,6 +72,8 @@ universe, in particular using the `RcppXPtrUtils` package for sending
 **C++** pointers of the model-specific functions (drift, diffusion,
 observation and jacobians) rather than sending (slow to evaluate) **R**
 functions.
+
+<!-- Estimation Methods -->
 
 # Estimation Methods
 
@@ -122,6 +134,8 @@ The method *may* be less useful in the context of model-training towards
 forecasting because the likelihood contributions are based on these
 smoothed estimates, rather than one-step predictions (as is the case of
 the Kalman filters).
+
+<!-- Installation -->
 
 # Installation
 
@@ -252,9 +266,6 @@ u = u.sim[ids]
 # Create model object
 model = ctsmTMB$new()
 
-# Set name of model (and the created .cpp file)
-model$setModelname("ornstein_uhlenbeck")
-
 # Add system equations
 model$addSystem(
   dx ~ theta * (mu-x+u) * dt + sigma_x*dw
@@ -312,8 +323,8 @@ plot1 = ggplot() +
 
 # Predict to obtain k-step-ahead predictions to see model forecasting ability
 pred.list = model$predict(data=.data, 
-                        k.ahead=10, 
-                        method="ekf",
+                          k.ahead=10, 
+                          method="ekf",
 )
 
 # Create plot all 10-step predictions against data
@@ -328,16 +339,16 @@ plot2 = ggplot() +
   labs(title="10 Step Predictions vs Observations", x="Time", y="") +
   theme_minimal()
 
-# Perform full prediction without data update
-pred.list = model$predict(data=.data, 
-                        k.ahead=1e6, 
-                        method="ekf",
+# Perform prediction ignoring all data
+pred.list = model$predict(data=.data,
+                          k.ahead=1e7, 
+                          method="ekf",
 )
 
-# Perform full simulation without data update
+# Perform simulation ignoring all data
 sim.list = model$simulate(data=.data, 
-                        k.ahead=1e6, 
-                        method="ekf"
+                          k.ahead=499, 
+                          method="ekf"
 )
 
 # Collapse simulation data for easy use with ggplot 
@@ -345,8 +356,7 @@ sim.df = sim.list$states$x$i0 %>%
   select(!c("i","j","t.i","k.ahead")) %>%
   reshape2::melt(., id.var="t.j")
 
-# Plot all full simulations and the full prediction against observations
-# (full means no data-update at all)
+# Plot all simulations and the prediction against observations
 plot3 = ggplot() +
   geom_line(data=sim.df, aes(x=t.j, y=value, group=variable),color="grey") +
   geom_line(aes(x=pred.list$states$t.j,y=pred.list$states$x),color="steelblue") +
@@ -357,6 +367,6 @@ plot3 = ggplot() +
 # Draw both plots
 patchwork::wrap_plots(plot1, plot2, plot3, ncol=1)
 
-# Plot one-step-ahead residual analysis using the command below
-# plot(fit)
+# Plot one-step-ahead residual analysis
+plot(fit)
 ```

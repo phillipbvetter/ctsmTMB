@@ -13,12 +13,12 @@ rcpp_simulation = function(self, private, n.sims){
   number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
   
   # Call C++ function to perform simulation
-  mylist = execute_ekf_simulation(private$Rcppfunction_f,
-                                  private$Rcppfunction_g,
-                                  private$Rcppfunction_dfdx,
-                                  private$Rcppfunction_h,
-                                  private$Rcppfunction_dhdx,
-                                  private$Rcppfunction_hvar,
+  mylist = execute_ekf_simulation(private$rcpp_function_ptr$f,
+                                  private$rcpp_function_ptr$g,
+                                  private$rcpp_function_ptr$dfdx,
+                                  private$rcpp_function_ptr$h,
+                                  private$rcpp_function_ptr$dhdx,
+                                  private$rcpp_function_ptr$hvar,
                                   obsMat,
                                   inputMat,
                                   private$pars,
@@ -74,15 +74,16 @@ create_return_simulation = function(return.k.ahead, n.sims, self, private){
   
   for(i in seq_along(list.out)){
     for(j in seq_along(list.out[[i]])){
-      list.out[[i]][[j]] = data.frame(i=j-1, 
-                                      j=(j-1):(j+private$n.ahead-1), 
-                                      t.i=rep(private$data$t[i],private$n.ahead+1),
-                                      t.j=list.of.time.vectors[[j]][,"t.j"], 
+      list.out[[i]][[j]] = data.frame(i = j-1, 
+                                      j = (j-1):(j+private$n.ahead-1), 
+                                      t.i = rep(private$data$t[i],private$n.ahead+1),
+                                      t.j = list.of.time.vectors[[j]][,"t.j"], 
                                       k.ahead = 0:private$n.ahead,
                                       list.out[[i]][[j]]
       )
       nams = paste0(private$state.names,1:n.sims)
       names(list.out[[i]][[j]]) = c("i","j","t.i","t.j","k.ahead",nams)
+      # class(list.out[[i]][[j]]) <- c(class(list.out[[i]][[j]]), "ctsmTMB_simulation_df")
       
       # if(!is.null(return.k.ahead)){
         

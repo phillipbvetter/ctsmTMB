@@ -23,12 +23,21 @@ knitr::opts_chunk$set(
 # Overview
 
 Welcome to this GitHub repository which hosts **ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html), the intended successor of, and heavily inspired by, the **CTSM** package [(Continuous Time Stochastic Modelling)](https://ctsm.info). The purpose of the package is to facilitate a user-friendly tool for (state and parameter) inference, and forecasting, in (multi-dimensional) continuous-discrete stochastic state space systems, i.e. systems on the form
+
+<!-- $$ -->
+<!-- \begin{align} -->
+<!-- dx_{t} & = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t} \\ -->
+<!-- y_{t_k} & = h(t, x_t, u_t, \theta) -->
+<!-- \end{align} -->
+<!-- $$ -->
+
 $$
-\begin{align}
-dx_{t} & = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t} \\
-y_{t_k} & = h(t, x_t, u_t, \theta)
-\end{align}
+dx_{t} = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t}
 $$
+$$
+y_{t_k} = h(t, x_t, u_t, \theta)
+$$
+
 Here the latent state $x_t$ evolves continuously in time, governed by a set of stochastic differential equations, and information about the system is available at discrete times through the observations $y_{t_k}$.
 
 The **ctsmTMB** package is essentially "just" a convience wrapper for the **TMB**/**RTMB** packages [(Template Model Builder)](https://github.com/kaskr/adcomp) that provide automatic differentiation of the likelihood function, and access to other computational tools such as the Laplace approximation. The likelihood function is constructed based on the (symbolic) user-provided state space equations, which may be specified using the implemented OOP-style **R6** `ctsmTMB` class, with methods such as `addSystem` (for defining system equations), and `addObs` (for defining observation equations).
@@ -44,7 +53,7 @@ The following state reconstruction algorithms are currently available:
 1. The (Continous-Discrete) Extended Kalman Filter, `ekf`.
 
 2. The (Continous-Discrete) Unscented Kalman Filter, `ukf`.
- 
+
 3. The (Continuous-Discrete) Laplace Approximation `laplace`.
 
 ## Kalman Filters
@@ -137,7 +146,7 @@ The methods documentation is also available on the [package homepage](https://ph
 
 ## Code Example - Inference in 1D Ornstein-Uhlenbeck
 
-```{r}
+```{r, eval=FALSE}
 library(ggplot2)
 library(patchwork)
 library(dplyr)
@@ -182,9 +191,6 @@ u = u.sim[ids]
 
 # Create model object
 model = ctsmTMB$new()
-
-# Set name of model (and the created .cpp file)
-model$setModelname("ornstein_uhlenbeck")
 
 # Add system equations
 model$addSystem(
@@ -243,8 +249,8 @@ plot1 = ggplot() +
 
 # Predict to obtain k-step-ahead predictions to see model forecasting ability
 pred.list = model$predict(data=.data, 
-                        k.ahead=10, 
-                        method="ekf",
+                          k.ahead=10, 
+                          method="ekf",
 )
 
 # Create plot all 10-step predictions against data
@@ -259,16 +265,16 @@ plot2 = ggplot() +
   labs(title="10 Step Predictions vs Observations", x="Time", y="") +
   theme_minimal()
 
-# Perform full prediction without data update
-pred.list = model$predict(data=.data, 
-                        k.ahead=1e6, 
-                        method="ekf",
+# Perform prediction ignoring all data
+pred.list = model$predict(data=.data,
+                          k.ahead=1e7, 
+                          method="ekf",
 )
 
-# Perform full simulation without data update
+# Perform simulation ignoring all data
 sim.list = model$simulate(data=.data, 
-                        k.ahead=1e6, 
-                        method="ekf"
+                          k.ahead=499, 
+                          method="ekf"
 )
 
 # Collapse simulation data for easy use with ggplot 
@@ -276,8 +282,7 @@ sim.df = sim.list$states$x$i0 %>%
   select(!c("i","j","t.i","k.ahead")) %>%
   reshape2::melt(., id.var="t.j")
 
-# Plot all full simulations and the full prediction against observations
-# (full means no data-update at all)
+# Plot all simulations and the prediction against observations
 plot3 = ggplot() +
   geom_line(data=sim.df, aes(x=t.j, y=value, group=variable),color="grey") +
   geom_line(aes(x=pred.list$states$t.j,y=pred.list$states$x),color="steelblue") +
@@ -288,6 +293,6 @@ plot3 = ggplot() +
 # Draw both plots
 patchwork::wrap_plots(plot1, plot2, plot3, ncol=1)
 
-# Plot one-step-ahead residual analysis using the command below
-# plot(fit)
+# Plot one-step-ahead residual analysis
+plot(fit)
 ```

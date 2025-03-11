@@ -247,9 +247,10 @@ write_ukf_estimate = function(self, private)
   
   # UKF Transform Hyperparameters
   txt = c(txt, "\n//// unscented transform hyper-parameters ////")  
-  txt = c(txt, "DATA_SCALAR(ukf_alpha);")
-  txt = c(txt, "DATA_SCALAR(ukf_beta);")
-  txt = c(txt, "DATA_SCALAR(ukf_kappa);")
+  txt = c(txt, "DATA_VECTOR(ukf_pars);")
+  # txt = c(txt, "DATA_SCALAR(ukf_alpha);")
+  # txt = c(txt, "DATA_SCALAR(ukf_beta);")
+  # txt = c(txt, "DATA_SCALAR(ukf_kappa);")
   
   # Maximum a Posterior
   txt = c(txt, "\n//// map estimation ////")
@@ -299,7 +300,7 @@ write_ukf_estimate = function(self, private)
   ##################################################
   # Weights
   txt = c(txt, "\n//////////// create weights ///////////")
-  txt = c(txt, "Type ukf_lambda = pow(ukf_alpha,2)*(number_of_state_eqs + ukf_kappa) - number_of_state_eqs;")
+  txt = c(txt, "Type ukf_lambda = pow(ukf_pars(0),2)*(number_of_state_eqs + ukf_pars(2)) - number_of_state_eqs;")
   txt = c(txt, "Type ukf_weights = Type(1.0)/(Type(2.0)*(number_of_state_eqs + ukf_lambda));")
   txt = c(txt, "vector<Type> wm__(nn), wmC__(nn);")
   txt = c(txt, "matrix<Type> Wm__, WcDiag__(nn,nn), I__(nn,nn), W__;")
@@ -309,7 +310,7 @@ write_ukf_estimate = function(self, private)
   txt = c(txt, "wm__.fill(ukf_weights);")
   txt = c(txt, "wmC__.fill(ukf_weights);")
   txt = c(txt, "wm__(0) = ukf_lambda/(ukf_lambda + number_of_state_eqs);")
-  txt = c(txt, "wmC__(0) = ukf_lambda/((number_of_state_eqs + ukf_lambda) + (1-pow(ukf_alpha,2)+ukf_beta));")
+  txt = c(txt, "wmC__(0) = ukf_lambda/((number_of_state_eqs + ukf_lambda) + (1-pow(ukf_pars(0),2)+ukf_pars(1)));")
   txt = c(txt, "Wm__ = wm__.replicate(1, nn);")
   txt = c(txt, "WcDiag__.diagonal() = wmC__;")
   txt = c(txt, "W__ = (I__ - Wm__) * WcDiag__ * (I__ - Wm__).transpose();")

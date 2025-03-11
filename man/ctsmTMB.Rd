@@ -487,6 +487,7 @@ Estimate the fixed effects parameters in the specified model.
   use.hessian = FALSE,
   laplace.residuals = FALSE,
   unconstrained.optim = FALSE,
+  estimate.initial.state = FALSE,
   compile = FALSE,
   silent = FALSE
 )}\if{html}{\out{</div>}}
@@ -567,6 +568,10 @@ using the method of \link[TMB]{oneStepPredict}.}
 
 \item{\code{unconstrained.optim}}{boolean value. When TRUE then the optimization is carried out unconstrained i.e.
 without any of the parameter bounds specified during \code{setParameter}.}
+
+\item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
+estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+system contains time-varying inputs, the first element of these is used.}
 
 \item{\code{compile}}{boolean value. The default (\code{FALSE}) is to not compile the C++ objective
 function but assume it is already compiled and corresponds to the specified model object. It is
@@ -716,7 +721,7 @@ state estimate as the initial condition.
   silent = FALSE,
   pars = NULL,
   k.ahead = 1,
-  return.k.ahead = 0:k.ahead,
+  return.k.ahead = NULL,
   return.covariance = TRUE
 )}\if{html}{\out{</div>}}
 }
@@ -816,7 +821,7 @@ state estimate as the initial condition.
   silent = FALSE,
   pars = NULL,
   n.sims = 100,
-  k.ahead = 1,
+  k.ahead = Inf,
   return.k.ahead = 0:k.ahead
 )}\if{html}{\out{</div>}}
 }

@@ -22,6 +22,11 @@ print.ctsmTMB = function(x,...) {
 #' @export
 print.ctsmTMB.fit = function(x,...) {
   fit <- x #method consistency (argument must be called x)
+  if(is.null(fit$sd.fixed)) {
+    fit$sd.fixed <- rep(NA,length(fit$par.fixed))
+    fit$tvalue <- rep(NA,length(fit$par.fixed))
+    fit$Pr.tvalue <- rep(NA,length(fit$par.fixed))
+  }
   mat = cbind(fit$par.fixed, fit$sd.fixed, fit$tvalue, fit$Pr.tvalue)
   colnames(mat) = c("Estimate","Std. Error","t value","Pr(>|t|)")
   cat("Coefficent Matrix \n")
@@ -61,7 +66,7 @@ summary.ctsmTMB.fit = function(object,
                                ...) {
   
   fit <- object #method consistency (argument must be called 'object')
-
+  
   if (!is.logical(correlation)) {
     stop("correlation must be logical")
   }
@@ -82,7 +87,7 @@ summary.ctsmTMB.fit = function(object,
     # cor[!lower.tri(cor)] <- ""
     # print(cor[-1, -(dim(cor)[1]), drop = FALSE], quote = FALSE)
   }
-
+  
   return(invisible(list(parameters=mat)))
 }
 
@@ -128,7 +133,7 @@ plot.ctsmTMB.pred = function(x,
                              n.ahead = 0,
                              state.name = NULL,
                              ...) {
-
+  
   # method consistency
   pred.data <- x
   
@@ -136,19 +141,19 @@ plot.ctsmTMB.pred = function(x,
   if(!any(n.ahead %in% unique(pred.data$n.ahead))){
     stop("n.ahead not found in the prediction data frame")
   }
-
+  
   # set state name to plot
   if(is.null(state.name)){
     state.name = colnames(pred.data)[6]
   }
-
+  
   # filter and plot
   bool = pred.data$n.ahead==n.ahead
   x = pred.data[bool,"t_{k+i}"]
   y = pred.data[bool,state.name]
   plot(x=x, y=y, type="l",...)
-
-
+  
+  
   return(invisible(NULL))
 }
 
@@ -169,7 +174,7 @@ plot.ctsmTMB = function(x,
   
   object <- x
   object$plot(plot.obs=plot.obs, ggtheme=ggtheme)
-
+  
   return(invisible(NULL))
 }
 
@@ -186,28 +191,26 @@ plot.ctsmTMB.fit = function(x,
                             plot.obs=1,
                             ggtheme=getggplot2theme(),
                             ...) {
-
+  
   fit <- x
   private <- fit$private
-
+  
   if (!(inherits(ggtheme,"theme") & inherits(ggtheme,"gg"))) {
     stop("ggtheme must be a ggplot2 theme")
   }
   if(!is.numeric(plot.obs)){
     stop("plot.obs must be a numeric (or integer) value")
   }
-  if(plot.obs > private$number.of.states){
-    message("Can't plot state ", plot.obs, " because there's only ", private$number.of.states, " state(s). Setting plot.obs = ",private$number.of.states)
-    plot.obs = private$number.of.states
+  
+  if(is.null(fit$residuals)){
+    if(private$method=="laplace"){
+      stop("No residuals to plot. Did you calculate residuals with argument 'laplace.residuals=TRUE' when calling 'estimate'?")
+    }
+    stop("Error: no residuals were found in the fit object.")
   }
-
-  if(private$method == "laplace"){
-    message("'plot' is not available for method 'laplace' yet.")
-    return(NULL)
-  }
-
+  
   # retrieve user default parameter settings
-
+  
   # use ggplot to plot
   mycolor = getggplot2colors(2)[2]
   # if (use.ggplot) {
@@ -219,7 +222,7 @@ plot.ctsmTMB.fit = function(x,
     e = e[id]
     t = t[id]
     nam = private$obs.names[i]
-
+    
     # time vs residuals
     plot.res =
       ggplot2::ggplot(data=data.frame(t,e)) +
@@ -288,7 +291,7 @@ plot.ctsmTMB.fit = function(x,
         y = "",
         x = "Lag"
       )
-
+    
     plots[[i]] = patchwork::wrap_plots(plot.res,
                                        plot.hist,
                                        plot.qq,
@@ -299,14 +302,12 @@ plot.ctsmTMB.fit = function(x,
       patchwork::plot_annotation(title=paste("Residual Analysis for ", nam),
                                  theme= ggtheme + ggplot2::theme(text=ggplot2::element_text("Avenir Next Condensed", size=18, face="bold"))
       )
-
-    # return plot list, and print one of the plots
-    print(plots[[plot.obs]])
-    return(invisible(plots))
+    
   }
-
-  # return
-  return(invisible(NULL))
+  
+  # return plot list, and print one of the plots
+  print(plots[[plot.obs]])
+  return(invisible(plots))
 }
 
 #' #' Performs full multi-dimensional profile likelihood calculations
@@ -336,17 +337,17 @@ profile.ctsmTMB.fit = function(fit,
                                trace=0,
                                control=list(trace=trace,iter.max=1e3,eval.max=1e3)
 ){
-
+  
   if(missing(fit)){
     stop("Please supply a fit from a ctsmTMB model.")
   }
   if(missing(parlist)){
     stop("Please supply a named list of parameter values")
   }
-
+  
   # 1. Get likelihood function
   nll <- fit$private$nll
-
+  
   # Create parameter grid
   parnames <- names(parlist)
   id <- names(fit$par.fixed) %in% parnames
@@ -363,38 +364,38 @@ profile.ctsmTMB.fit = function(fit,
   prof.nll <- numeric(n)
   prof.pars <- vector("list",length=n)
   opt.list <- vector("list",length=n)
-
+  
   # 2. Create parameter filter matrix C that extracts only the
   # non-profiled entries which needs to be optimized over.
   # C maps from length(par.fixed) to length(par.fixed) - length(parnames)
   # by multiplication.
   C <- diag(length(fit$par.fixed))[,!id,drop=F]
-
+  
   # Create optimization function that takes initial guess x0
   # and finds the maximum profile likelihood estimate in the
   # reduced parameter space
   f.optim <- function(x0){
-
+    
     # objective function
     f <- function(x){
       y <- par + as.numeric(C %*% x)
       # print(y["Cm"])
       nll$fn(y)
     }
-
+    
     # gradient
     gr <- function(x){
       y <- par + as.numeric(C %*% x)
       as.numeric(nll$gr(y) %*% C)
     }
-
+    
     # hessian
     he <- function(x){
       y <- par + as.numeric(C %*% x)
       # t(C) %*% nll$he(y)[!id,!id] %*% C
       nll$he(y)[!id,!id]
     }
-
+    
     # optimize
     if(hessian) {
       opt <- nlminb(x0, f, gr, he, control=control)
@@ -403,14 +404,14 @@ profile.ctsmTMB.fit = function(fit,
     }
     return(opt)
   }
-
+  
   # Robustify f.optim to handle NA cases
   f <- function(x0){
     y <- try_withWarningRecovery(f.optim(x0), silent=TRUE)
     if(inherits(y,"try-error")) y <- NA
     return(y)
   }
-
+  
   par <- fit$par.fixed
   x0 <- fit$par.fixed[!id]
   par[!id] <- 0
@@ -439,7 +440,7 @@ profile.ctsmTMB.fit = function(fit,
       }
     }
   }
-
+  
   # return
   returnlist = list(
     parameter.list = parlist,
@@ -449,6 +450,6 @@ profile.ctsmTMB.fit = function(fit,
     profile.opts = opt.list
   )
   class(returnlist) <- "profile.ctsmTMB"
-
+  
   return(returnlist)
 }

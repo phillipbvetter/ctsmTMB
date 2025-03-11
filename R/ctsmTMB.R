@@ -51,7 +51,7 @@ ctsmTMB = R6::R6Class(
       private$parameters = NULL
       private$initial.state = NULL
       private$pred.initial.state = list(mean=NULL,cov=NULL)
-      private$tmb.initial.state.for.parameters = NULL
+      private$tmb.initial.state = NULL
       private$iobs = NULL
       
       # after algebraics
@@ -75,8 +75,12 @@ ctsmTMB = R6::R6Class(
       private$estimate.initial = NULL
       private$initial.variance.scaling = 1
       
+      # rebuild
+      private$rebuild.model = TRUE
+      private$rebuild.data = TRUE
+      private$old.data = list()
+      
       # hidden
-      private$lock.model = FALSE
       private$fixed.pars = NULL
       private$free.pars = NULL
       private$pars = NULL
@@ -114,21 +118,17 @@ ctsmTMB = R6::R6Class(
       private$last.pred.index = 0
       
       # rtmb
-      rtmb.function.strings = NULL
-      rtmb.nll.strings = NULL
+      private$rtmb.function.strings = NULL
+      private$rtmb.function.strings.indexed = NULL
+      private$rekf.function.strings = NULL
+      private$rtmb.nll.strings = NULL
+      private$rcpp.function.strings = NULL
       
-      # Rcpp
-      private$Rcppfunction_f = NULL
-      private$Rcppfunction_g = NULL
-      private$Rcppfunction_dfdx = NULL
-      private$Rcppfunction_h = NULL
-      private$Rcppfunction_dhdx = NULL
-      private$Rcppfunction_hvar = NULL
+      # rcpp functions
+      private$rcpp_function_ptr = NULL
       
       # unscented transform
-      private$ukf_alpha = NULL
-      private$ukf_beta = NULL
-      private$ukf_kappa = NULL
+      private$ukf_hyperpars = list()
     },
     
     ########################################################################
@@ -150,9 +150,8 @@ ctsmTMB = R6::R6Class(
     #' multiple equations at once.
     addSystem = function(form,...) {
       
-      if(private$lock.model){
-        stop("The model is locked after applying algebraics")
-      }
+      # trigger a rebuild
+      private$rebuild.model <- TRUE
       
       # store each provided formula
       lapply(c(form,...), function(form) {
@@ -192,10 +191,6 @@ ctsmTMB = R6::R6Class(
     #' given a name on the form obs__# where # is a number, unless obsnames is provided.
     addObs = function(form,...,obsnames=NULL) {
       
-      if(private$lock.model){
-        stop("The model is locked after applying algebraics")
-      }
-      
       # Check obsnames
       if(!is.null(obsnames)){
         if(length(c(form,...))!=length(obsnames)){
@@ -205,6 +200,9 @@ ctsmTMB = R6::R6Class(
           stop("The observation names in obsnames must be characters")
         }
       }
+      
+      # trigger a rebuild
+      private$rebuild.model <- TRUE
       
       # attach observation names to the each formula in list
       formlist = lapply(c(form,...), function(form) list(form=form))
@@ -223,7 +221,11 @@ ctsmTMB = R6::R6Class(
         private$obs.names = names(private$obs.eqs)
         
         # Create space in the observation variances for the observation name
-        private$obs.var[[result$name]] = list()
+        # if it doesnt already exist
+        holder <- private$obs.var[[result$name]]
+        if(length(holder)==0){
+          private$obs.var[[result$name]] = list()
+        }
       })
       
       return(invisible(self))
@@ -249,9 +251,8 @@ ctsmTMB = R6::R6Class(
     #' 
     setVariance = function(form,...) {
       
-      if(private$lock.model){
-        stop("The model is locked after applying algebraics")
-      }
+      # trigger a rebuild
+      private$rebuild.model <- TRUE
       
       # store each provided formula
       lapply(c(form,...), function(form) {
@@ -284,10 +285,6 @@ ctsmTMB = R6::R6Class(
     #' @param ... variable names that specifies the name of input variables in the defined system.
     #' 
     addInput =  function(...) {
-      
-      # if(private$lock.model){
-      #   stop("The model is locked after applying algebraics")
-      # }
       
       args = as.list(match.call()[-1])
       
@@ -431,8 +428,8 @@ ctsmTMB = R6::R6Class(
     #' @param ... additional formulas
     setAlgebraics = function(form,...) {
       
-      # You are not allowed to change the model after you add algebraics
-      private$lock.model = TRUE
+      # trigger a rebuild
+      private$rebuild.model <- TRUE
       
       lapply(c(form,...), function(form) {
         
@@ -514,12 +511,24 @@ ctsmTMB = R6::R6Class(
         stop("The covariance matrix is symmetric")
       }
       
-      # Initial State
-      private$initial.state = list(x0=x0, p0=as.matrix(p0))
-      
-      # Estimate?
       if(!is.logical(estimate)){
         stop("Estimate must be a logical.")
+      }
+      
+      names(initial.state) <- c("x0","p0")
+      # Store old initial state
+      bool <- identical(initial.state, private$initial.state)
+      if(!bool){
+        private$rebuild.data <- TRUE
+      }
+      
+      # Store initial state
+      private$initial.state = list(x0=x0, p0=as.matrix(p0))
+      
+      # Set whether to estimate or not
+      bool <- identical(estimate, private$estimate.initial)
+      if(!bool){
+        private$rebuild.data <- TRUE
       }
       private$estimate.initial = estimate
       
@@ -563,6 +572,9 @@ ctsmTMB = R6::R6Class(
     #' @param transforms character vector - one of either "identity, "log", "logit", "sqrt-logit"
     #' @param states a vector of the state names for which the specified transformations should be applied to. 
     setLamperti = function(transforms, states=NULL) {
+      
+      # trigger a rebuild
+      private$rebuild.model <- TRUE
       
       # remove repeated entries
       states = unique(states)
@@ -995,6 +1007,9 @@ ctsmTMB = R6::R6Class(
     #' the unscented transformation.
     #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
     #' without any of the parameter bounds specified during \code{setParameter}.
+    #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
+    #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+    #' system contains time-varying inputs, the first element of these is used.
     #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
     #' methods). The loss function is per default quadratic in the one-step residauls as is natural 
     #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the 
@@ -1026,6 +1041,7 @@ ctsmTMB = R6::R6Class(
                         use.hessian = FALSE,
                         laplace.residuals = FALSE,
                         unconstrained.optim = FALSE,
+                        estimate.initial.state = FALSE,
                         compile = FALSE,
                         silent = FALSE){
       
@@ -1042,33 +1058,47 @@ ctsmTMB = R6::R6Class(
         laplace.residuals = laplace.residuals,
         unconstrained.optim = unconstrained.optim,
         compile = compile,
-        silent = silent
+        silent = silent,
+        estimate.initial.state = estimate.initial.state
+        
       )
       set_flags("estimation", args, self, private)
       
-      # build model
-      if(!private$silent) message("Building model...")
-      build_model(self, private)
-      
-      # compile model
-      if(!private$silent) message("Compiling model...")
-      perform_compilation(self, private)
+      # do we need to rebuild the model?
+      if(private$rebuild.model) {
+        
+        # build model
+        if(!private$silent) message("Building model...")
+        build_model(self, private)
+        
+        # set flags
+        private$rebuild.model <- FALSE
+        # if model has been rebuilt, then data must also be
+        private$rebuild.data <- TRUE
+      }
       
       # check and set data
       if(!private$silent) message("Checking data...")
       check_and_set_data(data, self, private)
       
-      # construct neg. log-likelihood function
-      if(!private$silent) message("Constructing objective function and derivative tables...")
-      if(private$method=="ekf_rcpp"){
-        compile_rcpp_functions(self, private)
+      # check for rebuild of ADfun
+      check_for_data_rebuild(self, private)
+      if(private$rebuild.data){
+        
+        # compile model
+        if(!private$silent) message("Compiling model...")
+        perform_compilation(self, private)
+        
+        # construct neg. log-likelihood function
+        if(!private$silent) message("Constructing objective function and derivative tables...")
+        construct_makeADFun(self, private)
+        
+        # set rebuild flag
+        private$rebuild.data = FALSE
       }
-      construct_makeADFun(self, private)
       
-      # TEST TEST TEST
-      if(private$method=="ekf_rcpp"){
-        return(private$prediction)
-      }
+      # save old data / settings for next check
+      temporary_save_old_data(self, private)
       
       # estimate
       if(!private$silent) message("Minimizing the negative log-likelihood...")
@@ -1192,22 +1222,42 @@ ctsmTMB = R6::R6Class(
       )
       set_flags("construction", args, self, private)
       
-      # build model
-      if(!silent) message("Building model...")
-      build_model(self, private)
-      
-      # compile model
-      if(!private$silent) message("Compiling model...")
-      perform_compilation(self, private)
+      # do we need to rebuild the model?
+      if(private$rebuild.model) {
+        
+        # build model
+        if(!silent) message("Building model...")
+        build_model(self, private)
+        
+        # set flags
+        private$rebuild.model <- FALSE
+        # if model has been rebuilt, then data must also be
+        private$rebuild.data <- TRUE
+        
+      }
       
       # check and set data
       if(!silent) message("Checking data...")
       check_and_set_data(data, self, private)
       
+      # check for rebuild of ADfun
+      check_for_data_rebuild(self, private)
+      if(private$rebuild.data){
+        
+        # compile model
+        if(!private$silent) message("Compiling model...")
+        perform_compilation(self, private)
+        
+        # construct neg. log-likelihood
+        if(!silent) message("Constructing objective function...")
+        construct_makeADFun(self, private)
+        
+        # set rebuild flag
+        private$rebuild.data = FALSE
+      }
       
-      # construct neg. log-likelihood
-      if(!silent) message("Constructing objective function...")
-      construct_makeADFun(self, private)
+      # save old data / settings for next check
+      temporary_save_old_data(self, private)
       
       # return
       if(!silent) message("Succesfully returned function handlers")
@@ -1286,7 +1336,8 @@ ctsmTMB = R6::R6Class(
                        silent = FALSE,
                        pars = NULL,
                        k.ahead = 1,
-                       return.k.ahead = 0:k.ahead,
+                       rfun = FALSE,
+                       return.k.ahead = NULL,
                        return.covariance = TRUE){
       
       
@@ -1304,9 +1355,18 @@ ctsmTMB = R6::R6Class(
       )
       set_flags("prediction", args, self, private)
       
-      ###### BUILD MODEL #######
-      if(!private$silent) message("Building model...")
-      build_model(self, private)
+      # do we need to rebuild the model?
+      if(private$rebuild.model) {
+        
+        ###### BUILD MODEL #######
+        if(!private$silent) message("Building model...")
+        build_model(self, private)
+        
+        # set flags
+        private$rebuild.model <- FALSE
+        # if model has been rebuilt, then data must also be
+        private$rebuild.data <- TRUE
+      }
       
       ###### CHECK AND SET DATA, PARS, ETC.  #######
       if(!private$silent) message("Checking data...")
@@ -1314,19 +1374,26 @@ ctsmTMB = R6::R6Class(
       set_parameters(pars, silent, self, private)
       
       ##### COMPILE C++ FUNCTIONS #######
-      if(!private$silent) message("Compiling C++ functions...")
-      compile_rcpp_functions(self, private)
+      if(!private$silent) message("Checking C++ function pointers...")
+      perform_compilation(self, private, "prediction")
       
       ##### PERFORM PREDICTION #######
-      if(!private$silent) message("Predicting...")
-      rcpp_prediction(self, private)
-      
-      ##### CREATE RETURN DATA.FRAME #######
-      if(!private$silent) message("Constructing return data.frame...")
-      create_return_prediction(return.covariance, return.k.ahead, self, private)
+      if(rfun){
+        if(!private$silent) message("Predicting with Rfun...")  
+        private$prediction <- ekf_r_prediction(self, private)
+        
+      } else{
+        
+        if(!private$silent) message("Predicting...")
+        rcpp_prediction(self, private)
+        
+        ##### CREATE RETURN DATA.FRAME #######
+        if(!private$silent) message("Returning results...")
+        create_return_prediction(return.covariance, return.k.ahead, self, private)
+      }
       
       ##### RETURN #######
-      if(!private$silent) message("Finished.")
+      if(!private$silent) message("Finished!")
       return(invisible(private$prediction))
     },
     
@@ -1405,7 +1472,7 @@ ctsmTMB = R6::R6Class(
                         silent = FALSE,
                         pars = NULL,
                         n.sims = 100,
-                        k.ahead = 1,
+                        k.ahead = Inf,
                         return.k.ahead = 0:k.ahead){
       
       
@@ -1424,10 +1491,22 @@ ctsmTMB = R6::R6Class(
       )
       set_flags("simulation", args, self, private)
       
-      
-      ###### BUILD MODEL #######
-      if(!private$silent) message("Building model...")
-      build_model(self, private)
+      # do we need to rebuild the model?
+      if(private$rebuild.model) {
+        
+        ###### BUILD MODEL #######
+        if(!private$silent) message("Building model...")
+        build_model(self, private)
+        
+        ##### COMPILE C++ FUNCTIONS #######
+        if(!private$silent) message("Compiling C++ functions...")
+        compile_rcpp_functions(self, private)
+        
+        # set flags
+        private$rebuild.model <- FALSE
+        # if model has been rebuilt, then data must also be
+        private$rebuild.data <- TRUE
+      }
       
       ###### CHECK AND SET DATA, PARS, ETC.  #######
       if(!private$silent) message("Checking data...")
@@ -1435,9 +1514,6 @@ ctsmTMB = R6::R6Class(
       set_parameters(pars, silent, self, private)
       
       ###### PERFORM PREDICTION #######
-      if(!private$silent) message("Compiling C++ functions...")
-      compile_rcpp_functions(self, private)
-      
       if(!private$silent) message("Simulating...")
       rcpp_simulation(self, private, n.sims)
       
@@ -1601,7 +1677,7 @@ ctsmTMB = R6::R6Class(
     parameters = NULL,
     initial.state = NULL,
     pred.initial.state = NULL,
-    tmb.initial.state.for.parameters = NULL,
+    tmb.initial.state = NULL,
     iobs = NULL,
     
     # after algebraics
@@ -1639,8 +1715,12 @@ ctsmTMB = R6::R6Class(
     estimate.initial = NULL,
     initial.variance.scaling = NULL,
     
+    # rebuild
+    rebuild.model = FALSE,
+    rebuild.data = FALSE,
+    old.data = list(),
+    
     # hidden
-    lock.model = FALSE,
     fixed.pars = NULL,
     free.pars = NULL,
     pars = NULL,
@@ -1671,22 +1751,18 @@ ctsmTMB = R6::R6Class(
     n.ahead = NULL,
     last.pred.index = NULL,
     
-    # rtmb
+    # function strings
     rtmb.function.strings = NULL,
+    rtmb.function.strings.indexed = NULL,
+    rekf.function.strings = NULL,
     rtmb.nll.strings = NULL,
+    rcpp.function.strings = NULL,
     
-    # Rcpp
-    Rcppfunction_f = NULL,
-    Rcppfunction_g = NULL,
-    Rcppfunction_dfdx = NULL,
-    Rcppfunction_h = NULL,
-    Rcppfunction_dhdx = NULL,
-    Rcppfunction_hvar = NULL,
+    # rcpp
+    rcpp_function_ptr = NULL,
     
     # unscented transform
-    ukf_alpha = NULL,
-    ukf_beta = NULL,
-    ukf_kappa = NULL,
+    ukf_hyperpars = NULL,
     
     ########################################################################
     # ADD TRANSFORMED SYSTEM EQS
@@ -1834,9 +1910,10 @@ ctsmTMB = R6::R6Class(
       }
       
       # check if method is available
-      available_methods = c("ekf","ukf","laplace", "ekf_cpp", "ekf_rcpp")
+      available_methods = c("lkf","ekf","ukf","laplace", "ekf_cpp", "ekf_rcpp")
       if (!(method %in% available_methods)) {
         stop("That method is not available. Please choose one of:
+             1. 'lkf' - Linear (Exact) Kalman Filter with RTMB (No Compilation)
              1. 'ekf' - Extended Kalman Filter with RTMB (No Compilation)
              2. 'ukf' - Unscented Kalman Filter with C++ (Requires Compilation)
              3. 'laplace' - Laplace Approximation using Random Effects Formulation with RTMB (No Compilation)
@@ -2008,8 +2085,6 @@ ctsmTMB = R6::R6Class(
         stop("The covariance matrix is symmetric")
       }
       
-      # private$initial.state = list(x0=x0, p0=as.matrix(p0))
-      
       # set field
       private$pred.initial.state = list(x0=x0, p0=as.matrix(p0))
       
@@ -2122,9 +2197,10 @@ ctsmTMB = R6::R6Class(
       }
       
       # set parameters
-      private$ukf_alpha = parlist[["alpha"]]
-      private$ukf_beta = parlist[["beta"]]
-      private$ukf_kappa = parlist[["kappa"]]
+      private$ukf_hyperpars = do.call(c,unname(parlist))
+      # private$ukf_alpha = parlist[["alpha"]]
+      # private$ukf_beta = parlist[["beta"]]
+      # private$ukf_kappa = parlist[["kappa"]]
       
       # return
       return(invisible(self))
