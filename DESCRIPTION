@@ -52,5 +52,3 @@ Suggests:
 	grDevices,
 	knitr,
 	rmarkdown
-Additional_repositories: 
-	https://github.com/kaskr/RTMB/tree/master/RTMBode
