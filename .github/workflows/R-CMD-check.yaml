@@ -39,10 +39,11 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
+          extra-repositories: "https://kaskr.r-universe.dev"
 
       # Download RTMBode
-      - name: add r-universe to repos
-        run: Rscript -e 'options(repos = c("https://kaskr.r-universe.dev", "https://cloud.r-project.org"))'
+     # - name: add r-universe to repos
+     #   run: Rscript -e 'options(repos = c("https://kaskr.r-universe.dev", "https://cloud.r-project.org"))'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
