@@ -6,37 +6,37 @@ construct_makeADFun = function(self, private){
   
   # TMB::openmp(max=TRUE, autopar=TRUE, DLL=private$modelname.with.method)
   
-  if(any(private$method == c("ekf_cpp","ukf"))){
+  if(any(private$method == c("ekf_cpp","ukf_cpp"))){
     comptime <- system.time(
       makeADFun_ekf_cpp(self, private)
-      )
+    )
   }
   
   if(private$method == "lkf"){
     comptime <- system.time(
       makeADFun_lkf_rtmb(self, private)
-      )
+    )
   }
   
   if(private$method == "ekf"){
     comptime <- system.time(
       makeADFun_ekf_rtmb(self, private)
-      )
+    )
     # comptime <- system.time(construct_rtmb_ekf_makeADFun(self, private))
   }
   
   if(private$method=="laplace"){
     comptime <- system.time(
       makeADFun_laplace_rtmb(self, private)
-      )
+    )
   }
   
   # experimental
-  if(private$method == "ekf_rcpp"){
-    comptime <- system.time(
-      rcpp_ekf_estimate(self, private)
-      )
-  }
+  # if(private$method == "ekf_rcpp"){
+  #   comptime <- system.time(
+  #     rcpp_ekf_estimate(self, private)
+  #     )
+  # }
   
   comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
   if(!private$silent) message("...took: ", comptime, " seconds.")
@@ -67,16 +67,16 @@ create_fit = function(self, private, laplace.residuals){
     calculate_fit_statistics_ekf(self, private)
     
     # this is the old function using nll$report instead of ekf_r 
-    # calculate_fit_statistics_ekfukf_cpp(self, private)
+    # calculate_fit_statistics_ukf_cpp(self, private)
   }
   
-  if(private$method == "ukf"){
-    calculate_fit_statistics_ekfukf_cpp(self, private)
+  if(private$method == "ukf_cpp"){
+    calculate_fit_statistics_ukf_cpp(self, private)
   }
   
-  if(private$method == "ekf_rcpp"){
-    # calculate_fit_statistics_ekf(self, private)
-  }
+  # if(private$method == "ekf_rcpp"){
+  # calculate_fit_statistics_ekf(self, private)
+  # }
   
   if(private$method=="laplace"){
     calculcate_fit_statistics_laplace(self, private, laplace.residuals)
@@ -100,7 +100,12 @@ perform_estimation = function(self, private) {
   }
   
   # IF METHOD IS KALMAN FILTER
-  if (any(private$method==c("lkf","ekf","ukf","ekf_cpp"))) {
+  if (any(private$method==c("lkf","ekf","ukf_cpp","ekf_cpp"))) {
+    
+    if(private$method=="ekf_cpp"){
+      # TMB::openmp(max=TRUE, DLL=private$modelname.with.method, autopar=TRUE)
+      # TMB::config(trace.atomic=FALSE, DLL=private$modelname.with.method)
+    }
     
     # use function, gradient and hessian
     if (private$use.hessian) {
@@ -125,8 +130,7 @@ perform_estimation = function(self, private) {
     
   }
   
-  # IF METHOD IS TMB
-  # if (any(private$method == c("laplace","ekf"))) {
+  # IF METHOD IS LAPLACE
   if (any(private$method == c("laplace"))) {
     comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
                                                                          objective = private$nll$fn,
@@ -139,11 +143,9 @@ perform_estimation = function(self, private) {
   
   # DID THE OPTIMIZATION FAIL?
   if (inherits(opt,"try-error")) {
-    
     message("The optimisation failed due to the following error: \n\n\t",opt)
     
     if(stringr::str_detect(opt,"NA/NaN")){
-      
       message("You should consider the following to circumvent the error:
               1. Explore other parameter initial values - watch out of boundaries.
               2. Consider parameter transformations that ensure appropriate domains.
@@ -152,7 +154,6 @@ perform_estimation = function(self, private) {
               5. The Kalman filters may benefit from optimization with the hessian i.e. 'use.hessian'
               6. Try other optimizations using the function handlers from the 'likelihood' method.
               7. Change the optimization tolerances for 'nlminb' with the 'control' argument.")
-      
     }
     
     private$opt = NULL

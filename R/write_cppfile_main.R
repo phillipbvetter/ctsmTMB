@@ -24,7 +24,7 @@ write_method_cppfile = function(self, private) {
   # txt = c(txt, newtxt)
   
   # Various helper functions
-  if(any(private$method == c("ekf_cpp","ukf"))){
+  if(any(private$method == c("ekf_cpp","ukf_cpp"))){
     newtxt = write_helper_cppfunctions()
     txt = c(txt, newtxt)
   }
@@ -34,7 +34,7 @@ write_method_cppfile = function(self, private) {
     newtxt = write_ekf_functions(self, private)
     txt = c(txt, newtxt)
   }
-  if(private$method=="ukf"){
+  if(private$method=="ukf_cpp"){
     newtxt = write_ukf_functions(self,private)
     txt = c(txt,newtxt)
   }
@@ -49,7 +49,7 @@ write_method_cppfile = function(self, private) {
     newtxt = write_ekf_estimate(self, private)
     txt = c(txt, newtxt)
   }
-  if(private$method=="ukf"){
+  if(private$method=="ukf_cpp"){
     newtxt = write_ukf_estimate(self, private)
     txt = c(txt, newtxt)
   }

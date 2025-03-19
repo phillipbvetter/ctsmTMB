@@ -1,5 +1,9 @@
-# These functions are not ready yet, just templates from ekf is being used
 
+#
+#
+# THESE FUNCTIONS HAVE CURRENTLY NO USE - THEY ARE JUST TEMPLATES BORROWED FROM EKF
+#
+#
 
 #######################################################
 #######################################################
@@ -9,6 +13,13 @@
 
 makeADFun_ukf_rtmb = function(self, private)
 {
+  
+  # Tape Configration ----------------------
+  # The best options for tape configuration was seen to be disabling atomic 
+  # (x7 speed improvement of optimization) enabled by default, and keeping 
+  # vectorized disabled
+  RTMB::TapeConfig(atomic="disable")
+  RTMB::TapeConfig(vectorize="disable")
   
   # Data ----------------------------------------
   
@@ -468,8 +479,6 @@ ukf_r = function(parVec, self, private)
     V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
     R = C %*% covMat %*% t(C) + V
     K = covMat %*% t(C) %*% solve(R)
-    # Likelihood Contribution
-    nll = nll - dmvnorm(e, Sigma=R, log=TRUE)
     # Update State/Cov
     stateVec = stateVec + K %*% e
     covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -510,8 +519,6 @@ ukf_r = function(parVec, self, private)
       V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
       R = C %*% covMat %*% t(C) + V
       K = covMat %*% t(C) %*% solve(R)
-      # Likelihood Contribution
-      nll = nll - dmvnorm(e, Sigma=R, log=TRUE)
       # Update State/Cov
       stateVec = stateVec + K %*% e
       covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -525,8 +532,7 @@ ukf_r = function(parVec, self, private)
   ###### MAIN LOOP END #######
   
   ####### RETURN #######
-  returnlist <- list(nll=nll,
-                     xPost = xPost,
+  returnlist <- list(xPost = xPost,
                      pPost = pPost,
                      xPrior = xPrior,
                      pPrior = pPrior,
@@ -586,7 +592,7 @@ makeADFun_ukf_cpp = function(self, private){
   
   # unscented parameters
   ukf_hyperpars = c()
-  if(private$method=="ukf"){
+  if(private$method=="ukf_cpp"){
     ukf_hyperpars = list(private$ukf_hyperpars)
   }
   
@@ -678,7 +684,7 @@ calculate_fit_statistics_ukf <- function(self, private){
   }
   
   # parameter estimates and standard deviation
-  npars <- length(private$fit$par.fixed)
+  npars <- length(private$opt$par)
   private$fit$par.fixed = private$opt$par
   private$fit$sd.fixed = rep(NA,npars)
   private$fit$cov.fixed = array(NA,dim=c(npars,npars))
@@ -761,7 +767,8 @@ calculate_fit_statistics_ukf <- function(self, private){
   # States -----------------------------------
   
   # Extract reported items from nll
-  comptime <- system.time(rep <- ekf_r(model$getParameters()[,"estimate"], self, private))
+  estimated_pars <- self$getParameters()[,"estimate"]
+  comptime <- system.time(rep <- ekf_r(estimated_pars, self, private))
   comptime = format(round(as.numeric(comptime["elapsed"])*1e2)/1e2,digits=5,scientific=F)
   if(!private$silent) message("...took ", comptime, " seconds")
   

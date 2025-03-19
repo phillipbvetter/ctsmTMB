@@ -17,6 +17,7 @@ thus must be functions of at least one state.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-ctsmTMB-new}{\code{ctsmTMB$new()}}
+\item \href{#method-ctsmTMB-.private}{\code{ctsmTMB$.private()}}
 \item \href{#method-ctsmTMB-addSystem}{\code{ctsmTMB$addSystem()}}
 \item \href{#method-ctsmTMB-addObs}{\code{ctsmTMB$addObs()}}
 \item \href{#method-ctsmTMB-setVariance}{\code{ctsmTMB$setVariance()}}
@@ -56,6 +57,16 @@ thus must be functions of at least one state.
 Initialize private fields
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$new()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-.private"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-.private}{}}}
+\subsection{Method \code{.private()}}{
+Extract the private fields of a ctsmTMB model object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$.private()}\if{html}{\out{</div>}}
 }
 
 }
@@ -478,7 +489,7 @@ Estimate the fixed effects parameters in the specified model.
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$estimate(
   data,
   method = "ekf",
-  ode.solver = "rk4",
+  ode.solver = "euler",
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = 3,
@@ -500,17 +511,17 @@ Estimate the fixed effects parameters in the specified model.
 can take \code{NA}-values.}
 
 \item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
-Must be one of either "ekf", ukf" or "laplace".
+Must be one of either "lkf", "ekf", "laplace", "ukf_cpp" or "ekf_cpp".
 \enumerate{
-\item The natural TMB-style formulation where latent states are considered random effects
+\item "laplace" - the natural TMB-style formulation where latent states are considered random effects
 and are integrated out using the Laplace approximation. This method only yields the gradient
 of the (negative log) likelihood function with respect to the fixed effects for optimization.
 The method is slower although probably has some precision advantages, and allows for non-Gaussian
 observation noise (not yet implemented). One-step / K-step residuals are not yet available in
 the package.
-\item (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
+\item "ekf"/"ekf_cpp" - (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
 to handle potential non-linearities. This is computationally the fastest method.
-\item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
+\item "ukf_cpp" - (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
 which improves the mean and covariance estimates when the system display high nonlinearity, and
 circumvents the necessity to compute the jacobian of the drift and observation functions.
 }}
@@ -601,7 +612,7 @@ have more control of the optimization workflow.
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$likelihood(
   data,
   method = "ekf",
-  ode.solver = "rk4",
+  ode.solver = "euler",
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = 3,
@@ -713,16 +724,17 @@ state estimate as the initial condition.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$predict(
   data,
+  pars = NULL,
   method = "ekf",
-  ode.solver = "rk4",
+  ode.solver = "euler",
   ode.timestep = diff(data$t),
+  k.ahead = Inf,
+  return.k.ahead = NULL,
+  return.covariance = TRUE,
   initial.state = self$getInitialState(),
   unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
   silent = FALSE,
-  pars = NULL,
-  k.ahead = 1,
-  return.k.ahead = NULL,
-  return.covariance = TRUE
+  use.cpp = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -732,25 +744,11 @@ state estimate as the initial condition.
 \item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
 can take \code{NA}-values.}
 
-\item{\code{method}}{\enumerate{
-\item The natural TMB-style formulation where latent states are considered random effects
-and are integrated out using the Laplace approximation. This method only yields the gradient
-of the (negative log) likelihood function with respect to the fixed effects for optimization.
-The method is slower although probably has some precision advantages, and allows for non-Gaussian
-observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-the package.
-\item (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-to handle potential non-linearities. This is computationally the fastest method.
-\item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.
-}
+\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
+function has been run, then the default values will be those at the found optimum.}
 
-All package features are currently available for the kalman filters, while TMB is limited to
-parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-with these methods (use the \code{predict} S3 method), and stochastic simulation is also available
-in the cases where long prediction horizons are sought, where the normality assumption will be
-inaccurate.}
+\item{\code{method}}{The prediction method}
 
 \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
@@ -772,18 +770,6 @@ scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
 
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-the unscented transformation.}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
-'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
-
-\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
-function has been run, then the default values will be those at the found optimum.}
-
 \item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
 data updates).}
@@ -793,6 +779,15 @@ should be returned.}
 
 \item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
 should be returned.}
+
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+
+\item{\code{unscented_hyperpars}}{hyper-parameters for Unscented Kalman filter, \code{alpha}, \code{beta} and \code{kappa}.}
+
+\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+
+\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
 }
 \if{html}{\out{</div>}}
 }
@@ -812,17 +807,18 @@ state estimate as the initial condition.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$simulate(
   data,
+  pars = NULL,
   method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   simulation.timestep = diff(data$t),
+  k.ahead = Inf,
+  return.k.ahead = 0:k.ahead,
+  n.sims = 100,
   initial.state = self$getInitialState(),
   unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
   silent = FALSE,
-  pars = NULL,
-  n.sims = 100,
-  k.ahead = Inf,
-  return.k.ahead = 0:k.ahead
+  use.cpp = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -831,6 +827,10 @@ state estimate as the initial condition.
 \describe{
 \item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
 can take \code{NA}-values.}
+
+\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
+function has been run, then the default values will be those at the found optimum.}
 
 \item{\code{method}}{\enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects
@@ -874,6 +874,15 @@ which serves to link together the latent (random effects) states.
 
 \item{\code{simulation.timestep}}{timestep used in the euler-maruyama scheme}
 
+\item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
+data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
+data updates).}
+
+\item{\code{return.k.ahead}}{numeric vector of integers specifying which n.ahead predictions to that
+should be returned.}
+
+\item{\code{n.sims}}{number of simulations}
+
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
 
 \item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
@@ -882,18 +891,7 @@ the unscented transformation.}
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
 
-\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
-function has been run, then the default values will be those at the found optimum.}
-
-\item{\code{n.sims}}{number of simulations}
-
-\item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
-data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
-data updates).}
-
-\item{\code{return.k.ahead}}{numeric vector of integers specifying which n.ahead predictions to that
-should be returned.}
+\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
 
 \item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
 should be returned.}

@@ -7,19 +7,28 @@
 makeADFun_ekf_rtmb = function(self, private)
 {
   
+  # Tape Configration ----------------------
+  # The best options for tape configuration was seen to be disabling atomic 
+  # (x7 speed improvement of optimization) enabled by default, and keeping 
+  # vectorized disabled
+  RTMB::TapeConfig(atomic="disable")
+  RTMB::TapeConfig(vectorize="disable")
+  
   # Data ----------------------------------------
+  n.states <- private$number.of.states
+  n.obs <- private$number.of.observations
+  n.pars <- private$number.of.pars
+  n.diffusions <- private$number.of.diffusions
+  n.inputs <- private$number.of.inputs
+  estimate.initial <- private$estimate.initial
   
   # methods and purpose
-  ode_solver = private$ode.solver
+  ode.solver = private$ode.solver
+  
   
   # initial
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
-  
-  # loss function
-  # loss_function = private$loss$loss
-  # loss_threshold_value = private$loss$c
-  # tukey_loss_parameters = private$tukey.pars
   
   # time-steps
   ode_timestep_size = private$ode.timestep.size
@@ -31,6 +40,39 @@ makeADFun_ekf_rtmb = function(self, private)
   # observations
   obsMat = as.matrix(private$data[private$obs.names])
   
+  # parameters ----------------------------------------
+  parameters = lapply(private$parameters, function(x) x[["initial"]])
+  
+  # Loss function ----------------------------------------
+  loss_function = private$loss$loss
+  loss_threshold_value = private$loss$c
+  tukey_loss_parameters = private$tukey.pars
+  # quadratic loss
+  if(private$loss$loss==0){
+    loss_fun = function(e,R) -RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+  }
+  # tukey loss
+  if(private$loss$loss==1){
+    log2pi = log(2*pi)
+    p_tukey = private$tukey.pars
+    loss_fun = function(e,R){
+      r <- 0.5 * t(e) %*% RTMB::solve(R) %*% e
+      psi_r <- p_tukey[4]*(invlogit2(r,a=p_tukey[1],b=p_tukey[2])+p_tukey[3])^2
+      0.5 * logdet(R) + 0.5 * log2pi * length(e) + psi_r
+    }
+  }
+  # huber loss
+  if(private$loss$loss==2){
+    log2pi = log(2*pi)
+    c_squared = private$loss$c^2
+    huber_loss = function(r) c_squared * (sqrt(1 + (2*r / c_squared)) - 1)  
+    loss_fun = function(e,R){
+      r <- 0.5 * t(e) %*% RTMB::solve(R) %*% e
+      psi_r <- c_squared * (sqrt(1 + (2*r / c_squared)) - 1)
+      0.5 * logdet(R) + 0.5 * log2pi * length(e) + psi_r
+    }
+  }
+  
   # # MAP Estimation?
   # MAP_bool = 0L
   # if (!is.null(private$map)) {
@@ -41,9 +83,6 @@ makeADFun_ekf_rtmb = function(self, private)
   #   map_ints__ = as.numeric(bool)
   #   sum_map_ints__ = sum(as.numeric(bool))
   # }
-  
-  # parameters ----------------------------------------
-  parameters = lapply(private$parameters, function(x) x[["initial"]])
   
   # adjoints ----------------------------------------
   logdet <- RTMB::ADjoint(
@@ -106,7 +145,7 @@ makeADFun_ekf_rtmb = function(self, private)
   
   
   # forward euler ----------------------------------------
-  if(ode_solver==1){
+  if(ode.solver==1){
     ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       
       X1 = stateVec + f__(stateVec, parVec, inputVec) * dt
@@ -114,10 +153,8 @@ makeADFun_ekf_rtmb = function(self, private)
       
       return(list(X1,P1))
     }
-  }
-  
-  # rk4 ----------------------------------------
-  if(ode_solver==2){
+  } else if (ode.solver==2) {
+    # rk4 ----------------------------------------
     ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       
       # Initials
@@ -155,6 +192,56 @@ makeADFun_ekf_rtmb = function(self, private)
       
       return(list(X1,P1))
     }
+  } else {
+    # Construct input interpolators
+    #---------------------------------
+    # Expand time-domain slightly to avoid NAs in RTMB::interpol1Dfun
+    # if ODE is evaluated slightly outside domain
+    time <- inputMat[,1]
+    time.range <- range(time)
+    time.range.diff <- diff(time.range)
+    new.range = time.range + rep(time.range.diff/10, 2) * c(-1,1)
+    new.time <- seq(new.range[1], new.range[2], by=min(diff(time)))
+    input.interp.funs <- vector("list",length=n.inputs)
+    # Create interpolation on uniform grid
+    for(i in 1:length(input.interp.funs)){
+      # create uniform time grid
+      out <- stats::approx(x=time, y=inputMat[,i], xout=new.time, rule=2)
+      # interpol1Dfun assumes uniform distances in x-coordinates
+      input.interp.funs[[i]] <- RTMB::interpol1Dfun(z=out$y, xlim=range(new.time), R=1)
+    }
+    
+    # Construct ode fun for DeSolve
+    #---------------------------------
+    ode.fun <- function(time, stateVec_and_covMat, parVec){
+      inputVec <- RTMB::sapply(input.interp.funs, function(f) f(time))
+      # 
+      stateVec <- head(stateVec_and_covMat, n.states)
+      covMat <- RTMB::matrix(tail(stateVec_and_covMat, -n.states),nrow=n.states)
+      # 
+      G <- g__(stateVec, parVec, inputVec)
+      AcovMat = dfdx__(stateVec, parVec, inputVec) %*% covMat
+      #
+      dX <- f__(stateVec, parVec, inputVec)
+      dP <- AcovMat + t(AcovMat) + G %*% t(G)
+      return(list(c(dX,dP)))
+    }
+    
+    # Construct function to call in likelihood functon
+    #---------------------------------
+    ode_integrator <- function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
+      out <- RTMBode::ode(y = c(stateVec, covMat),
+                          times = c(inputVec[1], inputVec[1]+dt),
+                          func = ode.fun,
+                          parms = parVec,
+                          method=ode.solver)[2,-1]
+      
+      return(
+        list(head(out,n.states),
+             RTMB::matrix(tail(out,-n.states),nrow=n.states)
+        )
+      )
+    }
   }
   
   # user-defined functions ---------------------------
@@ -163,19 +250,11 @@ makeADFun_ekf_rtmb = function(self, private)
   }
   
   # new functions ----------------------------------------
-  
   #error function
   erf = function(x){
     y <- sqrt(2) * x
     2*RTMB::pnorm(y)-1
   }
-  
-  # global values in likelihood function ------------------------------------
-  n.states <- private$number.of.states
-  n.obs <- private$number.of.observations
-  n.pars <- private$number.of.pars
-  n.diffusions <- private$number.of.diffusions
-  estimate.initial <- private$estimate.initial
   
   # AD overwrites ----------------------------------------
   f_vec <- RTMB::AD(numeric(n.obs),force=TRUE)
@@ -187,11 +266,11 @@ makeADFun_ekf_rtmb = function(self, private)
   
   stateVec <- RTMB::AD(stateVec,force=TRUE)
   covMat <- RTMB::AD(covMat,force=TRUE)
+  
   # obsMat <- RTMB::AD(obsMat,force=F)
-  # inputMat <- RTMB::AD(inputMat,force=F)
+  # inputMat <- RTMB::AD(inputMat,force=T)
   
   # likelihood function --------------------------------------
-  
   ekf.nll = function(p){
     
     # "[<-" <- RTMB::ADoverload("[<-")
@@ -241,7 +320,7 @@ makeADFun_ekf_rtmb = function(self, private)
       R = C %*% covMat %*% t(C) + V
       K = covMat %*% t(C) %*% RTMB::solve(R)
       # Likelihood Contribution
-      nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+      nll <- nll + loss_fun(e,R)
       # Update State/Cov
       stateVec = stateVec + K %*% e
       covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -276,7 +355,7 @@ makeADFun_ekf_rtmb = function(self, private)
         R = C %*% covMat %*% t(C) + V
         K = covMat %*% t(C) %*% RTMB::solve(R)
         # Likelihood Contribution
-        nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+        nll <- nll + loss_fun(e,R)
         # Update State/Cov
         stateVec = stateVec + K %*% e
         covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -318,18 +397,19 @@ ekf_r = function(parVec, self, private)
   }
   
   # Data ----------------------------------------
+  n.states <- private$number.of.states
+  n.obs <- private$number.of.observations
+  n.pars <- private$number.of.pars
+  n.diffusions <- private$number.of.diffusions
+  n.inputs <- private$number.of.inputs
+  estimate.initial <- private$estimate.initial
   
   # methods and purpose
-  ode_solver = private$ode.solver
+  ode.solver = private$ode.solver
   
   # initial
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
-  
-  # loss function
-  # loss_function = private$loss$loss
-  # loss_threshold_value = private$loss$c
-  # tukey_loss_parameters = private$tukey.pars
   
   # time-steps
   ode_timestep_size = private$ode.timestep.size
@@ -352,7 +432,7 @@ ekf_r = function(parVec, self, private)
   
   
   # forward euler ----------------------------------------
-  if(ode_solver==1){
+  if(ode.solver==1){
     ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       
       X1 = stateVec + f__(stateVec, parVec, inputVec) * dt
@@ -360,10 +440,8 @@ ekf_r = function(parVec, self, private)
       
       return(list(X1,P1))
     }
-  }
-  
-  # rk4 ----------------------------------------
-  if(ode_solver==2){
+  } else if (ode.solver==2) {
+    # rk4 ----------------------------------------
     ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       
       # Initials
@@ -401,6 +479,45 @@ ekf_r = function(parVec, self, private)
       
       return(list(X1,P1))
     }
+  } else {
+    # Construct input interpolators
+    #---------------------------------
+    input.interp.funs <- vector("list",length=n.inputs)
+    for(i in 1:length(input.interp.funs)){
+      input.interp.funs[[i]] <- stats::approxfun(x=inputMat[,1], y=inputMat[,i], rule=2)
+    }
+    
+    # Construct ode fun for DeSolve
+    #---------------------------------
+    ode.fun <- function(time, stateVec_and_covMat, parVec){
+      inputVec <- sapply(input.interp.funs, function(f) f(time))
+      # 
+      stateVec <- head(stateVec_and_covMat, n.states)
+      covMat <- matrix(tail(stateVec_and_covMat, -n.states),nrow=n.states)
+      # 
+      G <- g__(stateVec, parVec, inputVec)
+      AcovMat = dfdx__(stateVec, parVec, inputVec) %*% covMat
+      #
+      dX <- f__(stateVec, parVec, inputVec)
+      dP <- AcovMat + t(AcovMat) + G %*% t(G)
+      return(list(c(dX,dP)))
+    }
+    
+    # Construct function to call in likelihood functon
+    #---------------------------------
+    ode_integrator <- function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
+      out <- deSolve::ode(y = c(stateVec, covMat),
+                          times = c(inputVec[1], inputVec[1]+dt),
+                          func = ode.fun,
+                          parms = parVec,
+                          method=ode.solver)[2,-1]
+      
+      return(
+        list(head(out,n.states),
+             matrix(tail(out,-n.states),nrow=n.states)
+        )
+      )
+    }
   }
   
   # user-defined functions ---------------------------
@@ -414,13 +531,6 @@ ekf_r = function(parVec, self, private)
     y <- sqrt(2) * x
     2*RTMB::pnorm(y)-1
   }
-  
-  # global values in likelihood function ------------------------------------
-  n.states <- private$number.of.states
-  n.obs <- private$number.of.observations
-  n.pars <- private$number.of.pars
-  n.diffusions <- private$number.of.diffusions
-  estimate.initial <- private$estimate.initial
   
   ####### STORAGE #######
   xPrior <- pPrior <- xPost <- pPost <- Innovation <- InnovationCovariance <- vector("list",length=nrow(obsMat))
@@ -467,7 +577,7 @@ ekf_r = function(parVec, self, private)
     R = C %*% covMat %*% t(C) + V
     K = covMat %*% t(C) %*% solve(R)
     # Likelihood Contribution
-    nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+    # nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
     # Update State/Cov
     stateVec = stateVec + K %*% e
     covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -509,7 +619,7 @@ ekf_r = function(parVec, self, private)
       R = C %*% covMat %*% t(C) + V
       K = covMat %*% t(C) %*% solve(R)
       # Likelihood Contribution
-      nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+      # nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
       # Update State/Cov
       stateVec = stateVec + K %*% e
       covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -523,8 +633,7 @@ ekf_r = function(parVec, self, private)
   ###### MAIN LOOP END #######
   
   ####### RETURN #######
-  returnlist <- list(nll=nll,
-                     xPost = xPost,
+  returnlist <- list(xPost = xPost,
                      pPost = pPost,
                      xPrior = xPrior,
                      pPrior = pPrior,
@@ -584,7 +693,7 @@ makeADFun_ekf_cpp = function(self, private){
   
   # unscented parameters
   ukf_hyperpars = c()
-  if(private$method=="ukf"){
+  if(private$method=="ukf_cpp"){
     ukf_hyperpars = list(private$ukf_hyperpars)
   }
   
@@ -638,7 +747,6 @@ calculate_fit_statistics_ekf <- function(self, private){
     return(NULL)
   }
   
-  
   # clear fit
   private$fit = NULL
   
@@ -677,7 +785,7 @@ calculate_fit_statistics_ekf <- function(self, private){
   }
   
   # parameter estimates and standard deviation
-  npars <- length(private$fit$par.fixed)
+  npars <- length(private$opt$par)
   private$fit$par.fixed = private$opt$par
   private$fit$sd.fixed = rep(NA,npars)
   private$fit$cov.fixed = array(NA,dim=c(npars,npars))
@@ -759,11 +867,9 @@ calculate_fit_statistics_ekf <- function(self, private){
   # States -----------------------------------
   
   # Extract reported items from nll
-  comptime <- system.time(rep <- ekf_r(self$getParameters()[,"estimate"], self, private))
-  comptime = format(round(as.numeric(comptime["elapsed"])*1e2)/1e2,digits=5,scientific=F)
-  if(!private$silent) message("...took ", comptime, " seconds")
-  
-  private$fit$rep <- rep
+  estimated_pars <- self$getParameters()[,"estimate"]
+  rep <- ekf_r(estimated_pars, self, private)
+  # private$fit$rep <- rep
   
   # Prior States
   temp.states = try_withWarningRecovery(cbind(private$data$t, t(do.call(cbind,rep$xPrior))))
@@ -938,3 +1044,4 @@ calculate_fit_statistics_ekf <- function(self, private){
   return(invisible(self))
   
 }
+

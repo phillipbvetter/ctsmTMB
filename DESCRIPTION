@@ -36,16 +36,21 @@ Imports:
 	Rcpp,
 	RcppEigen,
 	RcppXPtrUtils,
-	RcppZiggurat
+	RcppZiggurat,
+	Matrix,
+	deSolve
 LinkingTo:
 	Rcpp,
 	RcppEigen,
 	RcppZiggurat
 Suggests:
-    testthat (>= 3.0.0),
-    patchwork,
-    ggplot2,
-    ggfortify,
-    grDevices,
-    knitr,
-    rmarkdown
+	RTMBode,
+	testthat (>= 3.0.0),
+	patchwork,
+	ggplot2,
+	ggfortify,
+	grDevices,
+	knitr,
+	rmarkdown
+Additional_repositories: 
+	https://kaskr.r-universe.dev/RTMBode

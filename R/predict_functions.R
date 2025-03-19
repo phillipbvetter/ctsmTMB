@@ -9,10 +9,15 @@ ekf_r_prediction = function(self, private)
   
   
   # parameters ----------------------------------------
-  # parVec = sapply(private$parameters, function(x) x[["initial"]])
   parVec <- private$pars
   
   # Data ----------------------------------------
+  n.states <- private$number.of.states
+  n.obs <- private$number.of.observations
+  n.pars <- private$number.of.pars
+  n.diffusions <- private$number.of.diffusions
+  n.inputs <- private$number.of.inputs
+  estimate.initial <- private$estimate.initial
   
   # inputs
   inputMat = as.matrix(private$data[private$input.names])
@@ -21,7 +26,7 @@ ekf_r_prediction = function(self, private)
   obsMat = as.matrix(private$data[private$obs.names])
   
   # methods and purpose
-  ode_solver = private$ode.solver
+  ode.solver = private$ode.solver
   k.ahead <- private$n.ahead
   last.pred.index <- private$last.pred.index
   
@@ -42,7 +47,7 @@ ekf_r_prediction = function(self, private)
   
   
   # forward euler ----------------------------------------
-  if(ode_solver==1){
+  if(ode.solver==1){
     ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       
       X1 = stateVec + f__(stateVec, parVec, inputVec) * dt
@@ -50,10 +55,8 @@ ekf_r_prediction = function(self, private)
       
       return(list(X1,P1))
     }
-  }
-  
-  # rk4 ----------------------------------------
-  if(ode_solver==2){
+  } else if (ode.solver==2) {
+    # rk4 ----------------------------------------
     ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       
       # Initials
@@ -91,6 +94,45 @@ ekf_r_prediction = function(self, private)
       
       return(list(X1,P1))
     }
+  } else {
+    # Construct input interpolators
+    #---------------------------------
+    input.interp.funs <- vector("list",length=n.inputs)
+    for(i in 1:length(input.interp.funs)){
+      input.interp.funs[[i]] <- stats::approxfun(x=inputMat[,1], y=inputMat[,i], rule=2)
+    }
+    
+    # Construct ode fun for DeSolve
+    #---------------------------------
+    ode.fun <- function(time, stateVec_and_covMat, parVec){
+      inputVec <- sapply(input.interp.funs, function(f) f(time))
+      # 
+      stateVec <- head(stateVec_and_covMat, n.states)
+      covMat <- matrix(tail(stateVec_and_covMat, -n.states),nrow=n.states)
+      # 
+      G <- g__(stateVec, parVec, inputVec)
+      AcovMat = dfdx__(stateVec, parVec, inputVec) %*% covMat
+      #
+      dX <- f__(stateVec, parVec, inputVec)
+      dP <- AcovMat + t(AcovMat) + G %*% t(G)
+      return(list(c(dX,dP)))
+    }
+    
+    # Construct function to call in likelihood functon
+    #---------------------------------
+    ode_integrator <- function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
+      out <- deSolve::ode(y = c(stateVec, covMat),
+                          times = c(inputVec[1], inputVec[1]+dt),
+                          func = ode.fun,
+                          parms = parVec,
+                          method=ode.solver)[2,-1]
+      
+      return(
+        list(head(out,n.states),
+             matrix(tail(out,-n.states),nrow=n.states)
+        )
+      )
+    }
   }
   
   # user-defined functions ---------------------------
@@ -105,18 +147,8 @@ ekf_r_prediction = function(self, private)
     2*RTMB::pnorm(y)-1
   }
   
-  # global values in likelihood function ------------------------------------
-  n.states <- private$number.of.states
-  n.obs <- private$number.of.observations
-  n.pars <- private$number.of.pars
-  n.diffusions <- private$number.of.diffusions
-  estimate.initial <- private$estimate.initial
-  
   ####### STORAGE #######
-  # print(k.ahead)
-  # print(last.pred.index)
-  xPred <- lapply(1:last.pred.index, function(x) matrix(NA, nrow=k.ahead+1,ncol=n.states))
-  pPred <- lapply(1:last.pred.index, function(x) vector("list", length=k.ahead+1))
+  predMats <- lapply(1:last.pred.index, function(x) matrix(NA,nrow=k.ahead+1,ncol=n.states+n.states^2))
   
   ####### Pre-Allocated Object #######
   I0 <- diag(n.states)
@@ -163,8 +195,7 @@ ekf_r_prediction = function(self, private)
   for(i in 1:last.pred.index){
     # Start Loop
     
-    xPred[[i]][1,] <- stateVec
-    pPred[[i]][[1]] <- covMat
+    predMats[[i]][1,] <- c(stateVec, covMat)
     
     ###### K-STEP AHEAD LOOP ####### 
     for(k in 1:k.ahead){
@@ -180,13 +211,12 @@ ekf_r_prediction = function(self, private)
         inputVec = inputVec + dinputVec
       }
       
-      xPred[[i]][k+1,] <- stateVec
-      pPred[[i]][[k+1]] <- covMat
+      predMats[[i]][k+1,] <- c(stateVec, covMat)
       
     }
     
-    stateVec <- xPred[[i]][2,]
-    covMat <- pPred[[i]][[2]]
+    stateVec <- head(predMats[[i]][2,],n.states)
+    covMat <- matrix(tail(predMats[[i]][2,],n.states^2),nrow=n.states)
     
     ######## DATA UPDATE ########
     # We update the state and covariance based on the "new" measurement
@@ -210,11 +240,19 @@ ekf_r_prediction = function(self, private)
   }
   ###### MAIN LOOP END #######
   
+  ####### STORE PREDICTION #######
+  # private$prediction = list(Xpred=xPred, Ppred=pPred, predMats=predMats)
+  private$prediction = list(predMats=predMats)
+  
   ####### RETURN #######
-  return(invisible(list(xPred=xPred, pPred=pPred)))
+  return(invisible(self))
 }
 
-rcpp_prediction = function(self, private){
+ekf_rcpp_prediction = function(self, private){
+  
+  if(!any(private$ode.solver==c(1,2))){
+    stop("Predictions using C++ currently only support 'euler' or 'rk4' ODE solvers.") 
+  }
   
   # observation/input matrix
   obsMat = as.matrix(private$data[private$obs.names])
@@ -228,34 +266,55 @@ rcpp_prediction = function(self, private){
   number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
   
   # predict using c++ function
-  mylist <- execute_ekf_prediction(private$rcpp_function_ptr$f,
-                                   private$rcpp_function_ptr$g,
-                                   private$rcpp_function_ptr$dfdx,
-                                   private$rcpp_function_ptr$h,
-                                   private$rcpp_function_ptr$dhdx,
-                                   private$rcpp_function_ptr$hvar,
-                                   obsMat,
-                                   inputMat,
-                                   private$pars,
-                                   private$pred.initial.state$p0,
-                                   private$pred.initial.state$x0,
-                                   private$ode.timestep.size,
-                                   private$ode.timesteps,
-                                   numeric_is_not_na_obsMat,
-                                   number_of_available_obs,
-                                   private$number.of.states,
-                                   private$number.of.observations,
-                                   private$last.pred.index,
-                                   private$n.ahead,
-                                   private$ode.solver)
+  # mylist <- execute_ekf_prediction(private$rcpp_function_ptr$f,
+  #                                  private$rcpp_function_ptr$g,
+  #                                  private$rcpp_function_ptr$dfdx,
+  #                                  private$rcpp_function_ptr$h,
+  #                                  private$rcpp_function_ptr$dhdx,
+  #                                  private$rcpp_function_ptr$hvar,
+  #                                  obsMat,
+  #                                  inputMat,
+  #                                  private$pars,
+  #                                  private$pred.initial.state$p0,
+  #                                  private$pred.initial.state$x0,
+  #                                  private$ode.timestep.size,
+  #                                  private$ode.timesteps,
+  #                                  numeric_is_not_na_obsMat,
+  #                                  number_of_available_obs,
+  #                                  private$number.of.states,
+  #                                  private$number.of.observations,
+  #                                  private$last.pred.index,
+  #                                  private$n.ahead,
+  #                                  private$ode.solver)
+  mylist <- execute_ekf_prediction2(private$rcpp_function_ptr$f,
+                                    private$rcpp_function_ptr$g,
+                                    private$rcpp_function_ptr$dfdx,
+                                    private$rcpp_function_ptr$h,
+                                    private$rcpp_function_ptr$dhdx,
+                                    private$rcpp_function_ptr$hvar,
+                                    obsMat,
+                                    inputMat,
+                                    private$pars,
+                                    private$pred.initial.state$p0,
+                                    private$pred.initial.state$x0,
+                                    private$ode.timestep.size,
+                                    private$ode.timesteps,
+                                    numeric_is_not_na_obsMat,
+                                    number_of_available_obs,
+                                    private$number.of.states,
+                                    private$number.of.observations,
+                                    private$last.pred.index,
+                                    private$n.ahead,
+                                    private$ode.solver)
   
-  
+  ####### STORE PREDICTION #######
   private$prediction = mylist
   
-  return(invisible(NULL))
+  ####### RETURN #######
+  return(invisible(self))
 }
 
-create_return_prediction = function(return.covariance, return.k.ahead, self, private){
+create_return_prediction = function(return.covariance, return.k.ahead, use.cpp, self, private){
   
   # Simlify variable names
   n = private$number.of.states
@@ -268,7 +327,6 @@ create_return_prediction = function(return.covariance, return.k.ahead, self, pri
   df.out = data.frame(matrix(nrow=last.pred.index*(n.ahead+1), ncol=5+n+n^2))
   disp_names = sprintf(rep("cor.%s.%s",n^2),rep(state.names, each=n),rep(state.names,n))
   disp_names[seq.int(1,n^2,by=n+1)] = sprintf(rep("var.%s",n),state.names)
-  # var_bool = !stringr::str_detect(disp_names,"cor")
   if(return.covariance){
     disp_names = sprintf(rep("cov.%s.%s",n^2),rep(state.names,each=n),rep(state.names,n))
     disp_names[seq.int(1,n^2,by=n+1)] = sprintf(rep("var.%s",n),state.names)
@@ -284,14 +342,12 @@ create_return_prediction = function(return.covariance, return.k.ahead, self, pri
   df.out["k.ahead"] = rep(0:n.ahead,last.pred.index)
   df.obs = df.out[c("i.","j.","t.i","t.j","k.ahead")]
   
-  ##### STATES PREDICTIONS ######
-  df.out[,state.names] = do.call(rbind,lapply(private$prediction$Xpred, function(cur.list) do.call(rbind, cur.list)))
-  if(return.covariance){ #covariance
-    df.out[,disp_names] = do.call(rbind, lapply(private$prediction$Ppred, function(cur.list){ do.call(rbind, lapply(cur.list, function(x) as.vector(x))) } ))
-  } else { #correlation
-    df.out[,disp_names] = do.call(rbind, lapply(private$prediction$Ppred, function(cur.list){ do.call(rbind, lapply(cur.list, function(x) as.vector(cov2cor(x)))) } )) 
-    diag.ids = seq(from=1,to=n^2,by=n+1)
-    df.out[,disp_names[diag.ids]] = do.call(rbind, lapply(private$prediction$Ppred, function(cur.list){ do.call(rbind, lapply(cur.list, function(x) as.vector(diag(x)))) } ))
+  df.out[, c(state.names, disp_names)] <- do.call(rbind, private$prediction$predMats)
+  if(!return.covariance){
+    diag.ids <- seq(from=1,to=n^2,by=n+1)
+    .seq <- seq(from=1,to=n^2,by=1)
+    non.diag.ids <- .seq[!(.seq %in% diag.ids)]
+    df.out[,disp_names[non.diag.ids]] <- t(apply(df.out, 1, function(x) as.vector(stats::cov2cor(matrix(tail(x, n^2), nrow=n)))))[,non.diag.ids]
   }
   
   ##### OBSERVATION PREDICTIONS #####
@@ -329,7 +385,7 @@ create_return_prediction = function(return.covariance, return.k.ahead, self, pri
   df.obs = df.obs[df.obs[,"k.ahead"] %in% return.k.ahead,]
   
   list.out = list(states = df.out, observations = df.obs)
-  # class(list.out) = c(class(list.out), "ctsmTMB.pred")
+  class(list.out) = c(class(list.out), "ctsmTMB.pred")
   
   private$prediction = list.out
   

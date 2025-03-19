@@ -5,6 +5,12 @@
 makeADFun_laplace_rtmb = function(self, private)
 {
   
+  # Tape Configration ----------------------
+  # The best option was not to change defaults
+
+  RTMB::TapeConfig(atomic="enable")
+  RTMB::TapeConfig(vectorize="disable")
+  
   # Data ----------------------------------------
   
   # initial states and covariance
@@ -94,7 +100,6 @@ makeADFun_laplace_rtmb = function(self, private)
   estimate.initial <- private$estimate.initial
   
   # likelihood function --------------------------------------
-  
   laplace.nll = function(p){
     
     # "[<-" <- RTMB::ADoverload("[<-")

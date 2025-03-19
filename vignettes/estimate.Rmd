@@ -1,27 +1,27 @@
 ---
-title: "Estimating parameters and latent states"
+title: "More Details on the Estimation Procedure"
 author: ""
 date: ""
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Estimating parameters and latent states}
+  %\VignetteIndexEntry{More Details on the Estimation Procedure}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-
+  
 ```{r, include=FALSE}
-library(ctsmTMB)
+  library(ctsmTMB)
 ```
 
-In this document we demonstrate the functionality of `estimate` further. We use the Ornstein-Uhlenbeck process for this purpose.
+In this vignette we elaborate on the abilities and workings of the `estimate` method.
+
+We consider the Ornstein-Uhlenbeck process, with a direct observation equation:
+$$ 
+\mathrm{d}x_{t} = \theta (\mu - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} 
+$$
 
 $$
-\mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \, \mathrm{d}B_{t} 
-$$
-
-
-$$
-Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim \mathcal{N}\left(0,\sigma_{Y}^{2}\right)  
+y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}} \qquad \varepsilon_{t_{k}} \sim N(0,\sigma_{y}^{2})
 $$
 
 ```{r, include=FALSE}
@@ -49,44 +49,36 @@ y = x[t.sim %in% t.obs] + sigma_y * rnorm(length(t.obs))
 )
 ```
 
-
-# Construct model object
-
----
-
-We now construct the `ctsmTMB` model object as per usual
+First we construct the `ctsmTMB` model object as per usual:
 
 ```{r}
 # Create model object
-obj = ctsmTMB$new()
-
-# Set name of model (and the created .cpp file)
-obj$setModelname("ornstein_uhlenbeck")
+model = ctsmTMB$new()
 
 # Add system equations
-obj$addSystem(
+model$addSystem(
   dx ~ theta * (mu-x) * dt + sigma_x*dw
 )
 
 # Add observation equations
-obj$addObs(
+model$addObs(
   y ~ x
 )
 
 # Set observation equation variances
-obj$setVariance(
+model$setVariance(
   y ~ sigma_y^2
 )
 
 # Specify algebraic relations
-obj$setAlgebraics(
+model$setAlgebraics(
   theta ~ exp(logtheta),
   sigma_x ~ exp(logsigma_x),
   sigma_y ~ exp(logsigma_y)
 )
 
 # Specify parameter initial values and lower/upper bounds in estimation
-obj$setParameter(
+model$setParameter(
   logtheta   = log(c(initial = 5,    lower = 0,    upper = 20)),
   mu         = c(    initial = 0,    lower = -10,  upper = 10),
   logsigma_x = log(c(initial = 1e-1, lower = 1e-5, upper = 5)),
@@ -94,52 +86,79 @@ obj$setParameter(
 )
 
 # Set initial state mean and covariance
-obj$setInitialState(list(x[1], 1e-1*diag(1)))
+model$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"))
-obj$setCppfilesDirectory(temporary_directory)
+model$setCppfilesDirectory(temporary_directory)
 ```
 
-# Using `estimate` - default settings
+
+# Estimation
 
 ---
 
-We can run `estimate` directly with the default settings
-
+We are now ready to estimate the (fixed effects) parameters and states of the model by calling
 ```{r, eval=FALSE}
-obj$estimate(.data)
+model$estimate(.data)
 ```
 
-This is the same as using the default settings
+The arguments and their defaults when calling are:
 ```{r, eval=FALSE}
-obj$estimate(data = .data, 
-             method = "ekf",
-             ode.solver = "rk4",
-             ode.timestep = diff(data$t),
-             loss = "quadratic",
-             loss_c = 3,
-             unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-             control = list(trace=1,iter.max=1e5,eval.max=1e5),
-             use.hessian = FALSE,
-             laplace.residuals = FALSE,
-             unconstrained.optim = FALSE,
-             compile = FALSE,
-             silent = FALSE)
+model$estimate(
+  data,
+  method = "ekf",
+  ode.solver = "rk4",
+  ode.timestep = diff(data$t),
+  loss = "quadratic",
+  loss_c = 3,
+  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
+  control = list(trace = 1, iter.max = 1e+05, eval.max = 1e+05),
+  use.hessian = FALSE,
+  laplace.residuals = FALSE,
+  unconstrained.optim = FALSE,
+  estimate.initial.state = FALSE,
+  compile = FALSE,
+  silent = FALSE
+)
 ```
 
-Let's walk through the various arguments and their effect:
+We now go through out of the arguments and explain in detail their workings
 
-# Argument: `method`
+# Arguments:
 
----
+## `method`
 
-The `method` argument determines which underlying estimation techniques is used. The current implementation supports the following
+The `method` argument decides which estimation/filtering algorithm is used. Currently, the following arguments are accepted by `method`:
 
-1. `method='ekf'`: The Extended Kalman Filter.
-2. `method='ukf'`: The Unscented Kalman Filter - currently disabled.
-3. `method='laplace'`: The Laplace Approximation
+1. `method='lkf'`: The Linear "Exact" Kalman Filter (RTMB).
+
+2. `method='ekf'`: The Extended Kalman Filter (RTMB).
+
+3. `method='ukf_cpp'`: The Unscented Kalman Filter (TMB).
+
+4. `method='ekf_cpp'`: The Extended Kalman Filter (TMB).
+
+5. `method='laplace'`: The Laplace Approximation (RTMB).
+
+### Filtering Technique
+
+The package offers two filtering approaches. The first approach is that of **Kalman Filtering** (1-4) while the second approach is through the so-called **Laplace Approxmation** (5).
+
+  1. The **Kalman Filtering** method is a recursive algorithm where the state is continuously being predicted forwards in time where until a measurement is available, and then updated using (information from) that measurement. Importantly, this recursiveness produces so-called prior and posterior state estimates, estimates which are conditional on observations up to the past and present respectively.
+
+<!-- The filtering algorithm is optimal when the state space model is linear (i.e. linear drift and constant diffusion) and observation noise is Gaussian. -->
+
+  2. The **Laplace Approximation** method is non-recursive in contrast to the Kalman filtering, and the produced state estimates, referred to as smoothed estimates, are therefore conditional on all observation in the data.
+  
+
+
+### TMB vs RTMB
+
+The second difference to emphasize is the final parenthesis for each method, highlighting whether TMB or RTMB is used to construct the likelihood function. The former requires writing and compiling a C++ function, while the latter does not. 
+
+The primary difference in these methods should be made between methods 1-4 which are Kalman filtering methods, and 5 which is an altogether different approach to state and likelihood estimation.
 
 The former two are quite similar in that they are based on the Kalman Filter theory. The assumptions of normality in the state transition and observation equation are fundamental, although the implemented filters are standard non-linear filters, in the sense that they try to overcome these assumptions for small non-linearities. The Unscented Kalman Filter is generally considered to perform better in these cases.
 
@@ -148,6 +167,16 @@ The former two are quite similar in that they are based on the Kalman Filter the
 The latter `laplace` method employs the Laplace Approximation method of \code{link{TMB}} to integration out random effects. In this formulation we consider the states as random effects, and parameters as fixed. The underlying assumption is one of normality, but its implementation allows for the flexibility of choosing arbitrary distributions (not yet implemented.)
 
 Both of these methods can be used to estimate parameter and states. In the case of `laplace` the states will be smoothed (conditioned on both past and future observations).
+
+## **Note on C++ model changes**
+
+---
+
+This note is only relevant if you are using the `method="ekf_cpp"`. If you make changes to the model equations but retain the model name, then the underlying C++ function must be recompiled. You do this by specifying
+```{r, eval=FALSE}
+model$estimate(data, compile=TRUE)
+```
+If you receive error messages when calling `estimate` regarding variables that are not in your specified model, it is likely because you forgot to recompile.
 
 # Argument: `ode.solver`
 
@@ -182,6 +211,6 @@ This argument determines the time-step used in the ODE solvers
 
 ---
 
-```{r clean up, include=FALSE}
+```{r clean up, include=FALSE, eval=FALSE}
 unlink(temporary_directory, recursive=TRUE)
 ```

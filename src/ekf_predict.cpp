@@ -1,11 +1,11 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
-#include "helper_funs.h"
+#include "helper_funs2.h"
 using namespace Rcpp;
 using namespace Eigen;
 // [[Rcpp::depends(RcppEigen)]]
 
-Eigen::MatrixXd construct_permutation_matrix(int number_of_available_obs, int number_of_obs_eqs, Eigen::VectorXi bool_is_not_na_obsVec){
+Eigen::MatrixXd construct_permutation_matrix2(int number_of_available_obs, int number_of_obs_eqs, Eigen::VectorXi bool_is_not_na_obsVec){
   Eigen::MatrixXd E(number_of_available_obs, number_of_obs_eqs);
   E.setZero();
   int j=0;
@@ -19,7 +19,7 @@ Eigen::MatrixXd construct_permutation_matrix(int number_of_available_obs, int nu
   return E;
 }
 
-Eigen::VectorXd remove_NAs(Eigen::VectorXd obsVec, int number_of_available_obs, Eigen::VectorXi bool_is_not_na_obsVec){
+Eigen::VectorXd remove_NAs2(Eigen::VectorXd obsVec, int number_of_available_obs, Eigen::VectorXi bool_is_not_na_obsVec){
   // Initialize
   int ii = 0;
   Eigen::VectorXd obsVec_without_NAs(number_of_available_obs);
@@ -36,14 +36,14 @@ Eigen::VectorXd remove_NAs(Eigen::VectorXd obsVec, int number_of_available_obs, 
 
 
 //  This is the predict kalman filter function
-template <typename T>
-List ekf_prediction(
-  T f__, 
-  T g__,
-  T dfdx__,
-  T h__,
-  T dhdx__,
-  T hvar__,
+template <typename T1, typename T2>
+List ekf_prediction2(
+  T1 f__, 
+  T2 g__,
+  T2 dfdx__,
+  T1 h__,
+  T2 dhdx__,
+  T2 hvar__,
   Eigen::MatrixXd obsMat,
   Eigen::MatrixXd inputMat,
   Eigen::VectorXd parVec,
@@ -53,25 +53,34 @@ List ekf_prediction(
   Eigen::VectorXd ode_timesteps,
   Eigen::MatrixXi bool_is_not_na_obsMat,
   Eigen::VectorXi number_of_available_obs,
-  int n,
-  int m,
-  int last_pred_id,
-  int k_step_ahead,
-  int ode_solver)
+  const int n,
+  const int m,
+  const int last_pred_id,
+  const int k_step_ahead,
+  const int ode_solver)
 {
 
   // misc  
-  int ni = inputMat.row(0).size();
+  const int ni = inputMat.row(0).size();
+  const int n_squared = n*n;
   Eigen::VectorXd inputVec(ni), dinputVec(ni), obsVec(m), e, y, obsVec_all;
   Eigen::VectorXi bool_is_not_na_obsVec;
   Eigen::MatrixXd C, R, K, E, V, Ri, I(n,n);
   I.setIdentity();
-  Rcpp::NumericVector H;
-  Rcpp::NumericMatrix Hvar, dHdX;
+  Eigen::VectorXd H;
+  Eigen::MatrixXd Hvar, dHdX;
 
   // storage for predictions
-  Rcpp::List xk_temp(k_step_ahead+1), pk_temp(k_step_ahead+1), xk(last_pred_id), pk(last_pred_id);
-  Rcpp::List ode_1step_integration;
+  //Rcpp::List xk_temp(k_step_ahead+1), pk_temp(k_step_ahead+1), xk(last_pred_id), pk(last_pred_id);
+  Rcpp::List xk(last_pred_id), ode_1step_integration(2);
+
+  Eigen::MatrixXd predMat(k_step_ahead+1, n + n_squared);
+  predMat.setZero();
+
+  /*We can save the predictions in a matrix of columns:
+  n.states + n.states^2, and k.step.ahead+1 rows
+  */
+  //Eigen::MatrixXd xk_temp_2(k_step_ahead+1, n + n*n);
 
   //////////// INITIAL DATA-UPDATE ///////////
   // Only update if there is any available data
@@ -82,21 +91,18 @@ List ekf_prediction(
     bool_is_not_na_obsVec = bool_is_not_na_obsMat.row(0);
 
     // remove potential NA entries in obsVec and construct permutation matrix
-    obsVec = remove_NAs(obsVec_all, number_of_available_obs(0), bool_is_not_na_obsVec);
-    E = construct_permutation_matrix(number_of_available_obs(0), m, bool_is_not_na_obsVec);
+    obsVec = remove_NAs2(obsVec_all, number_of_available_obs(0), bool_is_not_na_obsVec);
+    E = construct_permutation_matrix2(number_of_available_obs(0), m, bool_is_not_na_obsVec);
 
-    // Call funs and transform from Rcpp to Eigen
+    // Call funs
     H = h__(stateVec, parVec, inputVec);
     dHdX = dhdx__(stateVec, parVec, inputVec);
     Hvar = hvar__(stateVec, parVec, inputVec);
-    Eigen::Map<Eigen::VectorXd> H_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(H);
-    Eigen::Map<Eigen::MatrixXd> dHdX_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(dHdX);
-    Eigen::Map<Eigen::MatrixXd> Hvar_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(Hvar);
     
     // Kalman Filter
-    C = E * dHdX_eigen;
-    e = obsVec - E * H_eigen;
-    V = E * Hvar_eigen * E.transpose();
+    C = E * dHdX;
+    e = obsVec - E * H;
+    V = E * Hvar * E.transpose();
     R = C * covMat * C.transpose() + V;
     Ri = R.inverse();
     K = covMat * C.transpose() * Ri;
@@ -106,8 +112,10 @@ List ekf_prediction(
 
   //////////// MAIN LOOP OVER TIME POINTS ///////////
   for(int i=0 ; i < last_pred_id ; i++){
-    xk_temp[0] = stateVec;
-    pk_temp[0] = covMat;
+    //xk_temp[0] = stateVec;
+    //pk_temp[0] = covMat;
+    predMat.row(0).head(n) = stateVec;
+    predMat.row(0).tail(n_squared) = covMat.reshaped();
 
     //////////// K-STEP-AHEAD LOOP ///////////
     for(int k=0 ; k < k_step_ahead ; k++){
@@ -117,26 +125,31 @@ List ekf_prediction(
       //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
       // Integrate moments between two time points
       for(int j=0 ; j < ode_timesteps(i+k) ; j++){
-        ode_1step_integration = ode_integrator(f__, g__, dfdx__, covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size(i+k), ode_solver);
+        ode_1step_integration = ode_integrator2(f__, g__, dfdx__, covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size(i+k), ode_solver);
         stateVec = ode_1step_integration["X1"];
         covMat = ode_1step_integration["P1"];
         inputVec += dinputVec;
       }
 
       // Save the prediction
-      xk_temp[k+1] = stateVec;
-      pk_temp[k+1] = covMat;
+      //xk_temp[k+1] = stateVec;
+      //pk_temp[k+1] = covMat;
+      predMat.row(k+1).head(n) = stateVec;
+      predMat.row(k+1).tail(n_squared) = covMat.reshaped();
     }
 
     // Save a clone of the lists (if we dont use clone then all entries in xk and pk are identical,
     // because of the way pointers work here)
-    xk[i] = clone(xk_temp);
-    pk[i] = clone(pk_temp);
+    //xk[i] = clone(xk_temp);
+    //pk[i] = clone(pk_temp);
+    xk[i] = predMat;
 
     //////////// DATA-UPDATE ///////////
     // Grab the one-step-ahead prediction (prior prediction)
-    stateVec = xk_temp[1];
-    covMat = pk_temp[1];
+    //stateVec = xk_temp[1];
+    //covMat = pk_temp[1];
+    stateVec = predMat.row(1).head(n);
+    covMat = predMat.row(1).tail(n_squared).reshaped(n,n);
 
     // Only update if there is any available data
     if( number_of_available_obs(i+1) > 0 ){
@@ -146,21 +159,18 @@ List ekf_prediction(
       bool_is_not_na_obsVec = bool_is_not_na_obsMat.row(i+1);
 
       // remove potential NA entries in obsVec and construct permutation matrix
-      obsVec = remove_NAs(obsVec_all, number_of_available_obs(i+1), bool_is_not_na_obsVec);
-      E = construct_permutation_matrix(number_of_available_obs(i+1), m, bool_is_not_na_obsVec);
+      obsVec = remove_NAs2(obsVec_all, number_of_available_obs(i+1), bool_is_not_na_obsVec);
+      E = construct_permutation_matrix2(number_of_available_obs(i+1), m, bool_is_not_na_obsVec);
 
-      // Call funs and transform from Rcpp to Eigen
+      // Call funs
       H = h__(stateVec, parVec, inputVec);
       dHdX = dhdx__(stateVec, parVec, inputVec);
       Hvar = hvar__(stateVec, parVec, inputVec);
-      Eigen::Map<Eigen::VectorXd> H_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(H);
-      Eigen::Map<Eigen::MatrixXd> dHdX_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(dHdX);
-      Eigen::Map<Eigen::MatrixXd> Hvar_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(Hvar);
       
       // Kalman Filter
-      C = E * dHdX_eigen;
-      e = obsVec - E * H_eigen;
-      V = E * Hvar_eigen * E.transpose();
+      C = E * dHdX;
+      e = obsVec - E * H;
+      V = E * Hvar * E.transpose();
       R = C * covMat * C.transpose() + V;
       Ri = R.inverse();
       K = covMat * C.transpose() * Ri;
@@ -169,18 +179,22 @@ List ekf_prediction(
     }
   }
   
-  return List::create(
+  /*return List::create(
     Named("Xpred")=xk , 
     Named("Ppred")=pk
+    );*/
+  return List::create(
+    Named("predMats") = xk
     );
 }
 
 // Function typedefs
-typedef SEXP (*funPtr)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
+typedef Eigen::VectorXd (*funPtr_vec)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
+typedef Eigen::MatrixXd (*funPtr_mat)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
 
 // Function exported to R that performs (Extended Kalman) filtering
 // [[Rcpp::export]]
-List execute_ekf_prediction(
+List execute_ekf_prediction2(
   SEXP f__R, 
   SEXP g__R,
   SEXP dfdx__R,
@@ -203,14 +217,14 @@ List execute_ekf_prediction(
   int ode_solver)
 {
 
-  funPtr     f__ = *XPtr<funPtr>(f__R);
-  funPtr     g__ = *XPtr<funPtr>(g__R);
-  funPtr  dfdx__ = *XPtr<funPtr>(dfdx__R);
-  funPtr     h__ = *XPtr<funPtr>(h__R);
-  funPtr  dhdx__ = *XPtr<funPtr>(dhdx__R);
-  funPtr  hvar__ = *XPtr<funPtr>(hvar__R);
+  funPtr_vec     f__ = *XPtr<funPtr_vec>(f__R);
+  funPtr_mat     g__ = *XPtr<funPtr_mat>(g__R);
+  funPtr_mat  dfdx__ = *XPtr<funPtr_mat>(dfdx__R);
+  funPtr_vec     h__ = *XPtr<funPtr_vec>(h__R);
+  funPtr_mat  dhdx__ = *XPtr<funPtr_mat>(dhdx__R);
+  funPtr_mat  hvar__ = *XPtr<funPtr_mat>(hvar__R);
 
-  return ekf_prediction<funPtr>(
+  return ekf_prediction2<funPtr_vec, funPtr_mat>(
     f__, 
     g__, 
     dfdx__, 

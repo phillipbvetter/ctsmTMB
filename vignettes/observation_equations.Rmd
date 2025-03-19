@@ -28,7 +28,7 @@ obj$addSystem(
 )
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"))
 obj$setCppfilesDirectory(temporary_directory)
 ```
@@ -84,6 +84,6 @@ obj$addObs(
 )
 ```
 
-```{r clean up, include=FALSE}
+```{r clean up, include=FALSE, eval=FALSE}
 unlink(temporary_directory, recursive=TRUE)
 ```

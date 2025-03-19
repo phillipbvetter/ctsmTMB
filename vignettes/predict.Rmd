@@ -125,7 +125,7 @@ obj$setParameter(
 obj$setInitialState(list(x[1], 1e-1*diag(1)))
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 # temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"),mustWork=F)
 # obj$setCppfilesDirectory(temporary_directory)
 ```
@@ -312,6 +312,6 @@ ggplot() +
   mytheme
 ```
 
-```{r clean up, include=FALSE}
+```{r clean up, include=FALSE, eval=FALSE}
 # unlink(temporary_directory, recursive=TRUE)
 ```

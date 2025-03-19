@@ -27,8 +27,9 @@ build_model = function(self, private) {
   # function strings
   create_rtmb_function_strings(self, private)
   create_rtmb_function_strings_new(self, private)
-  create_rekf_function_strings(self, private)
+  create_r_function_strings(self, private)
   create_rcpp_function_strings(self, private)
+  # create_rcpp_function_strings2(self, private)
   
   # last check
   final_build_check(self, private)

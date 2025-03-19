@@ -71,6 +71,7 @@ temporary_save_old_data <- function(self, private){
   private$old.data$method = priv$method
   private$old.data$ode.solver = priv$ode.solver
   private$old.data$ode.timestep = priv$ode.timestep
+  private$old.data$loss$loss = priv$loss$loss
   
   # private$simulation.timestep.size
   # private$simulation.timesteps
@@ -80,14 +81,16 @@ temporary_save_old_data <- function(self, private){
 
 check_for_data_rebuild <- function(self, private){
   
-  bool <- any(c(
+  bool <- c(
     private$rebuild.data,
     !identical(private$old.data$data, private$data),
     !identical(private$old.data$method, private$method),
     !identical(private$old.data$ode.solver, private$ode.solver),
-    !identical(private$old.data$ode.timestep, private$ode.timestep)
-  ))
-  private$rebuild.data = bool
+    !identical(private$old.data$ode.timestep, private$ode.timestep),
+    !identical(private$old.data$loss$loss, private$loss$loss)
+  )
+  
+  private$rebuild.data = any(bool)
   
   return(invisible(self))
 }

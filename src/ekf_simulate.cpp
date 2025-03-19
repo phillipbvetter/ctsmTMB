@@ -1,20 +1,20 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <Ziggurat.h>
-#include "helper_funs.h"
+#include "helper_funs2.h"
 using namespace Rcpp;
 using namespace Eigen;
 // [[Rcpp::depends(RcppEigen)]]
 
 //  This is the predict kalman filter function
-template<typename T>
-List ekf_simulation(
-  T f__, 
-  T g__,
-  T dfdx__,
-  T h__,
-  T dhdx__,
-  T hvar__,
+template<typename T1, typename T2>
+List ekf_simulation2(
+  T1 f__, 
+  T2 g__,
+  T2 dfdx__,
+  T1 h__,
+  T2 dhdx__,
+  T2 hvar__,
   Eigen::MatrixXd obsMat,
   Eigen::MatrixXd inputMat,
   Eigen::VectorXd parVec,
@@ -26,26 +26,26 @@ List ekf_simulation(
   Eigen::VectorXd simulation_timesteps,
   Eigen::MatrixXi bool_is_not_na_obsMat,
   Eigen::VectorXi number_of_available_obs,
-  int n,
-  int m,
-  int ng,
-  int last_pred_id,
-  int k_step_ahead,
-  int ode_solver,
-  int nsims)
+  const int n,
+  const int m,
+  const int ng,
+  const int last_pred_id,
+  const int k_step_ahead,
+  const int ode_solver,
+  const int nsims)
 {
 
   // misc  
-  int ni = inputMat.row(0).size();
+  const int ni = inputMat.row(0).size();
   VectorXd inputVec(ni), dinputVec(ni), obsVec(m), e, y, obsVec_all;
   VectorXi bool_is_not_na_obsVec;
   MatrixXd C, R, K, E, V, Ri, I(n,n), stateMat(nsims,n), randN(n, nsims);
   I.setIdentity();
-  NumericVector H;
-  NumericMatrix Hvar, dHdX;
+  VectorXd H;
+  MatrixXd Hvar, dHdX;
 
   // storage for predictions
-  List xk_simulate(last_pred_id), xk_simulate_temp(k_step_ahead+1), ode_1step_integration;
+  List xk_simulate(last_pred_id), xk_simulate_temp(k_step_ahead+1), ode_1step_integration(2);
 
   //////////// INITIAL DATA-UPDATE ///////////
   // Only update if there is any available data
@@ -56,21 +56,18 @@ List ekf_simulation(
     bool_is_not_na_obsVec = bool_is_not_na_obsMat.row(0);
 
     // remove potential NA entries in obsVec and construct permutation matrix
-    obsVec = remove_NAs(obsVec_all, number_of_available_obs(0), bool_is_not_na_obsVec);
-    E = construct_permutation_matrix(number_of_available_obs(0), m, bool_is_not_na_obsVec);
+    obsVec = remove_NAs2(obsVec_all, number_of_available_obs(0), bool_is_not_na_obsVec);
+    E = construct_permutation_matrix2(number_of_available_obs(0), m, bool_is_not_na_obsVec);
 
     // Call funs and transform from Rcpp to Eigen
     H = h__(stateVec, parVec, inputVec);
     dHdX = dhdx__(stateVec, parVec, inputVec);
     Hvar = hvar__(stateVec, parVec, inputVec);
-    Eigen::Map<Eigen::VectorXd> H_eigen = Rcpp::as<Eigen::Map<Eigen::VectorXd> >(H);
-    Eigen::Map<Eigen::MatrixXd> dHdX_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(dHdX);
-    Eigen::Map<Eigen::MatrixXd> Hvar_eigen = Rcpp::as<Eigen::Map<Eigen::MatrixXd> >(Hvar);
     
     // Kalman Filter
-    C = E * dHdX_eigen;
-    e = obsVec - E * H_eigen;
-    V = E * Hvar_eigen * E.transpose();
+    C = E * dHdX;
+    e = obsVec - E * H;
+    V = E * Hvar * E.transpose();
     R = C * covMat * C.transpose() + V;
     Ri = R.inverse();
     K = covMat * C.transpose() * Ri;
@@ -107,7 +104,7 @@ List ekf_simulation(
       dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k))/simulation_timesteps(i+k);
 
       for(int j=0 ; j < simulation_timesteps(i+k) ; j++){
-        stateMat = euler_maruyama_simulation(f__, g__, stateMat, parVec, inputVec, simulation_timestep_size(i+k), nsims, n, ng);
+        stateMat = euler_maruyama_simulation2(f__, g__, stateMat, parVec, inputVec, simulation_timestep_size(i+k), nsims, n, ng);
         inputVec += dinputVec;
       }
 
@@ -131,7 +128,7 @@ List ekf_simulation(
     inputVec = inputMat.row(i);
     dinputVec = (inputMat.row(i+1) - inputMat.row(i))/ode_timesteps(i);
     for(int j=0 ; j < ode_timesteps(i) ; j++){
-      ode_1step_integration = ode_integrator(f__, g__, dfdx__, covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size(i), ode_solver);
+      ode_1step_integration = ode_integrator2(f__, g__, dfdx__, covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size(i), ode_solver);
       stateVec = ode_1step_integration["X1"];
       covMat = ode_1step_integration["P1"];
       inputVec += dinputVec;
@@ -146,21 +143,18 @@ List ekf_simulation(
       bool_is_not_na_obsVec = bool_is_not_na_obsMat.row(i+1);
 
       // remove potential NA entries in obsVec and construct permutation matrix
-      obsVec = remove_NAs(obsVec_all, number_of_available_obs(i+1), bool_is_not_na_obsVec);
-      E = construct_permutation_matrix(number_of_available_obs(i+1), m, bool_is_not_na_obsVec);
+      obsVec = remove_NAs2(obsVec_all, number_of_available_obs(i+1), bool_is_not_na_obsVec);
+      E = construct_permutation_matrix2(number_of_available_obs(i+1), m, bool_is_not_na_obsVec);
 
       // Call funs and transform from Rcpp to Eigen
       H = h__(stateVec, parVec, inputVec);
       dHdX = dhdx__(stateVec, parVec, inputVec);
       Hvar = hvar__(stateVec, parVec, inputVec);
-      Map<VectorXd> H_eigen = as<Map<VectorXd> >(H);
-      Map<MatrixXd> dHdX_eigen = as<Map<MatrixXd> >(dHdX);
-      Map<MatrixXd> Hvar_eigen = as<Map<MatrixXd> >(Hvar);
 
       // Kalman Filter
-      C = E * dHdX_eigen;
-      e = obsVec - E * H_eigen;
-      V = E * Hvar_eigen * E.transpose();
+      C = E * dHdX;
+      e = obsVec - E * H;
+      V = E * Hvar * E.transpose();
       R = C * covMat * C.transpose() + V;
       Ri = R.inverse();
       K = covMat * C.transpose() * Ri;
@@ -178,11 +172,12 @@ List ekf_simulation(
 }
 
 // Function typedefs
-typedef SEXP (*funPtr)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
+typedef Eigen::VectorXd (*funPtr_vec)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
+typedef Eigen::MatrixXd (*funPtr_mat)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
 
 // Function exported to R that performs stochastic simulations with (Extended Kalman) filtering updates
 // [[Rcpp::export]]
-List execute_ekf_simulation(
+List execute_ekf_simulation2(
   SEXP f__R, 
   SEXP g__R,
   SEXP dfdx__R,
@@ -209,14 +204,14 @@ List execute_ekf_simulation(
   int nsims)
 {
 
-  funPtr     f__ = *XPtr<funPtr>(f__R);
-  funPtr     g__ = *XPtr<funPtr>(g__R);
-  funPtr  dfdx__ = *XPtr<funPtr>(dfdx__R);
-  funPtr     h__ = *XPtr<funPtr>(h__R);
-  funPtr  dhdx__ = *XPtr<funPtr>(dhdx__R);
-  funPtr  hvar__ = *XPtr<funPtr>(hvar__R);
+  funPtr_vec     f__ = *XPtr<funPtr_vec>(f__R);
+  funPtr_mat     g__ = *XPtr<funPtr_mat>(g__R);
+  funPtr_mat  dfdx__ = *XPtr<funPtr_mat>(dfdx__R);
+  funPtr_vec     h__ = *XPtr<funPtr_vec>(h__R);
+  funPtr_mat  dhdx__ = *XPtr<funPtr_mat>(dhdx__R);
+  funPtr_mat  hvar__ = *XPtr<funPtr_mat>(hvar__R);
 
-  return ekf_simulation<funPtr>(
+  return ekf_simulation2<funPtr_vec, funPtr_mat>(
     f__, 
     g__, 
     dfdx__, 

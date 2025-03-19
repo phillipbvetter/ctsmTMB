@@ -1,11 +1,18 @@
 #######################################################
 #######################################################
-# EKF RTMB-IMPLEMENTATION (FOR OPTIMIZATION)
+# LKF RTMB-IMPLEMENTATION (FOR OPTIMIZATION)
 #######################################################
 #######################################################
 
 makeADFun_lkf_rtmb = function(self, private)
 {
+  
+  # Tape Configration ----------------------
+  # The best options for tape configuration was seen to be disabling atomic 
+  # (x7 speed improvement of optimization) enabled by default, and keeping 
+  # vectorized disabled
+  RTMB::TapeConfig(atomic="disable")
+  RTMB::TapeConfig(vectorize="disable")
   
   # Data ----------------------------------------
   
@@ -15,11 +22,6 @@ makeADFun_lkf_rtmb = function(self, private)
   # initial
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
-  
-  # loss function
-  # loss_function = private$loss$loss
-  # loss_threshold_value = private$loss$c
-  # tukey_loss_parameters = private$tukey.pars
   
   # time-steps
   ode_timestep_size = private$ode.timestep.size
@@ -31,6 +33,39 @@ makeADFun_lkf_rtmb = function(self, private)
   # observations
   obsMat = as.matrix(private$data[private$obs.names])
   
+  # parameters ----------------------------------------
+  parameters = lapply(private$parameters, function(x) x[["initial"]])
+  
+  # Loss function ----------------------------------------
+  loss_function = private$loss$loss
+  loss_threshold_value = private$loss$c
+  tukey_loss_parameters = private$tukey.pars
+  # quadratic loss
+  if(private$loss$loss==0){
+    loss_fun = function(e,R) -RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+  }
+  # tukey loss
+  if(private$loss$loss==1){
+    log2pi = log(2*pi)
+    p_tukey = private$tukey.pars
+    loss_fun = function(e,R){
+      r <- 0.5 * t(e) %*% RTMB::solve(R) %*% e
+      psi_r <- p_tukey[4]*(invlogit2(r,a=p_tukey[1],b=p_tukey[2])+p_tukey[3])^2
+      0.5 * logdet(R) + 0.5 * log2pi * length(e) + psi_r
+    }
+  }
+  # huber loss
+  if(private$loss$loss==2){
+    log2pi = log(2*pi)
+    c_squared = private$loss$c^2
+    huber_loss = function(r) c_squared * (sqrt(1 + (2*r / c_squared)) - 1)  
+    loss_fun = function(e,R){
+      r <- 0.5 * t(e) %*% RTMB::solve(R) %*% e
+      psi_r <- c_squared * (sqrt(1 + (2*r / c_squared)) - 1)
+      0.5 * logdet(R) + 0.5 * log2pi * length(e) + psi_r
+    }
+  }
+  
   # # MAP Estimation?
   # MAP_bool = 0L
   # if (!is.null(private$map)) {
@@ -41,9 +76,6 @@ makeADFun_lkf_rtmb = function(self, private)
   #   map_ints__ = as.numeric(bool)
   #   sum_map_ints__ = sum(as.numeric(bool))
   # }
-  
-  # parameters ----------------------------------------
-  parameters = lapply(private$parameters, function(x) x[["initial"]])
   
   # adjoints ----------------------------------------
   logdet <- RTMB::ADjoint(
@@ -182,30 +214,48 @@ makeADFun_lkf_rtmb = function(self, private)
     Q12 <- ePhi2[1:n.states, (n.states+1):ncol(ePhi2)]
     Vhat <- t(Q22) %*% Q12
     
+    # if the time difference is not constant, we can still do good by
+    # using the eigen-decomposition:
     # if(constant.time.diff){
+    
     #   .dt <- ode.timestep.size[1]
+    # then repeat the above code
+    
     # } else {
+    
+    # we compute the matrix exponential of the eigen decompositions
+    
     # .dt <- diff(ode.timesteps)
-    # RTMB::eigen(A)
+    # out1 <- RTMB::eigen(Phi1)
+    # out2 <- RTMB::eigen(Phi2)
+    # Lambda1 <- diag(out1$values)
+    # Lambda2 <- diag(out2$values)
+    # Q1 <- out1$vectors
+    # Q1inv <- solve(Q1)
+    # Q2 <- out2$vectors
+    # Q2inv <- solve(Q2)
+    # Then in each iteration we can do
+    # exp_Phi1_dt = Q1 %*% Lambda1^dt %*% Q1inv
+    # exp_Phi2_dt = Q2 %*% Lambda2^dt %*% Q2inv
     
     ####### INITIAL STATE / COVARIANCE #######
     # The state/covariance is either given by user or obtained from solving the
     # stationary mean, and then solving for the covariance.
     # In principle these are coupled equations, but believe that root-finding
     # both simultaneously can lead to likelihood blow-up.
-    # inputVec = inputMat[1,]
-    # if(estimate.initial){
-    #   # 1. Root-find stationary mean
-    #   .F <- RTMB::MakeTape(function(x) sum(f__(x, parVec, inputVec)^2), numeric(n.states))
-    #   stateVec <- .F$newton(1:n.states)(numeric(0))
-    #   # 2. Use stationary mean to solve lyapunov eq. for associated covariance
-    #   A <- dfdx__(stateVec, parVec, inputVec)
-    #   G <- g__(stateVec, parVec, inputVec)
-    #   Q <- G %*% t(G)
-    #   P <- kron_left(A) + kron_right(A)
-    #   X <- -RTMB::solve(P, as.numeric(Q))
-    #   covMat <- RTMB::matrix(X, nrow=n.states)
-    # }
+    inputVec = inputMat[1,]
+    if(estimate.initial){
+      # 1. Root-find stationary mean
+      .F <- RTMB::MakeTape(function(x) sum(f__(x, parVec, inputVec)^2), numeric(n.states))
+      stateVec <- .F$newton(1:n.states)(numeric(0))
+      # 2. Use stationary mean to solve lyapunov eq. for associated covariance
+      A <- dfdx__(stateVec, parVec, inputVec)
+      G <- g__(stateVec, parVec, inputVec)
+      Q <- G %*% t(G)
+      P <- kron_left(A) + kron_right(A)
+      X <- -RTMB::solve(P, as.numeric(Q))
+      covMat <- RTMB::matrix(X, nrow=n.states)
+    }
     
     ######## (PRE) DATA UPDATE ########
     # This is done to include the first measurements in the provided data
@@ -222,7 +272,8 @@ makeADFun_lkf_rtmb = function(self, private)
       R = C %*% covMat %*% t(C) + V
       K = covMat %*% t(C) %*% RTMB::solve(R)
       # Likelihood Contribution
-      nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+      # nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+      nll <- nll + loss_fun(e,R)
       # Update State/Cov
       stateVec = stateVec + K %*% e
       covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -253,7 +304,8 @@ makeADFun_lkf_rtmb = function(self, private)
         R = C %*% covMat %*% t(C) + V
         K = covMat %*% t(C) %*% RTMB::solve(R)
         # Likelihood Contribution
-        nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+        # nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+        nll <- nll + loss_fun(e,R)
         # Update State/Cov
         stateVec = stateVec + K %*% e
         covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -285,7 +337,7 @@ makeADFun_lkf_rtmb = function(self, private)
 
 #######################################################
 #######################################################
-# EKF R-IMPLEMENTATION (FOR REPORTING)
+# LKF R-IMPLEMENTATION (FOR REPORTING)
 #######################################################
 #######################################################
 
@@ -303,11 +355,6 @@ lkf_r = function(parVec, self, private)
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
   
-  # loss function
-  # loss_function = private$loss$loss
-  # loss_threshold_value = private$loss$c
-  # tukey_loss_parameters = private$tukey.pars
-  
   # time-steps
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
@@ -317,17 +364,6 @@ lkf_r = function(parVec, self, private)
   
   # observations
   obsMat = as.matrix(private$data[private$obs.names])
-  
-  # # MAP Estimation?
-  # MAP_bool = 0L
-  # if (!is.null(private$map)) {
-  #   bool = self$getParameters()[,"type"] == "free"
-  #   MAP_bool = 1L
-  #   map_mean__ = private$map$mean[bool]
-  #   map_cov__ = private$map$cov[bool,bool]
-  #   map_ints__ = as.numeric(bool)
-  #   sum_map_ints__ = sum(as.numeric(bool))
-  # }
   
   # user-defined functions ---------------------------
   for(i in seq_along(private$rekf.function.strings)){
@@ -346,12 +382,14 @@ lkf_r = function(parVec, self, private)
   n.obs <- private$number.of.observations
   n.pars <- private$number.of.pars
   n.diffusions <- private$number.of.diffusions
+  n.inputs <- private$number.of.inputs
   estimate.initial <- private$estimate.initial
   
   # detect time-variations etc ----------------------
   constant.time.diff <- FALSE
-  if(var(diff(ode.timestep.size)) < 1e-15){
+  if(var(diff(ode_timestep_size)) < 1e-15){
     constant.time.diff <- TRUE
+    fixed.timestep.size <- ode_timestep_size[1]
   }
   
   ####### STORAGE #######
@@ -373,24 +411,22 @@ lkf_r = function(parVec, self, private)
   V0 <- hvar__matrix(stateVec, parVec, inputVec) #observation variance
   
   # [A B \\ 0 0]
-  Phi1 <- rbind(cbind(A,B),cbind(0*A, 0*B))
+  Phi1 <- 0.0 * diag(n.states+n.inputs+1)
+  Phi1[1:n.states,1:n.states] <- A
+  Phi1[1:n.states,(n.states+1):ncol(Phi1)] <- B
   # [-A GG^T \\ 0 A^t]
   Phi2 <- rbind(cbind(-A,G %*% t(G)),cbind(0*A,t(A)))
-  ePhi1 <- Matrix::expm(Phi1*dt.fixed)
-  ePhi2 <- Matrix::expm(Phi2*dt.fixed)
+  ePhi1 <- as.matrix(Matrix::expm(Phi1 * fixed.timestep.size))
+  ePhi2 <- as.matrix(Matrix::expm(Phi2 * fixed.timestep.size))
   
+  # A and B (for mean calculations)
   Ahat <- ePhi1[1:n.states,1:n.states]
   Ahat_T <- t(Ahat)
   Bhat <- ePhi1[1:n.states, (n.states+1):ncol(ePhi1)]
-  Q22 <- ePhi2[(n.states+1):ncol(ePhi1), (n.states+1):ncol(ePhi1)]
-  Q12 <- ePhi2[1:n.states, (n.states+1):ncol(ePhi1)]
+  # V (for variance)
+  Q22 <- ePhi2[(n.states+1):ncol(ePhi2), (n.states+1):ncol(ePhi2)]
+  Q12 <- ePhi2[1:n.states, (n.states+1):ncol(ePhi2)]
   Vhat <- t(Q22) %*% Q12
-  
-  # if(constant.time.diff){
-  #   .dt <- ode.timestep.size[1]
-  # } else {
-  # .dt <- diff(ode.timesteps)
-  # RTMB::eigen(A)
   
   ####### INITIAL STATE / COVARIANCE #######
   # The state/covariance is either given by user or obtained from solving the
@@ -497,6 +533,9 @@ lkf_r = function(parVec, self, private)
 #######################################################
 makeADFun_lkf_cpp = function(self, private){
   
+  # This function has no use currently - just a placeholder for a future
+  # TMB LKF implementation
+  
   # Data ----------------------------------------
   
   # add mandatory entries to data
@@ -538,12 +577,6 @@ makeADFun_lkf_cpp = function(self, private){
     obsMat = as.matrix(private$data[private$obs.names])
   )
   
-  # unscented parameters
-  ukf_hyperpars = c()
-  if(private$method=="ukf"){
-    ukf_hyperpars = list(private$ukf_hyperpars)
-  }
-  
   # MAP Estimation?
   tmb.map.data = list(
     MAP_bool = 0L
@@ -560,7 +593,7 @@ makeADFun_lkf_cpp = function(self, private){
   }
   
   # construct final data list
-  data = c(tmb.data, tmb.map.data, ukf_pars=ukf_hyperpars)
+  data = c(tmb.data, tmb.map.data)
   
   
   # Parameters ----------------------------------------
@@ -583,7 +616,7 @@ makeADFun_lkf_cpp = function(self, private){
 
 #######################################################
 #######################################################
-# RETURN FIT FOR EKF RTMB
+# RETURN FIT FOR LKF RTMB
 #######################################################
 #######################################################
 
@@ -627,15 +660,18 @@ calculate_fit_statistics_lkf <- function(self, private){
       nll.hess
     }
   )
+  
   if (inherits(private$fit$nll.hessian, "try-error")) {
     private$fit$nll.hessian = NULL
   }
   
   # parameter estimates and standard deviation
-  npars <- length(private$fit$par.fixed)
+  npars <- length(private$opt$par)
   private$fit$par.fixed = private$opt$par
   private$fit$sd.fixed = rep(NA,npars)
   private$fit$cov.fixed = array(NA,dim=c(npars,npars))
+  private$fit$tvalue = rep(NA,npars)
+  private$fit$Pr.tvalue = rep(NA,npars)
   
   # parameter std. error and full covariance by hessian inversion
   if(!is.null(private$fit$nll.hessian)){
@@ -713,173 +749,172 @@ calculate_fit_statistics_lkf <- function(self, private){
   }
   
   # States -----------------------------------
-  
   # Extract reported items from nll
-  comptime <- system.time(rep <- ekf_r(model$getParameters()[,"estimate"], self, private))
-  comptime = format(round(as.numeric(comptime["elapsed"])*1e2)/1e2,digits=5,scientific=F)
-  if(!private$silent) message("...took ", comptime, " seconds")
+  estimated_pars <- self$getParameters()[,"estimate"]
+  rep <- try_withWarningRecovery((lkf_r(estimated_pars, self, private)))
   
-  private$fit$rep <- rep
-  
-  # Prior States
-  temp.states = try_withWarningRecovery(cbind(private$data$t, t(do.call(cbind,rep$xPrior))))
-  temp.sd = try_withWarningRecovery(cbind(private$data$t, sqrt(do.call(rbind,lapply(rep$pPrior,diag)))))
-  
-  colnames(temp.states) = c("t", private$state.names)
-  colnames(temp.sd) = c("t",private$state.names)
-  private$fit$states$mean$prior = as.data.frame(temp.states)
-  private$fit$states$sd$prior = as.data.frame(temp.sd)
-  private$fit$states$cov$prior = rep$pPrior
-  names(private$fit$states$cov$prior) = paste("t = ",private$data$t,sep="")
-  
-  # Posterior States
-  temp.states = try_withWarningRecovery(cbind(private$data$t, t(do.call(cbind,rep$xPost))))
-  temp.sd = try_withWarningRecovery(cbind(private$data$t, sqrt(do.call(rbind,lapply(rep$pPost,diag)))))
-  colnames(temp.states) = c("t",private$state.names)
-  colnames(temp.sd) = c("t",private$state.names)
-  private$fit$states$mean$posterior = as.data.frame(temp.states)
-  private$fit$states$sd$posterior = as.data.frame(temp.sd)
-  private$fit$states$cov$posterior = rep$pPost
-  names(private$fit$states$cov$posterior) = paste("t = ",private$data$t,sep="")
-  
-  # Residuals -----------------------------------
-  rowNAs = as.matrix(!is.na(private$data[private$obs.names])[-1,])
-  sumrowNAs = rowSums(rowNAs)
-  
-  innovation = rep$Innovation
-  innovation.cov = rep$InnovationCovariance
-  innovation[[1]] = NULL
-  innovation.cov[[1]] = NULL
-  
-  temp.res = matrix(nrow=length(private$data$t)-1, ncol=private$number.of.observations)
-  temp.var =  matrix(nrow=length(private$data$t)-1, ncol=private$number.of.observations)
-  
-  for (i in seq_along(private$data$t[-1])) {
-    if (sumrowNAs[i] > 0) {
-      temp.res[i,rowNAs[i,]] = innovation[[i]]
-      temp.var[i,rowNAs[i,]] = diag(innovation.cov[[i]])
+  if(!inherits(rep,"try-error")){
+    
+    # Prior States
+    temp.states = try_withWarningRecovery(cbind(private$data$t, t(do.call(cbind,rep$xPrior))))
+    temp.sd = try_withWarningRecovery(cbind(private$data$t, sqrt(do.call(rbind,lapply(rep$pPrior,diag)))))
+    
+    colnames(temp.states) = c("t", private$state.names)
+    colnames(temp.sd) = c("t",private$state.names)
+    private$fit$states$mean$prior = as.data.frame(temp.states)
+    private$fit$states$sd$prior = as.data.frame(temp.sd)
+    private$fit$states$cov$prior = rep$pPrior
+    names(private$fit$states$cov$prior) = paste("t = ",private$data$t,sep="")
+    
+    # Posterior States
+    temp.states = try_withWarningRecovery(cbind(private$data$t, t(do.call(cbind,rep$xPost))))
+    temp.sd = try_withWarningRecovery(cbind(private$data$t, sqrt(do.call(rbind,lapply(rep$pPost,diag)))))
+    colnames(temp.states) = c("t",private$state.names)
+    colnames(temp.sd) = c("t",private$state.names)
+    private$fit$states$mean$posterior = as.data.frame(temp.states)
+    private$fit$states$sd$posterior = as.data.frame(temp.sd)
+    private$fit$states$cov$posterior = rep$pPost
+    names(private$fit$states$cov$posterior) = paste("t = ",private$data$t,sep="")
+    
+    # Residuals -----------------------------------
+    rowNAs = as.matrix(!is.na(private$data[private$obs.names]))
+    sumrowNAs = rowSums(rowNAs)
+    
+    nr <- nrow(private$data)
+    temp.res = matrix(nrow=length(private$data$t), ncol=private$number.of.observations)
+    temp.var =  matrix(nrow=length(private$data$t), ncol=private$number.of.observations)
+    
+    nr <- nrow(private$data)
+    innovation = rep$Innovation
+    innovation.cov = rep$InnovationCovariance
+    names(innovation.cov) = paste("t = ", private$data$t, sep="")
+    for (i in 1:nr) {
+      if (sumrowNAs[i] > 0) {
+        temp.res[i,rowNAs[i,]] = innovation[[i]]
+        temp.var[i,rowNAs[i,]] = diag(innovation.cov[[i]])
+      }
     }
-  }
-  temp.res = cbind(private$data$t[-1], temp.res)
-  temp.sd = cbind(private$data$t[-1], try_withWarningRecovery(sqrt(temp.var)))
-  
-  names(innovation.cov) = paste("t = ",private$data$t[-1],sep="")
-  
-  # should we remove the empty matrices?
-  # innovation.cov = innovation.cov[sumrowNAs!=0]
-  
-  colnames(temp.res) = c("t",private$obs.names)
-  colnames(temp.sd) = c("t",private$obs.names)
-  private$fit$residuals$mean = as.data.frame(temp.res)
-  private$fit$residuals$sd = as.data.frame(temp.sd)
-  private$fit$residuals$normalized = as.data.frame(temp.res)
-  private$fit$residuals$normalized[,-1] = private$fit$residuals$normalized[,-1]/temp.sd[,-1]
-  private$fit$residuals$cov = innovation.cov
-  
-  
-  # Observations -----------------------------------
-  
-  # We need all states, inputs and parameter values to evaluate the observation
-  # put them in a list
-  listofvariables.prior = c(
-    # states
-    as.list(private$fit$states$mean$prior[-1]),
-    # estimated free parameters 
-    as.list(private$fit$par.fixed),
-    # fixed parameters
-    lapply(private$fixed.pars, function(x) x$initial),
-    # inputs
-    as.list(private$data)
-  )
-  
-  listofvariables.posterior = c(
-    # states
-    as.list(private$fit$states$mean$posterior[-1]),
-    # estimated free parameters 
-    as.list(private$fit$par.fixed),
-    # fixed parameters
-    lapply(private$fixed.pars, function(x) x$initial),
-    # inputs
-    as.list(private$data)
-  )
-  obs.df.prior = as.data.frame(
-    lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.prior)})
-  )
-  obs.df.posterior = as.data.frame(
-    lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.posterior)})
-  )
-  
-  private$fit$observations$mean$prior = data.frame(t=private$data$t, obs.df.prior)
-  private$fit$observations$mean$posterior = data.frame(t=private$data$t, obs.df.posterior)
-  
-  # Observation variances -----------------------------------
-  
-  # The observation variance (to first order) is: 
-  #
-  # y = h(x) + e -> var(y) = dhdx var(x) dhdx^T + var(e)
-  
-  n <- private$number.of.states
-  m <- private$number.of.observations
-  
-  # create expression for observation covariance to be 'eval'-uated
-  jac.h = c()
-  for(i in seq_along(private$obs.names)){
-    for(j in seq_along(private$state.names)){
-      jac.h = c(jac.h, private$diff.terms.obs[[i]][[j]])
+    temp.res <- data.frame(private$data$t, temp.res)
+    temp.sd = data.frame(private$data$t, try_withWarningRecovery(sqrt(temp.var)))
+    names(temp.res) = c("t", private$obs.names)
+    names(temp.sd) = c("t", private$obs.names)
+    # should we remove the empty matrices?
+    # innovation.cov = innovation.cov[sumrowNAs!=0]
+    
+    private$fit$residuals$residuals = temp.res
+    private$fit$residuals$sd = temp.sd
+    private$fit$residuals$normalized = temp.res
+    private$fit$residuals$normalized[,-1] = temp.res[,-1]/temp.sd[,-1]
+    private$fit$residuals$cov = innovation.cov
+    
+    
+    # Observations -----------------------------------
+    
+    # We need all states, inputs and parameter values to evaluate the observation
+    # put them in a list
+    listofvariables.prior = c(
+      # states
+      as.list(private$fit$states$mean$prior[-1]),
+      # estimated free parameters 
+      as.list(private$fit$par.fixed),
+      # fixed parameters
+      lapply(private$fixed.pars, function(x) x$initial),
+      # inputs
+      as.list(private$data)
+    )
+    
+    listofvariables.posterior = c(
+      # states
+      as.list(private$fit$states$mean$posterior[-1]),
+      # estimated free parameters 
+      as.list(private$fit$par.fixed),
+      # fixed parameters
+      lapply(private$fixed.pars, function(x) x$initial),
+      # inputs
+      as.list(private$data)
+    )
+    obs.df.prior = as.data.frame(
+      lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.prior)})
+    )
+    obs.df.posterior = as.data.frame(
+      lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.posterior)})
+    )
+    
+    private$fit$observations$mean$prior = data.frame(t=private$data$t, obs.df.prior)
+    private$fit$observations$mean$posterior = data.frame(t=private$data$t, obs.df.posterior)
+    
+    # Observation variances -----------------------------------
+    
+    # The observation variance (to first order) is: 
+    #
+    # y = h(x) + e -> var(y) = dhdx var(x) dhdx^T + var(e)
+    
+    n <- private$number.of.states
+    m <- private$number.of.observations
+    
+    # create expression for observation covariance to be 'eval'-uated
+    jac.h = c()
+    for(i in seq_along(private$obs.names)){
+      for(j in seq_along(private$state.names)){
+        jac.h = c(jac.h, private$diff.terms.obs[[i]][[j]])
+      }
     }
+    dhdx <- parse(text=sprintf("matrix(c(%s),nrow=%s,ncol=%s)", paste(jac.h,collapse=","), m, n))[[1]]
+    obs.var <- c()
+    for(i in seq_along(private$obs.var.trans)){
+      obs.var = c(obs.var, private$obs.var.trans[[i]]$rhs)
+    }
+    obsvar <- parse(text=sprintf("diag(%s)*c(%s)", m, paste(obs.var,collapse=",")))[[1]]
+    yCov <- substitute(dhdx %*% xCov %*% t(dhdx) + eCov, list(dhdx=dhdx, eCov=obsvar))
+    
+    # evaluate prior and posterior variance
+    list.of.parameters <- c(
+      as.list(private$fit$par.fixed),
+      lapply(private$fixed.pars, function(x) x$initial)
+    )
+    
+    # prior
+    obsvar.prior <- list()
+    for(i in seq_along(private$data$t)){
+      obsvar.prior[[i]] <- eval(expr = yCov,
+                                envir = c(list.of.parameters, 
+                                          as.list(private$fit$states$mean$prior[i,-1]),
+                                          list(xCov = private$fit$states$cov$prior[[i]]),
+                                          as.list(private$data[i,-1])
+                                ))
+    }
+    names(obsvar.prior) <- names(private$fit$states$cov$prior)
+    private$fit$observations$cov$prior <- obsvar.prior
+    obs.sd.prior <- cbind(private$fit$states$mean$prior["t"], do.call(rbind, lapply(obsvar.prior, diag)))
+    rownames(obs.sd.prior) <- NULL
+    names(obs.sd.prior) <- c("t",private$obs.names)
+    private$fit$observations$sd$prior <- obs.sd.prior
+    
+    # posterior
+    obsvar.post <- list()
+    for(i in seq_along(private$data$t)){
+      obsvar.post[[i]] <- eval(expr = yCov,
+                               envir = c(list.of.parameters, 
+                                         as.list(private$fit$states$mean$posterior[i,-1]),
+                                         list(xCov = private$fit$states$cov$posterior[[i]]),
+                                         as.list(private$data[i,-1])
+                               ))
+    }
+    names(obsvar.post) <- names(private$fit$states$cov$posterior)
+    private$fit$observations$cov$posterior <- obsvar.post
+    obs.sd.post <- cbind(private$fit$states$mean$posterior["t"], do.call(rbind, lapply(obsvar.post, diag)))
+    rownames(obs.sd.post) <- NULL
+    names(obs.sd.post) <- c("t",private$obs.names)
+    private$fit$observations$sd$posterior <- obs.sd.post
+    
+    # t-values and Pr( t > t_test ) -----------------------------------
+    
+    private$fit$tvalue = private$fit$par.fixed / private$fit$sd.fixed
+    private$fit$Pr.tvalue = 2*pt(q=abs(private$fit$tvalue),df=sum(sumrowNAs),lower.tail=FALSE)
+    
+  } else {
+    message("Unable to perform filtering with the following warning:\n\t", rep)
   }
-  dhdx <- parse(text=sprintf("matrix(c(%s),nrow=%s,ncol=%s)", paste(jac.h,collapse=","), m, n))[[1]]
-  obs.var <- c()
-  for(i in seq_along(private$obs.var.trans)){
-    obs.var = c(obs.var, private$obs.var.trans[[i]]$rhs)
-  }
-  obsvar <- parse(text=sprintf("diag(%s)*c(%s)", m, paste(obs.var,collapse=",")))[[1]]
-  yCov <- substitute(dhdx %*% xCov %*% t(dhdx) + eCov, list(dhdx=dhdx, eCov=obsvar))
-  
-  # evaluate prior and posterior variance
-  list.of.parameters <- c(
-    as.list(private$fit$par.fixed),
-    lapply(private$fixed.pars, function(x) x$initial)
-  )
-  
-  # prior
-  obsvar.prior <- list()
-  for(i in seq_along(private$data$t)){
-    obsvar.prior[[i]] <- eval(expr = yCov,
-                              envir = c(list.of.parameters, 
-                                        as.list(private$fit$states$mean$prior[i,-1]),
-                                        list(xCov = private$fit$states$cov$prior[[i]]),
-                                        as.list(private$data[i,-1])
-                              ))
-  }
-  names(obsvar.prior) <- names(private$fit$states$cov$prior)
-  private$fit$observations$cov$prior <- obsvar.prior
-  obs.sd.prior <- cbind(private$fit$states$mean$prior["t"], do.call(rbind, lapply(obsvar.prior, diag)))
-  rownames(obs.sd.prior) <- NULL
-  names(obs.sd.prior) <- c("t",private$obs.names)
-  private$fit$observations$sd$prior <- obs.sd.prior
-  
-  # posterior
-  obsvar.post <- list()
-  for(i in seq_along(private$data$t)){
-    obsvar.post[[i]] <- eval(expr = yCov,
-                             envir = c(list.of.parameters, 
-                                       as.list(private$fit$states$mean$posterior[i,-1]),
-                                       list(xCov = private$fit$states$cov$posterior[[i]]),
-                                       as.list(private$data[i,-1])
-                             ))
-  }
-  names(obsvar.post) <- names(private$fit$states$cov$posterior)
-  private$fit$observations$cov$posterior <- obsvar.post
-  obs.sd.post <- cbind(private$fit$states$mean$posterior["t"], do.call(rbind, lapply(obsvar.post, diag)))
-  rownames(obs.sd.post) <- NULL
-  names(obs.sd.post) <- c("t",private$obs.names)
-  private$fit$observations$sd$posterior <- obs.sd.post
-  
-  # t-values and Pr( t > t_test ) -----------------------------------
-  
-  private$fit$tvalue = private$fit$par.fixed / private$fit$sd.fixed
-  private$fit$Pr.tvalue = 2*pt(q=abs(private$fit$tvalue),df=sum(sumrowNAs),lower.tail=FALSE)
   
   # clone and return -----------------------------------
   
@@ -892,5 +927,4 @@ calculate_fit_statistics_lkf <- function(self, private){
   class(private$fit) = "ctsmTMB.fit"
   
   return(invisible(self))
-  
 }

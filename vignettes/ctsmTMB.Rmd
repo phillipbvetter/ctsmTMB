@@ -9,96 +9,114 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-  Let's get starting using `ctsmTMB`!
+Let's get starting using `ctsmTMB`.
+
+```{r, include=TRUE}
+library(ctsmTMB)
+```
+
+We shall assume that you have some time series data with observations and model inputs, and have a continous-time stochastic differential equation which you believe can be used to model some latent variable state which in turn can be linked to the gathered observations.
+
+# Model
+
+In this example we consider a simple mean-reverting model based on the Ornstein-Uhlenbeck process
+$$ 
+\mathrm{d}x_{t} = \theta (\mu - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} 
+$$
+where $\theta$, $\mu$ and $\sigma_x$ are (fixed effects) parameters in the model to be estimated. 
   
-  We shall assume that you have some time series `data`, and a stochastic differential equation model which you believe can be used to model that data (or some latent variable that can be linked to your data). 
-  
-  Here we consider the Ornstein-Uhlenbeck process
-  $$ 
-  \mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \, \mathrm{d}B_{t} 
-  $$
-  where $\theta$, $\mu$ and $\sigma_x$ are (fixed effects) parameters in the model to be estimated. 
-  
-  We assume that we have direct observations of the state $X_{t}$ i.e. the observation equation is
-  $$
-  Y_{t_{k}} = X_{t_{k}} + \varepsilon_{t_{k}} \qquad \varepsilon_{t_{k}} \sim N(0,\sigma_{Y}^{2} \cdot U_{t_{k}})
-  $$
-  and the residuals are normally distributed with variance $\sigma_{Y}^{2} \cdot U_{t}$, where $\sigma_{Y}$ is a fixed effect (parameter) which should also be estimated, and $U_{t}$ is an input. The input is added purely for the sake of this example. It could for instance be a vector 
-  $$
-  U_{t_{i}} = \left\{ 1,2,1,2,1,2,\cdots \right\}
-  $$
-  so that some observations have a larger variance than others, i.e. we believe them to be a less accurate measurement of $Y$.
-  
+We assume that we have direct observations of the state $x_{t}$ i.e. the observation equation is
+$$
+y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}} \qquad \varepsilon_{t_{k}} \sim N(0,\sigma_{y}^{2} \cdot u_{t_{k}})
+$$
+and the residuals are normally distributed with variance $\sigma_{y}^{2} \cdot u_{t}$, where $\sigma_{y}$ is a fixed effect (parameter) which should also be estimated, and $u_{t}$ is an input. Typically this input is not added, but it is done so here for sake of this example, to demonstrate how inputs are specified. It's effect here could e.g. be as the vector 
+$$
+u_{t_{i}} = \left\{ 1, 4, 1, 4, 1, 4 \cdots \right\}
+$$
+so that some observations have twice the standard deviation of others.
+
 # Initialising
   
 We initialise a `ctsmTMB` model object using
 
 ```{r}
-library(ctsmTMB)
-obj = ctsmTMB$new()
+model = ctsmTMB$new()
 ```
 
-We set the model name, which is used to generate the underlying C++ files
+<!-- We set the model name, which is used to generate the underlying C++ files -->
 
-```{r}
-obj$setModelname("getting_started_model")
-```
+<!-- ```{r} -->
+<!-- model$setModelname("getting_started_model") -->
+<!-- ``` -->
 
-By default the files are saved in a directory called *ctsmTMB_cppfiles* in the current working directory. The files can be stored in another location by specifying another directory as below:
+<!-- By default the files are saved in a directory called *ctsmTMB_cppfiles* in the current working directory. The files can be stored in another location by specifying another directory as below: -->
 
-```{r, eval=FALSE}
-obj$setCppfilesDirectory("some_path_to_a_directory")
-```
+<!-- ```{r, eval=FALSE} -->
+<!-- model$setCppfilesDirectory("some_path_to_a_directory") -->
+<!-- ``` -->
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 temporary_directory <- file.path(tempdir(),"ctsmTMB_cppfiles")
-obj$setCppfilesDirectory(temporary_directory)
+model$setCppfilesDirectory(temporary_directory)
 ```
 
 Now that the object is created let us first inspect it's printout:
 
 ```{r}
-print(obj)
+print(model)
 ```
 
-We see that the model is called `sde_model` (default), and there are no states, diffusions, observations, inputs or parameters currently registered. The name is used to name the `C++` file that will be created locally, and to later recognize the compiled model object.
+We see that the model is called `ctsmTMB_model` (default), and there are no states, diffusions, observations, inputs or parameters currently registered. 
+
+## **Note on the model name**
+
+The model name is only relevant for the few methods that generate C++ files (`ekf_cpp` and `ukf_cpp`) where it is used to name the `C++` file(s) that will be created locally, and to later recognize the compiled model object. The model name and directory where C++ files are stored, can be set using:
+
+```{r, eval=FALSE}
+model$setModelname("getting_started")
+model$setCppfilesDirectory("some_path_to_a_directory")
+```
 
 # Add system equations
 
 ---
 
-We can begin by adding the desired stochastic differential equation to the object.
+We can begin by adding the desired stochastic differential equation to the object, which is straighforward:
 ```{r}
-obj$addSystem(dX ~ theta * (mu - X) * dt + sigma_x * dw)
+model$addSystem(dx ~ theta * (mu - x) * dt + sigma_x * dw)
 ```
-We note that the drift term ends with `*dt` and diffusions are specified by `dw` or `dw#` where `#` can be any sequence of numbers.
+We note that drift terms are specified in that they have a `* dt` and similary for diffusions with `* dw` or `* dw#` where `#` can be any sequence of numbers. A single equation can contain any number of
+diffusion terms i.e.
+
+```{r, eval=FALSE}
+model$addSystem(dx ~ theta * (mu - x) * dt + sigma_x * dw + sigma_x2 * dw2)
+```
 
 # Add observation equations
 
 ---
 
-We must also add the observation equation.
+Next we add the observation equations:
 ```{r}
-obj$addObs(Y ~ X)
+model$addObs(y ~ x)
 ```
-
-The observations associated with `Y` in the `data` should also be named `Y`. 
+Here we are saying that the latent variable `x` is observed (directly) by the observations `y`. The observations for `y` are now identified in the (to-be provided) estimation data via the name "y".
 
 # Add observation variances
 
 ---
 
-For every observation variable we must also specify the variance of the normally distributed residuals for that observation equation
+We must also specify the variance of the normally distributed residuals for each observation equation. This is done as follows:
 ```{r}
-obj$setVariance(Y ~ sigma_y^2*U)
+model$setVariance(y ~ sigma_y^2 * u)
 ```
-The variable name on the left-hand side of the formula must match a name previously defined via `add_observations`, and the variance is associated with that observation equation.
+The variable name `y` on the left-hand side of the formula must match a name previously defined via `addObs`. 
 
 Let's inspect the model object again
 ```{r}
-print(obj)
+print(model)
 ```
-So now we have specified one state $X$ and an observation $Y$. The diffusions count the number of $\mathrm{d}\omega_{i}$ terms. A single equation can have multiple diffusion terms i.e. `sigma_1 * dw1 + sigma_2*dw2`). We also note that there are no inputs and no parameter specified yet.
+So now we have specified one state $x$ and an observation equation $y$. We also note that there are no inputs and no parameter specified yet.
 
 # Add inputs
 
@@ -106,18 +124,18 @@ So now we have specified one state $X$ and an observation $Y$. The diffusions co
 
 We tell the model which variable names are inputs via
 ```{r}
-obj$addInput(U)
+model$addInput(u)
 ```
-The input values should be provided in the `data`, with the same name, similar to the observations.
+The input values should be provided in the estimation data, using the same name, exactly similar to how observations are provided.
 
 
 # Add parameters
 
 ---
 
-We must also specify the (fixed effects) parameters, together with their initial value and lower/upper bound, for the optimization.
+We must also specify the (fixed effects) parameters, and in addition their values (initial, lower/upper bound) or the estimation procedure (likelihood optimization).
 ```{r}
-obj$setParameter(
+model$setParameter(
   theta   = c(initial = 5,    lower = 0,    upper = 20),
   mu      = c(initial = 0,    lower = -10,  upper = 10),
   sigma_x = c(initial = 1e-1, lower = 1e-5, upper = 5),
@@ -125,25 +143,30 @@ obj$setParameter(
 )
 ```
 
-We can fix a parameter value (so the parameter becomes a constant) by supplying just a single value. It is usually difficult to identify both of the noise parameters $\left(\sigma_{X},\sigma_{Y}\right)$ in practice, so lets assume that we want to fix $\sigma_{Y}$. This is done via
+We can fix a parameter value (so the parameter becomes a constant) by supplying just a single value. 
+
+It is for instance typically useful to fix some noise parameters, because they can be difficult to identify simultaneously. Here we fix the observation noise $\sigma_{y}$:
 ```{r}
-obj$setParameter(
+model$setParameter(
   sigma_y  = 1e-1
 )
 ```
 
 Let's inspect the model object again, and see that inputs and parameters (both non-fixed and fixed) have been registered.
 ```{r}
-print(obj)
+print(model)
 ```
 
 # Set initial state and covariance
 
 ---
 
-The last thing to do before we can perform estimation is to set the initial value of the state(s) and its associated (co)variance. These two inputs are adequate since we assume a normally distributed state. The choice of value should reflect ones belief in the initial state, but it is most often a ballpark figure.
+Finally, we must set the state's expected value and (co)variance at the initial time-point, where the filtering algorithms begin, with the assumption that the state is normally distributed. The choice of values should reflect ones belief in the initial state, but it is probably just a ballpark figure.
 ```{r}
-obj$setInitialState(list(mean=3, cov=1e-1*diag(1)))
+x0 <- 3
+p0 <- 1e-1 * diag(1)
+initial.state <- list(x0, p0)
+model$setInitialState(initial.state)
 ```
 Note that we use `diag` to construct a 1x1 matrix for the covariance, as required by the method.
 
@@ -153,7 +176,38 @@ Note that we use `diag` to construct a 1x1 matrix for the covariance, as require
 ---
 
 We are now ready to perform state filtration and parameter estimation. We first construct some fake data by simulating paths of the Ornstein-Uhlenbeck process using the [Euler-Maruyama scheme](https://en.wikipedia.org/wiki/Euler–Maruyama_method).
-```{r, include=TRUE}
+
+```{r, fig.height=7,fig.width=7}
+library(ggplot2)
+set.seed(10)
+simulation.pars <- c(theta=10, mu=1, sigma_x=1, sigma_y=1e-1)
+dt.sim <- 1e-3
+t.sim <- seq(0,1,by=dt.sim)
+df.sim <- data.frame(t=t.sim, u=1, y=0)
+
+# Perform simulation
+sim <- model$simulate(data=df.sim, pars=simulation.pars, n.sims=1, silent=T)
+x <- sim$states$x$i0$x1
+
+# Extract observations from simulation and add noise
+dt.obs = 1e-2
+t.obs = seq(0,1,by=dt.obs)
+y = x[t.sim %in% t.obs] + simulation.pars["sigma_y"] * rnorm(length(t.obs))
+
+data = data.frame(
+  t = t.obs,
+  u = 1,
+  y = y
+)
+
+ggplot() +
+  geom_line(aes(x=t.sim,y=x,color="Simulation")) +
+  geom_point(aes(x=t.obs,y=y,fill="Observations")) +
+  ctsmTMB:::getggplot2theme() + labs(color="",fill="")
+```
+
+
+```{r, fig.height=7,fig.width=7, eval=FALSE, include=FALSE}
 # Choosing parameters
 set.seed(10)
 theta=10; mu=1; sigma_x=1; sigma_y=1e-1
@@ -175,8 +229,8 @@ y = x[t.sim %in% t.obs] + sigma_y * rnorm(length(t.obs))
 # Create data.frame
 data = data.frame(
   t = t.obs,
-  Y = y,
-  U = c(rep(c(1,2),times=round(length(y)/2)),1)
+  y = y,
+  u = c(rep(c(1,2),times=round(length(y)/2)),1)
 )
 ```
 
@@ -187,19 +241,8 @@ We pass the `data` to the `estimate` method. The method will build and compile a
 The output generated during the optimization is the objective (negativ log-likelihood) value and parameter values at the current step. The optimizer used in the package is `stats::nlminb`. This optimizer is great because of its robustness and ability to use the objective function hessian unlike e.g. 'stats::optim'
 
 ```{r}
-fit = obj$estimate(data)
+fit = model$estimate(data)
 ```
-
-# **Important Note for Model Changes**
-
----
-
-If you change the model at a later stage but retain the same model name, then you need to recompile the `C++` objective function. You can do this like so:
-```{r, eval=FALSE}
-obj$estimate(data, compile=TRUE)
-```
-
-If you receive error messages when calling `estimate` regarding variables that are not in your specified model, it is likely because you forgot to recompile.
 
 # Parameter estimates
 
@@ -246,39 +289,20 @@ library(ggplot2)
 library(patchwork)
 ```
 
-
-```{r, include=TRUE}
-# ggplot2 theme
-mytheme =
-  theme_minimal() + 
-  theme(
-    text             = element_text("Avenir Next Condensed",size=15),
-    legend.text      = element_text(size=15),
-    axis.text        = element_text(size=15),
-    strip.text       = element_text(face="bold",size=15),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.box       = "vertical",
-    legend.position  = "top",
-    plot.title       = element_text(hjust=0.5)
-  )
-```
-
-
 ```{r, fig.height=7,fig.width=7}
 t         = fit$states$mean$posterior$t
-xprior    = fit$states$mean$prior$X
-xpost     = fit$states$mean$posterior$X
-xpost_sd  = fit$states$sd$posterior$X
+xprior    = fit$states$mean$prior$x
+xpost     = fit$states$mean$posterior$x
+xpost_sd  = fit$states$sd$posterior$x
 
 ggplot() +
   geom_line(aes(x=t,y=xpost,color="State Estimates (Posterior)"),lwd=1) +
   geom_line(aes(x=t,y=xprior,color="State Estimates (Prior)"),lwd=1) +
   geom_ribbon(aes(x=t,ymin=xpost-2*xpost_sd,ymax=xpost+2*xpost_sd),fill="grey",alpha=0.5) +
-  geom_point(aes(x=data$t,data$Y,color="Observations")) +
+  geom_point(aes(x=data$t,data$y,color="Observations")) +
   guides(color=guide_legend(override.aes=list(shape=c(16,NA,NA),size=c(2,NA,NA),linetype=c(NA,1,1),lwd=c(NA,1,1)))) +
   labs(x = "Time", y = "", color="") +
-  mytheme
+  ctsmTMB:::getggplot2theme()
 ```
 
 # Residual analysis
@@ -296,21 +320,13 @@ The residuals (both standard and normalized) can be extracted as well, together 
 
 ---
 
-For the sake of clarity it can sometimes be easier to specify simple variables in the equations in place of some other (perhaps larger) expression. We can redefine a variable name by providing an algebraic relation.
-
-Let's say that we wish only to consider positive values of the parameter $\theta$, then it is appropriate to estimate in the log-domain (since the domain of the logarithm is the positive real axis). We use $\theta = \exp\left(\log\theta\right)$ and introduce the parameter `logtheta` to replace `theta`. This is obviously just names, and you might as well have written `exp(theta)` directly when specifying the system equations, but calling the parameter `logtheta` reminds one that we are really interested in the exponential of the parameter.
-
-We specify the algebraic relation like so:
+In order to keep the code clean, one can define algebraic expressions, that replace variables in the defined equations. As an example estimating $\theta$ as strictly positive corresponds to estimating $\log(\theta)$ so really we are looking for the parameter $\hat{\theta} = \exp(\log(\theta))$. This can be achieved by setting the following algrabic expression:
 ```{r}
-obj$setAlgebraics(theta ~ exp(logtheta))
+model$setAlgebraics(theta ~ exp(logtheta))
 ```
 
-The parameter settings for `theta` are not automatically transformed into `logtheta`, so they must be redefined:
+A new parameter entry must be added to the model object which describes values for `logtheta` which has replaced `theta`:
 ```{r}
-obj$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
-```
-
-```{r clean up, include=FALSE}
-# unlink(temporary_directory, recursive=TRUE)
+model$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
 ```
 

@@ -26,7 +26,7 @@ compile_cppfile = function(self, private) {
   
   # Start Check:
   # - Exit if the method uses RTMB and does not need C++ compilation.
-  bool <- !any(private$method == c("ekf_cpp", "ukf"))
+  bool <- !any(private$method == c("ekf_cpp", "ukf_cpp"))
   if(bool){
     return(invisible(self))
   }

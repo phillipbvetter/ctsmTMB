@@ -417,24 +417,6 @@ create_rtmb_function_strings_new = function(self, private)
   # observation variance
   ##################################################
   
-  ### VECTOR FORM ### (for laplace)
-  
-  # hvar.elements = sapply(seq_along(private$obs.var.trans),
-  #                        function(i) {
-  #                          term = private$obs.var.trans[[i]]$rhs
-  #                          deparse1(do.call(substitute, list(term, subsList)))
-  #                        })
-  # 
-  # hvar.function.text = paste('
-  # hvar__ = function(stateVec, parVec, inputVec){
-  #   ans = c(HVAR_ELEMENTS)
-  #   return(ans)
-  # }')
-  # 
-  # private$rtmb.function.strings.indexed$hvar = stringr::str_replace_all(hvar.function.text,
-  #                                                                       pattern="HVAR_ELEMENTS",
-  #                                                                       replacement=paste(hvar.elements,collapse=","))
-  
   hvar.elements <- c()
   for(i in seq_along(private$obs.names)){
     term <- deparse1(do.call(substitute, list(private$obs.var.trans[[i]]$rhs, subsList)))
@@ -549,12 +531,12 @@ create_rtmb_function_strings_new = function(self, private)
 ##########################################################
 ##########################################################
 ##########################################################
-# USER-FUNCTION CONSTRUCTION FOR R-IMPLEMENTATION OF EKF
+# USER-FUNCTION CONSTRUCTION FOR PURE R-IMPLEMENTATIONS
 ##########################################################
 ##########################################################
 ##########################################################
 
-create_rekf_function_strings = function(self, private)
+create_r_function_strings = function(self, private)
 {
   
   # Create substitution translation list
@@ -828,8 +810,147 @@ create_rcpp_function_strings = function(self, private){
                 new.drift.term = do.call(substitute, list(drift.term, subsList))
                 sprintf("f(%i) = %s;",i-1,deparse1(new.drift.term))
               })
-  code = sprintf("SEXP f(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
+  code = sprintf("Eigen::VectorXd f(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
                  Eigen::VectorXd f(%s); 
+                 %s
+                 return f;
+                 }",private$number.of.states, paste(f,collapse=""))
+  
+  private$rcpp.function.strings$f = code
+  
+  ##################################################
+  # drift jacobian
+  ##################################################
+  
+  # calculate all the terms and substitute variables
+  dfdx = c()
+  for(i in seq_along(private$state.names)){
+    for(j in seq_along(private$state.names)){
+      # term = hat2pow(Deriv::Deriv(private$diff.terms[[i]]$dt, x=private$state.names[j], cache.exp=F))
+      term = hat2pow(ctsmTMB.Deriv(f=private$diff.terms[[i]]$dt, x=private$state.names[j]))
+      new.term = do.call(substitute, list(term, subsList))
+      dfdx = c(dfdx, sprintf("dfdx(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+    }
+  }
+  code = sprintf("Eigen::MatrixXd dfdx(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
+                 Eigen::MatrixXd dfdx(%s,%s);
+                 %s
+                 return dfdx;
+                 }",private$number.of.states, private$number.of.states, paste(dfdx,collapse=""))
+  
+  private$rcpp.function.strings$dfdx = code
+  
+  ##################################################
+  # diffusion
+  ##################################################
+  
+  # calculate all the terms and substitute variables
+  g = c()
+  for(i in seq_along(private$state.names)){
+    for(j in seq_along(private$diff.processes[-1])){
+      term = hat2pow(private$diff.terms[[i]][[j+1]])
+      new.term = do.call(substitute, list(term, subsList))
+      g = c(g, sprintf("g(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+    }
+  }
+  code = sprintf("Eigen::MatrixXd g(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
+                 Eigen::MatrixXd g(%s,%s);
+                 %s
+                 return g;
+                 }",private$number.of.states, private$number.of.diffusions, paste(g,collapse=""))
+  
+  private$rcpp.function.strings$g = code
+  
+  ##################################################
+  # observation
+  ##################################################
+  
+  # calculate all the terms and substitute variables
+  h = sapply(seq_along(private$obs.names), 
+             function(i){
+               term = hat2pow(private$obs.eqs.trans[[i]]$rhs)
+               new.term = do.call(substitute, list(term, subsList))
+               sprintf("h(%s) = %s;",i-1, deparse1(new.term))
+             }) 
+  code = sprintf("Eigen::VectorXd h(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
+                 Eigen::VectorXd h(%s);
+                 %s
+                 return h;
+                 }",private$number.of.observations, paste(h,collapse=""))
+  
+  private$rcpp.function.strings$h = code
+  
+  ##################################################
+  # observation jacobian
+  ##################################################
+  
+  # calculate all the terms and substitute variables
+  dhdx = c()
+  for(i in seq_along(private$obs.names)){
+    for(j in seq_along(private$state.names)){
+      term = hat2pow(private$diff.terms.obs[[i]][[j]])
+      new.term = do.call(substitute, list(term, subsList))
+      dhdx = c(dhdx, sprintf("dhdx(%s, %s) = %s;",i-1, j-1, deparse1(new.term)))
+    }
+  }
+  code = sprintf("Eigen::MatrixXd dhdx(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
+                 Eigen::MatrixXd dhdx(%s,%s);
+                 %s
+                 return dhdx;
+                 }", private$number.of.observations, private$number.of.states, paste(dhdx,collapse=""))
+  
+  private$rcpp.function.strings$dhdx = code
+  
+  
+  ##################################################
+  # observation variance
+  ##################################################
+  
+  hvar = lapply(seq_along(private$obs.var.trans), 
+                function(i) {
+                  term = hat2pow(private$obs.var.trans[[i]]$rhs)
+                  new.term = do.call(substitute, list(term, subsList))
+                  sprintf("hvar(%s,%s) = %s;", i-1, i-1, deparse1(new.term))
+                })
+  code = sprintf("Eigen::MatrixXd hvar(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
+                 Eigen::MatrixXd hvar(%s,%s);
+                 hvar.setZero();
+                 %s
+                 return hvar;
+                 }", private$number.of.observations, private$number.of.observations, paste(hvar,collapse=""))
+  
+  private$rcpp.function.strings$hvar = code
+  
+  
+}
+
+create_rcpp_function_strings2 = function(self, private){
+  
+  # Create substitution translation list
+  obsList = lapply(seq_along(private$obs.names), function(id) substitute(obsVec(i),list(i=as.numeric(id-1))))
+  parList = lapply(seq_along(private$parameter.names), function(id) substitute(parVec(i),list(i=as.numeric(id-1))))
+  stateList = lapply(seq_along(private$state.names), function(id) substitute(stateVec(i),list(i=as.numeric(id-1))))
+  inputList = lapply(seq_along(private$input.names), function(id) substitute(inputVec(i),list(i=as.numeric(id-1))))
+  names(obsList) = private$obs.names
+  names(parList) = private$parameter.names
+  names(stateList) = private$state.names
+  names(inputList) = private$input.names
+  subsList = c(obsList, parList, stateList, inputList)
+  
+  
+  ##################################################
+  # drift
+  ##################################################
+  
+  # Perform substitution of parameters, inputs and states
+  f = sapply( seq_along(private$state.names),
+              function(i){
+                drift.term = hat2pow(private$diff.terms[[i]]$dt)
+                new.drift.term = do.call(substitute, list(drift.term, subsList))
+                sprintf("f(%i) = %s;",i-1,deparse1(new.drift.term))
+              })
+  code = sprintf("SEXP f(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
+                 Eigen::VectorXd f(%s);
                  %s
                  return Rcpp::wrap(f);
                  }",private$number.of.states, paste(f,collapse=""))

@@ -105,7 +105,8 @@ getggplot2theme = function() {
       strip.text = ggplot2::element_text(face="bold",size=12),
       # panel.grid.major = element_blank(),
       # panel.grid.minor = element_blank(),
-      legend.box = "vertical",
+      legend.box = "horizontal",
+      legend.direction = "horizontal",
       legend.position = "top",
       plot.title = ggplot2::element_text(hjust=0.5)
     )
@@ -123,35 +124,47 @@ getggplot2colors = function(n) {
 #######################################################
 
 #' Plot of k-step predictions from a ctsmTMB prediction object
-#' @param x prediction \code{data.frame} from a ctsmTMB prediction
-#' @param n.ahead an integer indicating which n-ahead predictions to plot
+#' @param x a ctsmTMB.pred object
+#' @param y not used
+#' @param k.ahead an integer indicating which k-ahead predictions to plot
 #' @param state.name a string indicating which states to plot
+#' @param type one of 'states' or 'observations', to plot
+#' @param against name of an observations to plot predictions against
 #' @param ... additional arguments
-#' @returns A huge amount of information
+#' @returns A plot of predicted states
 #' @export
-plot.ctsmTMB.pred = function(x,
-                             n.ahead = 0,
+plot.ctsmTMB.pred = function(x, 
+                             y,
+                             k.ahead = unique(x[["states"]][["k.ahead"]]),
                              state.name = NULL,
+                             type="states",
+                             against=NULL,
                              ...) {
   
   # method consistency
-  pred.data <- x
+  states <- x[["states"]]
+  obs <- x[["observations"]]
   
   # check n.ahead
-  if(!any(n.ahead %in% unique(pred.data$n.ahead))){
+  if(!any(k.ahead %in% unique(states$k.ahead))){
     stop("n.ahead not found in the prediction data frame")
   }
   
   # set state name to plot
   if(is.null(state.name)){
-    state.name = colnames(pred.data)[6]
+    state.name = colnames(states)[6]
   }
   
   # filter and plot
-  bool = pred.data$n.ahead==n.ahead
-  x = pred.data[bool,"t_{k+i}"]
-  y = pred.data[bool,state.name]
+  bool = states$k.ahead %in% k.ahead
+  x = states[bool, "t.j"]
+  y = states[bool, state.name]
   plot(x=x, y=y, type="l",...)
+  
+  if(!is.null(against)){
+    z = obs[bool, against]
+    graphics::points(x=x, y=z,col="red",pch=16)
+  }
   
   
   return(invisible(NULL))
@@ -341,8 +354,10 @@ profile.ctsmTMB.fit = function(fit,
   if(missing(fit)){
     stop("Please supply a fit from a ctsmTMB model.")
   }
-  if(missing(parlist)){
-    stop("Please supply a named list of parameter values")
+  
+  bool <- !(names(parlist) %in% names(fit$par.fixed))
+  if(any(bool)){
+    stop("The following parameter name(s) do not exist in the model:\n", paste(names(parlist)[bool],collapse=", "))
   }
   
   # 1. Get likelihood function
@@ -358,8 +373,11 @@ profile.ctsmTMB.fit = function(fit,
       parlist[[parnames[i]]] = seq(p-grid.qnt[i]*s, p+grid.qnt[i]*s, length.out=grid.size[i])
     }
   }
+  len <- length(parlist)
   X <- do.call(expand.grid, rev(parlist))
   names(X) <- rev(parnames)
+  X <- X[,len:1,drop=FALSE]
+  X <- cbind(X, nll=0)
   n <- nrow(X)
   prof.nll <- numeric(n)
   prof.pars <- vector("list",length=n)
@@ -379,7 +397,6 @@ profile.ctsmTMB.fit = function(fit,
     # objective function
     f <- function(x){
       y <- par + as.numeric(C %*% x)
-      # print(y["Cm"])
       nll$fn(y)
     }
     
@@ -412,12 +429,15 @@ profile.ctsmTMB.fit = function(fit,
     return(y)
   }
   
+  names.in.parlist <- names(parlist)
+  
   par <- fit$par.fixed
   x0 <- fit$par.fixed[!id]
   par[!id] <- 0
   # Run for-loop over all pairs
   for(i in 1:nrow(X)){
-    par[id] <- unlist(X[i,])
+    # par[id] <- unlist(X[i, -(len+1)])
+    par[names.in.parlist] = unlist(X[i,names.in.parlist])
     par.temp <- par
     #
     cat("Iteration:", i, "/", n, "\n")
@@ -430,10 +450,14 @@ profile.ctsmTMB.fit = function(fit,
       prof.pars[[i]] <- NA
       x0 <- fit$par.fixed[!id]
     } else {
-      prof.nll[i] <- opt$objective
+      # prof.nll[i] <- opt$objective
+      X[i,len+1] <- opt$objective
       par.temp[!id] <- opt$par
       prof.pars[[i]] <- par.temp
-      #
+      
+      # This next start guess is optimum found 
+      # in the previous iteration
+      # This may be bad when parameter grid jumps??
       x0 <- opt$par
       if(opt$convergence==1) {
         x0 <- fit$par.fixed[!id]
@@ -443,13 +467,54 @@ profile.ctsmTMB.fit = function(fit,
   
   # return
   returnlist = list(
-    parameter.list = parlist,
-    profile.grid = X,
-    profile.nll = prof.nll,
-    profile.pars = prof.pars,
-    profile.opts = opt.list
+    profile.grid.and.nll = X,
+    parameter.values = parlist,
+    parameter.pairs = prof.pars,
+    optimiser.results = opt.list,
+    full.likelihood.optimum = fit$par.fixed
   )
-  class(returnlist) <- "profile.ctsmTMB"
+  class(returnlist) <- "ctsmTMB.profile"
   
   return(returnlist)
+}
+
+#' #' Plot a profile likelihood ctsmTMB object
+#' @param x a profile.ctstTMB object
+#' @param y not in use
+#' @param include.opt boolean which indicates whether or not to include the
+#' total likelihood optimizer in the plot.
+#' @param ... additional arguments
+#' @export
+plot.ctsmTMB.profile = function(x,y,include.opt=TRUE,...){
+  list <- x
+  l <- length(list$parameter.values)
+  df <- list$profile.grid.and.nll
+  par.names <- head(names(df),l)
+  opt <- list$full.likelihood.optimum[par.names]
+  
+  # A simple plot is only needed if we are profiling one parameter
+  if(l==1L){
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_line(ggplot2::aes(x=df[[par.names[1]]],y=df$nll)) +
+      {if(include.opt) ggplot2::geom_vline(ggplot2::aes(xintercept=opt,color="Full Likelihood Optimum"))} +
+      ggplot2::labs(color="",
+           title="Profile Likelihood",
+           y = "Negative Log-Likelihood") +
+      getggplot2theme()
+  } else if (l==2L){
+    p <- ggplot2::ggplot() + 
+      ggplot2::stat_contour(ggplot2::aes(
+        x=df[[par.names[1]]],
+        y=df[[par.names[2]]],
+        z=df$nll), bins=100) + {
+      if(include.opt) ggplot2::geom_point(ggplot2::aes(x=opt[1], y=opt[2],fill="Full Likelihood Optimum"))
+        } + 
+      ggplot2::labs(fill="",
+           title="Profile Likelihood") +
+      getggplot2theme()
+  } else {
+    stop("Profile likelihood plotting for more than two parameters is not supported.")
+  }
+  
+  return(p)
 }

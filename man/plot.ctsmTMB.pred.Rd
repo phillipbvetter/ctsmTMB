@@ -4,19 +4,33 @@
 \alias{plot.ctsmTMB.pred}
 \title{Plot of k-step predictions from a ctsmTMB prediction object}
 \usage{
-\method{plot}{ctsmTMB.pred}(x, n.ahead = 0, state.name = NULL, ...)
+\method{plot}{ctsmTMB.pred}(
+  x,
+  y,
+  k.ahead = unique(x[["states"]][["k.ahead"]]),
+  state.name = NULL,
+  type = "states",
+  against = NULL,
+  ...
+)
 }
 \arguments{
-\item{x}{prediction \code{data.frame} from a ctsmTMB prediction}
+\item{x}{a ctsmTMB.pred object}
 
-\item{n.ahead}{an integer indicating which n-ahead predictions to plot}
+\item{y}{not used}
+
+\item{k.ahead}{an integer indicating which k-ahead predictions to plot}
 
 \item{state.name}{a string indicating which states to plot}
+
+\item{type}{one of 'states' or 'observations', to plot}
+
+\item{against}{name of an observations to plot predictions against}
 
 \item{...}{additional arguments}
 }
 \value{
-A huge amount of information
+A plot of predicted states
 }
 \description{
 Plot of k-step predictions from a ctsmTMB prediction object
