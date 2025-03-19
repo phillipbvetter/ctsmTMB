@@ -30,6 +30,7 @@ Depends:
 Imports:
 	TMB,
 	RTMB,
+	RTMBode,
 	R6,
 	Deriv,
 	stringr,
@@ -51,5 +52,3 @@ Suggests:
 	grDevices,
 	knitr,
 	rmarkdown
-Remotes:
-	https://github.com/kaskr/RTMB/tree/master/RTMBode

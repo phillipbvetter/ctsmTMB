@@ -40,9 +40,9 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      # I added the two lines below to make sure RTMBode is available, but not sure if thats enough...
-      - name: InstallRTMBode
-        run: Rscript -e "install.packages('RTMBode', repos = c('https://kaskr.r-universe.dev', 'https://cloud.r-project.org'))"
+      # Download RTMBode
+      - name: add r-universe to repos
+        run: Rscript -e 'options(repos = c("https://kaskr.r-universe.dev", "https://cloud.r-project.org"))'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
