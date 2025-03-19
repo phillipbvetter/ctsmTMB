@@ -52,3 +52,5 @@ Suggests:
 	grDevices,
 	knitr,
 	rmarkdown
+Additional_repositories:
+	https://kaskr.r-universe.dev
