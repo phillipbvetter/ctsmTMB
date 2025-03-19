@@ -53,4 +53,4 @@ Suggests:
 	knitr,
 	rmarkdown
 Additional_repositories: 
-	https://kaskr.r-universe.dev/RTMBode
+	https://github.com/kaskr/RTMB/tree/master/RTMBode
