@@ -39,17 +39,16 @@ Imports:
 	RcppXPtrUtils,
 	RcppZiggurat,
 	Matrix,
-	deSolve
+	deSolve,
+	ggplot2,
+	ggfortify,
+	patchwork
 LinkingTo:
 	Rcpp,
 	RcppEigen,
 	RcppZiggurat
 Suggests:
 	testthat (>= 3.0.0),
-	patchwork,
-	ggplot2,
-	ggfortify,
-	grDevices,
 	knitr,
 	rmarkdown
 Remotes:

@@ -113,11 +113,11 @@ getggplot2theme = function() {
   return(mytheme)
 }
 
-getggplot2colors = function(n) {
-  hues = seq(15, 375, length = n + 1)
-  ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
-  return(ggcolors)
-}
+# getggplot2colors = function(n) {
+#   hues = seq(15, 375, length = n + 1)
+#   ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
+#   return(ggcolors)
+# }
 
 #######################################################
 # Plot - S3 Method
@@ -225,7 +225,8 @@ plot.ctsmTMB.fit = function(x,
   # retrieve user default parameter settings
   
   # use ggplot to plot
-  mycolor = getggplot2colors(2)[2]
+  # mycolor = getggplot2colors(2)[2]
+  mycolor <- "steelblue"
   # if (use.ggplot) {
   plots = list()
   t = fit$residuals$normalized[["t"]]

@@ -137,7 +137,7 @@ model$setParameter(
 We can fix a parameter value (so the parameter becomes a constant) by supplying just a single value. 
 
 It is for instance typically useful to fix some noise parameters, because they can be difficult to identify simultaneously. Here we fix the observation noise $\sigma_{y}$:
-```{r}
+```{r, eval=T}
 model$setParameter(
   sigma_y  = 1e-1
 )
@@ -154,7 +154,7 @@ print(model)
 
 Finally, we must set the state's expected value and (co)variance at the initial time-point, where the filtering algorithms begin, with the assumption that the state is normally distributed. The choice of values should reflect ones belief in the initial state, but it is probably just a ballpark figure.
 ```{r}
-x0 <- 3
+x0 <- 1
 p0 <- 1e-1 * diag(1)
 initial.state <- list(x0, p0)
 model$setInitialState(initial.state)
@@ -171,13 +171,13 @@ We are now ready to perform state filtration and parameter estimation. We first 
 ```{r, fig.height=7,fig.width=7}
 library(ggplot2)
 set.seed(10)
-simulation.pars <- c(theta=10, mu=1, sigma_x=1, sigma_y=1e-1)
+simulation.pars <- c(theta=10, mu=1, sigma_x=1, sigma_y=5e-5)
 dt.sim <- 1e-3
 t.sim <- seq(0,1,by=dt.sim)
-df.sim <- data.frame(t=t.sim, u=1, y=0)
+df.sim <- data.frame(t=t.sim, u=1, y=NA)
 
 # Perform simulation
-sim <- model$simulate(data=df.sim, pars=simulation.pars, n.sims=1, silent=T)
+sim <- model$simulate(data=df.sim, pars=simulation.pars, n.sims=1, silent=T, initial.state=initial.state)
 x <- sim$states$x$i0$x1
 
 # Extract observations from simulation and add noise
@@ -197,39 +197,11 @@ ggplot() +
   ctsmTMB:::getggplot2theme() + labs(color="",fill="")
 ```
 
-
-```{r, fig.height=7,fig.width=7, eval=FALSE, include=FALSE}
-# Choosing parameters
-set.seed(10)
-theta=10; mu=1; sigma_x=1; sigma_y=1e-1
-
-# Creating simulation path
-dt.sim = 1e-3
-t.sim = seq(0,1,by=dt.sim)
-dw = rnorm(length(t.sim)-1,sd=sqrt(dt.sim))
-x = 3
-for(i in 1:(length(t.sim)-1)) {
-  x[i+1] = x[i] + theta*(mu-x[i])*dt.sim + sigma_x*dw[i]
-}
-
-# Extract observations from simulation and add noise
-dt.obs = 1e-2
-t.obs = seq(0,1,by=dt.obs)
-y = x[t.sim %in% t.obs] + sigma_y * rnorm(length(t.obs))
-
-# Create data.frame
-data = data.frame(
-  t = t.obs,
-  y = y,
-  u = c(rep(c(1,2),times=round(length(y)/2)),1)
-)
-```
-
 The data must contain a time column named `t` and columns for each of the specified inputs and observations.
 
-We pass the `data` to the `estimate` method. The method will build and compile a generated `C++` function for the negative log-likelihood, check if the supplied data contains all necessary variables, construct the objective function (the computational tree must be build for automatic differentiation) and then start the optimization. 
+We pass the `data` to the `estimate` method. This will build the model, perform various checks, construct the computational graph for automatic differentiation, and then perform the optimization.
 
-The output generated during the optimization is the objective (negativ log-likelihood) value and parameter values at the current step. The optimizer used in the package is `stats::nlminb`. This optimizer is great because of its robustness and ability to use the objective function hessian unlike e.g. 'stats::optim'
+The output generated during the optimization is the objective (negativ log-likelihood) value and parameter values at the current step. The optimizer used in the package is `stats::nlminb`.
 
 ```{r}
 fit = model$estimate(data)
@@ -284,15 +256,20 @@ library(patchwork)
 ```{r, fig.height=7,fig.width=7}
 t         = fit$states$mean$posterior$t
 xprior    = fit$states$mean$prior$x
+xprior_sd = fit$states$sd$prior$x
 xpost     = fit$states$mean$posterior$x
 xpost_sd  = fit$states$sd$posterior$x
 
+t2 <- c(rbind(t,t))
+xprior_post <- c(rbind(xprior,xpost))
+xprior_post_sd <- c(rbind(xprior_sd,xpost_sd))
+
 ggplot() +
-  geom_line(aes(x=t,y=xpost,color="State Estimates (Posterior)"),lwd=1) +
-  geom_line(aes(x=t,y=xprior,color="State Estimates (Prior)"),lwd=1) +
-  geom_ribbon(aes(x=t,ymin=xpost-2*xpost_sd,ymax=xpost+2*xpost_sd),fill="grey",alpha=0.5) +
-  geom_point(aes(x=data$t,data$y,color="Observations")) +
-  guides(color=guide_legend(override.aes=list(shape=c(16,NA,NA),size=c(2,NA,NA),linetype=c(NA,1,1),lwd=c(NA,1,1)))) +
+  geom_line(aes(x=t2,y=xprior_post,color="State Estimates (Prior-Posterior)"),lwd=1) +
+  # geom_line(aes(x=t,y=xpost,color="State Estimates (Posterior)"),lwd=1) +
+  # geom_line(aes(x=t,y=xprior,color="State Estimates (Prior)"),lwd=1) +
+  # geom_ribbon(aes(x=t,ymin=xpost-2*xpost_sd,ymax=xpost+2*xpost_sd),fill="grey",alpha=0.5) +
+  geom_point(aes(x=data$t,data$y, color="Observations")) +
   labs(x = "Time", y = "", color="") +
   ctsmTMB:::getggplot2theme()
 ```
