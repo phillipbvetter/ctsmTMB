@@ -14,7 +14,7 @@ Author: Phillip Brinck Vetter [aut, cre],
 	Uffe H. Thygesen [ctb],
 	Peder Bacher [ctb],
 	Henrik Madsen [ctb]
-Description: ctsmTMB is an R package for parameter and state estimation and forecasting in stochastic state space systems. These are partially observed state space systems that whose latent states evolve according to a system of stochastic differential equation. The package employs the R6 object for easy model construction, and uses the TMB/RTMB packages for its modern C++ implementations and algorithmic differentiation. The estimation methods implemented are variations of (non-linear) Kalman Filters in addition to the Laplace approximation.
+Description: ctsmTMB is an R package for parameter and state estimation and forecasting in stochastic state space systems. These are partially observed state space systems that whose latent states evolve according to a system of stochastic differential equation. The package employs the R6 object oriented class for user-friendly model construction, and uses the TMB/RTMB packages for algorithmic differentiation and Laplace approximation. The estimation methods implemented are variations of Kalman Filters, in addition to a filtering scheme based on the Laplace approximation.
 Copyright: See the file COPYRIGHTS
 License: GPL-3
 Encoding: UTF-8
@@ -30,7 +30,6 @@ Depends:
 Imports:
 	TMB,
 	RTMB,
-	RTMBode,
 	R6,
 	Deriv,
 	stringr,
@@ -50,6 +49,7 @@ LinkingTo:
 Suggests:
 	testthat (>= 3.0.0),
 	knitr,
-	rmarkdown
-Remotes:
-	RTMBode=github::kaskr/RTMB/RTMBode
+	rmarkdown,
+	RTMBode
+Additional_repositories:
+	https://kaskr.r-universe.dev
