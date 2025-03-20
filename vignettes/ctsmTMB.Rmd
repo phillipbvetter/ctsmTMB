@@ -66,16 +66,7 @@ Now that the object is created let us first inspect it's printout:
 print(model)
 ```
 
-We see that the model is called `ctsmTMB_model` (default), and there are no states, diffusions, observations, inputs or parameters currently registered. 
-
-## **Note on the model name**
-
-The model name is only relevant for the few methods that generate C++ files (`ekf_cpp` and `ukf_cpp`) where it is used to name the `C++` file(s) that will be created locally, and to later recognize the compiled model object. The model name and directory where C++ files are stored, can be set using:
-
-```{r, eval=FALSE}
-model$setModelname("getting_started")
-model$setCppfilesDirectory("some_path_to_a_directory")
-```
+We see that there are no states, diffusions, observations, inputs or parameters currently registered. 
 
 # Add system equations
 
@@ -254,6 +245,7 @@ We can print the `fit` object to see a standard coefficient matrix for the param
 ```{r}
 print(fit)
 ```
+
 We can see the parameter estimate and the associated standard error together with the t-test statistic and P-value associated with the standard null-hypothesis 
 $$
 H_{0}: p = 0 \\
@@ -314,6 +306,7 @@ We can display a standard residual analysis for the observations by calling `plo
 ```{r, fig.height=7, fig.width=7}
 plot(fit)
 ```
+
 The residuals (both standard and normalized) can be extracted as well, together with their standard deviation and covariance matrix via `fit$residuals`
 
 # **Extra:** Adding algebraic equations

@@ -12,6 +12,7 @@ makeADFun_ekf_rtmb = function(self, private)
   # (x7 speed improvement of optimization) enabled by default, and keeping 
   # vectorized disabled
   RTMB::TapeConfig(atomic="disable")
+  # RTMB::TapeConfig(atomic="enable")
   RTMB::TapeConfig(vectorize="disable")
   
   # Data ----------------------------------------

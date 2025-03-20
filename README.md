@@ -33,7 +33,7 @@ form
 $$
 dx_{t} = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t}
 $$ $$
-y_{t_k} = h(t, x_t, u_t, \theta)
+y_{t_k} = h(t_k, x_{t_k}, u_{t_k}, \theta)
 $$
 
 Here the latent state $x_t$ evolves continuously in time, governed by a
@@ -57,21 +57,15 @@ the `stats::nlminb` quasi-Newton optimizer due to [D.
 Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The resulting
 object contains the maximum likelihood parameter and state estimates,
 and associated marginal uncertainties. The available inference methods
-are non-linear Kalman filters (EKF and UKF) and filtration by the
-Laplace approxmation in a random-effects setting. The user can extract
-the likelihood function handles (function, gradient and hessian) with
-the `likelihood` method if e.g. they want to use another optimizer.
+are the Linear and Extended Kalman filters in addition to filtration
+(actually smoothing) using a Laplace approximation approach.
+<!-- The user can extract the likelihood function handles (function, gradient and hessian) with the `likelihood` method if e.g. they want to use another optimizer. -->
 
-The package facilities forecasting through the `predict` and `simulate`
-methods (state updates for k-step ahead forecasts are currently only
-available using Kalman filters). The difference between the two is that
-the former produces moment predictions (mean and covariance) while the
-latter produces stochastic path simulations (distributions). The
-calculations are carried out in **C++** through the `Rcpp` package
-universe, in particular using the `RcppXPtrUtils` package for sending
-**C++** pointers of the model-specific functions (drift, diffusion,
-observation and jacobians) rather than sending (slow to evaluate) **R**
-functions.
+The package facilities forecasting through the `predict` (momen
+forecasts) and `simulate` (stochastic path simulations) methods. The
+calculations may be carried out in either **R** (default) or for
+additional speed in **C++** using `Rcpp`.
+<!-- in particular using the `RcppXPtrUtils` package for sending **C++** pointers of the model-specific functions (drift, diffusion, observation and jacobians) rather than sending (slow to evaluate) **R** functions. -->
 
 <!-- Estimation Methods -->
 
@@ -79,11 +73,11 @@ functions.
 
 The following state reconstruction algorithms are currently available:
 
-1.  The (Continous-Discrete) Extended Kalman Filter, `ekf`.
+1.  The (Continous-Discrete) Linear Kalman Filter, `lkf`.
 
-2.  The (Continous-Discrete) Unscented Kalman Filter, `ukf`.
+2.  The (Continous-Discrete) Extended Kalman Filter, `ekf`.
 
-3.  The (Continuous-Discrete) Laplace Approximation `laplace`.
+3.  The (Continuous-Discrete) Laplace “Filter” `laplace`.
 
 ## Kalman Filters
 
@@ -101,34 +95,27 @@ advantages of the methods are:
 In these cases **TMB** simply provides an easy framework for automatic
 differentiation.
 
-The package is currently mostly tailored towards the Kalman Filter, with
-its available methods `predict` and `simulate` for k-step-ahead
+The package is currently mostly tailored towards the Kalman Filters,
+with its available methods `predict` and `simulate` for k-step-ahead
 predictions and simulations. It also has an `S3 method` implementation
 of `plot` to be called on the `ctsmTMB.fit` class object returned from
 the `estimate` method, which plots a basic residuals analysis using the
 `ggplot2` package.
 
-The Unscented Kalman Filter implementation is based on *Algorithm 4.7*
-in [S. Särkkä,
-2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242).
+<!-- The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242). -->
 
-## Laplace Filter
+## Laplace Filter / Approximation
 
 The state-reconstructions based on the `laplace` method are *smoothed*
 estimates, meaning that all states are optimized jointly, given all
 observations in the data. For further mathematicals details, see
 [this](https://phillipbvetter.github.io/ctsmTMB/articles/laplace_approx.html)
 article on the package webpage. The Laplace Approximation is natively
-built-into and completely handled by **TMB**. A few noteworthy
-advantages are:
+built-into and completely handled by **TMB**.
 
-1.  There is no C++ compilation needed (using **RTMB**). In addition the
-    AD-compile time i.e. the call to `RTMB::MakeADFun`, is identical to
-    that of pre-compiled **C++** code.
-
-2.  The possibility for non-Gaussian (but unimodal) observation
+1.  The possibility for non-Gaussian (but unimodal) observation
     densities to accommodate the need for e.g. heavier distribution
-    tails.
+    tails. (not yet implemented).
 
 The method *may* be less useful in the context of model-training towards
 forecasting because the likelihood contributions are based on these
