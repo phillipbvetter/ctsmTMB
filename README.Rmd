@@ -42,7 +42,7 @@ Here the latent state $x_t$ evolves continuously in time, governed by a set of s
 
 The **ctsmTMB** package is essentially wrapper around the **TMB/RTMB** packages [(Template Model Builder)](https://github.com/kaskr/adcomp) that provide automatic differentiation of the likelihood function, and access to other computational tools such as the Laplace approximation. The likelihood function is constructed based on the (symbolic) user-provided state space equations, which may be specified using the implemented OOP-style **R6** `ctsmTMB` class, with methods such as `addSystem` (for defining system equations), and `addObs` (for defining observation equations).
 
-The primary work-horse of **ctsmTMB** is the `estimate` method, which carries out inference by minimizing the (negative log) likelihood using the `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The resulting object contains the maximum likelihood parameter and state estimates, and associated marginal uncertainties. The available inference methods are the Linear and Extended Kalman filters in addition to filtration (actually smoothing) using a Laplace approximation approach. 
+The primary work-horse of **ctsmTMB** is the `estimate` method, which carries out inference by minimizing the (negative log) likelihood using the `stats::nlminb` quasi-Newton optimizer. The resulting object contains the maximum likelihood parameter and state estimates, and associated marginal uncertainties. The available inference methods are the Linear and Extended Kalman filters in addition to filtration (actually smoothing) using a Laplace approximation approach. 
 <!-- The user can extract the likelihood function handles (function, gradient and hessian) with the `likelihood` method if e.g. they want to use another optimizer. -->
 
 The package facilities forecasting through the `predict` (moment forecasts) and `simulate` (stochastic path simulations) methods. The calculations for these may be carried out in either **R** (default) or for additional speed in **C++** using `Rcpp`.
@@ -52,9 +52,9 @@ The package facilities forecasting through the `predict` (moment forecasts) and 
 # Estimation Methods
 The following state reconstruction algorithms are currently available:
 
-1. The (Continous-Discrete) Linear Kalman Filter, `lkf`.
+1. The (Continuous-Discrete) Linear Kalman Filter, `lkf`.
 
-2. The (Continous-Discrete) Extended Kalman Filter, `ekf`.
+2. The (Continuous-Discrete) Extended Kalman Filter, `ekf`.
 
 3. The (Continuous-Discrete) Laplace "Filter" `laplace`.
 
@@ -137,7 +137,8 @@ You can access the documentation for all methods with
 ```{r, eval=FALSE}
 ?ctsmTMB
 ```
-or invidually using the standard syntax
+
+or individually using the standard syntax
 ```{r, eval=FALSE}
 ?ctsmTMB::addSystem
 ?ctsmTMB::estimate

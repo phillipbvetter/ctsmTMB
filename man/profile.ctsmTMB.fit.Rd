@@ -5,17 +5,18 @@
 \title{#' Performs full multi-dimensional profile likelihood calculations}
 \usage{
 \method{profile}{ctsmTMB.fit}(
-  fit,
+  fitted,
   parlist,
   grid.size = rep(10, length(parlist)),
   grid.qnt = rep(3, length(parlist)),
   hessian = FALSE,
   silent = FALSE,
-  control = list(trace = 0, iter.max = 1000, eval.max = 1000)
+  control = list(trace = 0, iter.max = 1000, eval.max = 1000),
+  ...
 )
 }
 \arguments{
-\item{fit}{a ctmsTMB fit object}
+\item{fitted}{a ctmsTMB fit object}
 
 \item{parlist}{a named-list of parameters to profile over. The user can either
 supply grid-values in the list or leave it empty. If the any one list is empty
@@ -36,11 +37,13 @@ the profile optimization.}
 the \code{control} argument.}
 
 \item{control}{a list of optimization output controls (see \link[stats]{nlminb})}
+
+\item{...}{various arguments (not in use)}
 }
 \description{
 #' Performs full multi-dimensional profile likelihood calculations
 }
 \note{
-The implemetation was modified from that of
+The implementation was modified from that of
 https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R
 }

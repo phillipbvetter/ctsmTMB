@@ -71,7 +71,7 @@ This argument is a vector of parameter values, which are used to generate the pr
 
 ---
 
-This argument is a boolean which determines whether a pure **R** (`use.cpp=FALSE`, default) or **C++** (`use.cpp=TRUE`) implementation is used to calculcate the predictions. 
+This argument is a boolean which determines whether a pure **R** (`use.cpp=FALSE`, default) or **C++** (`use.cpp=TRUE`) implementation is used to calculate the predictions. 
 
 The advantage of the **C++** implementation is computational speed but this comes at the cost of 5-10 seconds compilation time (the first time in a session that the **C++** implementation is used, subsequent calls are faster). The number of prediction steps to compute is given by
 ```{r, eval=FALSE}
@@ -224,7 +224,7 @@ The output of `predict` is a list of two `data.frames`, one for states and one f
 head(pred$states) 
 ```
 
-The *observations* `data.frame` currently only contain mean estimates, which are obtained by passing the mean state estiamtes through the observation function, which is this case is $y = h(x) = x$. The actual observed data is also provided with the suffix *.data*.
+The *observations* `data.frame` currently only contain mean estimates, which are obtained by passing the mean state estimates through the observation function, which is this case is $y = h(x) = x$. The actual observed data is also provided with the suffix *.data*.
 
 ```{r}
 head(pred$observations)

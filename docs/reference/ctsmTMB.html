@@ -141,7 +141,7 @@ which can be used to define a stochastic state space system.</p>
 
 
 </div><p></p><hr><a id="method-ctsmTMB-addSystem"></a><div class="section">
-<h3 id="method-addsystem-">Method <code><a href="addSystem.html">addSystem()</a></code><a class="anchor" aria-label="anchor" href="#method-addsystem-"></a></h3>
+<h3 id="method-addsystem-">Method <code>addSystem()</code><a class="anchor" aria-label="anchor" href="#method-addsystem-"></a></h3>
 <p>Define and add multiple stochastic differential equation governing the
 process of individual state variables on the form</p>
 <p><code>d&lt;state&gt; ~ f(t,&lt;states&gt;,&lt;inputs&gt;) * dt + g1(t,&lt;states&gt;,&lt;inputs&gt;) * dw1 
@@ -168,7 +168,7 @@ multiple equations at once.</p></dd>
 </div>
 
 </div><p></p><hr><a id="method-ctsmTMB-addObs"></a><div class="section">
-<h3 id="method-addobs-">Method <code><a href="addObs.html">addObs()</a></code><a class="anchor" aria-label="anchor" href="#method-addobs-"></a></h3>
+<h3 id="method-addobs-">Method <code>addObs()</code><a class="anchor" aria-label="anchor" href="#method-addobs-"></a></h3>
 <p>Define and add a relationship between an observed variable and system states.
 The observation equation takes the form</p>
 <p><code>&lt;observation&gt; ~ h(t,&lt;states&gt;,&lt;inputs&gt;) + e)</code></p>
@@ -183,7 +183,7 @@ observation variable should be present in the data provided when calling
 <div class="section">
 <h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>form</code></dt>
-<dd><p>formula class specifying the obsevation equation to be added to the system.</p></dd>
+<dd><p>formula class specifying the observation equation to be added to the system.</p></dd>
 
 
 <dt><code>...</code></dt>
@@ -200,10 +200,10 @@ given a name on the form obs__# where # is a number, unless obsnames is provided
 </div>
 
 </div><p></p><hr><a id="method-ctsmTMB-setVariance"></a><div class="section">
-<h3 id="method-setvariance-">Method <code><a href="setVariance.html">setVariance()</a></code><a class="anchor" aria-label="anchor" href="#method-setvariance-"></a></h3>
+<h3 id="method-setvariance-">Method <code>setVariance()</code><a class="anchor" aria-label="anchor" href="#method-setvariance-"></a></h3>
 <p>Specify the variance of an observation equation.</p>
 <p>A defined observation variable <code>y</code> in e.g. <code>addObs(y ~ 
-h(t,&lt;states&gt;,&lt;inputs&gt;)</code> is pertubed by Gaussian noise with zero mean and
+h(t,&lt;states&gt;,&lt;inputs&gt;)</code> is perturbed by Gaussian noise with zero mean and
 variance
 to-be specified using <code>setVariance(y ~ p(t,&lt;states&gt;,&lt;inputs&gt;)</code>.
 We can for instance declare <code>setVariance(y ~ sigma_x^2</code>
@@ -216,7 +216,7 @@ where <code>sigma_x</code> is a fixed effect parameter to be declared through
 <div class="section">
 <h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>form</code></dt>
-<dd><p>formula class specifying the obsevation equation to be added
+<dd><p>formula class specifying the observation equation to be added
 to the system.</p></dd>
 
 
@@ -229,7 +229,7 @@ observation equations at a time.</p></dd>
 </div>
 
 </div><p></p><hr><a id="method-ctsmTMB-addInput"></a><div class="section">
-<h3 id="method-addinput-">Method <code><a href="addInput.html">addInput()</a></code><a class="anchor" aria-label="anchor" href="#method-addinput-"></a></h3>
+<h3 id="method-addinput-">Method <code>addInput()</code><a class="anchor" aria-label="anchor" href="#method-addinput-"></a></h3>
 <p>Declare variables as data inputs</p>
 <p>Declare whether a variable contained in system, observation or observation
 variance equations is an input variable. If e.g. the system equation contains
@@ -250,7 +250,7 @@ when calling the <code>estimate</code> or <code>predict</code> methods.</p><div 
 </div>
 
 </div><p></p><hr><a id="method-ctsmTMB-setParameter"></a><div class="section">
-<h3 id="method-setparameter-">Method <code><a href="setParameter.html">setParameter()</a></code><a class="anchor" aria-label="anchor" href="#method-setparameter-"></a></h3>
+<h3 id="method-setparameter-">Method <code>setParameter()</code><a class="anchor" aria-label="anchor" href="#method-setparameter-"></a></h3>
 <p>Declare which variables that are (fixed effects) parameters in
 the specified model, and specify the initial optimizer value, as well as
 lower / upper bounds during optimization. There are two ways to declare parameters:</p><ol><li><p>You can declare parameters using formulas i.e. <code>setParameter( 
@@ -275,7 +275,7 @@ The columns values corresponds to the description in the vector format above.</p
 </div>
 
 </div><p></p><hr><a id="method-ctsmTMB-setAlgebraics"></a><div class="section">
-<h3 id="method-setalgebraics-">Method <code><a href="setAlgebraics.html">setAlgebraics()</a></code><a class="anchor" aria-label="anchor" href="#method-setalgebraics-"></a></h3>
+<h3 id="method-setalgebraics-">Method <code>setAlgebraics()</code><a class="anchor" aria-label="anchor" href="#method-setalgebraics-"></a></h3>
 <p>Add algebraic relations.</p>
 <p>Algebraic relations is a convenient way to transform parameters in your equations.
 In the Ornstein-Uhlenbeck process the rate parameter <code>theta</code> is always positive, so
@@ -303,7 +303,7 @@ for <code>logtheta</code> now instead of <code>theta</code> when declaring param
 </div>
 
 </div><p></p><hr><a id="method-ctsmTMB-setInitialState"></a><div class="section">
-<h3 id="method-setinitialstate-">Method <code><a href="setInitialState.html">setInitialState()</a></code><a class="anchor" aria-label="anchor" href="#method-setinitialstate-"></a></h3>
+<h3 id="method-setinitialstate-">Method <code>setInitialState()</code><a class="anchor" aria-label="anchor" href="#method-setinitialstate-"></a></h3>
 <p>Declare the initial state values i.e. mean and covariance for the system states.</p><div class="section">
 <h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="va">initial.state</span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -321,7 +321,7 @@ for <code>logtheta</code> now instead of <code>theta</code> when declaring param
 </div><p></p><hr><a id="method-ctsmTMB-setInitialVarianceScaling"></a><div class="section">
 <h3 id="method-setinitialvariancescaling-">Method <code>setInitialVarianceScaling()</code><a class="anchor" aria-label="anchor" href="#method-setinitialvariancescaling-"></a></h3>
 <p>A scalar value that is multiplied onto the estimated
-intiial state covariance matrix. The scaling is only applied when the
+initial state covariance matrix. The scaling is only applied when the
 initial state/cov is estimated, not when it is set by the user.</p><div class="section">
 <h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setInitialVarianceScaling</span><span class="op">(</span><span class="va">scaling</span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -554,7 +554,7 @@ which serves to link together the latent (random effects) states.</p></li>
 
 <dt><code>loss</code></dt>
 <dd><p>character vector. Sets the loss function type (only implemented for the kalman filter
-methods). The loss function is per default quadratic in the one-step residauls as is natural
+methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
 distribution is considered too small i.e. outliers are weighted too much, then one
 can choose loss functions that accounts for this. The three available types available:</p><ol><li><p>Quadratic loss (<code>quadratic</code>).</p></li>
@@ -562,7 +562,7 @@ can choose loss functions that accounts for this. The three available types avai
 <li><p>Quadratic-Constant (<code>tukey</code>)</p></li>
 </ol><p>The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter <code>loss_c</code>. The implementations of these losses are approximations (pseudo-huber and sigmoid
-approxmation respectively) for smooth derivatives.</p></dd>
+approximation respectively) for smooth derivatives.</p></dd>
 
 
 <dt><code>loss_c</code></dt>
@@ -582,7 +582,7 @@ without any random effects.</p></dd>
 
 
 <dt><code>laplace.residuals</code></dt>
-<dd><p>boolean - whether or not to calculate one-step ahead residuls
+<dd><p>boolean - whether or not to calculate one-step ahead residuals
 using the method of <a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">oneStepPredict</a>.</p></dd>
 
 
@@ -667,7 +667,7 @@ which serves to link together the latent (random effects) states.</p></li>
 
 <dt><code>loss</code></dt>
 <dd><p>character vector. Sets the loss function type (only implemented for the kalman filter
-methods). The loss function is per default quadratic in the one-step residauls as is natural
+methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
 distribution is considered too small i.e. outliers are weighted too much, then one
 can choose loss functions that accounts for this. The three available types available:</p><ol><li><p>Quadratic loss (<code>quadratic</code>).</p></li>
@@ -675,7 +675,7 @@ can choose loss functions that accounts for this. The three available types avai
 <li><p>Quadratic-Constant (<code>tukey</code>)</p></li>
 </ol><p>The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter <code>loss_c</code>. The implementations of these losses are approximations (pseudo-huber and sigmoid
-approxmation respectively) for smooth derivatives.</p></dd>
+approximation respectively) for smooth derivatives.</p></dd>
 
 
 <dt><code>loss_c</code></dt>
@@ -769,7 +769,7 @@ should be returned.</p></dd>
 
 
 <dt><code>return.covariance</code></dt>
-<dd><p>booelan value to indicate whether the covariance (instead of the correlation)
+<dd><p>boolean value to indicate whether the covariance (instead of the correlation)
 should be returned.</p></dd>
 
 
@@ -846,11 +846,11 @@ of the (negative log) likelihood function with respect to the fixed effects for 
 The method is slower although probably has some precision advantages, and allows for non-Gaussian
 observation noise (not yet implemented). One-step / K-step residuals are not yet available in
 the package.</p></li>
-<li><p>(Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
+<li><p>(Continuous-Discrete) Extended Kalman Filter where the system dynamics are linearized
 to handle potential non-linearities. This is computationally the fastest method.</p></li>
-<li><p>(Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
+<li><p>(Continuous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
 which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.</p></li>
+circumvents the necessity to compute the Jacobian of the drift and observation functions.</p></li>
 </ol><p>All package features are currently available for the kalman filters, while TMB is limited to
 parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
 with these methods (use the <code>predict</code> S3 method), and stochastic simulation is also available
@@ -913,7 +913,7 @@ should be returned.</p></dd>
 
 
 <dt><code>return.covariance</code></dt>
-<dd><p>booelan value to indicate whether the covariance (instead of the correlation)
+<dd><p>boolean value to indicate whether the covariance (instead of the correlation)
 should be returned.</p></dd>
 
 

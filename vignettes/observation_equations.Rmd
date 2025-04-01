@@ -66,7 +66,7 @@ obj$setVariance(
 
 ---
 
-You must supply multiple `obsnames` if you are supplying multiple observatin equations, although the name will only be used if the left-hand side is not just a single variable i.e.
+You must supply multiple `obsnames` if you are supplying multiple observation equations, although the name will only be used if the left-hand side is not just a single variable i.e.
 ```{r, eval=FALSE}
 obj$addObs(
   log(y) ~ x,

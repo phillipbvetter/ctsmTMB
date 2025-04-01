@@ -117,7 +117,7 @@ observation variable should be present in the data provided when calling
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{form}}{formula class specifying the obsevation equation to be added to the system.}
+\item{\code{form}}{formula class specifying the observation equation to be added to the system.}
 
 \item{\code{...}}{additional formulas identical to \code{form} to specify multiple observation equations at a time.}
 
@@ -135,7 +135,7 @@ given a name on the form obs__# where # is a number, unless obsnames is provided
 Specify the variance of an observation equation.
 
 A defined observation variable \code{y} in e.g. \code{addObs(y ~ 
-h(t,<states>,<inputs>)} is pertubed by Gaussian noise with zero mean and
+h(t,<states>,<inputs>)} is perturbed by Gaussian noise with zero mean and
 variance
 to-be specified using \code{setVariance(y ~ p(t,<states>,<inputs>)}.
 We can for instance declare \code{setVariance(y ~ sigma_x^2}
@@ -148,7 +148,7 @@ where \code{sigma_x} is a fixed effect parameter to be declared through
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{form}}{formula class specifying the obsevation equation to be added
+\item{\code{form}}{formula class specifying the observation equation to be added
 to the system.}
 
 \item{\code{...}}{additional formulas identical to \code{form} to specify multiple
@@ -258,7 +258,7 @@ Declare the initial state values i.e. mean and covariance for the system states.
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setInitialVarianceScaling}{}}}
 \subsection{Method \code{setInitialVarianceScaling()}}{
 A scalar value that is multiplied onto the estimated
-intiial state covariance matrix. The scaling is only applied when the
+initial state covariance matrix. The scaling is only applied when the
 initial state/cov is estimated, not when it is set by the user.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setInitialVarianceScaling(scaling)}\if{html}{\out{</div>}}
@@ -507,7 +507,7 @@ which serves to link together the latent (random effects) states.
 }}
 
 \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
-methods). The loss function is per default quadratic in the one-step residauls as is natural
+methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
 distribution is considered too small i.e. outliers are weighted too much, then one
 can choose loss functions that accounts for this. The three available types available:
@@ -519,7 +519,7 @@ can choose loss functions that accounts for this. The three available types avai
 
 The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
-approxmation respectively) for smooth derivatives.}
+approximation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
@@ -531,7 +531,7 @@ See \code{?stats::nlminb} for more information}
 performing the optimization. This feature is only available for the kalman filter methods
 without any random effects.}
 
-\item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuls
+\item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
 
 \item{\code{unconstrained.optim}}{boolean value. When TRUE then the optimization is carried out unconstrained i.e.
@@ -610,7 +610,7 @@ which serves to link together the latent (random effects) states.
 }}
 
 \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
-methods). The loss function is per default quadratic in the one-step residauls as is natural
+methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
 distribution is considered too small i.e. outliers are weighted too much, then one
 can choose loss functions that accounts for this. The three available types available:
@@ -622,7 +622,7 @@ can choose loss functions that accounts for this. The three available types avai
 
 The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
-approxmation respectively) for smooth derivatives.}
+approximation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
@@ -699,7 +699,7 @@ data updates).}
 \item{\code{return.k.ahead}}{numeric vector of integers specifying which n.ahead predictions to that
 should be returned.}
 
-\item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
+\item{\code{return.covariance}}{boolean value to indicate whether the covariance (instead of the correlation)
 should be returned.}
 
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
@@ -763,11 +763,11 @@ of the (negative log) likelihood function with respect to the fixed effects for 
 The method is slower although probably has some precision advantages, and allows for non-Gaussian
 observation noise (not yet implemented). One-step / K-step residuals are not yet available in
 the package.
-\item (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
+\item (Continuous-Discrete) Extended Kalman Filter where the system dynamics are linearized
 to handle potential non-linearities. This is computationally the fastest method.
-\item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
+\item (Continuous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
 which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.
+circumvents the necessity to compute the Jacobian of the drift and observation functions.
 }
 
 All package features are currently available for the kalman filters, while TMB is limited to
@@ -814,7 +814,7 @@ should be returned.}
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
 
-\item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
+\item{\code{return.covariance}}{boolean value to indicate whether the covariance (instead of the correlation)
 should be returned.}
 }
 \if{html}{\out{</div>}}

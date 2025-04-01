@@ -64,7 +64,7 @@ The Laplace filter produces *smoothed* state estimates. This is a state estimate
 $$
 \text{Smoothed:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{N}, y_{N-1},...,y_{t_{k}},...,y_{t_1}, y_{t_0} \right]
 $$
-2. The likelihood contributions from the Kalman filters are based on the *prior* estimates, which are one-step-ahead predictions. This gives rise to *independent* one-step-ahead residuals, ideal for residaul analysis and goodness-of-fit model validation. The Laplace filter does not produce such residuals inherently, and must instead compute these on the side. Residual calculations are disabled by default and determined with the `laplace.residuals` argument. The computations are very costly and slow. The user is referred to the documentation in `TMB::oneStepPredict` for further information.
+2. The likelihood contributions from the Kalman filters are based on the *prior* estimates, which are one-step-ahead predictions. This gives rise to *independent* one-step-ahead residuals, ideal for residual analysis and goodness-of-fit model validation. The Laplace filter does not produce such residuals inherently, and must instead compute these on the side. Residual calculations are disabled by default and determined with the `laplace.residuals` argument. The computations are very costly and slow. The user is referred to the documentation in `TMB::oneStepPredict` for further information.
 
 ## Argument: `ode.solver`
 
@@ -87,7 +87,7 @@ We recommend using the fast simple solvers to begin with when modelling.
 
 This argument has two different implications depending on whether Kalman filtering or Laplace filtering is carried out. The method accepts either a single scalar value to be used as the global time-step, or a vector of length `diff(data$t)` specifying all individual time-steps. The input values are interpolated linearly between time-points if more than one step is taken.
 
-1. **Kalman filters:** In this case the arugment controls the time-step used for the *euler* and *rk4* ODE solvers. 
+1. **Kalman filters:** In this case the argument controls the time-step used for the *euler* and *rk4* ODE solvers. 
 
 2. **Laplace filter:** In this case the argument controls the number of added intermediate time-points between observations each of which represents an additional state (random effect) at that particular time-point.
 

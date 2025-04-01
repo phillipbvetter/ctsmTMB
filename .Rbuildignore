@@ -9,3 +9,5 @@
 ^\.github$
 ^vignettes_sourcefiles
 ^pkgdown
+^doc$
+^Meta$

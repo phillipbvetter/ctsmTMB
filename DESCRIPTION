@@ -3,19 +3,19 @@ Type: Package
 Title: Continuous Time Stochastic Modelling using Template Model Builder
 Version: 1.0
 Date: 2025-03-20
-Authors@R: c(person("Phillip", "Vetter", email="pbrve@dtu.dk", role = c("aut", "cre"), comment=c(ROR = "04qtj9h94", ORCID="0000-0001-9290-7942")),
-		person("Jan", "Møller", email="jkmo@dtu.dk", role="ctb", comment = c(ORCID = "0000-0002-6100-043X")),
-		person("Uffe", "Thygesen", email="uhth@dtu.dk", role="ctb", comment = c(ORCID = "0000-0002-4311-6324")),
-		person("Peder", "Bacher", email="pbac@dtu.dk", role="ctb", comment = c(ORCID = "0000-0001-5456-2576")),
-		person("Henrik", "Madsen", email="hmad@dtu.dk", role="ctb", comment = c(ORCID = "0000-0003-0690-3713")) )
-Maintainer: Phillip Brinck Vetter <pbrve@dtu.dk>
-Author: Phillip Brinck Vetter [aut, cre],
+Authors@R: c(person("Phillip", "Vetter", email="pbrve@dtu.dk", role = c("aut", "cre", "cph"), comment=c(ROR = "04qtj9h94", ORCID="0000-0001-9290-7942")),
+	     person("Jan", "Møller", email="jkmo@dtu.dk", role="ctb", comment = c(ORCID = "0000-0002-6100-043X")),
+	     person("Uffe", "Thygesen", email="uhth@dtu.dk", role="ctb", comment = c(ORCID = "0000-0002-4311-6324")),
+	     person("Peder", "Bacher", email="pbac@dtu.dk", role="ctb", comment = c(ORCID = "0000-0001-5456-2576")),
+	     person("Henrik", "Madsen", email="hmad@dtu.dk", role="ctb", comment = c(ORCID = "0000-0003-0690-3713")) )
+Maintainer: Phillip Vetter <pbrve@dtu.dk>
+Author: Phillip Vetter [aut, cre, cph],
 	Jan K. Møller [ctb],
 	Uffe H. Thygesen [ctb],
 	Peder Bacher [ctb],
 	Henrik Madsen [ctb]
-Description: ctsmTMB is an R package for parameter and state estimation and forecasting in (multi-dimensional) stochastic state space systems. These are partially observed systems whose latent states evolve according to a set of stochastic differential equations. The package employs the R6 object oriented class for user-friendly model construction, and is based on the TMB/RTMB packages which provides many convenient features for likelihood estimation, in addition to algorithmic differentiation. The estimation methods implemented are variations of Kalman Filters, in addition to a filtering scheme based on the Laplace approximation, the latter of which is enabled by TMB/RTMB.
 Copyright: See the file COPYRIGHTS
+Description: The overall goal of the ctsmTMB (Continuous-Time Stochastic Modelling using Template Model Builder) package is user-friendly parameter and state inference and forecasting in (multi-dimensional) stochastic state space systems. These are partially observed systems whose latent states evolve according to a set of stochastic differential equations, and with algebraic discrete-time observation equations. The package employs 1) the 'R6' object-oriented-programming package for a user-friendly interface to model construction, estimation etc. 2) the 'TMB'/'RTMB' packages which provides many convenient features for likelihood estimation, in addition to algorithmic differentiation, and 3) the 'Rcpp' package(s) for various C++ implementations to gain computational speedups. The inference methods implemented are variations of Kalman filters, in addition to a Laplace "filter" based on the Laplace approximation (enabled by 'TMB'/'RTMB').
 License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

@@ -389,7 +389,8 @@ plot.ctsmTMB.fit = function(x,
 }
 
 #' #' Performs full multi-dimensional profile likelihood calculations
-#' @param fit a ctmsTMB fit object
+#' @param fitted a ctmsTMB fit object
+#' @param ... various arguments (not in use)
 #' @param parlist a named-list of parameters to profile over. The user can either
 #' supply grid-values in the list or leave it empty. If the any one list is empty
 #' then grid-values will be calculated using the estimated parameter mean value
@@ -404,17 +405,20 @@ plot.ctsmTMB.fit = function(x,
 #' @param silent boolean whether or not to mute current iteration number
 #' the \code{control} argument.
 #' @param control a list of optimization output controls (see \link[stats]{nlminb})
-#' @note The implemetation was modified from that of
+#' @note The implementation was modified from that of
 #' https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R
 #' @export
-profile.ctsmTMB.fit = function(fit,
+profile.ctsmTMB.fit = function(fitted,
                                parlist,
                                grid.size = rep(10, length(parlist)),
                                grid.qnt = rep(3, length(parlist)),
                                hessian=FALSE,
                                silent=FALSE,
-                               control=list(trace=0,iter.max=1e3,eval.max=1e3)
+                               control=list(trace=0,iter.max=1e3,eval.max=1e3),
+                               ...
 ){
+  
+  fit <- fitted
   
   if(missing(fit)){
     stop("Please supply a fit from a ctsmTMB model.")
@@ -544,7 +548,7 @@ profile.ctsmTMB.fit = function(fit,
 }
 
 #' #' Plot a profile likelihood ctsmTMB object
-#' @param x a profile.ctstTMB object
+#' @param x a profile.ctsmTMB object
 #' @param y not in use
 #' @param include.opt boolean which indicates whether or not to include the
 #' total likelihood optimizer in the plot.

@@ -133,17 +133,17 @@ The initial parameters (supplied by the user) are stored here
 nll$par
 ```
 
-The objective function can be evaluted by
+The objective function can be evaluated by
 ```{r}
 nll$fn(nll$par)
 ```
 
-The gradient can be evaluted by
+The gradient can be evaluated by
 ```{r}
 nll$gr(nll$par)
 ```
 
-The hessian can be evaluted by
+The hessian can be evaluated by
 ```{r}
 nll$he(nll$par)
 ```

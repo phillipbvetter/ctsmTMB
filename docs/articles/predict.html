@@ -176,7 +176,7 @@ alternative to use the initial guesses defined in
 <p>This argument is a boolean which determines whether a pure
 <strong>R</strong> (<code>use.cpp=FALSE</code>, default) or
 <strong>C++</strong> (<code>use.cpp=TRUE</code>) implementation is used
-to calculcate the predictions.</p>
+to calculate the predictions.</p>
 <p>The advantage of the <strong>C++</strong> implementation is
 computational speed but this comes at the cost of 5-10 seconds
 compilation time (the first time in a session that the
@@ -353,7 +353,7 @@ predictions, and associated covariances.</p>
 <span><span class="co">## 6  0  5   0 0.05       5 1.120086 0.050244286</span></span></code></pre>
 <p>The <em>observations</em> <code>data.frame</code> currently only
 contain mean estimates, which are obtained by passing the mean state
-estiamtes through the observation function, which is this case is <span class="math inline">\(y = h(x) = x\)</span>. The actual observed data is
+estimates through the observation function, which is this case is <span class="math inline">\(y = h(x) = x\)</span>. The actual observed data is
 also provided with the suffix <em>.data</em>.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred</span><span class="op">$</span><span class="va">observations</span><span class="op">)</span></span></code></pre></div>
@@ -398,7 +398,7 @@ likely parameters of the model:</p>
 <span><span class="co">##  13:    -78.262281:  18.5649 0.888761</span></span>
 <span><span class="co">##  14:    -78.262281:  18.5649 0.888771</span></span></code></pre>
 <pre><code><span><span class="co">##   Optimization finished!:</span></span>
-<span><span class="co">##             Elapsed time: 0.003 seconds.</span></span>
+<span><span class="co">##             Elapsed time: 0.002 seconds.</span></span>
 <span><span class="co">##             The objective value is: -7.826228e+01</span></span>
 <span><span class="co">##             The maximum gradient component is: 2.1e-06</span></span>
 <span><span class="co">##             The convergence message is: relative convergence (4)</span></span>

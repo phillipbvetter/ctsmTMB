@@ -273,8 +273,8 @@ estimation can be performed on the data at hand.</p>
 <p>In this particular example we generate some fake data. This can be
 achieved by simulating a stochastic realization of the stochastic
 differential equation, and adding some observation noise to it.</p>
-<p>We acheive this task using the <code>simulate</code> method of the
-model object, which perform stochatic simulations based on the <a href="https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method" class="external-link">Euler-Maruyama
+<p>We achieve this task using the <code>simulate</code> method of the
+model object, which perform stochastic simulations based on the <a href="https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method" class="external-link">Euler-Maruyama
 scheme</a>. The user is referred to the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html" class="external-link">simulation
 vignette</a> for further details.</p>
 <p>We choose the true parameters to be <span class="math display">\[
@@ -337,7 +337,7 @@ specified inputs and observations, in this case <code>u</code> and
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.05 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.051 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
 <pre><code><span><span class="co">##   0:     1400.0171:  5.00000  0.00000 0.100000</span></span>
 <span><span class="co">##   1:    -64.612226:  4.98142 0.0913549  1.09565</span></span>
@@ -361,7 +361,7 @@ specified inputs and observations, in this case <code>u</code> and
 <span><span class="co">##  19:    -75.852209:  9.27737  1.03232 0.912025</span></span>
 <span><span class="co">##  20:    -75.852209:  9.27778  1.03232 0.912024</span></span></code></pre>
 <pre><code><span><span class="co">##   Optimization finished!:</span></span>
-<span><span class="co">##             Elapsed time: 0.003 seconds.</span></span>
+<span><span class="co">##             Elapsed time: 0.004 seconds.</span></span>
 <span><span class="co">##             The objective value is: -7.585221e+01</span></span>
 <span><span class="co">##             The maximum gradient component is: 5.4e-05</span></span>
 <span><span class="co">##             The convergence message is: relative convergence (4)</span></span>
@@ -375,7 +375,7 @@ procedure is construction of the AD graph of the underlying likelihood
 function, but the time spent for this task relative to the optimization
 time will even out for models with more parameters.</em></p>
 <p>The output generated during the optimization is the objective
-(negativ log-likelihood) value and the parameter values at the current
+(negative log-likelihood) value and the parameter values at the current
 step. The optimizer used by <strong>ctsmTMB</strong> is the
 <em>nlminb</em> optimizer from the <em>stats</em> library.</p>
 <p>We refer the user to the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimation
@@ -395,7 +395,7 @@ optimizer than <em>nlminb</em>.</p>
 <span><span class="co">##  [6] "sd.fixed"     "cov.fixed"    "states"       "residuals"    "observations"</span></span>
 <span><span class="co">## [11] "tvalue"       "Pr.tvalue"    "private"</span></span></code></pre>
 <p>The first is a boolean which indicates whether estimation was
-succesful</p>
+successful</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">convergence</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] 0</span></span></code></pre>
@@ -511,7 +511,7 @@ prediction residuals. The model residuals are contained in
 <div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">residuals</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] "residuals"  "sd"         "normalized" "cov"</span></span></code></pre>
-<p>We can also easily generate a reisdual analysis plot with the
+<p>We can also easily generate a residual analysis plot with the
 <strong>S3</strong> plot.ctsmTMB.fit method. This is actually the
 default arguments to <code>plot.ctsmTMB.fit</code>. This produces a
 time-series of the residuals, a histogram, a quantile-quantile plot,
@@ -548,13 +548,14 @@ which must be strictly positive.</p>
 <p><strong>Example</strong> In this model <span class="math inline">\(\theta\)</span> should be a strictly positive
 parameter <span class="math inline">\(\hat{\theta} =
 \exp(\log\theta)\)</span>. This can be achieved by setting the following
-algrabic expression:</p>
+algebraic expression:</p>
 <div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>The effect of this is to replace all occurences of <code>theta</code>
-in the model equations with <code>exp(logtheta)</code>. The final thing
-to do is to add a new parameter entry to the model object which
-describes values for <code>logtheta</code></p>
+<p>The effect of this is to replace all occurrences of
+<code>theta</code> in the model equations with
+<code>exp(logtheta)</code>. The final thing to do is to add a new
+parameter entry to the model object which describes values for
+<code>logtheta</code></p>
 <div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span>logtheta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial<span class="op">=</span><span class="fl">5</span>, lower<span class="op">=</span><span class="fl">0</span>, upper<span class="op">=</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>

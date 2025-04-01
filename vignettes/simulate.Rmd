@@ -25,7 +25,7 @@ $$
 \mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0}\right\}
 $$
 
-A *k*-step **simulation** is a sample of the stochastic path of the model stochatic differential equation *k* time-steps into the future, conditioned on the current state estimate with mean and covariance
+A *k*-step **simulation** is a sample of the stochastic path of the model stochastic differential equation *k* time-steps into the future, conditioned on the current state estimate with mean and covariance
 $$
 \hat{x}_{i|i} = \mathrm{E}\left[ x_{t_{i}} | y_{t_{i}} \right] \\
 P_{i|i} = \mathrm{V}\left[ x_{t_{i}} | y_{t_{i}} \right]

@@ -163,7 +163,7 @@ y_{N-1},...,y_{t_{k}},...,y_{t_1}, y_{t_0} \right]
 <li>The likelihood contributions from the Kalman filters are based on
 the <em>prior</em> estimates, which are one-step-ahead predictions. This
 gives rise to <em>independent</em> one-step-ahead residuals, ideal for
-residaul analysis and goodness-of-fit model validation. The Laplace
+residual analysis and goodness-of-fit model validation. The Laplace
 filter does not produce such residuals inherently, and must instead
 compute these on the side. Residual calculations are disabled by default
 and determined with the <code>laplace.residuals</code> argument. The
@@ -207,7 +207,7 @@ vector of length <code>diff(data$t)</code> specifying all individual
 time-steps. The input values are interpolated linearly between
 time-points if more than one step is taken.</p>
 <ol style="list-style-type: decimal">
-<li><p><strong>Kalman filters:</strong> In this case the arugment
+<li><p><strong>Kalman filters:</strong> In this case the argument
 controls the time-step used for the <em>euler</em> and <em>rk4</em> ODE
 solvers.</p></li>
 <li><p><strong>Laplace filter:</strong> In this case the argument

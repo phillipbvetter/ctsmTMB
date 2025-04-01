@@ -7,7 +7,7 @@
 \method{plot}{ctsmTMB.profile}(x, y, include.opt = TRUE, ...)
 }
 \arguments{
-\item{x}{a profile.ctstTMB object}
+\item{x}{a profile.ctsmTMB object}
 
 \item{y}{not in use}
 

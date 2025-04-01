@@ -34,7 +34,8 @@ ctsmTMB = R6::R6Class(
     initialize = function() {
       # modelname, directory and path (directory+name)
       private$modelname = "ctsmTMB_model"
-      private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE, winslash = "/")
+      # private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE, winslash = "/")
+      private$cppfile.directory = NULL
       private$cppfile.path = NULL
       private$cppfile.path.with.method = NULL
       private$modelname.with.method = NULL
@@ -193,7 +194,7 @@ ctsmTMB = R6::R6Class(
     #' observation variable should be present in the data provided when calling
     #' \code{estimate(.data)} for parameter estimation.
     #' 
-    #' @param form formula class specifying the obsevation equation to be added to the system.
+    #' @param form formula class specifying the observation equation to be added to the system.
     #' @param ... additional formulas identical to \code{form} to specify multiple observation equations at a time.
     #' @param obsnames character vector specifying the name of the observation. When the observation left-hand side
     #' consists of more than just a single variable name (when its class is 'call' instead of 'name') it will be 
@@ -246,14 +247,14 @@ ctsmTMB = R6::R6Class(
     #' @description Specify the variance of an observation equation.
     #' 
     #' A defined observation variable \code{y} in e.g. \code{addObs(y ~ 
-    #' h(t,<states>,<inputs>)} is pertubed by Gaussian noise with zero mean and 
+    #' h(t,<states>,<inputs>)} is perturbed by Gaussian noise with zero mean and 
     #' variance 
     #' to-be specified using \code{setVariance(y ~ p(t,<states>,<inputs>)}. 
     #' We can for instance declare \code{setVariance(y ~ sigma_x^2} 
     #' where \code{sigma_x} is a fixed effect parameter to be declared through 
     #' \code{setParameter}.
     #' 
-    #' @param form formula class specifying the obsevation equation to be added 
+    #' @param form formula class specifying the observation equation to be added 
     #' to the system.
     #' @param ... additional formulas identical to \code{form} to specify multiple 
     #' observation equations at a time.
@@ -538,7 +539,7 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     #' @description 
     #' A scalar value that is multiplied onto the estimated
-    #' intiial state covariance matrix. The scaling is only applied when the
+    #' initial state covariance matrix. The scaling is only applied when the
     #' initial state/cov is estimated, not when it is set by the user.
     #' @param scaling a numeric scalar value.
     
@@ -953,7 +954,7 @@ ctsmTMB = R6::R6Class(
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
     #' system contains time-varying inputs, the first element of these is used.
     #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
-    #' methods). The loss function is per default quadratic in the one-step residauls as is natural 
+    #' methods). The loss function is per default quadratic in the one-step residuals as is natural 
     #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the 
     #' distribution is considered too small i.e. outliers are weighted too much, then one 
     #' can choose loss functions that accounts for this. The three available types available:
@@ -964,8 +965,8 @@ ctsmTMB = R6::R6Class(
     #' 
     #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff 
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid 
-    #' approxmation respectively) for smooth derivatives.
-    #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuls
+    #' approximation respectively) for smooth derivatives.
+    #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
     #' using the method of \link[TMB]{oneStepPredict}.
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param control list of control parameters parsed to \code{nlminb} as its \code{control} argument. 
@@ -1091,7 +1092,7 @@ ctsmTMB = R6::R6Class(
     #' @param method character vector specifying the filtering method used for state/likelihood calculations. 
     #' Must be one of either "lkf", "ekf", "laplace".
     #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
-    #' methods). The loss function is per default quadratic in the one-step residauls as is natural 
+    #' methods). The loss function is per default quadratic in the one-step residuals as is natural 
     #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the 
     #' distribution is considered too small i.e. outliers are weighted too much, then one 
     #' can choose loss functions that accounts for this. The three available types available:
@@ -1102,7 +1103,7 @@ ctsmTMB = R6::R6Class(
     #' 
     #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff 
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid 
-    #' approxmation respectively) for smooth derivatives.
+    #' approximation respectively) for smooth derivatives.
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
@@ -1187,7 +1188,7 @@ ctsmTMB = R6::R6Class(
     #' data updates).
     #' @param return.k.ahead numeric vector of integers specifying which n.ahead predictions to that
     #' should be returned.
-    #' @param return.covariance booelan value to indicate whether the covariance (instead of the correlation) 
+    #' @param return.covariance boolean value to indicate whether the covariance (instead of the correlation) 
     #' should be returned.
     #' @param estimate.initial.state bool - stationary estimation of initial mean and covariance
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
@@ -1300,7 +1301,7 @@ ctsmTMB = R6::R6Class(
     #' data updates).
     #' @param return.k.ahead numeric vector of integers specifying which n.ahead predictions to that
     #' should be returned.
-    #' @param return.covariance booelan value to indicate whether the covariance (instead of the correlation) 
+    #' @param return.covariance boolean value to indicate whether the covariance (instead of the correlation) 
     #' should be returned.
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param ode.timestep numeric value. Sets the time step-size in numerical filtering schemes. 
@@ -1327,11 +1328,11 @@ ctsmTMB = R6::R6Class(
     #' The method is slower although probably has some precision advantages, and allows for non-Gaussian
     #' observation noise (not yet implemented). One-step / K-step residuals are not yet available in
     #' the package.
-    #' 2. (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
+    #' 2. (Continuous-Discrete) Extended Kalman Filter where the system dynamics are linearized
     #' to handle potential non-linearities. This is computationally the fastest method.
-    #' 3. (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
+    #' 3. (Continuous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
     #' which improves the mean and covariance estimates when the system display high nonlinearity, and
-    #' circumvents the necessity to compute the jacobian of the drift and observation functions.
+    #' circumvents the necessity to compute the Jacobian of the drift and observation functions.
     #' 
     #' All package features are currently available for the kalman filters, while TMB is limited to
     #' parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
@@ -1914,6 +1915,33 @@ ctsmTMB = R6::R6Class(
         stop("You must choose one of the following ode solvers:\n",
              paste(available.ode.solvers,collase=" "))
       }
+      
+      # If using an RTMBode solver check if RTMBode is available
+      RTMBode.solvers <- c("lsoda", 
+                           "lsode", 
+                           "lsodes", 
+                           "lsodar", 
+                           "vode", 
+                           "daspk",
+                           "ode23", 
+                           "ode45", 
+                           "radau", 
+                           "bdf", 
+                           "bdf_d", 
+                           "adams", 
+                           "impAdams", 
+                           "impAdams_d")
+      bool = ode.solver %in% RTMBode.solvers
+      if(bool){
+        check.for.package <- requireNamespace("RTMBode", quietly=TRUE)
+        if(!check.for.package){
+          stop("The RTMBode package is not installed. Please install the package with:
+        install.packages('RTMBode', repos = c('https://kaskr.r-universe.dev', 'https://cloud.r-project.org'))
+  or visit https://github.com/kaskr/RTMB for more information."
+          )
+        }
+      }
+      
       
       # set flag
       switch(ode.solver,

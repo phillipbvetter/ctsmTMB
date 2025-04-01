@@ -226,7 +226,7 @@ makeADFun_laplace2_rtmb = function(self, private)
 # RETURN FIT FOR LAPLACE
 #######################################################
 #######################################################
-calculcate_fit_statistics_laplace2 <- function(self, private, laplace.residuals){
+calculate_fit_statistics_laplace2 <- function(self, private, laplace.residuals){
   
   # Initialization and clearing -----------------------------------
   if (is.null(private$opt)) {
@@ -283,7 +283,7 @@ calculcate_fit_statistics_laplace2 <- function(self, private, laplace.residuals)
   
   # compute one-step residuals
   if(laplace.residuals){
-    message("Calculating one-step ahead residuls...")
+    message("Calculating one-step ahead residuals...")
     res <- RTMB::oneStepPredict(private$nll,
                                 observation.name="obsMat",
                                 method="oneStepGaussian",

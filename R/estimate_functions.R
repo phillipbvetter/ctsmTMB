@@ -61,11 +61,11 @@ create_fit = function(self, private, laplace.residuals){
   # }
   
   if(private$method=="laplace"){
-    calculcate_fit_statistics_laplace(self, private, laplace.residuals)
+    calculate_fit_statistics_laplace(self, private, laplace.residuals)
   }
   
   if(private$method=="laplace2"){
-    calculcate_fit_statistics_laplace2(self, private, laplace.residuals)
+    calculate_fit_statistics_laplace2(self, private, laplace.residuals)
   }
   
   return(invisible(self))

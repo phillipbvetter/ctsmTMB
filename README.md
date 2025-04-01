@@ -53,11 +53,10 @@ observation equations).
 
 The primary work-horse of **ctsmTMB** is the `estimate` method, which
 carries out inference by minimizing the (negative log) likelihood using
-the `stats::nlminb` quasi-Newton optimizer due to [D.
-Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The resulting
-object contains the maximum likelihood parameter and state estimates,
-and associated marginal uncertainties. The available inference methods
-are the Linear and Extended Kalman filters in addition to filtration
+the `stats::nlminb` quasi-Newton optimizer. The resulting object
+contains the maximum likelihood parameter and state estimates, and
+associated marginal uncertainties. The available inference methods are
+the Linear and Extended Kalman filters in addition to filtration
 (actually smoothing) using a Laplace approximation approach.
 <!-- The user can extract the likelihood function handles (function, gradient and hessian) with the `likelihood` method if e.g. they want to use another optimizer. -->
 
@@ -73,9 +72,9 @@ for additional speed in **C++** using `Rcpp`.
 
 The following state reconstruction algorithms are currently available:
 
-1.  The (Continous-Discrete) Linear Kalman Filter, `lkf`.
+1.  The (Continuous-Discrete) Linear Kalman Filter, `lkf`.
 
-2.  The (Continous-Discrete) Extended Kalman Filter, `ekf`.
+2.  The (Continuous-Discrete) Extended Kalman Filter, `ekf`.
 
 3.  The (Continuous-Discrete) Laplace “Filter” `laplace`.
 
@@ -108,8 +107,8 @@ implements the stability-improved method due to [Thygesen,
 A particular advantage of Laplace filter is:
 
 1.  The possibility for unimodal non-Gaussian observation densities to
-    accommodate the need for e.g. heavier distribution tails. Not
-    implemented.
+    accommodate the need for e.g. heavier distribution tails. *Not yet
+    implemented*.
 
 The method is typically not useful for model-training with the goal of
 forecasting because the likelihood contributions are based on smoothed
@@ -188,7 +187,7 @@ You can access the documentation for all methods with
 ?ctsmTMB
 ```
 
-or invidually using the standard syntax
+or individually using the standard syntax
 
 ``` r
 ?ctsmTMB::addSystem

@@ -74,19 +74,20 @@
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for ctsmTMB.fit</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/profile.html" class="external-link">profile</a></span><span class="op">(</span></span>
-<span>  <span class="va">fit</span>,</span>
+<span>  <span class="va">fitted</span>,</span>
 <span>  <span class="va">parlist</span>,</span>
 <span>  grid.size <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">parlist</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  grid.qnt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">parlist</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  hessian <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>trace <span class="op">=</span> <span class="fl">0</span>, iter.max <span class="op">=</span> <span class="fl">1000</span>, eval.max <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>trace <span class="op">=</span> <span class="fl">0</span>, iter.max <span class="op">=</span> <span class="fl">1000</span>, eval.max <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
-    <dl><dt>fit</dt>
+    <dl><dt>fitted</dt>
 <dd><p>a ctmsTMB fit object</p></dd>
 
 
@@ -121,10 +122,14 @@ the <code>control</code> argument.</p></dd>
 <dt>control</dt>
 <dd><p>a list of optimization output controls (see <a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a>)</p></dd>
 
+
+<dt>...</dt>
+<dd><p>various arguments (not in use)</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
-    <p>The implemetation was modified from that of
+    <p>The implementation was modified from that of
 https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R</p>
     </div>
 

@@ -6,9 +6,6 @@ using namespace Eigen;
 static Ziggurat::Ziggurat::Ziggurat zigg; //zigg.norm() draws from a normal distribution?
 const double pi = M_PI;
 
-//#ifndef _HELPERFUNS_ 
-//#define _HELPERFUNS_
-
 // Inverse logit function
 // double invlogit2(double x);
 
@@ -155,7 +152,3 @@ MatrixXd euler_maruyama_simulation2(
   // Return
   return stateMat_next;
 }
-
-
-
-//#endif // _HELPERFUNS_

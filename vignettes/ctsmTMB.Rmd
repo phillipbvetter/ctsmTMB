@@ -141,7 +141,7 @@ The model has now been fully specified, and state and parameter estimation can b
 
 In this particular example we generate some fake data. This can be achieved by simulating a stochastic realization of the stochastic differential equation, and adding some observation noise to it.
 
-We acheive this task using the  `simulate` method of the model object, which perform stochatic simulations based on the [Euler-Maruyama scheme](https://en.wikipedia.org/wiki/Euler–Maruyama_method). The user is referred to the [simulation vignette](https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html) for further details.
+We achieve this task using the  `simulate` method of the model object, which perform stochastic simulations based on the [Euler-Maruyama scheme](https://en.wikipedia.org/wiki/Euler–Maruyama_method). The user is referred to the [simulation vignette](https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html) for further details.
 
 We choose the true parameters to be
 $$
@@ -201,7 +201,7 @@ fit <- model$estimate(data)
 
 _**Note**: a time-consuming step in the estimation procedure is construction of the AD graph of the underlying likelihood function, but the time spent for this task relative to the optimization time will even out for models with more parameters._
 
-The output generated during the optimization is the objective (negativ log-likelihood) value and the parameter values at the current step. The optimizer used by **ctsmTMB** is the *nlminb* optimizer from the *stats* library.
+The output generated during the optimization is the objective (negative log-likelihood) value and the parameter values at the current step. The optimizer used by **ctsmTMB** is the *nlminb* optimizer from the *stats* library.
 
 We refer the user to the [estimation vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html) for further details on the available arguments to `estimate`, and to the ['use another optimizer' vignette](https://phillipbvetter.github.io/ctsmTMB/articles/using_another_optimizer.html) for details on how to use another optimizer than *nlminb*.
 
@@ -214,7 +214,7 @@ The `fit` object contains the following entries
 names(fit)
 ```
 
-The first is a boolean which indicates whether estimation was succesful
+The first is a boolean which indicates whether estimation was successful
 ```{r}
 fit$convergence
 ```
@@ -335,7 +335,7 @@ Model validation typically involves inspecting the properties of prediction resi
 names(fit$residuals)
 ```
 
-We can also easily generate a reisdual analysis plot with the **S3** plot.ctsmTMB.fit method. This is actually the default arguments to `plot.ctsmTMB.fit`. This produces a time-series of the residuals, a histogram, a quantile-quantile plot, auto/partial-correlations and a cumulative periodogram:
+We can also easily generate a residual analysis plot with the **S3** plot.ctsmTMB.fit method. This is actually the default arguments to `plot.ctsmTMB.fit`. This produces a time-series of the residuals, a histogram, a quantile-quantile plot, auto/partial-correlations and a cumulative periodogram:
 
 ```{r, fig.height=9,fig.width=9, out.width="100%", fig.align='center'}
 plot(fit)
@@ -361,12 +361,12 @@ plot(prof)
 
 The model definitions can be kept clean by defining algebraic expressions which replace variables in the defined equations. A typical scenario where algebraic equations can be used is to rename parameters which must be strictly positive. 
 
-**Example** In this model $\theta$ should be a strictly positive parameter $\hat{\theta} = \exp(\log\theta)$. This can be achieved by setting the following algrabic expression:
+**Example** In this model $\theta$ should be a strictly positive parameter $\hat{\theta} = \exp(\log\theta)$. This can be achieved by setting the following algebraic expression:
 ```{r}
 model$setAlgebraics(theta ~ exp(logtheta))
 ```
 
-The effect of this is to replace all occurences of `theta` in the model equations with `exp(logtheta)`. The final thing to do is to add a new parameter entry to the model object which describes values for `logtheta` 
+The effect of this is to replace all occurrences of `theta` in the model equations with `exp(logtheta)`. The final thing to do is to add a new parameter entry to the model object which describes values for `logtheta` 
 ```{r}
 model$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
 ```
