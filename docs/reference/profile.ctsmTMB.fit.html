@@ -27,15 +27,16 @@
     <a class="dropdown-item" href="../articles/estimate.html">Estimation</a>
     <a class="dropdown-item" href="../articles/predict.html">Prediction</a>
     <a class="dropdown-item" href="../articles/simulate.html">Simulation</a>
-    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Using another Optimizer</a>
+    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Likelihood (Extracting Function Handlers)</a>
   </div>
 </li>
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-math-details">Math Details</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-math-details">
-    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Approximation</a>
-    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalmn Filter</a>
+    <a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a>
     <a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a>
   </div>
 </li>
 <li class="active nav-item">
@@ -78,8 +79,8 @@
 <span>  grid.size <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">parlist</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  grid.qnt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">parlist</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  hessian <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  trace <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>trace <span class="op">=</span> <span class="va">trace</span>, iter.max <span class="op">=</span> <span class="fl">1000</span>, eval.max <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>trace <span class="op">=</span> <span class="fl">0</span>, iter.max <span class="op">=</span> <span class="fl">1000</span>, eval.max <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -112,8 +113,8 @@ the grid points from the mean value in multiples of the standard deviation.</p><
 the profile optimization.</p></dd>
 
 
-<dt>trace</dt>
-<dd><p>the optimization output flag (see <a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a>) given to
+<dt>silent</dt>
+<dd><p>boolean whether or not to mute current iteration number
 the <code>control</code> argument.</p></dd>
 
 

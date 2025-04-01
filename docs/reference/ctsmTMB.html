@@ -33,15 +33,16 @@ thus must be functions of at least one state."><meta property="og:image" content
     <a class="dropdown-item" href="../articles/estimate.html">Estimation</a>
     <a class="dropdown-item" href="../articles/predict.html">Prediction</a>
     <a class="dropdown-item" href="../articles/simulate.html">Simulation</a>
-    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Using another Optimizer</a>
+    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Likelihood (Extracting Function Handlers)</a>
   </div>
 </li>
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-math-details">Math Details</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-math-details">
-    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Approximation</a>
-    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalmn Filter</a>
+    <a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a>
     <a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a>
   </div>
 </li>
 <li class="active nav-item">
@@ -93,6 +94,7 @@ which can be used to define a stochastic state space system.</p>
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
 
 <ul><li><p><a href="#method-ctsmTMB-new"><code>ctsmTMB$new()</code></a></p></li>
+<li><p><a href="#method-ctsmTMB-.private"><code>ctsmTMB$.private()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-addSystem"><code>ctsmTMB$addSystem()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-addObs"><code>ctsmTMB$addObs()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-setVariance"><code>ctsmTMB$setVariance()</code></a></p></li>
@@ -103,7 +105,6 @@ which can be used to define a stochastic state space system.</p>
 <li><p><a href="#method-ctsmTMB-setInitialVarianceScaling"><code>ctsmTMB$setInitialVarianceScaling()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-setLamperti"><code>ctsmTMB$setLamperti()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-setModelname"><code>ctsmTMB$setModelname()</code></a></p></li>
-<li><p><a href="#method-ctsmTMB-setCppfilesDirectory"><code>ctsmTMB$setCppfilesDirectory()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-setMAP"><code>ctsmTMB$setMAP()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-getSystems"><code>ctsmTMB$getSystems()</code></a></p></li>
 <li><p><a href="#method-ctsmTMB-getObservations"><code>ctsmTMB$getObservations()</code></a></p></li>
@@ -131,6 +132,14 @@ which can be used to define a stochastic state space system.</p>
 </div>
 
 
+</div><p></p><hr><a id="method-ctsmTMB-.private"></a><div class="section">
+<h3 id="method-private-">Method <code>.private()</code><a class="anchor" aria-label="anchor" href="#method-private-"></a></h3>
+<p>Extract the private fields of a ctsmTMB model object</p><div class="section">
+<h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">.private</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+
 </div><p></p><hr><a id="method-ctsmTMB-addSystem"></a><div class="section">
 <h3 id="method-addsystem-">Method <code><a href="addSystem.html">addSystem()</a></code><a class="anchor" aria-label="anchor" href="#method-addsystem-"></a></h3>
 <p>Define and add multiple stochastic differential equation governing the
@@ -139,7 +148,7 @@ process of individual state variables on the form</p>
 + g2(t,&lt;states&gt;,&lt;inputs&gt;) * dw2 + ... + gN(t,&lt;states&gt;,&lt;inputs&gt;) * dwN</code></p>
 <p>where <code>f</code> is the drift, and <code>g1, g2, ..., gN</code> are diffusions, with
 differential brownian motions dw1, dw2, ..., dwN.</p><div class="section">
-<h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
+<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -167,7 +176,7 @@ The observation equation takes the form</p>
 distributed noise with zero mean and variance to be specified. The
 observation variable should be present in the data provided when calling
 <code>estimate(.data)</code> for parameter estimation.</p><div class="section">
-<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
+<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span>, obsnames <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -200,7 +209,7 @@ to-be specified using <code>setVariance(y ~ p(t,&lt;states&gt;,&lt;inputs&gt;)</
 We can for instance declare <code>setVariance(y ~ sigma_x^2</code>
 where <code>sigma_x</code> is a fixed effect parameter to be declared through
 <code>setParameter</code>.</p><div class="section">
-<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
+<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -227,7 +236,7 @@ variance equations is an input variable. If e.g. the system equation contains
 an input variable <code>u</code> then it is declared using <code>addInput(u)</code>.
 The input <code>u</code> must be contained in the data.frame <code>.data</code> provided
 when calling the <code>estimate</code> or <code>predict</code> methods.</p><div class="section">
-<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">addInput</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -252,7 +261,7 @@ bound and the third value is the upper optimization bound.</p></li>
 parameters, and the parameter names are provided as rownames of the matrix.
 The columns values corresponds to the description in the vector format above.</p></li>
 </ol><div class="section">
-<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -276,7 +285,7 @@ in the system equation one can transform into the log domain using the algebraic
 by <code>exp(logtheta)</code> when compiling the C++ function. Note that you must provide values
 for <code>logtheta</code> now instead of <code>theta</code> when declaring parameters through
 <code>setParameter</code></p><div class="section">
-<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">form</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -296,20 +305,14 @@ for <code>logtheta</code> now instead of <code>theta</code> when declaring param
 </div><p></p><hr><a id="method-ctsmTMB-setInitialState"></a><div class="section">
 <h3 id="method-setinitialstate-">Method <code><a href="setInitialState.html">setInitialState()</a></code><a class="anchor" aria-label="anchor" href="#method-setinitialstate-"></a></h3>
 <p>Declare the initial state values i.e. mean and covariance for the system states.</p><div class="section">
-<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="va">initial.state</span>, estimate <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="va">initial.state</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
 <h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>initial.state</code></dt>
-<dd><p>a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state</p></dd>
-
-
-<dt><code>estimate</code></dt>
-<dd><p>boolean value which indicates whether or not the initial conditions
-shall be estimated as fixed effects parameters. The provided mean and covariance are then
-used as initial guesses</p></dd>
+<dd><p>a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state.</p></dd>
 
 
 </dl><p></p></div>
@@ -320,7 +323,7 @@ used as initial guesses</p></dd>
 <p>A scalar value that is multiplied onto the estimated
 intiial state covariance matrix. The scaling is only applied when the
 initial state/cov is estimated, not when it is set by the user.</p><div class="section">
-<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setInitialVarianceScaling</span><span class="op">(</span><span class="va">scaling</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -344,7 +347,7 @@ is currently supported</p><ol><li><p>'identity' - when the diffusion is state-in
 <li><p>'logit' - when the diffusion is proportional to x * (1-x) * dw</p></li>
 <li><p>'sqrt-logit' - when the diffusion is proportional to sqrt(x * (1-x)) * dw</p></li>
 </ol><div class="section">
-<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
+<h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setLamperti</span><span class="op">(</span><span class="va">transforms</span>, states <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -367,7 +370,7 @@ is currently supported</p><ol><li><p>'identity' - when the diffusion is state-in
 <p>When calling <code><a href="https://rdrr.io/pkg/TMB/man/MakeADFun.html" class="external-link">TMB::MakeADFun</a></code> the (negative log) likelihood function
 is created in the directory specified by the <code>setCppfilesDirectory</code>
 method with name <code>&lt;modelname&gt;.cpp</code></p><div class="section">
-<h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
+<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="va">name</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -375,25 +378,6 @@ method with name <code>&lt;modelname&gt;.cpp</code></p><div class="section">
 <h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>name</code></dt>
 <dd><p>string defining the model name.</p></dd>
-
-
-</dl><p></p></div>
-</div>
-
-</div><p></p><hr><a id="method-ctsmTMB-setCppfilesDirectory"></a><div class="section">
-<h3 id="method-setcppfilesdirectory-">Method <code>setCppfilesDirectory()</code><a class="anchor" aria-label="anchor" href="#method-setcppfilesdirectory-"></a></h3>
-<p>Set the path directory where the constructed C++ file is created.
-You should specify the entire path, unless you want to construct a subfolder
-in the current working directory - then you can call e.g.
-<code>setCppfilesDirectory("folder_in_current_wd")</code>.</p><div class="section">
-<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">setCppfilesDirectory</span><span class="op">(</span><span class="va">directory</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
-<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
-<p></p><div class="arguments"><dl><dt><code>directory</code></dt>
-<dd><p>string specifying a local directory</p></dd>
 
 
 </dl><p></p></div>
@@ -410,7 +394,7 @@ with <code>mean</code> and <code>covariance</code> as provided.</p><div class="s
 </div>
 
 <div class="section">
-<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
+<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>mean</code></dt>
 <dd><p>mean vector of the Gaussian prior parameter distribution</p></dd>
 
@@ -470,7 +454,7 @@ with <code>mean</code> and <code>covariance</code> as provided.</p><div class="s
 </div>
 
 <div class="section">
-<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
+<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>type</code></dt>
 <dd><p>one of "all", free" or "fixed" parameters.</p></dd>
 
@@ -521,22 +505,21 @@ with <code>mean</code> and <code>covariance</code> as provided.</p><div class="s
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
-<span>  ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
+<span>  ode.solver <span class="op">=</span> <span class="st">"euler"</span>,</span>
 <span>  ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>  loss <span class="op">=</span> <span class="st">"quadratic"</span>,</span>
-<span>  loss_c <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  unscented_hyperpars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">1</span>, beta <span class="op">=</span> <span class="fl">0</span>, kappa <span class="op">=</span> <span class="fl">3</span> <span class="op">-</span> <span class="va">private</span><span class="op">$</span><span class="va">number.of.states</span><span class="op">)</span>,</span>
+<span>  loss_c <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>trace <span class="op">=</span> <span class="fl">1</span>, iter.max <span class="op">=</span> <span class="fl">1e+05</span>, eval.max <span class="op">=</span> <span class="fl">1e+05</span><span class="op">)</span>,</span>
 <span>  use.hessian <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  laplace.residuals <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  unconstrained.optim <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  compile <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  estimate.initial.state <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  silent <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
+<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>data</code></dt>
 <dd><p>data.frame containing time-vector 't', observations and inputs. The observations
 can take <code>NA</code>-values.</p></dd>
@@ -544,18 +527,7 @@ can take <code>NA</code>-values.</p></dd>
 
 <dt><code>method</code></dt>
 <dd><p>character vector specifying the filtering method used for state/likelihood calculations.
-Must be one of either "ekf", "ekf_rtmb", ukf" or "laplace".</p><ol><li><p>The natural TMB-style formulation where latent states are considered random effects
-and are integrated out using the Laplace approximation. This method only yields the gradient
-of the (negative log) likelihood function with respect to the fixed effects for optimization.
-The method is slower although probably has some precision advantages, and allows for non-Gaussian
-observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-the package.</p></li>
-<li><p>(Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-to handle potential non-linearities. This is computationally the fastest method.</p></li>
-<li><p>(Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.</p></li>
-</ol></dd>
+Must be one of either "lkf", "ekf", "laplace".</p></dd>
 
 
 <dt><code>ode.solver</code></dt>
@@ -597,11 +569,6 @@ approxmation respectively) for smooth derivatives.</p></dd>
 <dd><p>cutoff value for huber and tukey loss functions. Defaults to <code>c=3</code></p></dd>
 
 
-<dt><code>unscented_hyperpars</code></dt>
-<dd><p>the three hyper-parameters <code>alpha</code>, <code>beta</code> and <code>kappa</code> defining
-the unscented transformation.</p></dd>
-
-
 <dt><code>control</code></dt>
 <dd><p>list of control parameters parsed to <code>nlminb</code> as its <code>control</code> argument.
 See <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">?stats::nlminb</a></code> for more information</p></dd>
@@ -624,14 +591,10 @@ using the method of <a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" cl
 without any of the parameter bounds specified during <code>setParameter</code>.</p></dd>
 
 
-<dt><code>compile</code></dt>
-<dd><p>boolean value. The default (<code>FALSE</code>) is to not compile the C++ objective
-function but assume it is already compiled and corresponds to the specified model object. It is
-the user's responsibility to ensure correspondence between the specified model and the precompiled
-C++ object. If a precompiled C++ object is not found in the specified directory i.e.
-in <code>&lt;cppfile_directory&gt;/&lt;modelname&gt;/(dll/so)</code> then the compile flag is set to <code>TRUE</code>.
-If the user makes changes to system equations, observation equations, observation variances,
-algebraic relations or lamperi transformations then the C++ object should be recompiled.</p></dd>
+<dt><code>estimate.initial.state</code></dt>
+<dd><p>boolean value. When TRUE the initial state and covariance matrices are
+estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+system contains time-varying inputs, the first element of these is used.</p></dd>
 
 
 <dt><code>silent</code></dt>
@@ -653,41 +616,25 @@ have more control of the optimization workflow.</p><div class="section">
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">likelihood</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
-<span>  ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
+<span>  ode.solver <span class="op">=</span> <span class="st">"euler"</span>,</span>
 <span>  ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>  loss <span class="op">=</span> <span class="st">"quadratic"</span>,</span>
-<span>  loss_c <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  unscented_hyperpars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">1</span>, beta <span class="op">=</span> <span class="fl">0</span>, kappa <span class="op">=</span> <span class="fl">3</span> <span class="op">-</span> <span class="va">private</span><span class="op">$</span><span class="va">number.of.states</span><span class="op">)</span>,</span>
-<span>  compile <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  loss_c <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  estimate.initial.state <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  silent <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-14">Arguments<a class="anchor" aria-label="anchor" href="#arguments-14"></a></h4>
+<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>data</code></dt>
 <dd><p>a data.frame containing time-vector 't', observations and inputs.
 The observations can take <code>NA</code>-values.</p></dd>
 
 
 <dt><code>method</code></dt>
-<dd><p>character vector - one of either "ekf", "ukf" or "tmb". Sets the estimation
-method. The package has three available methods implemented:</p><ol><li><p>The natural TMB-style formulation where latent states are considered random effects
-and are integrated out using the Laplace approximation. This method only yields the gradient
-of the (negative log) likelihood function with respect to the fixed effects for optimization.
-The method is slower although probably has some precision advantages, and allows for non-Gaussian
-observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-the package.</p></li>
-<li><p>(Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-to handle potential non-linearities. This is computationally the fastest method.</p></li>
-<li><p>(Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.</p></li>
-</ol><p>All package features are currently available for the kalman filters, while TMB is limited to
-parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-with these methods (use the <code>predict</code> S3 method), and stochastic simulation is also available
-in the cases where long prediction horizons are sought, where the normality assumption will be
-inaccurate.</p></dd>
+<dd><p>character vector specifying the filtering method used for state/likelihood calculations.
+Must be one of either "lkf", "ekf", "laplace".</p></dd>
 
 
 <dt><code>ode.solver</code></dt>
@@ -735,19 +682,10 @@ approxmation respectively) for smooth derivatives.</p></dd>
 <dd><p>cutoff value for huber and tukey loss functions. Defaults to <code>c=3</code></p></dd>
 
 
-<dt><code>unscented_hyperpars</code></dt>
-<dd><p>the three hyper-parameters <code>alpha</code>, <code>beta</code> and <code>kappa</code> defining
-the unscented transformation.</p></dd>
-
-
-<dt><code>compile</code></dt>
-<dd><p>boolean value. The default (<code>FALSE</code>) is to not compile the C++ objective
-function but assume it is already compiled and corresponds to the specified model object. It is
-the user's responsibility to ensure correspondence between the specified model and the precompiled
-C++ object. If a precompiled C++ object is not found in the specified directory i.e.
-in <code>&lt;cppfile_directory&gt;/&lt;modelname&gt;/(dll/so)</code> then the compile flag is set to <code>TRUE</code>.
-If the user makes changes to system equations, observation equations, observation variances,
-algebraic relations or lamperi transformations then the C++ object should be recompiled.</p></dd>
+<dt><code>estimate.initial.state</code></dt>
+<dd><p>boolean value. When TRUE the initial state and covariance matrices are
+estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+system contains time-varying inputs, the first element of these is used.</p></dd>
 
 
 <dt><code>silent</code></dt>
@@ -766,43 +704,35 @@ state estimate as the initial condition.</p><div class="section">
 <h4 id="usage-25">Usage<a class="anchor" aria-label="anchor" href="#usage-25"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
-<span>  ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
-<span>  ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
-<span>  initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  unscented_hyperpars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">1</span>, beta <span class="op">=</span> <span class="fl">0</span>, kappa <span class="op">=</span> <span class="fl">3</span> <span class="op">-</span> <span class="va">private</span><span class="op">$</span><span class="va">number.of.states</span><span class="op">)</span>,</span>
-<span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  k.ahead <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
+<span>  ode.solver <span class="op">=</span> <span class="st">"euler"</span>,</span>
+<span>  ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
+<span>  k.ahead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
 <span>  return.k.ahead <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">k.ahead</span>,</span>
-<span>  return.covariance <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  return.covariance <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  estimate.initial.state <span class="op">=</span> <span class="va">private</span><span class="op">$</span><span class="va">estimate.initial</span>,</span>
+<span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  use.cpp <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-15">Arguments<a class="anchor" aria-label="anchor" href="#arguments-15"></a></h4>
+<h4 id="arguments-14">Arguments<a class="anchor" aria-label="anchor" href="#arguments-14"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>data</code></dt>
 <dd><p>data.frame containing time-vector 't', observations and inputs. The observations
 can take <code>NA</code>-values.</p></dd>
 
 
+<dt><code>pars</code></dt>
+<dd><p>fixed parameter vector parsed to the objective function for prediction/filtration. The default
+parameter values used are the initial parameters provided through <code>setParameter</code>, unless the <code>estimate</code>
+function has been run, then the default values will be those at the found optimum.</p></dd>
+
+
 <dt><code>method</code></dt>
-<dd><ol><li><p>The natural TMB-style formulation where latent states are considered random effects
-and are integrated out using the Laplace approximation. This method only yields the gradient
-of the (negative log) likelihood function with respect to the fixed effects for optimization.
-The method is slower although probably has some precision advantages, and allows for non-Gaussian
-observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-the package.</p></li>
-<li><p>(Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-to handle potential non-linearities. This is computationally the fastest method.</p></li>
-<li><p>(Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.</p></li>
-</ol><p>All package features are currently available for the kalman filters, while TMB is limited to
-parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-with these methods (use the <code>predict</code> S3 method), and stochastic simulation is also available
-in the cases where long prediction horizons are sought, where the normality assumption will be
-inaccurate.</p></dd>
+<dd><p>The prediction method</p></dd>
 
 
 <dt><code>ode.solver</code></dt>
@@ -827,26 +757,6 @@ which serves to link together the latent (random effects) states.</p></li>
 </ol></dd>
 
 
-<dt><code>initial.state</code></dt>
-<dd><p>a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state</p></dd>
-
-
-<dt><code>unscented_hyperpars</code></dt>
-<dd><p>the three hyper-parameters <code>alpha</code>, <code>beta</code> and <code>kappa</code> defining
-the unscented transformation.</p></dd>
-
-
-<dt><code>silent</code></dt>
-<dd><p>logical value whether or not to suppress printed messages such as 'Checking Data',
-'Building Model', etc. Default behaviour (FALSE) is to print the messages.</p></dd>
-
-
-<dt><code>pars</code></dt>
-<dd><p>fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through <code>setParameter</code>, unless the <code>estimate</code>
-function has been run, then the default values will be those at the found optimum.</p></dd>
-
-
 <dt><code>k.ahead</code></dt>
 <dd><p>integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
@@ -861,6 +771,23 @@ should be returned.</p></dd>
 <dt><code>return.covariance</code></dt>
 <dd><p>booelan value to indicate whether the covariance (instead of the correlation)
 should be returned.</p></dd>
+
+
+<dt><code>initial.state</code></dt>
+<dd><p>a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state</p></dd>
+
+
+<dt><code>estimate.initial.state</code></dt>
+<dd><p>bool - stationary estimation of initial mean and covariance</p></dd>
+
+
+<dt><code>silent</code></dt>
+<dd><p>logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.</p></dd>
+
+
+<dt><code>use.cpp</code></dt>
+<dd><p>a boolean to indicate whether to use C++ to perform calculations</p></dd>
 
 
 </dl><p></p></div>
@@ -880,25 +807,36 @@ state estimate as the initial condition.</p><div class="section">
 <h4 id="usage-26">Usage<a class="anchor" aria-label="anchor" href="#usage-26"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ctsmTMB</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
+<span>  pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  use.cpp <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
 <span>  ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
 <span>  ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>  simulation.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
-<span>  initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  unscented_hyperpars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">1</span>, beta <span class="op">=</span> <span class="fl">0</span>, kappa <span class="op">=</span> <span class="fl">3</span> <span class="op">-</span> <span class="va">private</span><span class="op">$</span><span class="va">number.of.states</span><span class="op">)</span>,</span>
-<span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  k.ahead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  return.k.ahead <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">k.ahead</span>,</span>
 <span>  n.sims <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  k.ahead <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  return.k.ahead <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">k.ahead</span></span>
+<span>  initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  estimate.initial.state <span class="op">=</span> <span class="va">private</span><span class="op">$</span><span class="va">estimate.initial</span>,</span>
+<span>  silent <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-16">Arguments<a class="anchor" aria-label="anchor" href="#arguments-16"></a></h4>
+<h4 id="arguments-15">Arguments<a class="anchor" aria-label="anchor" href="#arguments-15"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>data</code></dt>
 <dd><p>data.frame containing time-vector 't', observations and inputs. The observations
 can take <code>NA</code>-values.</p></dd>
+
+
+<dt><code>pars</code></dt>
+<dd><p>fixed parameter vector parsed to the objective function for prediction/filtration. The default
+parameter values used are the initial parameters provided through <code>setParameter</code>, unless the <code>estimate</code>
+function has been run, then the default values will be those at the found optimum.</p></dd>
+
+
+<dt><code>use.cpp</code></dt>
+<dd><p>a boolean to indicate whether to use C++ to perform calculations</p></dd>
 
 
 <dt><code>method</code></dt>
@@ -946,30 +884,6 @@ which serves to link together the latent (random effects) states.</p></li>
 <dd><p>timestep used in the euler-maruyama scheme</p></dd>
 
 
-<dt><code>initial.state</code></dt>
-<dd><p>a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state</p></dd>
-
-
-<dt><code>unscented_hyperpars</code></dt>
-<dd><p>the three hyper-parameters <code>alpha</code>, <code>beta</code> and <code>kappa</code> defining
-the unscented transformation.</p></dd>
-
-
-<dt><code>silent</code></dt>
-<dd><p>logical value whether or not to suppress printed messages such as 'Checking Data',
-'Building Model', etc. Default behaviour (FALSE) is to print the messages.</p></dd>
-
-
-<dt><code>pars</code></dt>
-<dd><p>fixed parameter vector parsed to the objective function for prediction/filtration. The default
-parameter values used are the initial parameters provided through <code>setParameter</code>, unless the <code>estimate</code>
-function has been run, then the default values will be those at the found optimum.</p></dd>
-
-
-<dt><code>n.sims</code></dt>
-<dd><p>number of simulations</p></dd>
-
-
 <dt><code>k.ahead</code></dt>
 <dd><p>integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
@@ -979,6 +893,23 @@ data updates).</p></dd>
 <dt><code>return.k.ahead</code></dt>
 <dd><p>numeric vector of integers specifying which n.ahead predictions to that
 should be returned.</p></dd>
+
+
+<dt><code>n.sims</code></dt>
+<dd><p>number of simulations</p></dd>
+
+
+<dt><code>initial.state</code></dt>
+<dd><p>a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state</p></dd>
+
+
+<dt><code>estimate.initial.state</code></dt>
+<dd><p>bool - stationary estimation of initial mean and covariance</p></dd>
+
+
+<dt><code>silent</code></dt>
+<dd><p>logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.</p></dd>
 
 
 <dt><code>return.covariance</code></dt>
@@ -1011,7 +942,7 @@ matrix is returned, otherwise only the marginal variances are returned.</p>
 </div>
 
 <div class="section">
-<h4 id="arguments-17">Arguments<a class="anchor" aria-label="anchor" href="#arguments-17"></a></h4>
+<h4 id="arguments-16">Arguments<a class="anchor" aria-label="anchor" href="#arguments-16"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>correlation</code></dt>
 <dd><p>boolean value. The default (<code>FALSE</code>) is to not provide the fixed effects parameter
 correlation matrix.</p></dd>
@@ -1028,7 +959,7 @@ correlation matrix.</p></dd>
 </div>
 
 <div class="section">
-<h4 id="arguments-18">Arguments<a class="anchor" aria-label="anchor" href="#arguments-18"></a></h4>
+<h4 id="arguments-17">Arguments<a class="anchor" aria-label="anchor" href="#arguments-17"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>plot.obs</code></dt>
 <dd><p>a vector to indicate which observations should be plotted for. If multiple
 are chosen a list of plots for each observation is returned.</p></dd>
@@ -1058,7 +989,7 @@ The default is FALSE in which case a histogram is returned instead.</p></dd>
 </div>
 
 <div class="section">
-<h4 id="arguments-19">Arguments<a class="anchor" aria-label="anchor" href="#arguments-19"></a></h4>
+<h4 id="arguments-18">Arguments<a class="anchor" aria-label="anchor" href="#arguments-18"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 

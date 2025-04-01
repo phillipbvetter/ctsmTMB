@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="description" content="ctsmTMB">
-<title>Estimating parameters and latent states • ctsmTMB</title>
+<title>Estimating Parameters • ctsmTMB</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
 <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="../apple-touch-icon.png">
@@ -19,7 +19,7 @@
 <link href="../deps/Source_Code_Pro-0.4.9/font.css" rel="stylesheet">
 <!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js" integrity="sha512-7O5pXpc0oCRrxk8RUfDYFgn0nO1t+jLuIOQdOMRp4APB7uZ4vSjspzp5y6YDtDs4VzUSTbWzBFZ/LKJhnyFOKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating parameters and latent states">
+<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js" integrity="sha512-7O5pXpc0oCRrxk8RUfDYFgn0nO1t+jLuIOQdOMRp4APB7uZ4vSjspzp5y6YDtDs4VzUSTbWzBFZ/LKJhnyFOKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating Parameters">
 <meta property="og:description" content="ctsmTMB">
 <meta property="og:image" content="/logo.png">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
@@ -53,15 +53,16 @@
     <a class="dropdown-item" href="../articles/estimate.html">Estimation</a>
     <a class="dropdown-item" href="../articles/predict.html">Prediction</a>
     <a class="dropdown-item" href="../articles/simulate.html">Simulation</a>
-    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Using another Optimizer</a>
+    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Likelihood (Extracting Function Handlers)</a>
   </div>
 </li>
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-math-details">Math Details</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-math-details">
-    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Approximation</a>
-    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalmn Filter</a>
+    <a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a>
     <a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a>
   </div>
 </li>
 <li class="nav-item">
@@ -94,7 +95,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Estimating parameters and latent states</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Estimating Parameters</h1>
                         <h4 data-toc-skip class="author"></h4>
             
       
@@ -104,161 +105,312 @@
 
     
     
-<p>In this document we demonstrate the functionality of
-<code>estimate</code> further. We use the Ornstein-Uhlenbeck process for
-this purpose.</p>
-<p><span class="math display">\[
-\mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \,
-\mathrm{d}B_{t}
-\]</span></p>
-<p><span class="math display">\[
-Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim
-\mathcal{N}\left(0,\sigma_{Y}^{2}\right)  
-\]</span></p>
-<div class="section level2">
-<h2 id="construct-model-object">Construct model object<a class="anchor" aria-label="anchor" href="#construct-model-object"></a>
-</h2>
-<hr>
-<p>We now construct the <code>ctsmTMB</code> model object as per
-usual</p>
+<p>In this vignette we elaborate on the abilities and workings of the
+<code>estimate</code> method.</p>
+<p>The default argument to the <code>estimate</code> method are:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Create model object</span></span>
-<span><span class="va">obj</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Set name of model (and the created .cpp file)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="st">"ornstein_uhlenbeck"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add system equations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span></span>
-<span>  <span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span><span class="op">*</span><span class="va">dw</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add observation equations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span></span>
-<span>  <span class="va">y</span> <span class="op">~</span> <span class="va">x</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Set observation equation variances</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span></span>
-<span>  <span class="va">y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Specify algebraic relations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span></span>
-<span>  <span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span>,</span>
-<span>  <span class="va">sigma_x</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logsigma_x</span><span class="op">)</span>,</span>
-<span>  <span class="va">sigma_y</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logsigma_y</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Specify parameter initial values and lower/upper bounds in estimation</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
-<span>  logtheta   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">5</span>,    lower <span class="op">=</span> <span class="fl">0</span>,    upper <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  mu         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>    initial <span class="op">=</span> <span class="fl">0</span>,    lower <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>,  upper <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
-<span>  logsigma_x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">1e-1</span>, lower <span class="op">=</span> <span class="fl">1e-5</span>, upper <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  logsigma_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">1e-1</span>, lower <span class="op">=</span> <span class="fl">1e-5</span>, upper <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Set initial state mean and covariance</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-</div>
+<code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>, </span>
+<span>  method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
+<span>  ode.solver <span class="op">=</span> <span class="st">"euler"</span>,</span>
+<span>  ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
+<span>  loss <span class="op">=</span> <span class="st">"quadratic"</span>,</span>
+<span>  loss_c <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>trace<span class="op">=</span><span class="fl">1</span>,iter.max<span class="op">=</span><span class="fl">1e5</span>,eval.max<span class="op">=</span><span class="fl">1e5</span><span class="op">)</span>,</span>
+<span>  use.hessian <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  laplace.residuals <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  unconstrained.optim <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  estimate.initial.state <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  silent <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="using-estimate---default-settings">Using <code>estimate</code> - default settings<a class="anchor" aria-label="anchor" href="#using-estimate---default-settings"></a>
+<h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
 </h2>
+<div class="section level3">
+<h3 id="argument-method">Argument: <code>method</code><a class="anchor" aria-label="anchor" href="#argument-method"></a>
+</h3>
 <hr>
-<p>We can run <code>estimate</code> directly with the default
-settings</p>
+<p>The <code>method</code> argument decides which estimation/filtering
+algorithm is used. Currently, the following methods are available:</p>
+<ol style="list-style-type: decimal">
+<li><p><code>method='lkf'</code>: The Linear Kalman Filter.</p></li>
+<li><p><code>method='ekf'</code>: The Extended Kalman Filter.</p></li>
+<li><p><code>method='laplace'</code>: The Laplace
+Approximation.</p></li>
+</ol>
+<!-- 4. `method='ukf'`: The Unscented Kalman Filter. --><p>There is a difference between the Kalman filtering methods, and the
+Laplace method in the way they approach likelihood computations, and
+thus what information the filters produce:</p>
+<ol style="list-style-type: decimal">
+<li>The Kalman filters produce <em>prior</em> and <em>posterior</em>
+state estimates. The <em>prior</em> estimates are conditioned on
+observations from the starting time <span class="math inline">\(t_0\)</span> up til the previous time-point <span class="math inline">\(t_{k-1}\)</span>. The <em>posterior</em> estimates
+are conditioned also on the observations available at the “current”
+time-point <span class="math inline">\(t_{k}\)</span>. These are denoted
+respectively by <span class="math display">\[
+\text{Prior:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{t_{k-1}},
+y_{t_{k-2}},...,y_{t_0} \right]
+\]</span> <span class="math display">\[
+\text{Posterior:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{t_{k}},
+y_{t_{k-1}},...,y_{t_0} \right]
+\]</span> The Laplace filter produces <em>smoothed</em> state estimates.
+This is a state estimate based observations at all time-points <span class="math inline">\(t_{0}\)</span> to <span class="math inline">\(t_{N}\)</span> where <span class="math inline">\(N\)</span> is the last index in the time-series.
+These are denoted by <span class="math display">\[
+\text{Smoothed:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{N},
+y_{N-1},...,y_{t_{k}},...,y_{t_1}, y_{t_0} \right]
+\]</span>
+</li>
+<li>The likelihood contributions from the Kalman filters are based on
+the <em>prior</em> estimates, which are one-step-ahead predictions. This
+gives rise to <em>independent</em> one-step-ahead residuals, ideal for
+residaul analysis and goodness-of-fit model validation. The Laplace
+filter does not produce such residuals inherently, and must instead
+compute these on the side. Residual calculations are disabled by default
+and determined with the <code>laplace.residuals</code> argument. The
+computations are very costly and slow. The user is referred to the
+documentation in <code><a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">TMB::oneStepPredict</a></code> for further
+information.</li>
+</ol>
+</div>
+<div class="section level3">
+<h3 id="argument-ode-solver">Argument: <code>ode.solver</code><a class="anchor" aria-label="anchor" href="#argument-ode-solver"></a>
+</h3>
+<hr>
+<p>This argument is used for the Kalman filtering methods only to
+determine the ODE integrator used to solving the moment differential
+equations i.e. <span class="math display">\[
+\dfrac{d\mathrm{E}\left[x_t\right]}{dt} = f(\mathrm{E}\left[x_t\right])
+\]</span> <span class="math display">\[
+\dfrac{d\mathrm{V}\left[x_t\right]}{dt} =
+\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\mathrm{V}\left[x_t\right]
++
+\mathrm{V}\left[x_t\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\right]^{T}
++ g(\mathrm{E}\left[x_t\right])g(\mathrm{E}\left[x_t\right])^{T}
+\]</span> The <strong>ctsmTMB</strong> package implements the Explicit
+Forward-Euler <em>euler</em> and the Explicit 4th Order Runge-Kutta
+<em>rk4</em> methods. In addition all of the methods available for
+<strong>deSolve::ode</strong> are also available through the use of the
+<strong>RTMBode</strong> package, but they are <em>significantly</em>
+slower than other two solvers, and they are primarily there to add the
+possibility for implicit and adaptive solvers.</p>
+<p>We recommend using the fast simple solvers to begin with when
+modelling.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-ode-timestep">Argument: <code>ode.timestep</code><a class="anchor" aria-label="anchor" href="#argument-ode-timestep"></a>
+</h3>
+<hr>
+<p>This argument has two different implications depending on whether
+Kalman filtering or Laplace filtering is carried out. The method accepts
+either a single scalar value to be used as the global time-step, or a
+vector of length <code>diff(data$t)</code> specifying all individual
+time-steps. The input values are interpolated linearly between
+time-points if more than one step is taken.</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Kalman filters:</strong> In this case the arugment
+controls the time-step used for the <em>euler</em> and <em>rk4</em> ODE
+solvers.</p></li>
+<li><p><strong>Laplace filter:</strong> In this case the argument
+controls the number of added intermediate time-points between
+observations each of which represents an additional state (random
+effect) at that particular time-point.</p></li>
+</ol>
+<p>If a provided time-step <span class="math inline">\(\Delta
+t_{i}\)</span> does not divide the correspond time-difference <span class="math inline">\(t_{i+1}-t_{i}\)</span> in the data then it is
+rounded down such that it does. Consider the following example where the
+time-difference between two observations in the data is 3 seconds, but a
+time-step of 0.7. This produces a non-integer number of steps i.e.:
+<span class="math display">\[
+N_{i} = \dfrac{t_{i+1}-t_{i}}{\Delta t_i} = \dfrac{3}{0.7} = 4.28...
+\]</span> Thus the number of steps taken is rounded up to <span class="math inline">\(N^{*}_i = \left\lceil N_i \right\rceil =
+\left\lceil 4.28... \right\rceil = 5\)</span> and the corrected
+time-step then becomes <span class="math display">\[
+\Delta t^{*}_{i} = \dfrac{3}{N^{*}_{i}} = \dfrac{3}{5} = 0.6
+\]</span></p>
+<p><strong>Note:</strong> The exception to this rule is when the
+remainder is less than <span class="math inline">\(\epsilon =
+10^{-3}\)</span> i.e. if for instance <span class="math inline">\(N_i =
+4.0001\)</span> then the time-step is accepted, and the number of steps
+rounded down to <span class="math inline">\(N^{*}_{i}= \left\lfloor N_i
+\right\rfloor = 4\)</span>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-loss-and-loss_c">Argument: <code>loss</code> and <code>loss_c</code><a class="anchor" aria-label="anchor" href="#argument-loss-and-loss_c"></a>
+</h3>
+<hr>
+<p>The following losses are currently available:</p>
+<ol style="list-style-type: decimal">
+<li><p><code>loss='quadratic'</code> (default)</p></li>
+<li><p><code>loss='huber'</code></p></li>
+<li><p><code>loss='tukey'</code></p></li>
+</ol>
+<p>This argument only affects the Kalman filtering methods, and is used
+to regularize the likelihood contributions, removing the influence of
+large outliers.</p>
+<p>The i<sup>th</sup> likelihood contributions is given by: <span class="math display">\[
+-\log L_{i}(\theta) \propto f(r_i)
+\]</span> where <span class="math inline">\(r_i = \sqrt{e_{i}^{T}
+\Sigma_{i}^{-1} e_{i}}\)</span> is a normalized residual, and where
+<span class="math inline">\(e_{i}\)</span> is the i<sup>th</sup>
+residual vector, and <span class="math inline">\(\Sigma_{i}^{-1}\)</span> the i<sup>th</sup>
+residual precision matrix.</p>
+<p>The <code>loss</code> argument changes the function <span class="math inline">\(f\)</span> as follows:</p>
+<ol style="list-style-type: decimal">
+<li><p>If <code>loss='quadratic'</code> then <span class="math inline">\(f\)</span> is quadratic in the residuals i.e.
+<span class="math display">\[
+f(r) = r^2
+\]</span> and the likelihood contributions are exactly those from a
+Gaussian.</p></li>
+<li><p>If <code>loss='huber'</code> then <span class="math inline">\(f\)</span> is the Huber’s <span class="math inline">\(\psi\)</span> function given by <span class="math display">\[
+\psi_{c}(r) = \left\{ \begin{array}{l} r^2 &amp; \text{for} \,\, r \leq
+c \\ c(2r-c) &amp; \text{otherwise} \end{array} \right\}
+\]</span> which is quadratic/linear in the residuals below/above the
+threshold determined by <span class="math inline">\(c\)</span>.</p></li>
+<li><p>If <code>loss='tukey'</code> then <span class="math inline">\(f\)</span> is Tukey’s byweight function given by
+<span class="math display">\[
+l_{c}(r) = \left\{ \begin{array}{l}
+r^2
+&amp; \text{for} \,\, r \leq c
+\\
+c^2
+&amp; \text{otherwise}
+\end{array} \right\}
+\]</span> which is quadratic/constant in the residuals below/above the
+threshold determined by <span class="math inline">\(c\)</span>.</p></li>
+</ol>
+<p>In practice a smooth approximation to both Huber and Tukey are
+implemented in practice using the construction <span class="math display">\[
+\tilde{\psi}_{c}(r) = r^2 (1-\sigma_{c}(r)) + c^2 \sigma_{c}(r)
+\]</span> <span class="math display">\[
+\tilde{l}_{c}(r) = r^2 (1-\sigma_{c}(r)) + c(2r-c) \sigma_{c}(r)
+\]</span> where <span class="math inline">\(\sigma(r)\)</span> is the
+sigmoid function <span class="math display">\[
+\sigma_{c}(r) = \dfrac{1}{1+\exp(-5(r-c))}
+\]</span> The plot below shows the actual and implemented loss functions
+(almost indistinguishable) for <span class="math inline">\(c=5\)</span>.
+The threshold value is marked by with dashed line for the line <span class="math inline">\(x = c\)</span>.</p>
+<div class="figure" style="text-align: center">
+<img src="estimate_files/figure-html/unnamed-chunk-3-1.png" alt="Loss Functions" width="100%"><p class="caption">
+Loss Functions
+</p>
+</div>
+<p>The <code>loss_c</code> argument is used to determine the value of
+<span class="math inline">\(c\)</span>. The default values are chosen
+based on the fact that under the assumed (multivariate) normal
+distribution of the residuals, the squared (normalized) residuals
+follows a <span class="math inline">\(\chi^{2}_{m}\)</span> distribution
+with degrees of freedom equal to the number of elements of <span class="math inline">\(e_{i}\)</span> i.e: <span class="math display">\[
+r_{i}^2 = e_{i}^{T} \Sigma_{i}^{-1} e_{i} \sim \chi^{2}_{m}
+\]</span> It is therefore reasonable to choose the threshold level
+(value of <span class="math inline">\(c\)</span>) which determines
+whether or not <span class="math inline">\(r_{i}\)</span> is an outlier,
+as the level at which the null-hypothesis <span class="math display">\[
+H_{0}: r_{i}^2 \sim \chi^{2}_{m}
+\]</span> is rejected for some critical value <span class="math inline">\(1 - \alpha\)</span>. Choosing the significance
+level <span class="math inline">\(\alpha = 0.05\)</span> the appropriate
+<span class="math inline">\(c\)</span> threshold value becomes</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
-<p>This is the same as using the default settings</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span>data <span class="op">=</span> <span class="va">.data</span>, </span>
-<span>             method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
-<span>             ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
-<span>             ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
-<span>             loss <span class="op">=</span> <span class="st">"quadratic"</span>,</span>
-<span>             loss_c <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>             unscented_hyperpars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha<span class="op">=</span><span class="fl">1</span>, beta<span class="op">=</span><span class="fl">0</span>, kappa<span class="op">=</span><span class="fl">3</span><span class="op">-</span><span class="va">private</span><span class="op">$</span><span class="va">number.of.states</span><span class="op">)</span>,</span>
-<span>             control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>trace<span class="op">=</span><span class="fl">1</span>,iter.max<span class="op">=</span><span class="fl">1e5</span>,eval.max<span class="op">=</span><span class="fl">1e5</span><span class="op">)</span>,</span>
-<span>             use.hessian <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>             laplace.residuals <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>             unconstrained.optim <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>             compile <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>             silent <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p>Let’s walk through the various arguments and their effect:</p>
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/Chisquare.html" class="external-link">qchisq</a></span><span class="op">(</span><span class="fl">0.95</span>,df<span class="op">=</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## [1] 3.841459</span></span></code></pre>
+<p>where <span class="math inline">\(m\)</span> is the number of
+observation equations.</p>
+<p><strong>Note:</strong> The significance level will be higher than the
+chosen if there are missing observations in some indices of <span class="math inline">\(i\)</span> for systems with multiple observation
+equations.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-use_hessian">Argument: <code>use_hessian</code><a class="anchor" aria-label="anchor" href="#argument-use_hessian"></a>
+</h3>
+<hr>
+<p>This argument is a boolean which determines whether or not the
+likelihood hessian constructed by automatic differentiation from
+<strong>TMB</strong> is used during the optimization procedure by
+providing it to the <code>hessian</code> argument of
+<code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code>. The default is
+<code>use.hessian=FALSE</code>. The argument has no effect if
+<code>method=laplace</code> due to restrictions in
+<strong>TMB</strong>/<strong>RTMB</strong>.</p>
+<p>The effect of providing the hessian is typically that an optimum is
+found in fewer iterations, but the cost of computing the hessian is
+relatively large, so it is often faster to optimize using only the
+gradient.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-laplace-residuals">Argument: <code>laplace.residuals</code><a class="anchor" aria-label="anchor" href="#argument-laplace-residuals"></a>
+</h3>
+<hr>
+<p>This boolean controls whether or not model residuals are calculated
+with <code><a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">TMB::oneStepPredict</a></code> when the Laplace filtering is used
+(<code>method=laplace</code>). This takes a considerable amount of time
+- typically much longer than the estimation itself.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-unconstrainted-optim">Argument: <code>unconstrainted.optim</code><a class="anchor" aria-label="anchor" href="#argument-unconstrainted-optim"></a>
+</h3>
+<hr>
+<p>This boolean allows for quick unconstrained estimation removing the
+parameter boundaries specified by <code>setParameter</code>. This may be
+useful sometimes, to quickly check whether estimation issues occur
+because of ill boundaries.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-estimate-initial-state">Argument: <code>estimate.initial.state</code><a class="anchor" aria-label="anchor" href="#argument-estimate-initial-state"></a>
+</h3>
+<hr>
+<p>This boolean determines whether or not the initial-time state
+distribution (mean and covariance) should be estimated or not. By
+default <code>estimate.initial.state=FALSE</code> and it is not
+estimated but simply taken as the values provided by
+<code>setInitialState</code>. When
+<code>estimate.initial.state=TRUE</code> the mean and covariance are
+estimated as the stationary solution of the moment differential
+equations using the input values are the initial time-point.</p>
+<p>The stationary solution is obtained first by solving <span class="math display">\[
+\dfrac{d\mathrm{E}\left[x_{\infty}\right]}{dt} =
+f(\mathrm{E}\left[x_\infty\right]) = 0
+\]</span> for <span class="math inline">\(\mathrm{E}\left[x_\infty\right]\)</span> using
+Newton’s method. This stationary mean is then used to solve <span class="math display">\[
+\dfrac{d\mathrm{V}\left[x_\infty\right]}{dt} =
+\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\mathrm{V}\left[x_\infty\right]
++
+\mathrm{V}\left[x_\infty\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\right]^{T}
++
+g(\mathrm{E}\left[x_\infty\right])g(\mathrm{E}\left[x_\infty\right])^{T}
+= 0
+\]</span> for the stationary covariance <span class="math inline">\(\mathrm{V}\left[x_\infty\right]\)</span> by
+calling a linear solver on the vectorized system of equations (using
+kronecker products).</p>
+</div>
+<div class="section level3">
+<h3 id="argument-control">Argument: <code>control</code><a class="anchor" aria-label="anchor" href="#argument-control"></a>
+</h3>
+<hr>
+<p>This argument is a list which controls various settings of the
+<code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code> optimizer. See the documentation on
+<code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">?stats::nlminb</a></code> for more information.</p>
+<p>The default is <code>list(trace=1,iter.max=1e5,eval.max=1e5)</code>
+which prints the iteration steps, and increases the default number of
+iterations and function calls allowed before the optimization procedure
+terminates.</p>
+<p><strong>Note::</strong> The user should remember that disabling
+tracing by passing <code>control = list(trace=0)</code> will remove the
+<code>ìter.max</code>and <code>eval.max</code> arguments, so they should
+be provided as well if needed.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-silent">Argument: <code>silent</code><a class="anchor" aria-label="anchor" href="#argument-silent"></a>
+</h3>
+<hr>
+<p>This boolean argument controls whether or not various information
+messages are printed by <strong>ctsmTMB</strong> during model building,
+compilation and estimation.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="argument-method">Argument: <code>method</code><a class="anchor" aria-label="anchor" href="#argument-method"></a>
+<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<hr>
-<p>The <code>method</code> argument determines which underlying
-estimation techniques is used. The current implementation supports the
-following</p>
-<ol style="list-style-type: decimal">
-<li>
-<code>method='ekf'</code>: The Extended Kalman Filter.</li>
-<li>
-<code>method='ukf'</code>: The Unscented Kalman Filter - currently
-disabled.</li>
-<li>
-<code>method='laplace'</code>: The Laplace Approximation</li>
-</ol>
-<p>The former two are quite similar in that they are based on the Kalman
-Filter theory. The assumptions of normality in the state transition and
-observation equation are fundamental, although the implemented filters
-are standard non-linear filters, in the sense that they try to overcome
-these assumptions for small non-linearities. The Unscented Kalman Filter
-is generally considered to perform better in these cases.</p>
-<!-- The Extended Kalman Filter linearizes (to first order in the drift, and zeroth order in the diffusion) around the expectation of the state value to obtain prior and posterior state estimates as a way to handle non-linearities in system and observation equations.  -->
-<p>The latter <code>laplace</code> method employs the Laplace
-Approximation method of to integration out random effects. In this
-formulation we consider the states as random effects, and parameters as
-fixed. The underlying assumption is one of normality, but its
-implementation allows for the flexibility of choosing arbitrary
-distributions (not yet implemented.)</p>
-<p>Both of these methods can be used to estimate parameter and states.
-In the case of <code>laplace</code> the states will be smoothed
-(conditioned on both past and future observations).</p>
-</div>
-<div class="section level2">
-<h2 id="argument-ode-solver">Argument: <code>ode.solver</code><a class="anchor" aria-label="anchor" href="#argument-ode-solver"></a>
-</h2>
-<hr>
-<p>This argument is only used by the Kalman Filter methods
-i.e. <code>ekf</code> and <code>ukf</code>. The argument determines the
-algorithm used to integrate forward the moment (mean and variance)
-differential equations. The current implementation supports</p>
-<ol style="list-style-type: decimal">
-<li>
-<code>ode.solver='euler'</code>: The forward Euler scheme</li>
-<li>
-<code>ode.solver='rk4'</code>: The 4th order Runge-Kutta scheme</li>
-</ol>
-</div>
-<div class="section level2">
-<h2 id="argument-ode-timestep">Argument: <code>ode.timestep</code><a class="anchor" aria-label="anchor" href="#argument-ode-timestep"></a>
-</h2>
-<hr>
-<p>This argument determines the time-step used in the ODE solvers</p>
-</div>
-<div class="section level2">
-<h2 id="argument-loss-and-loss_c">Argument: <code>loss</code> and <code>loss_c</code><a class="anchor" aria-label="anchor" href="#argument-loss-and-loss_c"></a>
-</h2>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="argument-use_hessian">Argument: <code>use_hessian</code><a class="anchor" aria-label="anchor" href="#argument-use_hessian"></a>
-</h2>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="argument-compile">Argument: <code>compile</code><a class="anchor" aria-label="anchor" href="#argument-compile"></a>
-</h2>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="argument-control">Argument: <code>control</code><a class="anchor" aria-label="anchor" href="#argument-control"></a>
-</h2>
-<hr>
+<p><strong>Insert Example</strong></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

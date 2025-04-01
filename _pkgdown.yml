@@ -35,19 +35,21 @@ navbar:
         href: articles/predict.html
       - text: Simulation
         href: articles/simulate.html
-      - text: Using another Optimizer
+      - text: Likelihood (Extracting Function Handlers)
         href: articles/using_another_optimizer.html
     # Vignettes End
     # Math Start
     mathematics:
       text: Math Details
       menu:
-      - text: Laplace Approximation
-        href: articles/laplace_approx.html
-      - text: Extended Kalmn Filter
+      - text: Linear Kalman Filter
+        href: articles/linear_kalman_filter.html
+      - text: Extended Kalman Filter
         href: articles/extended_kalman_filter.html
       - text: Unscented Kalman Filter
         href: articles/unscented_kalman_filter.html
+      - text: Laplace "Filter"
+        href: articles/laplace_approx.html
     # Math End
   ### Components End
   structure:

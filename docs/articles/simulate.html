@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="description" content="ctsmTMB">
-<title>Performing stochastic model simulations • ctsmTMB</title>
+<title>Stochastic Simulations • ctsmTMB</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
 <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="../apple-touch-icon.png">
@@ -19,7 +19,7 @@
 <link href="../deps/Source_Code_Pro-0.4.9/font.css" rel="stylesheet">
 <!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js" integrity="sha512-7O5pXpc0oCRrxk8RUfDYFgn0nO1t+jLuIOQdOMRp4APB7uZ4vSjspzp5y6YDtDs4VzUSTbWzBFZ/LKJhnyFOKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Performing stochastic model simulations">
+<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js" integrity="sha512-7O5pXpc0oCRrxk8RUfDYFgn0nO1t+jLuIOQdOMRp4APB7uZ4vSjspzp5y6YDtDs4VzUSTbWzBFZ/LKJhnyFOKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Stochastic Simulations">
 <meta property="og:description" content="ctsmTMB">
 <meta property="og:image" content="/logo.png">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
@@ -53,15 +53,16 @@
     <a class="dropdown-item" href="../articles/estimate.html">Estimation</a>
     <a class="dropdown-item" href="../articles/predict.html">Prediction</a>
     <a class="dropdown-item" href="../articles/simulate.html">Simulation</a>
-    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Using another Optimizer</a>
+    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Likelihood (Extracting Function Handlers)</a>
   </div>
 </li>
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-math-details">Math Details</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-math-details">
-    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Approximation</a>
-    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalmn Filter</a>
+    <a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a>
     <a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a>
   </div>
 </li>
 <li class="nav-item">
@@ -94,7 +95,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Performing stochastic model simulations</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Stochastic Simulations</h1>
                         <h4 data-toc-skip class="author"></h4>
             
       
@@ -104,350 +105,246 @@
 
     
     
-<p>We demonstate how to use the <code>simulate</code> method to obtain
-k-step ahead predictions / forecasts of a model object, and the
-observations.</p>
-<p>A prediction in this context is considered to be a prior estimate of
-the state mean and covariance i.e. an estimate obtained without
-incorporating information from future observations. We denote these</p>
-<p><span class="math display">\[
-\hat{x}_{i|j} = \mathrm{E}(x_{t_{i}} | x_{t_{j}}, y_{t_{j}}) \\
-\hat{P}_{i|j} = \mathrm{V}(x_{t_{i}} | x_{t_{j}}, y_{t_{j}})
-\]</span> where <span class="math inline">\(i \geq j\)</span>.</p>
-<p>The <code>predict</code> method computes the predictions depending on
-its argument <code>method</code> in the following way:</p>
-<ol style="list-style-type: decimal">
-<li><p>The Extended Kalman FIlter (<code>method=ekf</code>): The
-posterior values <span class="math inline">\(\hat{x}_{i|i}\)</span>,
-<span class="math inline">\(\hat{P}_{i|i}\)</span> are obtained from the
-filter. In each iteration the moment ODEs <span class="math display">\[
-\begin{align}
-\frac{d\hat{x}_{i|i}}{dt} &amp;= f(\hat{x}_{i|i},\cdots) \\
-\frac{d\hat{P}_{i|i}}{dt} &amp;=
-\left[\frac{df}{dx}(\hat{x}_{i|i},\cdots)\right] \hat{P}_{i|i} +
-\hat{P}_{i|i} \left[\frac{df}{dx}(\hat{x}_{i|i},\cdots)\right]^{T} +
-G(\hat{x}_{i|i},\cdots)G^{T}(\hat{x}_{i|i},\cdots)
-\end{align}
-\]</span> are solved from the initial time <span class="math inline">\(t_{i}\)</span> until <span class="math inline">\(t_{j}\)</span> where the number of steps is
-determined by the argument <code>k.ahead</code> to <code>predict</code>,
-i.e. <code>j=i+k.ahead</code>. The solution at each time point <span class="math inline">\(t_{i+1}, t_{i+2}, \dots, t_{i+k.ahead}\)</span> is
-the desired predictions. We note that these predictions assume that the
-underlying probability density of the SDE remains approximately
-Gaussian. If the prediction horizon is large then this assumption
-probably doesn’t hold, and one should instead use the
-<code>simulate</code> method. The stochastic predictions are generated
-by simulating the SDE forward in time for a user-defined number of
-simulations.</p></li>
-<li><p>The Laplace Approximation (<code>method=laplace</code>): The
-<code>predict</code> method is not yet implemented.</p></li>
-</ol>
+<p>This vignette demonstrates how to use the <code>simulate</code>
+method for calculating <em>k</em>-step (state and observation)
+simulations.</p>
 <div class="section level2">
-<h2 id="simulate-from-the-ornstein-uhlenbeck-process">Simulate from the Ornstein-Uhlenbeck process<a class="anchor" aria-label="anchor" href="#simulate-from-the-ornstein-uhlenbeck-process"></a>
+<h2 id="notation">Notation<a class="anchor" aria-label="anchor" href="#notation"></a>
 </h2>
 <hr>
-<p>We use the Ornstein-Uhlenbeck process again.</p>
-<p><span class="math display">\[
-\mathrm{d}X_{t} = \theta (\mu - X_{t}) \, \mathrm{d}t \, + \sigma_{X} \,
-\mathrm{d}B_{t}
+<p>Let the set of observations from the initial time <span class="math inline">\(t_0\)</span> until the current time <span class="math inline">\(t_{i}\)</span> be noted by <span class="math display">\[
+\mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0}\right\}
 \]</span></p>
-<p><span class="math display">\[
-Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim
-\mathcal{N}\left(0,\sigma_{Y}^{2}\right)  
-\]</span> We first create data by simulating the process</p>
+<p>A <em>k</em>-step <strong>simulation</strong> is a sample of the
+stochastic path of the model stochatic differential equation <em>k</em>
+time-steps into the future, conditioned on the current state estimate
+with mean and covariance <span class="math display">\[
+\hat{x}_{i|i} = \mathrm{E}\left[ x_{t_{i}} | y_{t_{i}} \right] \\
+P_{i|i} = \mathrm{V}\left[ x_{t_{i}} | y_{t_{i}} \right]
+\]</span> A single stochastic simulation can be obtained using the
+Euler-Maruyama scheme by <span class="math display">\[
+X_{t_{j+1}} = X_{t_{j}} + f(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta t_{j} +
+G(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta B_{j}
+\]</span> for <span class="math inline">\(j=i,...,i+k\)</span>, where
+the initial point follows <span class="math display">\[
+X_{t_{i}} \sim N(\hat{x}_{i|i}, P_{i|i} )
+\]</span> and <span class="math display">\[
+\Delta B_{j} \sim N(0,\Delta t_{j})
+\]</span></p>
+</div>
+<div class="section level2">
+<h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
+</h2>
+<hr>
+<p>The <code>simulate</code> method accepts the following arguments</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Simulate data using Euler Maruyama</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
-<span><span class="va">theta</span><span class="op">=</span><span class="fl">10</span>; <span class="va">mu</span><span class="op">=</span><span class="fl">1</span>; <span class="va">sigma_x</span><span class="op">=</span><span class="fl">1</span>; <span class="va">sigma_y</span><span class="op">=</span><span class="fl">1e-1</span></span>
-<span><span class="co"># </span></span>
-<span><span class="va">dt.sim</span> <span class="op">=</span> <span class="fl">1e-3</span></span>
-<span><span class="va">t.sim</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,by<span class="op">=</span><span class="va">dt.sim</span><span class="op">)</span></span>
-<span><span class="va">dw</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.sim</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span>,sd<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">dt.sim</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">x</span> <span class="op">=</span> <span class="fl">3</span></span>
-<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.sim</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">x</span><span class="op">[</span><span class="va">i</span><span class="op">+</span><span class="fl">1</span><span class="op">]</span> <span class="op">=</span> <span class="va">x</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">+</span> <span class="va">theta</span><span class="op">*</span><span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">x</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span><span class="op">*</span><span class="va">dt.sim</span> <span class="op">+</span> <span class="va">sigma_x</span><span class="op">*</span><span class="va">dw</span><span class="op">[</span><span class="va">i</span><span class="op">]</span></span>
-<span><span class="op">}</span></span>
+<code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span><span class="va">data</span>,</span>
+<span>               pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>               use.cpp <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>               method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
+<span>               ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
+<span>               ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
+<span>               simulation.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
+<span>               k.ahead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span>,</span>
+<span>               return.k.ahead <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">k.ahead</span>,</span>
+<span>               n.sims <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>               initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>               estimate.initial.state <span class="op">=</span> <span class="va">private</span><span class="op">$</span><span class="va">estimate.initial</span>,</span>
+<span>               silent <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="argument-pars">Argument: <code>pars</code><a class="anchor" aria-label="anchor" href="#argument-pars"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-use-cpp">Argument: <code>use.cpp</code><a class="anchor" aria-label="anchor" href="#argument-use-cpp"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-method">Argument: <code>method</code><a class="anchor" aria-label="anchor" href="#argument-method"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
+vignette</a>.</p>
+<p><strong>Note:</strong> The <code>simulate</code> method is currently
+only available using the Extended Kalman filter
+(<code>method="ekf</code>).</p>
+</div>
+<div class="section level3">
+<h3 id="argument-ode-solver">Argument: <code>ode.solver</code><a class="anchor" aria-label="anchor" href="#argument-ode-solver"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
+vignette</a>.</p>
+<p><strong>Note:</strong> When the argument <code>use.cpp=TRUE</code>
+then the only solvers available are <em>euler</em> and <em>rk4</em>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-ode-timestep">Argument: <code>ode.timestep</code><a class="anchor" aria-label="anchor" href="#argument-ode-timestep"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
+vignette</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-k-ahead">Argument: <code>k.ahead</code><a class="anchor" aria-label="anchor" href="#argument-k-ahead"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-return-k-ahead">Argument: <code>return.k.ahead</code><a class="anchor" aria-label="anchor" href="#argument-return-k-ahead"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-simulation-timestep">Argument: <code>simulation.timestep</code><a class="anchor" aria-label="anchor" href="#argument-simulation-timestep"></a>
+</h3>
+<hr>
+<p>This argument is the same as <code>ode.timestep</code> but determines
+the time-steps used between data-points when performing the
+Euler-Maruyama simulation.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-n-sims">Argument: <code>n.sims</code><a class="anchor" aria-label="anchor" href="#argument-n-sims"></a>
+</h3>
+<hr>
+<p>The number of stochastic simulations (trajectories) generated.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-initial-state">Argument: <code>initial.state</code><a class="anchor" aria-label="anchor" href="#argument-initial-state"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-estimate-initial-state">Argument: <code>estimate.initial.state</code><a class="anchor" aria-label="anchor" href="#argument-estimate-initial-state"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="argument-silent">Argument: <code>silent</code><a class="anchor" aria-label="anchor" href="#argument-silent"></a>
+</h3>
+<hr>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+</h2>
+<p>We consider a modified Ornstein Uhlenbeck process:</p>
+<p><span class="math display">\[
+\mathrm{d}x_{t} = \theta (a_t - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \,
+\mathrm{d}b_{t} \\
+y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
+\]</span> where the mean is some complex time-varying input <span class="math inline">\(a_t = tu_{t}^{2}-\cos(tu_{t})\)</span>, and <span class="math inline">\(u_{t}\)</span> is a given time-varying input
+signal.</p>
+<p>We create the model and simulate the data as follows:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">model</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">model</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">t</span><span class="op">*</span><span class="va">u</span><span class="op">^</span><span class="fl">2</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">t</span><span class="op">*</span><span class="va">u</span><span class="op">)</span> <span class="op">-</span> <span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span><span class="op">*</span><span class="va">dw</span><span class="op">)</span></span>
+<span><span class="va">model</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span><span class="op">)</span></span>
+<span><span class="va">model</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">model</span><span class="op">$</span><span class="fu">addInput</span><span class="op">(</span><span class="va">u</span><span class="op">)</span></span>
+<span><span class="va">model</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
+<span>  theta   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">2</span>, lower <span class="op">=</span> <span class="fl">0</span>,    upper <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>,</span>
+<span>  sigma_x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">0.2</span>, lower <span class="op">=</span> <span class="fl">1e-5</span>, upper <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span>
+<span>  sigma_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">5e-2</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">model</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Set simulation settings</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">true.pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>theta<span class="op">=</span><span class="fl">20</span>, sigma_x<span class="op">=</span><span class="fl">1</span>, sigma_y<span class="op">=</span><span class="fl">5e-2</span><span class="op">)</span></span>
+<span><span class="va">dt.sim</span> <span class="op">&lt;-</span> <span class="fl">1e-3</span></span>
+<span><span class="va">t.sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, by<span class="op">=</span><span class="va">dt.sim</span><span class="op">)</span></span>
+<span><span class="va">u.sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.sim</span><span class="op">)</span>,sd<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">df.sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>t<span class="op">=</span><span class="va">t.sim</span>, y<span class="op">=</span><span class="cn">NA</span>, u<span class="op">=</span><span class="va">u.sim</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Extract observations and add noise</span></span>
-<span><span class="va">dt.obs</span> <span class="op">=</span> <span class="fl">1e-2</span></span>
-<span><span class="va">t.obs</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,by<span class="op">=</span><span class="va">dt.obs</span><span class="op">)</span></span>
-<span><span class="va">y</span> <span class="op">=</span> <span class="va">x</span><span class="op">[</span><span class="va">t.sim</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">t.obs</span><span class="op">]</span> <span class="op">+</span> <span class="va">sigma_y</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.obs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># Simulate data</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">df.sim</span>, </span>
+<span>                      pars<span class="op">=</span><span class="va">true.pars</span>, </span>
+<span>                      n.sims<span class="op">=</span><span class="fl">1</span>,</span>
+<span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Create data</span></span>
-<span><span class="va">.data</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span><span class="co"># Grab first simulation trajectory</span></span>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">x</span><span class="op">$</span><span class="va">i0</span><span class="op">$</span><span class="va">x1</span></span>
+<span></span>
+<span><span class="co"># Extract observations from simulation and add noise</span></span>
+<span><span class="va">iobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.sim</span><span class="op">)</span>, by<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">t.obs</span> <span class="op">&lt;-</span> <span class="va">t.sim</span><span class="op">[</span><span class="va">iobs</span><span class="op">]</span></span>
+<span><span class="va">u.obs</span> <span class="op">&lt;-</span> <span class="va">u.sim</span><span class="op">[</span><span class="va">iobs</span><span class="op">]</span></span>
+<span><span class="va">y</span> <span class="op">=</span> <span class="va">x</span><span class="op">[</span><span class="va">iobs</span><span class="op">]</span> <span class="op">+</span> <span class="va">true.pars</span><span class="op">[</span><span class="st">"sigma_y"</span><span class="op">]</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">iobs</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Create data-frame</span></span>
+<span><span class="va">.data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  t <span class="op">=</span> <span class="va">t.obs</span>,</span>
+<span>  u <span class="op">=</span> <span class="va">u.obs</span>,</span>
 <span>  y <span class="op">=</span> <span class="va">y</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="construct-model-object">Construct model object<a class="anchor" aria-label="anchor" href="#construct-model-object"></a>
-</h2>
-<hr>
-<p>We now construct the <code>ctsmTMB</code> model object</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Create model object</span></span>
-<span><span class="va">obj</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Set name of model (and the created .cpp file)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="st">"ornstein_uhlenbeck"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add system equations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span></span>
-<span>  <span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span><span class="op">*</span><span class="va">dw</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add observation equations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span></span>
-<span>  <span class="va">y</span> <span class="op">~</span> <span class="va">x</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Set observation equation variances</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span></span>
-<span>  <span class="va">y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Specify algebraic relations</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span></span>
-<span>  <span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span>,</span>
-<span>  <span class="va">sigma_x</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logsigma_x</span><span class="op">)</span>,</span>
-<span>  <span class="va">sigma_y</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logsigma_y</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Specify parameter initial values and lower/upper bounds in estimation</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
-<span>  logtheta   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">5</span>,    lower <span class="op">=</span> <span class="fl">0</span>,    upper <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  mu         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>    initial <span class="op">=</span> <span class="fl">0</span>,    lower <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>,  upper <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
-<span>  logsigma_x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">1e-1</span>, lower <span class="op">=</span> <span class="fl">1e-5</span>, upper <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  logsigma_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">1e-1</span>, lower <span class="op">=</span> <span class="fl">1e-5</span>, upper <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Set initial state mean and covariance</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="predict">Predict<a class="anchor" aria-label="anchor" href="#predict"></a>
-</h2>
-<hr>
-<p>We can use the predict function without having called
-<code>estimate</code> first, in which case the initial value of the
-parameters provided during <code>add_parameters</code> are used.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
-<p>The output of <code>predict</code> is a list of two data.frames, one
-for states and one for observations. The two data.frames share the same
-five initial columns that contain indices <code>i</code> and
-<code>j</code>, associated time-points <code>t.i</code> and
-<code>t.j</code>, and a <code>k.ahead</code></p>
-<p>They both contain indices, time-points and associated k-step ahead ,
-state/observation values and associated standard deviations, and
-observations provided in the data, and predicted observation values
-based from the predicted state values.</p>
+<!-- The data is plotted below: -->
+<!-- ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'} -->
+<!-- ggplot() +  -->
+<!--   geom_point(aes(x=t.obs, y=y, color="y(t)")) + -->
+<!--   geom_line(aes(x=t.obs, y=u.obs, color="u(t)")) + -->
+<!--   ctsmTMB:::getggplot2theme() +  -->
+<!--   theme(legend.text = ggplot2::element_text(size=15)) + -->
+<!--   labs(color="",x="Time",y="") -->
+<!-- ``` -->
+<p>We can simulate many trajectories using:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred</span><span class="op">$</span><span class="va">states</span><span class="op">)</span> </span></code></pre></div>
-<pre><code><span><span class="co">##   i. j.  t.i  t.j k.ahead        x       var.x</span></span>
-<span><span class="co">## 1  0  0 0.00 0.00       0 3.095456 0.009090909</span></span>
-<span><span class="co">## 2  0  1 0.00 0.01       1 2.944489 0.008320958</span></span>
-<span><span class="co">## 3  1  1 0.01 0.01       0 2.827817 0.004541770</span></span>
-<span><span class="co">## 4  1  2 0.01 0.02       1 2.689903 0.004204726</span></span>
-<span><span class="co">## 5  2  2 0.02 0.02       0 2.673529 0.002960090</span></span>
-<span><span class="co">## 6  2  3 0.02 0.03       1 2.543140 0.002773563</span></span></code></pre>
+<code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>, </span>
+<span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>,<span class="fl">1</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>
+<span>                      n.sims<span class="op">=</span><span class="fl">100</span>,</span>
+<span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
+<p>with parameters <span class="math inline">\(\theta = 20, \sigma_{x} =
+1, \sigma_{y} = 0.05\)</span>.</p>
+<p><strong>Note:</strong> The value of <span class="math inline">\(\sigma_{y}\)</span> has no impact when doing
+“full” simulations (i.e. choosing maximum <code>k.ahead</code>) since no
+data updates occur.</p>
+<p>The simulations can be plotted quickly using
+<code>matplot</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get the first (and only in this case) k-step simulation data.frame</span></span>
+<span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">x</span><span class="op">$</span><span class="va">i0</span></span>
+<span></span>
+<span><span class="co"># Grab all the simulations (the first five columns are indices, time, etc.)</span></span>
+<span><span class="va">Y</span> <span class="op">&lt;-</span> <span class="va">X</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span><span class="op">]</span></span>
+<span></span>
+<span><span class="co"># Grab prediction time column</span></span>
+<span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">X</span><span class="op">[</span>,<span class="st">"t.j"</span><span class="op">]</span></span>
+<span></span>
+<span><span class="co"># Plot</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/matplot.html" class="external-link">matplot</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">Y</span>,type<span class="op">=</span><span class="st">"l"</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="simulate_files/figure-html/unnamed-chunk-6-1.png" width="100%" style="display: block; margin: auto;"></p>
+<p>Lets see the effect of setting <span class="math inline">\(\sigma_{x}
+= 3\)</span>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred</span><span class="op">$</span><span class="va">observations</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##     i. j.  t.i  t.j k.ahead        y   y.data</span></span>
-<span><span class="co">## 1    0  0 0.00 0.00       0 3.095456 3.105001</span></span>
-<span><span class="co">## 2    0  1 0.00 0.01       1 2.944489 2.687603</span></span>
-<span><span class="co">## 2.1  1  1 0.01 0.01       0 2.827817 2.687603</span></span>
-<span><span class="co">## 3    1  2 0.01 0.02       1 2.689903 2.634588</span></span>
-<span><span class="co">## 3.1  2  2 0.02 0.02       0 2.673529 2.634588</span></span>
-<span><span class="co">## 4    2  3 0.02 0.03       1 2.543140 2.267096</span></span></code></pre>
-<p>The indices <code>i.</code> and <code>j.</code> in the table refer to
-expectation and variance of the state vector <span class="math display">\[
-\mathrm{E}(x_{t_{i}} | x_{t_{j}}, y_{t_{j}}) \\
-\mathrm{V}(x_{t_{i}} | x_{t_{j}}, y_{t_{j}})
-\]</span> where the moments are given at indices <span class="math inline">\(i\)</span> (time <span class="math inline">\(t_{i}\)</span>) conditioned on the information
-available up until indices <span class="math inline">\(j\)</span> (time
-<span class="math inline">\(t_{j}\)</span>). In this sense the
-state/covariance predictions with <span class="math inline">\(i=j\)</span> are posterior estimates, and all
-others are prior estimates.</p>
-<p>By default only the standard deviations of the states are returned.
-The entire covariance matrix elements can be returned via</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span><span class="va">.data</span>, return.covariance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="set-number-of-prediction-steps">Set number of prediction steps<a class="anchor" aria-label="anchor" href="#set-number-of-prediction-steps"></a>
-</h2>
-<hr>
-<p>The number of time steps ahead that predictions are desired can be
-changed with the <code>k.ahead</code> argument. The default behaviour is
-to save all prediction steps from 1 to <code>k.ahead</code> but if only
-a selected few are desired, then the <code>return.k.ahead</code>
-argument can be used to indicate which should be kept in the output.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred1</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span><span class="va">.data</span>, k.ahead<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">pred2</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span><span class="va">.data</span>, k.ahead<span class="op">=</span><span class="fl">10</span>, return.k.ahead<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">5</span>,<span class="fl">8</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred1</span><span class="op">$</span><span class="va">states</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##   i. j.  t.i  t.j k.ahead        x       var.x</span></span>
-<span><span class="co">## 1  0  0 0.00 0.00       0 3.095456 0.009090909</span></span>
-<span><span class="co">## 2  0  1 0.00 0.01       1 2.944489 0.008320958</span></span>
-<span><span class="co">## 3  0  2 0.00 0.02       2 2.800884 0.007624277</span></span>
-<span><span class="co">## 4  1  1 0.01 0.01       0 2.827817 0.004541770</span></span>
-<span><span class="co">## 5  1  2 0.01 0.02       1 2.689903 0.004204726</span></span>
-<span><span class="co">## 6  1  3 0.01 0.03       2 2.558715 0.003899757</span></span></code></pre>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred2</span><span class="op">$</span><span class="va">states</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##    i. j.  t.i  t.j k.ahead        x       var.x</span></span>
-<span><span class="co">## 3   0  2 0.00 0.02       2 2.800884 0.007624277</span></span>
-<span><span class="co">## 6   0  5 0.00 0.05       5 2.410743 0.005907387</span></span>
-<span><span class="co">## 9   0  8 0.00 0.08       8 2.074946 0.004635482</span></span>
-<span><span class="co">## 14  1  3 0.01 0.03       2 2.558715 0.003899757</span></span>
-<span><span class="co">## 17  1  6 0.01 0.06       5 2.202306 0.003148193</span></span>
-<span><span class="co">## 20  1  9 0.01 0.09       8 1.895543 0.002591421</span></span></code></pre>
-</div>
-<div class="section level2">
-<h2 id="set-the-model-parameters-used">Set the model parameters used<a class="anchor" aria-label="anchor" href="#set-the-model-parameters-used"></a>
-</h2>
-<hr>
-<p>The default of <code>predict</code> is to use the initial parameters
-supplied during <code>setParameter</code>, unless the
-<code>estimate</code> function has been succesfully run, then
-<code>predict</code> will use the parameter values at the found
-minimizer. You can provide other parameters using the <code>pars</code>
-argument of the method i.e.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">some.other.random.pars</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">pred</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span><span class="va">.data</span>, pars<span class="op">=</span><span class="va">some.other.random.pars</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="set-the-initial-state-and-covariance">Set the initial state and covariance<a class="anchor" aria-label="anchor" href="#set-the-initial-state-and-covariance"></a>
-</h2>
-<hr>
-<p>The default behaviour of <code>predict</code> is to use the initial
-state and covariance suppled when calling the
-<code>set_initial_state</code> method. This can be important to change
-if one wishes to correctly predict on the first few observations in a
-provided prediction data series. You can supply the <code>x0</code> and
-<code>p0</code> arguments with updated state and covariance
-estimates</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">new.initial.x0</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">new.initial.p0</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">pred</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>,</span>
-<span>                   initial.state <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>                     <span class="va">new.state.value</span>,</span>
-<span>                     <span class="va">new.covariance.value</span></span>
-<span>                   <span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="the-solver-options">The solver options<a class="anchor" aria-label="anchor" href="#the-solver-options"></a>
-</h2>
-<hr>
-<p>You can choose which solver options to use via the arguments
-<code>ode.solver</code> and <code>ode.timestep</code>.</p>
-<p>The <code>ode.solver</code> decides which ode solver algorithm to
-used when solving the mean and variance ODEs of the SDE.</p>
-<p>The <code>ode.timestep</code> determines the time step-size using
-when solving the ODEs, with default value being the minimum observed
-time difference in the provided data time vector
-(<code>min(diff(.data$t))</code>). The time step-size can’t be smaller
-than this. If the chosen time step-size <span class="math inline">\(\Delta_{step}\)</span> does not “almost” divide
-the observation time differences in the data <span class="math inline">\(\Delta_{obs}\)</span> i.e. if <span class="math display">\[
-\frac{\Delta_{obs}}{\Delta_{step}} - \bigg\lfloor
-\frac{\Delta_{obs}}{\Delta_{step}} \bigg\rfloor \geq 0.02
-\]</span> then the time step-size is reduced such that it does divide
-evenly by setting</p>
-<p><span class="math display">\[
-\frac{\Delta_{obs}}{\Delta_{step}} = \bigg\lceil
-\frac{\Delta_{obs}}{\Delta_{step}} \bigg\rceil
-\]</span> In other words: if there it takes <span class="math inline">\(3.561\)</span> time-steps to get from <span class="math inline">\(t_{i}\)</span> to <span class="math inline">\(t_{i+1}\)</span> then we take <span class="math inline">\(4\)</span> time-steps instead, and calculate a
-reduced time-step such that this is true. If there were only <span class="math inline">\(3.01\)</span> time-steps then we retain the
-original time-step, ignoring the small temporal discrepancy.</p>
-<p>We provide these arguments via</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span><span class="va">.data</span>,</span>
-<span>            ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">.data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="use-case">Use-case<a class="anchor" aria-label="anchor" href="#use-case"></a>
-</h2>
-<hr>
-<p>We could use our model predictions against observation to compute a
-model performance score e.g. RMSE (root-mean square error). We first
-estimate the model parameters, such that they are automatically used
-when calling <code>predict</code>. We then predict up to 10-steps ahead,
-and return only these values.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span>
-<span><span class="va">pred</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">predict</span><span class="op">(</span><span class="va">.data</span>, k.ahead<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span>
-<span><span class="va">pred.states</span> <span class="op">=</span> <span class="va">pred</span><span class="op">$</span><span class="va">states</span></span>
-<span><span class="va">pred.obs</span> <span class="op">=</span> <span class="va">pred</span><span class="op">$</span><span class="va">observations</span></span></code></pre></div>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># ggplot2 theme</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="va">mytheme</span> <span class="op">=</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
-<span>    text             <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span><span class="st">"Avenir Next Condensed"</span>,size<span class="op">=</span><span class="fl">15</span><span class="op">)</span>,</span>
-<span>    legend.text      <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">15</span><span class="op">)</span>,</span>
-<span>    axis.text        <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">15</span><span class="op">)</span>,</span>
-<span>    strip.text       <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face<span class="op">=</span><span class="st">"bold"</span>,size<span class="op">=</span><span class="fl">15</span><span class="op">)</span>,</span>
-<span>    legend.box       <span class="op">=</span> <span class="st">"vertical"</span>,</span>
-<span>    legend.position  <span class="op">=</span> <span class="st">"top"</span>,</span>
-<span>    plot.title       <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>hjust<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<p>Let’s plot the 10-step predictions against the observations.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred10</span> <span class="op">=</span> <span class="va">pred.states</span><span class="op">[</span><span class="va">pred.states</span><span class="op">$</span><span class="va">k.ahead</span><span class="op">==</span><span class="fl">10</span>,<span class="op">]</span></span></code></pre></div>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data</span> <span class="op">=</span> <span class="va">.data</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">pred10</span><span class="op">$</span><span class="va">t.j</span>,y<span class="op">=</span><span class="va">pred10</span><span class="op">$</span><span class="va">x</span>,color<span class="op">=</span><span class="st">"10-Step Predictions"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html" class="external-link">geom_ribbon</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">pred10</span><span class="op">$</span><span class="va">t.j</span>,ymin<span class="op">=</span><span class="va">pred10</span><span class="op">$</span><span class="va">x</span><span class="op">-</span><span class="fl">2</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">pred10</span><span class="op">$</span><span class="va">var.x</span><span class="op">)</span>,ymax<span class="op">=</span><span class="va">pred10</span><span class="op">$</span><span class="va">x</span><span class="op">+</span><span class="fl">2</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">pred10</span><span class="op">$</span><span class="va">var.x</span><span class="op">)</span><span class="op">)</span>,fill<span class="op">=</span><span class="st">"grey"</span>,alpha<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">data</span><span class="op">$</span><span class="va">t</span>,<span class="va">data</span><span class="op">$</span><span class="va">y</span>,color<span class="op">=</span><span class="st">"Observations"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>color<span class="op">=</span><span class="st">""</span>,x<span class="op">=</span><span class="st">"Time"</span>,y<span class="op">=</span><span class="st">""</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="co"># coord_cartesian(xlim=c(0,0.1)) +</span></span>
-<span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-17-1.png" width="700">
-We notice that because these are 10-step predictions the state
-uncertainty (95%) is much larger than for the filtered posterior state
-estimates from <code>fit</code> i.e.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t</span>         <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">mean</span><span class="op">$</span><span class="va">posterior</span><span class="op">$</span><span class="va">t</span></span>
-<span><span class="va">xpost</span>     <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">mean</span><span class="op">$</span><span class="va">posterior</span><span class="op">$</span><span class="va">x</span></span>
-<span><span class="va">xpost_sd</span>  <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">sd</span><span class="op">$</span><span class="va">posterior</span><span class="op">$</span><span class="va">x</span></span>
-<span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">t</span>,y<span class="op">=</span><span class="va">xpost</span>,color<span class="op">=</span><span class="st">"0-Step Predictions (Posterior State Estimates)"</span><span class="op">)</span>,lwd<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html" class="external-link">geom_ribbon</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">t</span>,ymin<span class="op">=</span><span class="va">xpost</span><span class="op">-</span><span class="fl">2</span><span class="op">*</span><span class="va">xpost_sd</span>,ymax<span class="op">=</span><span class="va">xpost</span><span class="op">+</span><span class="fl">2</span><span class="op">*</span><span class="va">xpost_sd</span><span class="op">)</span>,fill<span class="op">=</span><span class="st">"grey"</span>,alpha<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">data</span><span class="op">$</span><span class="va">t</span>,<span class="va">data</span><span class="op">$</span><span class="va">y</span>,color<span class="op">=</span><span class="st">"Observations"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">""</span>, color<span class="op">=</span><span class="st">""</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-18-1.png" width="700">
-We can calculate the RMSE prediction score for each prediction step as
-follows:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">rmse</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">k.ahead</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span></span>
-<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="va">k.ahead</span><span class="op">)</span><span class="op">{</span></span>
-<span>  <span class="va">xy</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="va">pred.states</span><span class="op">[</span><span class="va">pred.states</span><span class="op">$</span><span class="va">k.ahead</span><span class="op">==</span><span class="va">i</span>,<span class="st">"x"</span><span class="op">]</span>,</span>
-<span>    y <span class="op">=</span> <span class="va">pred.obs</span><span class="op">[</span><span class="va">pred.obs</span><span class="op">$</span><span class="va">k.ahead</span><span class="op">==</span><span class="va">i</span>,<span class="st">"y.data"</span><span class="op">]</span></span>
-<span>  <span class="op">)</span></span>
-<span>  <span class="va">rmse</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">xy</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span> <span class="op">-</span> <span class="va">xy</span><span class="op">[[</span><span class="st">"y"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">k.ahead</span>, <span class="va">rmse</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"steelblue"</span><span class="op">)</span> <span class="op">+</span> </span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">k.ahead</span>, <span class="va">rmse</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    title <span class="op">=</span> <span class="st">"Root-Mean Square Errors for Different Prediction Horizons"</span>,</span>
-<span>    x <span class="op">=</span> <span class="st">"Prediction Steps"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"Root-Mean-Square Errors"</span></span>
-<span>    <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="va">mytheme</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-19-1.png" width="700"></p>
+<code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>, </span>
+<span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>,<span class="fl">3</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>
+<span>                      n.sims<span class="op">=</span><span class="fl">100</span>,</span>
+<span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
+<p><img src="simulate_files/figure-html/unnamed-chunk-8-1.png" width="100%" style="display: block; margin: auto;"></p>
+<p>Lets see the effect of setting <span class="math inline">\(\theta =
+50\)</span>:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>, </span>
+<span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>,<span class="fl">1</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>
+<span>                      n.sims<span class="op">=</span><span class="fl">100</span>,</span>
+<span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
+<p><img src="simulate_files/figure-html/unnamed-chunk-10-1.png" width="100%" style="display: block; margin: auto;"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="description" content="ctsmTMB">
-<title>Using another Optimizer • ctsmTMB</title>
+<title>Extracting the Likelihood Function and Changing Optimizer • ctsmTMB</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
 <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="../apple-touch-icon.png">
@@ -19,7 +19,7 @@
 <link href="../deps/Source_Code_Pro-0.4.9/font.css" rel="stylesheet">
 <!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js" integrity="sha512-7O5pXpc0oCRrxk8RUfDYFgn0nO1t+jLuIOQdOMRp4APB7uZ4vSjspzp5y6YDtDs4VzUSTbWzBFZ/LKJhnyFOKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Using another Optimizer">
+<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js" integrity="sha512-7O5pXpc0oCRrxk8RUfDYFgn0nO1t+jLuIOQdOMRp4APB7uZ4vSjspzp5y6YDtDs4VzUSTbWzBFZ/LKJhnyFOKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Extracting the Likelihood Function and Changing Optimizer">
 <meta property="og:description" content="ctsmTMB">
 <meta property="og:image" content="/logo.png">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
@@ -53,15 +53,16 @@
     <a class="dropdown-item" href="../articles/estimate.html">Estimation</a>
     <a class="dropdown-item" href="../articles/predict.html">Prediction</a>
     <a class="dropdown-item" href="../articles/simulate.html">Simulation</a>
-    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Using another Optimizer</a>
+    <a class="dropdown-item" href="../articles/using_another_optimizer.html">Likelihood (Extracting Function Handlers)</a>
   </div>
 </li>
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-math-details">Math Details</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-math-details">
-    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Approximation</a>
-    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalmn Filter</a>
+    <a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a>
     <a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a>
+    <a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a>
   </div>
 </li>
 <li class="nav-item">
@@ -94,7 +95,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Using another Optimizer</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Extracting the Likelihood Function and Changing Optimizer</h1>
                         <h4 data-toc-skip class="author"></h4>
             
       
@@ -106,9 +107,8 @@
     
 <p>In this document we show how to use the <code>likelihood</code>
 method to obtain function handlers for the objective function, and
-gradient, (and hessian if there are no random efects in your model
-formulation). These handlers can then be parsed to an optimization
-algorithm of your own choice.</p>
+gradient, (and hessian if using a Kalman filter), for instance to use
+another optimization algorithm than <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code>.</p>
 <div class="section level2">
 <h2 id="simulate-from-the-ornstein-uhlenbeck-process">Simulate from the Ornstein-Uhlenbeck process<a class="anchor" aria-label="anchor" href="#simulate-from-the-ornstein-uhlenbeck-process"></a>
 </h2>
@@ -156,9 +156,6 @@ Y_{t_{k}} = X_{t_{k}} + e_{t_{k}}, \qquad e_{t_{k}} \sim
 <code class="sourceCode R"><span><span class="co"># Create model object</span></span>
 <span><span class="va">obj</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Set name of model (and the created .cpp file)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">setModelname</span><span class="op">(</span><span class="st">"ornstein_uhlenbeck"</span><span class="op">)</span></span>
-<span></span>
 <span><span class="co"># Add system equations</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span></span>
 <span>  <span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span><span class="op">*</span><span class="va">dw</span></span>
@@ -202,42 +199,39 @@ run the optimization scheme using the built-in optimization which uses
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Building model...</span></span></code></pre>
-<pre><code><span><span class="co">## Compiling model...</span></span></code></pre>
-<pre><code><span><span class="co">## Note: Using Makevars in /Users/pbrve/.R/Makevars</span></span></code></pre>
-<pre><code><span><span class="co">## using C++ compiler: 'Apple clang version 15.0.0 (clang-1500.3.9.4)'</span></span></code></pre>
-<pre><code><span><span class="co">## using SDK: 'MacOSX14.4.sdk'</span></span></code></pre>
-<pre><code><span><span class="co">## ...took 10.29 seconds</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.044 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.051 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
-<pre><code><span><span class="co">##   0:     921.77031:  1.60944  0.00000 -2.30259 -2.30259</span></span>
-<span><span class="co">##   1:     86.857795:  1.06416 0.614170 -1.83281 -1.97888</span></span>
-<span><span class="co">##   2:     31.849960:  1.43157 0.566368 -1.48426 -1.11793</span></span>
-<span><span class="co">##   3:     29.255774:  1.22062  1.42236 -1.18700 -1.48456</span></span>
-<span><span class="co">##   4:     2.6332703:  1.21162  1.06391 -0.839196 -1.50616</span></span>
-<span><span class="co">##   5:    -28.360004:  1.69842 0.789400 0.678990 -2.68208</span></span>
-<span><span class="co">##   6:    -31.783751:  1.72217 0.792252 0.505927 -2.70162</span></span>
-<span><span class="co">##   7:    -32.935798:  1.82814 0.794076 0.369331 -2.66980</span></span>
-<span><span class="co">##   8:    -34.998129:  2.13584 0.801094 0.363805 -2.49993</span></span>
-<span><span class="co">##   9:    -38.060272:  2.43616  1.03138 0.233817 -2.31788</span></span>
-<span><span class="co">##  10:    -38.611349:  2.53386  1.03053 0.151828 -2.34627</span></span>
-<span><span class="co">##  11:    -38.948305:  2.62609  1.06853 0.198821 -2.27616</span></span>
-<span><span class="co">##  12:    -39.203049:  2.73311  1.05589 0.129693 -2.30229</span></span>
-<span><span class="co">##  13:    -39.275690:  2.73805  1.08259 0.162430 -2.29016</span></span>
-<span><span class="co">##  14:    -39.308929:  2.76701  1.06735 0.191922 -2.29410</span></span>
-<span><span class="co">##  15:    -39.341994:  2.80593  1.07554 0.193617 -2.31337</span></span>
-<span><span class="co">##  16:    -39.346463:  2.79920  1.07739 0.200505 -2.32628</span></span>
-<span><span class="co">##  17:    -39.346636:  2.80270  1.07746 0.202366 -2.32687</span></span>
-<span><span class="co">##  18:    -39.346636:  2.80285  1.07748 0.202480 -2.32692</span></span>
-<span><span class="co">##  19:    -39.346636:  2.80285  1.07748 0.202482 -2.32692</span></span></code></pre>
+<pre><code><span><span class="co">##   0:     936.11682:  1.60944  0.00000 -2.30259 -2.30259</span></span>
+<span><span class="co">##   1:     87.083269:  1.05839 0.612612 -1.83165 -1.98751</span></span>
+<span><span class="co">##   2:     30.831804:  1.42872 0.571166 -1.47012 -1.13285</span></span>
+<span><span class="co">##   3:     27.093246:  1.22027  1.42418 -1.16175 -1.49867</span></span>
+<span><span class="co">##   4:    0.42802599:  1.21559  1.07263 -0.807822 -1.53233</span></span>
+<span><span class="co">##   5:    -29.837043:  1.68587 0.793054 0.591933 -2.65227</span></span>
+<span><span class="co">##   6:    -32.378284:  1.71155 0.797170 0.422376 -2.67022</span></span>
+<span><span class="co">##   7:    -33.322237:  1.80730 0.816713 0.294476 -2.60826</span></span>
+<span><span class="co">##   8:    -35.484031:  2.11436 0.813309 0.261892 -2.45452</span></span>
+<span><span class="co">##   9:    -36.943433:  2.20642 0.984187 0.199473 -2.38963</span></span>
+<span><span class="co">##  10:    -38.269996:  2.39678  1.01007 0.128045 -2.32821</span></span>
+<span><span class="co">##  11:    -38.662773:  2.46559  1.03990 0.118501 -2.31645</span></span>
+<span><span class="co">##  12:    -39.208765:  2.61559  1.05578 0.0954213 -2.30526</span></span>
+<span><span class="co">##  13:    -39.271267:  2.67270  1.09444 0.113168 -2.30196</span></span>
+<span><span class="co">##  14:    -39.341842:  2.73859  1.07795 0.123778 -2.32079</span></span>
+<span><span class="co">##  15:    -39.346399:  2.71897  1.07807 0.124258 -2.33025</span></span>
+<span><span class="co">##  16:    -39.347572:  2.71957  1.07662 0.127387 -2.32720</span></span>
+<span><span class="co">##  17:    -39.347641:  2.72307  1.07756 0.127613 -2.32681</span></span>
+<span><span class="co">##  18:    -39.347669:  2.72144  1.07762 0.127756 -2.32677</span></span>
+<span><span class="co">##  19:    -39.347672:  2.72159  1.07745 0.127677 -2.32686</span></span>
+<span><span class="co">##  20:    -39.347672:  2.72164  1.07749 0.127690 -2.32684</span></span>
+<span><span class="co">##  21:    -39.347672:  2.72163  1.07749 0.127690 -2.32684</span></span></code></pre>
 <pre><code><span><span class="co">##   Optimization finished!:</span></span>
-<span><span class="co">##             Elapsed time: 0.028 seconds.</span></span>
-<span><span class="co">##             The objective value is: -3.934664e+01</span></span>
-<span><span class="co">##             The maximum gradient component is: 1.3e-04</span></span>
+<span><span class="co">##             Elapsed time: 0.004 seconds.</span></span>
+<span><span class="co">##             The objective value is: -3.934767e+01</span></span>
+<span><span class="co">##             The maximum gradient component is: 8.4e-06</span></span>
 <span><span class="co">##             The convergence message is: relative convergence (4)</span></span>
-<span><span class="co">##             Iterations: 19</span></span>
-<span><span class="co">##             Evaluations: Fun: 27 Grad: 20</span></span>
+<span><span class="co">##             Iterations: 21</span></span>
+<span><span class="co">##             Evaluations: Fun: 30 Grad: 22</span></span>
 <span><span class="co">##             See stats::nlminb for available tolerance/control arguments.</span></span></code></pre>
 <pre><code><span><span class="co">## Returning results...</span></span></code></pre>
 <pre><code><span><span class="co">## Finished!</span></span></code></pre>
@@ -245,7 +239,7 @@ run the optimization scheme using the built-in optimization which uses
 the fixed parameters using the construction function handlers from
 <code><a href="https://rdrr.io/pkg/TMB/man/MakeADFun.html" class="external-link">TMB::MakeADFun</a></code> and parsing them to
 <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code> i.e.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span> <span class="op">=</span> <span class="fu">TMB</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/TMB/man/MakeADFun.html" class="external-link">MakeADFun</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span>
 <span><span class="va">opt</span> <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a></span><span class="op">(</span>start<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span>, objective<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">fn</span>, grad<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">gr</span>, hessian<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">he</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -257,36 +251,32 @@ the fixed parameters using the construction function handlers from
 <code>nll</code> object that holds the negative log-likelihood, and its
 derivatives. The method takes arguments similar to those of
 <code>estimate</code>.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">likelihood</span><span class="op">(</span><span class="va">.data</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Building model...</span></span></code></pre>
-<pre><code><span><span class="co">## Compiling model...</span></span></code></pre>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
-<pre><code><span><span class="co">## Constructing objective function...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.041 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Succesfully returned function handlers</span></span></code></pre>
 <p>The initial parameters (supplied by the user) are stored here</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span><span class="op">$</span><span class="va">par</span></span></code></pre></div>
 <pre><code><span><span class="co">##   logtheta         mu logsigma_x logsigma_y </span></span>
 <span><span class="co">##   1.609438   0.000000  -2.302585  -2.302585</span></span></code></pre>
 <p>The objective function can be evaluted by</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span><span class="op">$</span><span class="fu">fn</span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 921.7703</span></span></code></pre>
+<pre><code><span><span class="co">## [1] 936.1168</span></span></code></pre>
 <p>The gradient can be evaluted by</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span><span class="op">$</span><span class="fu">gr</span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##          [,1]      [,2]      [,3]      [,4]</span></span>
-<span><span class="co">## [1,] 1382.854 -1557.574 -1191.374 -820.9253</span></span></code></pre>
+<pre><code><span><span class="co">##          [,1]      [,2]      [,3]     [,4]</span></span>
+<span><span class="co">## [1,] 1430.881 -1590.748 -1222.864 -818.151</span></span></code></pre>
 <p>The hessian can be evaluted by</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nll</span><span class="op">$</span><span class="fu">he</span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##           [,1]       [,2]       [,3]       [,4]</span></span>
-<span><span class="co">## [1,]  2226.705 -2859.2069 -1636.0560 -1136.3013</span></span>
-<span><span class="co">## [2,] -2859.207  1663.1457  2251.5926   865.5807</span></span>
-<span><span class="co">## [3,] -1636.056  2251.5926   905.1284  1486.3607</span></span>
-<span><span class="co">## [4,] -1136.301   865.5807  1486.3607   346.7711</span></span></code></pre>
+<span><span class="co">## [1,]  2348.091 -2949.2028 -1700.6171 -1167.7123</span></span>
+<span><span class="co">## [2,] -2949.203  1691.7601  2308.7901   874.6161</span></span>
+<span><span class="co">## [3,] -1700.617  2308.7901   938.3781  1516.2869</span></span>
+<span><span class="co">## [4,] -1167.712   874.6161  1516.2869   311.1072</span></span></code></pre>
 <p>We can now use these to optimize the function using
 e.g. <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim</a></code> instead.</p>
 </div>
@@ -298,21 +288,21 @@ e.g. <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">s
 <code><a href="../reference/setParameter.html">setParameter()</a></code> method by using the
 <code>getParameters</code> method (note that <code>nll$par</code> and
 <code>pars$initial</code> are identical).</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pars</span> <span class="op">=</span> <span class="va">obj</span><span class="op">$</span><span class="fu">getParameters</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##            type   estimate   initial     lower     upper</span></span>
-<span><span class="co">## logtheta   free  2.8028461  1.609438      -Inf  2.995732</span></span>
-<span><span class="co">## mu         free  1.0774793  0.000000 -10.00000 10.000000</span></span>
-<span><span class="co">## logsigma_x free  0.2024819 -2.302585 -11.51293  1.609438</span></span>
-<span><span class="co">## logsigma_y free -2.3269231 -2.302585 -11.51293  1.609438</span></span></code></pre>
+<span><span class="co">## logtheta   free  2.7216294  1.609438      -Inf  2.995732</span></span>
+<span><span class="co">## mu         free  1.0774882  0.000000 -10.00000 10.000000</span></span>
+<span><span class="co">## logsigma_x free  0.1276898 -2.302585 -11.51293  1.609438</span></span>
+<span><span class="co">## logsigma_y free -2.3268411 -2.302585 -11.51293  1.609438</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="optimize-manually-using-statsoptim">Optimize manually using <code>stats::optim</code><a class="anchor" aria-label="anchor" href="#optimize-manually-using-statsoptim"></a>
 </h2>
 <p>We supply the initial parameter values, objective function handler
 and gradient handler, and parameter bounds to <code>optim</code>.</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">opt</span> <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a></span><span class="op">(</span>par<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">par</span>, </span>
 <span>                   fn<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">fn</span>, </span>
 <span>                   gr<span class="op">=</span><span class="va">nll</span><span class="op">$</span><span class="va">gr</span>, </span>
@@ -327,27 +317,27 @@ and gradient handler, and parameter bounds to <code>optim</code>.</p>
 <p>Lets compare the results from using <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim</a></code> with
 the extracted function handler versus the internal optimisation that
 uses <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code> stored in <code>fit</code>:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Estimated parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>external<span class="op">=</span><span class="va">opt</span><span class="op">$</span><span class="va">par</span>, internal<span class="op">=</span><span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##              external   internal</span></span>
-<span><span class="co">## logtheta    2.8028428  2.8028461</span></span>
-<span><span class="co">## mu          1.0774788  1.0774793</span></span>
-<span><span class="co">## logsigma_x  0.2024796  0.2024819</span></span>
-<span><span class="co">## logsigma_y -2.3269222 -2.3269231</span></span></code></pre>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<span><span class="co">## logtheta    2.7216300  2.7216294</span></span>
+<span><span class="co">## mu          1.0774878  1.0774882</span></span>
+<span><span class="co">## logsigma_x  0.1276904  0.1276898</span></span>
+<span><span class="co">## logsigma_y -2.3268419 -2.3268411</span></span></code></pre>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Neg. Log-Likelihood</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>external<span class="op">=</span><span class="va">opt</span><span class="op">$</span><span class="va">value</span>, internal<span class="op">=</span><span class="va">fit</span><span class="op">$</span><span class="va">nll</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##    external  internal</span></span>
-<span><span class="co">## 1 -39.34664 -39.34664</span></span></code></pre>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<span><span class="co">## 1 -39.34767 -39.34767</span></span></code></pre>
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Gradient components</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>external<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="fu">gr</span><span class="op">(</span><span class="va">opt</span><span class="op">$</span><span class="va">par</span><span class="op">)</span><span class="op">)</span>, internal<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">nll</span><span class="op">$</span><span class="fu">gr</span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##        external      internal</span></span>
-<span><span class="co">## 1 -5.284383e-05 -2.269770e-06</span></span>
-<span><span class="co">## 2 -1.491876e-04 -1.337658e-04</span></span>
-<span><span class="co">## 3 -4.592109e-05  2.628658e-05</span></span>
-<span><span class="co">## 4 -2.656532e-05 -2.239568e-06</span></span></code></pre>
+<span><span class="co">## 1  7.587709e-06 -8.417709e-06</span></span>
+<span><span class="co">## 2 -5.872425e-05  8.215885e-06</span></span>
+<span><span class="co">## 3  1.062722e-05  4.106731e-06</span></span>
+<span><span class="co">## 4 -1.917425e-05  1.643487e-06</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

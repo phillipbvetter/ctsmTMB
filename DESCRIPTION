@@ -29,7 +29,7 @@ Depends:
 	R (>= 4.0.0)
 Imports:
 	TMB,
-	RTMB,
+	RTMB (>= 1.7),
 	R6,
 	Deriv,
 	stringr,

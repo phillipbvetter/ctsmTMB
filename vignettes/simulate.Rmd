@@ -16,7 +16,7 @@ library(ggplot2)
 
 This vignette demonstrates how to use the `simulate` method for calculating *k*-step (state and observation) simulations.
 
-## Notation
+# Notation
 
 ---
 
@@ -44,7 +44,7 @@ $$
 $$
 
 
-## Arguments
+# Arguments
 
 ---
 

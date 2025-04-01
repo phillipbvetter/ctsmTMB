@@ -19,6 +19,9 @@
     <loc>/articles/laplace_approx.html</loc>
   </url>
   <url>
+    <loc>/articles/linear_kalman_filter.html</loc>
+  </url>
+  <url>
     <loc>/articles/observation_equations.html</loc>
   </url>
   <url>
@@ -52,46 +55,10 @@
     <loc>/reference/addSystem.html</loc>
   </url>
   <url>
-    <loc>/reference/create_return_prediction.html</loc>
-  </url>
-  <url>
-    <loc>/reference/create_return_simulation.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ctsmTMB.Deriv.html</loc>
-  </url>
-  <url>
     <loc>/reference/ctsmTMB.html</loc>
   </url>
   <url>
-    <loc>/reference/ekf_rcpp_likelihood.html</loc>
-  </url>
-  <url>
-    <loc>/reference/erf.html</loc>
-  </url>
-  <url>
-    <loc>/reference/execute_ekf_prediction.html</loc>
-  </url>
-  <url>
-    <loc>/reference/execute_ekf_simulation.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_Deriv_drules.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_Deriv_environment.html</loc>
-  </url>
-  <url>
     <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/invlogit.html</loc>
-  </url>
-  <url>
-    <loc>/reference/invlogit2.html</loc>
-  </url>
-  <url>
-    <loc>/reference/logit.html</loc>
   </url>
   <url>
     <loc>/reference/plot.ctsmTMB.fit.html</loc>
@@ -103,6 +70,9 @@
     <loc>/reference/plot.ctsmTMB.pred.html</loc>
   </url>
   <url>
+    <loc>/reference/plot.ctsmTMB.profile.html</loc>
+  </url>
+  <url>
     <loc>/reference/print.ctsmTMB.fit.html</loc>
   </url>
   <url>
@@ -110,15 +80,6 @@
   </url>
   <url>
     <loc>/reference/profile.ctsmTMB.fit.html</loc>
-  </url>
-  <url>
-    <loc>/reference/rcpp_ekf_estimate.html</loc>
-  </url>
-  <url>
-    <loc>/reference/rcpp_prediction.html</loc>
-  </url>
-  <url>
-    <loc>/reference/rcpp_simulation.html</loc>
   </url>
   <url>
     <loc>/reference/setAlgebraics.html</loc>

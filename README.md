@@ -41,15 +41,15 @@ set of stochastic differential equations, and information about the
 system is available at discrete times through the observations
 $y_{t_k}$.
 
-The **ctsmTMB** package is essentially “just” a convience wrapper for
-the **TMB**/**RTMB** packages [(Template Model
-Builder)](https://github.com/kaskr/adcomp) that provide automatic
-differentiation of the likelihood function, and access to other
-computational tools such as the Laplace approximation. The likelihood
-function is constructed based on the (symbolic) user-provided state
-space equations, which may be specified using the implemented OOP-style
-**R6** `ctsmTMB` class, with methods such as `addSystem` (for defining
-system equations), and `addObs` (for defining observation equations).
+The **ctsmTMB** package is essentially wrapper around the **TMB/RTMB**
+packages [(Template Model Builder)](https://github.com/kaskr/adcomp)
+that provide automatic differentiation of the likelihood function, and
+access to other computational tools such as the Laplace approximation.
+The likelihood function is constructed based on the (symbolic)
+user-provided state space equations, which may be specified using the
+implemented OOP-style **R6** `ctsmTMB` class, with methods such as
+`addSystem` (for defining system equations), and `addObs` (for defining
+observation equations).
 
 The primary work-horse of **ctsmTMB** is the `estimate` method, which
 carries out inference by minimizing the (negative log) likelihood using
@@ -61,10 +61,10 @@ are the Linear and Extended Kalman filters in addition to filtration
 (actually smoothing) using a Laplace approximation approach.
 <!-- The user can extract the likelihood function handles (function, gradient and hessian) with the `likelihood` method if e.g. they want to use another optimizer. -->
 
-The package facilities forecasting through the `predict` (momen
+The package facilities forecasting through the `predict` (moment
 forecasts) and `simulate` (stochastic path simulations) methods. The
-calculations may be carried out in either **R** (default) or for
-additional speed in **C++** using `Rcpp`.
+calculations for these may be carried out in either **R** (default) or
+for additional speed in **C++** using `Rcpp`.
 <!-- in particular using the `RcppXPtrUtils` package for sending **C++** pointers of the model-specific functions (drift, diffusion, observation and jacobians) rather than sending (slow to evaluate) **R** functions. -->
 
 <!-- Estimation Methods -->
@@ -92,35 +92,28 @@ advantages of the methods are:
 3.  Multi-step predictions / simulations with state updates are easier
     to compute.
 
-In these cases **TMB** simply provides an easy framework for automatic
-differentiation.
-
-The package is currently mostly tailored towards the Kalman Filters,
-with its available methods `predict` and `simulate` for k-step-ahead
-predictions and simulations. It also has an `S3 method` implementation
-of `plot` to be called on the `ctsmTMB.fit` class object returned from
-the `estimate` method, which plots a basic residuals analysis using the
-`ggplot2` package.
+In these cases **TMB** simply provides the automatic differentiation.
 
 <!-- The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242). -->
 
-## Laplace Filter / Approximation
+## Laplace “Filter”
 
-The state-reconstructions based on the `laplace` method are *smoothed*
-estimates, meaning that all states are optimized jointly, given all
-observations in the data. For further mathematicals details, see
-[this](https://phillipbvetter.github.io/ctsmTMB/articles/laplace_approx.html)
-article on the package webpage. The Laplace Approximation is natively
-built-into and completely handled by **TMB**.
+The state-reconstructions based on the `laplace` (approximation) method
+are *smoothed* estimates, meaning that all states are optimized jointly,
+given all observations in the data. The Laplace Approximation is
+natively built-into and completely handled by **TMB**. The package
+implements the stability-improved method due to [Thygesen,
+2025](https://arxiv.org/abs/2503.21358).
 
-1.  The possibility for non-Gaussian (but unimodal) observation
-    densities to accommodate the need for e.g. heavier distribution
-    tails. (not yet implemented).
+A particular advantage of Laplace filter is:
 
-The method *may* be less useful in the context of model-training towards
-forecasting because the likelihood contributions are based on these
-smoothed estimates, rather than one-step predictions (as is the case of
-the Kalman filters).
+1.  The possibility for unimodal non-Gaussian observation densities to
+    accommodate the need for e.g. heavier distribution tails. Not
+    implemented.
+
+The method is typically not useful for model-training with the goal of
+forecasting because the likelihood contributions are based on smoothed
+estimates, rather than the one-step predictions of Kalman filters.
 
 <!-- Installation -->
 
@@ -268,22 +261,15 @@ model$setVariance(
   y ~ sigma_y^2
 )
 
-# Specify algebraic relations
-model$setAlgebraics(
-  theta   ~ exp(logtheta),
-  sigma_x ~ exp(logsigma_x),
-  sigma_y ~ exp(logsigma_y)
-)
-
 # Add vector input
 model$addInput(u)
 
 # Specify parameter initial values and lower/upper bounds in estimation
 model$setParameter(
-  logtheta    = log(c(initial = 1, lower=1e-5, upper=50)),
-  mu          = c(initial=1.5, lower=0, upper=5),
-  logsigma_x  = log(c(initial=1, lower=1e-10, upper=30)),
-  logsigma_y  = log(c(initial=1e-1, lower=1e-10, upper=30))
+  theta   = c(initial = 1, lower=1e-5, upper=50),
+  mu      = c(initial=1.5, lower=0, upper=5),
+  sigma_x = c(initial=1, lower=1e-10, upper=30),
+  sigma_y = c(initial=1e-1, lower=1e-10, upper=30)
 )
 
 # Set initial state mean and covariance
@@ -294,7 +280,7 @@ fit <- model$estimate(data=.data, method="ekf")
 
 # Check parameter estimates against truth
 p0 = fit$par.fixed
-cbind(c(exp(p0[1]),p0[2],exp(p0[3]),exp(p0[4])), pars)
+cbind(p0,pars)
 
 # Create plot of one-step predictions, simulated states and observations
 t.est = fit$states$mean$prior$t
@@ -304,7 +290,7 @@ plot1 = ggplot() +
   geom_ribbon(aes(x=t.est, ymin=x.mean-2*x.sd, ymax=x.mean+2*x.sd),fill="grey", alpha=0.9) +
   geom_line(aes(x=t.est, x.mean),col="steelblue",lwd=1) +
   geom_line(aes(x=t.sim,y=x)) + 
-  geom_point(aes(x=t.obs,y=y),col="tomato",size=1) +
+  geom_point(aes(x=t.obs,y=y),col="tomato",size=0.5) +
   labs(title="1-Step State Estimates vs Observations", x="Time", y="") +
   theme_minimal()
 
@@ -322,21 +308,15 @@ plot2 = ggplot() +
                   ymin=pred10step$x-2*sqrt(pred10step$var.x),
                   ymax=pred10step$x+2*sqrt(pred10step$var.x)),fill="grey", alpha=0.9) +
   geom_line(aes(x=pred10step$t.j,pred10step$x),color="steelblue",lwd=1) +
-  geom_point(aes(x=t.obs,y=y),color="tomato",size=1) +
+  geom_point(aes(x=t.obs,y=y),color="tomato",size=0.5) +
   labs(title="10 Step Predictions vs Observations", x="Time", y="") +
   theme_minimal()
 
 # Perform prediction ignoring all data
-pred.list = model$predict(data=.data,
-                          k.ahead=1e7, 
-                          method="ekf",
-)
+pred.list = model$predict(data=.data,method="ekf")
 
 # Perform simulation ignoring all data
-sim.list = model$simulate(data=.data, 
-                          k.ahead=499, 
-                          method="ekf"
-)
+sim.list = model$simulate(data=.data, method="ekf", n.sims=10)
 
 # Collapse simulation data for easy use with ggplot 
 sim.df = sim.list$states$x$i0 %>%
@@ -347,13 +327,23 @@ sim.df = sim.list$states$x$i0 %>%
 plot3 = ggplot() +
   geom_line(data=sim.df, aes(x=t.j, y=value, group=variable),color="grey") +
   geom_line(aes(x=pred.list$states$t.j,y=pred.list$states$x),color="steelblue") +
-  geom_point(aes(x=t.obs,y=y),color="tomato",size=1) +
+  geom_point(aes(x=t.obs,y=y),color="tomato",size=0.5) +
   labs(title="No Update Prediction and Simulations vs Observations", x="Time", y="") +
   theme_minimal() + theme(legend.position = "none")
 
-# Draw both plots
-patchwork::wrap_plots(plot1, plot2, plot3, ncol=1)
+# Create plot
+p1 <- patchwork::wrap_plots(plot1, plot2, plot3, ncol=1)
 
-# Plot one-step-ahead residual analysis
-plot(fit)
+# Create one-step-ahead residual analysis plot
+p2 <- plot(fit)
+
+# Wrap both plots
+patchwork::wrap_plots(p1,p2[[1]], ncol=2)
 ```
+
+## Bibliography
+
+- U. H. Thygesen and K. Kristensen (2025), *“Inference in stochastic
+  differential equations using the Laplace approximation: Demonstration
+  and examples”*. In:
+  [arXiv:2503.21358v2](https://arxiv.org/abs/2503.21358).

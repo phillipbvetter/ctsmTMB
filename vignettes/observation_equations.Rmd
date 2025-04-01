@@ -1,10 +1,10 @@
 ---
-title: "observations: Using functions on the left-hand side"
+title: "AddObs - Details"
 author: ""
 date: ""
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{observations: Using functions on the left-hand side}
+  %\VignetteIndexEntry{AddObs - Details}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,21 +19,13 @@ In this document we show how to apply functions to the left-hand side of an obse
 # Create model object
 obj = ctsmTMB$new()
 
-# Set name of model (and the created .cpp file)
-obj$setModelname("ornstein_uhlenbeck")
-
 # Add system equations
 obj$addSystem(
   dx ~ theta * (mu-x) * dt + sigma_x*dw
 )
 ```
 
-```{r, include=FALSE, eval=FALSE}
-temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"))
-obj$setCppfilesDirectory(temporary_directory)
-```
-
-# Adding observation equations
+## Adding observation equations
 
 ---
 
@@ -51,7 +43,7 @@ obj$addObs(
 
 Note that these kind of observation equations, where the left-hand side is a function of one (or more) observed variables must be explicitly named using the `obsnames` argument.
 
-# Adding observation variances
+## Adding observation variances
 
 ---
 
@@ -70,7 +62,7 @@ obj$setVariance(
 )
 ```
 
-# Multiple observation equations
+## Multiple observation equations
 
 ---
 
@@ -82,8 +74,4 @@ obj$addObs(
   y^2+z^3 ~ x,
   obsnames = c("log_y", NA, "y2_plus_z3")
 )
-```
-
-```{r clean up, include=FALSE, eval=FALSE}
-unlink(temporary_directory, recursive=TRUE)
 ```

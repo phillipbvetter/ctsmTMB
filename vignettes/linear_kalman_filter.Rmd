@@ -1,10 +1,10 @@
 ---
-title: "Extended Kalman Filter"
+title: "Linear Kalman Filter"
 author: ""
 date: ""
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Extended Kalman Filter}
+  %\VignetteIndexEntry{Linear Kalman Filter}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
