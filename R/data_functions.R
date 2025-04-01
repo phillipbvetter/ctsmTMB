@@ -351,13 +351,27 @@ set_parameters = function(pars, silent, self, private){
     # check if parameters is with or without fixed parameters
     lp = length(private$parameter.names)
     fp = length(private$fixed.pars)
+    
     # if not correct length give error
-    if(!any(length(pars) == c(lp,lp-fp))){
+    if(!any(length(pars) == c(lp, lp-fp))){
       stop("Incorrect number of parameters supplied (",length(pars),"). ", "Please supply either ",lp," or ", lp-fp, ", i.e. with or without fixed parameters.")
     }
-    # if not contain fixed parameters, add these
+    # if parameters does not contain fixed parameters - add these
     if(length(pars)==lp-fp){
-      pars = c(pars, self$getParameters(type="fixed",value="initial"))
+      
+      # Get free and fixes ids
+      par.type.free <- self$getParameters()[,"type"] == "free"
+      par.type.fixed <- !par.type.free
+      
+      # Create new par-vector
+      full.parVec <- rep(NA,lp)
+      
+      # Assign free and fixed pars 
+      full.parVec[par.type.free] <- pars
+      full.parVec[par.type.fixed] <- self$getParameters(type="fixed",value="initial")
+      
+      # return 
+      pars <- full.parVec
     }
   }
   
