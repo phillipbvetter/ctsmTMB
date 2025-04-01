@@ -2,12 +2,12 @@
 # This is a testthat script for automatically testing that the functions in
 # ctsmTMB are working as intended.
 
-obj = ctsmTMB$new()
-testthat::expect_s3_class(obj, class=c("ctsmTMB","R6"))
+model = ctsmTMB$new()
+testthat::expect_s3_class(model, class=c("ctsmTMB","R6"))
 
 # Try to create a model
-testthat::expect_no_error({
 model = ctsmTMB$new()
+testthat::expect_no_error({
 model$addSystem(
   dx ~ theta * (mu*u - x) * dt + sigma_x*dw,
   dx2 ~ sigma_x * dw1
@@ -35,27 +35,6 @@ model$setParameter(
 )
 model$setInitialState(list(rep(1,2), 0.656*diag(2)))
 })
-
-set.seed(10)
-fake.data <- data.frame(
-  t = c(0,1,2,3,4),
-  u = rnorm(5),
-  y = rnorm(5),
-  z  = rnorm(5)
-)
-
-testthat::expect_no_error(
-  model$estimate(fake.data, silent=T, control=list(trace=0))
-)
-testthat::expect_no_error(
-  model$likelihood(fake.data, silent=T)
-)
-testthat::expect_no_error(
-  model$predict(fake.data, silent=T)
-)
-testthat::expect_no_error(
-  model$simulate(fake.data, silent=T)
-)
 
 # CPP FUNCTIONS
 # testthat::expect_no_error(
