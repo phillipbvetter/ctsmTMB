@@ -2,12 +2,21 @@
 # CONSTRUCT LAPLACE MAKEADFUN WITH RTMB
 #######################################################
 
-makeADFun_laplace_rtmb = function(self, private)
+makeADFun_laplace2_rtmb = function(self, private)
 {
   
   # Tape Configration ----------------------
+  # The best option was not to change defaults
   RTMB::TapeConfig(atomic="disable")
   RTMB::TapeConfig(vectorize="disable")
+  
+  # global values in likelihood function ------------------------------------
+  n.states <- private$number.of.states
+  n.obs <- private$number.of.observations
+  n.pars <- private$number.of.pars
+  n.diffusions <- private$number.of.diffusions
+  estimate.initial <- private$estimate.initial
+  n.dbs <- nrow(private$tmb.initial.state) - 1
   
   # Data ----------------------------------------
   
@@ -30,9 +39,12 @@ makeADFun_laplace_rtmb = function(self, private)
   iobs <- private$iobs
   
   # parameters ----------------------------------------
+  db.len <- n.diffusions * n.dbs
+  dB = matrix(numeric(n.diffusions * n.dbs), nrow=n.dbs, ncol=n.diffusions)
   parameters = c(
     lapply(private$parameters, function(x) x[["initial"]]),
-    private$tmb.initial.state
+    private$tmb.initial.state,
+    dB = list(dB)
   )
   
   # adjoints ----------------------------------------
@@ -90,15 +102,8 @@ makeADFun_laplace_rtmb = function(self, private)
     2*RTMB::pnorm(y)-1
   }
   
-  # global values in likelihood function ------------------------------------
-  n.states <- private$number.of.states
-  n.obs <- private$number.of.observations
-  n.pars <- private$number.of.pars
-  n.diffusions <- private$number.of.diffusions
-  estimate.initial <- private$estimate.initial
-  
   # likelihood function --------------------------------------
-  laplace.nll = function(p){
+  laplace2.nll = function(p){
     
     # "[<-" <- RTMB::ADoverload("[<-")
     # "diag<-" <- RTMB::ADoverload("diag<-")
@@ -108,7 +113,8 @@ makeADFun_laplace_rtmb = function(self, private)
     nll = 0
     
     # small identity matrix
-    small_identity = diag(1e-8, nrow=n.states, ncol=n.states)
+    # tiny = diag(1e-8, nrow=n.states, ncol=n.states)
+    tiny <- 1e-5 * diag(n.states)
     
     # fixed effects parameter vector
     parVec <- do.call(c, p[1:n.pars])
@@ -126,9 +132,11 @@ makeADFun_laplace_rtmb = function(self, private)
       X <- -RTMB::solve(P, as.numeric(Q))
       covMat <- RTMB::matrix(X, nrow=n.states)
     }
-
+    
     # extract state random effects and fix initial condition
-    stateMat <- do.call(cbind, p[(n.pars+1):length(p)])
+    stateMat <- do.call(cbind, p[(n.pars+1):(length(p)-1)])
+    dstateMat <- RTMB::apply(stateMat, 2, diff)
+    I0 <- diag(n.diffusions)
     
     # prior contribution
     z0 <- stateMat[1,] - stateVec
@@ -144,27 +152,31 @@ makeADFun_laplace_rtmb = function(self, private)
       ###### BETWEEN TIME POINTS LOOP START #######
       for(j in 1:ode_timesteps[i]){
         
-        # grab current and next state
-        x_now = stateMat[ode_cumsum_timesteps[i]+j,]
-        x_next = stateMat[ode_cumsum_timesteps[i]+j+1,]
+        # current index in state matrix
+        cur.id <- ode_cumsum_timesteps[i]+j
         
         # compute drift (vector) and diffusion (matrix)
-        f = f__(x_now, parVec, inputVec)
-        g = g__(x_now, parVec, inputVec)
+        stateVec <- stateMat[cur.id,]
+        f = f__(stateVec, parVec, inputVec)
+        g = g__(stateVec, parVec, inputVec)
         inputVec = inputVec + dinputVec
         
-        # assume multivariate gauss distribution according to euler-step
-        # and calculate the likelihood
-        z = x_next - (x_now + f * ode_timestep_size[i])
-        v = (g %*% t(g) + small_identity) * ode_timestep_size[i]
-        nll = nll - RTMB::dmvnorm(z, Sigma=v, log=TRUE)
+        # Compute expected dX from Euler Maruyama
+        dstateVecPred <- f * ode_timestep_size[i] + g %*% p$dB[cur.id,]
+        
+        # Likelihood contribution from state difference (diagonal covariance)
+        z <- dstateMat[cur.id,] - dstateVecPred
+        nll = nll - RTMB::dmvnorm(z, Sigma=tiny, log=TRUE)
+        
+        # Likelihood contribution from dBs
+        nll = nll - RTMB::dmvnorm(p$dB[cur.id,], Sigma=ode_timestep_size[i]*I0, log=TRUE)
       }
       ###### BETWEEN TIME POINTS LOOP END #######
     }
     ###### TIME LOOP END #######
     
     obsMat = RTMB::OBS(obsMat)
-    ###### DATA UPDATE START #######
+    ##### DATA UPDATE START #######
     for(i in 1:n.obs){
       iobs.vec <- iobs[[i]]
       for(j in 1:length(iobs[[i]])){
@@ -175,12 +187,9 @@ makeADFun_laplace_rtmb = function(self, private)
         # Get corresponding input, state and observation
         inputVec = inputMat[k,]
         stateVec = stateMat[ode_cumsum_timesteps[k]+1,]
-        # obsScalar = obsMat[k,i]
         obsScalar = obsMat[[k,i]]
 
         # Observation equation and variance
-        # h_x = h__(stateVec, parVec, inputVec)[i]
-        # hvar_x = hvar__(stateVec, parVec, inputVec)[i]
         h_x = h__(stateVec, parVec, inputVec)[[i]]
         hvar_x = hvar__(stateVec, parVec, inputVec)[[i]]
 
@@ -198,9 +207,9 @@ makeADFun_laplace_rtmb = function(self, private)
   # Construct Neg. Log-Likelihood
   ################################################
   
-  nll = RTMB::MakeADFun(func = laplace.nll, 
+  nll = RTMB::MakeADFun(func = laplace2.nll, 
                         parameters=parameters, 
-                        random=private$state.names,
+                        random=c(private$state.names,"dB"),
                         map = lapply(private$fixed.pars, function(x) x$factor),
                         silent=TRUE)
   
@@ -217,7 +226,7 @@ makeADFun_laplace_rtmb = function(self, private)
 # RETURN FIT FOR LAPLACE
 #######################################################
 #######################################################
-calculcate_fit_statistics_laplace <- function(self, private, laplace.residuals){
+calculcate_fit_statistics_laplace2 <- function(self, private, laplace.residuals){
   
   # Initialization and clearing -----------------------------------
   if (is.null(private$opt)) {
@@ -294,62 +303,6 @@ calculcate_fit_statistics_laplace <- function(self, private, laplace.residuals){
   # t-values and Pr( t > t_test ) -----------------------------------
   private$fit$tvalue = private$fit$par.fixed / private$fit$sd.fixed
   private$fit$Pr.tvalue = 2*pt(q=abs(private$fit$tvalue),df=sum(sumrowNAs),lower.tail=FALSE)
-  
-  # Observations -----------------------------------
-  listofvariables.smoothed = c(
-    # states
-    as.list(private$fit$states$mean$smoothed[-1]),
-    # estimated free parameters 
-    as.list(private$fit$par.fixed),
-    # fixed parameters
-    lapply(private$fixed.pars, function(x) x$initial),
-    # inputs
-    as.list(private$data)
-  )
-  obs.df.smoothed = as.data.frame(
-    lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.smoothed)})
-  )
-  private$fit$observations$mean$smoothed = data.frame(t=private$data$t, obs.df.smoothed)
-  
-  # Observation variances -----------------------------------
-  # The observation variance (to first order) is: 
-  #
-  # y = h(x) + e -> var(y) = dhdx var(x) dhdx^T + var(e)
-  jac.h = c()
-  for(i in seq_along(private$obs.names)){
-    for(j in seq_along(private$state.names)){
-      jac.h = c(jac.h, private$diff.terms.obs[[i]][[j]])
-    }
-  }
-  dhdx <- parse(text=sprintf("matrix(c(%s),nrow=%s,ncol=%s)", paste(jac.h,collapse=","), m, n))[[1]]
-  obs.var <- c()
-  for(i in seq_along(private$obs.var.trans)){
-    obs.var = c(obs.var, private$obs.var.trans[[i]]$rhs)
-  }
-  obsvar <- parse(text=sprintf("diag(%s)*c(%s)", m, paste(obs.var,collapse=",")))[[1]]
-  yCov <- substitute(dhdx %*% xCov %*% t(dhdx) + eCov, list(dhdx=dhdx, eCov=obsvar))
-  
-  # Evaluate prior and posterior variance
-  list.of.parameters <- c(
-    as.list(private$fit$par.fixed),
-    lapply(private$fixed.pars, function(x) x$initial)
-  )
-  # prior
-  # obsvar.smooth <- list()
-  # for(i in seq_along(private$data$t)){
-  #   obsvar.smooth[[i]] <- eval(expr = yCov,
-  #                             envir = c(list.of.parameters,
-  #                                       as.list(private$fit$states$mean$smoothed[i,-1]),
-  #                                       list(xCov = private$fit$states$cov$smoothed[[i]]),
-  #                                       as.list(private$data[i,-1])
-  #                             ))
-  # }
-  # names(obsvar.smooth) <- names(private$fit$states$cov$prior)
-  # private$fit$observations$cov$prior <- obsvar.prior
-  # obs.sd.prior <- cbind(private$fit$states$mean$prior["t"], do.call(rbind, lapply(obsvar.prior, diag)))
-  # rownames(obs.sd.prior) <- NULL
-  # names(obs.sd.prior) <- c("t",private$obs.names)
-  # private$fit$observations$sd$prior <- obs.sd.prior
   
   # clone and return -----------------------------------
   # clone private and return fit

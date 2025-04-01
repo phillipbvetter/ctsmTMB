@@ -20,3 +20,28 @@ $$
 f(Y) = \int_{X} f(X,Y) \, \mathrm{d}X = \int_{X} \exp \log f(X,Y) \, \mathrm{d}X 
 $$
 
+<!-- ### Filtering Technique -->
+
+<!-- The package offers two filtering approaches. The first approach is that of **Kalman Filtering** (1-4) while the second approach is through the so-called **Laplace Approxmation** (5). -->
+
+<!--   1. The **Kalman Filtering** method is a recursive algorithm where the state is continuously being predicted forwards in time where until a measurement is available, and then updated using (information from) that measurement. Importantly, this recursiveness produces so-called prior and posterior state estimates, estimates which are conditional on observations up to the past and present respectively. -->
+
+<!-- <!-- The filtering algorithm is optimal when the state space model is linear (i.e. linear drift and constant diffusion) and observation noise is Gaussian. --> -->
+
+<!--   2. The **Laplace Approximation** method is non-recursive in contrast to the Kalman filtering, and the produced state estimates, referred to as smoothed estimates, are therefore conditional on all observation in the data. -->
+
+
+
+<!-- ### TMB vs RTMB -->
+
+<!-- The second difference to emphasize is the final parenthesis for each method, highlighting whether TMB or RTMB is used to construct the likelihood function. The former requires writing and compiling a C++ function, while the latter does not.  -->
+
+<!-- The primary difference in these methods should be made between methods 1-4 which are Kalman filtering methods, and 5 which is an altogether different approach to state and likelihood estimation. -->
+
+<!-- The former two are quite similar in that they are based on the Kalman Filter theory. The assumptions of normality in the state transition and observation equation are fundamental, although the implemented filters are standard non-linear filters, in the sense that they try to overcome these assumptions for small non-linearities. The Unscented Kalman Filter is generally considered to perform better in these cases. -->
+
+<!-- <!-- The Extended Kalman Filter linearizes (to first order in the drift, and zeroth order in the diffusion) around the expectation of the state value to obtain prior and posterior state estimates as a way to handle non-linearities in system and observation equations.  --> -->
+
+<!-- The latter `laplace` method employs the Laplace Approximation method of \code{link{TMB}} to integration out random effects. In this formulation we consider the states as random effects, and parameters as fixed. The underlying assumption is one of normality, but its implementation allows for the flexibility of choosing arbitrary distributions (not yet implemented.) -->
+
+<!-- Both of these methods can be used to estimate parameter and states. In the case of `laplace` the states will be smoothed (conditioned on both past and future observations). -->

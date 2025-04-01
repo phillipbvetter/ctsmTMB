@@ -34,5 +34,5 @@ model$setParameter(
   logsigma_y  = log(c(initial=1, lower=1e-10, upper=2)),
   logsigma_y  = log(0.1)
 )
-model$setInitialState(list(rep(1,2), 0.656*diag(2)), estimate=F)
+model$setInitialState(list(rep(1,2), 0.656*diag(2)))
 })

@@ -149,11 +149,8 @@ setAlgebraics = function(form,...) {
 #' @description Declare the initial state values i.e. mean and covariance for the system states.
 #' 
 #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
-#' @param estimate boolean value which indicates whether or not the initial conditions
-#' shall be estimated as fixed effects parameters. The provided mean and covariance are then
-#' used as initial guesses
 #' 
-setInitialState = function(initial.state, estimate=FALSE) {
+setInitialState = function(initial.state) {
   NULL
 }
 

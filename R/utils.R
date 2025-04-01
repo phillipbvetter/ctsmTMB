@@ -1,25 +1,4 @@
 #######################################################
-# PASTE WITH COLLAPSE
-#######################################################
-paste00 = function(str_vec){
-  paste(str_vec,collapse=", ")
-}
-
-#######################################################
-# SIMPLIFY FORMULA
-#######################################################
-
-simplify_formula = function(form) {
-  
-  form = stats::as.formula(paste(
-    form[[2]],
-    paste(deparse(Deriv::Simplify(form[[3]])),collapse=""),
-    sep="~"
-  ))
-  
-}
-
-#######################################################
 # CHANGE FROM R POWER NOTATION TO C++
 #######################################################
 
@@ -50,7 +29,15 @@ try_withWarningRecovery = function(expr, silent=TRUE){
     warning = function(w) {
       invokeRestart("muffleWarning")
     }
-  ),silent=silent)
+  ), silent=silent)
   
   return(output)
+}
+
+###########################################################
+# Upper-case first letter of string
+###########################################################
+capitalize_first <- function(s) {
+  if (nchar(s) == 0) return(s)  # Handle empty string case
+  paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
 }

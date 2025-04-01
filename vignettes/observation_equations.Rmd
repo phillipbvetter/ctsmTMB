@@ -39,7 +39,7 @@ obj$setCppfilesDirectory(temporary_directory)
 
 Let's assume that our observations $y_{t}$ are log-normally distributed conditioned on $x_{t}$ i.e.
 $$
-\log y_{t_{i}} \sim \mathcal{N}(x_{t_{i}},\sigma_{y}^{2})
+\log y_{t_{i}} \sim N(x_{t_{i}},\sigma_{y}^{2})
 $$
 It is sufficient for the user to provide the data column `y` in the provided `data.frame` to e.g. `estimate` or `predict` by adding the following observation equation
 

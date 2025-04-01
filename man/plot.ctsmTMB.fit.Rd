@@ -4,14 +4,29 @@
 \alias{plot.ctsmTMB.fit}
 \title{This function creates residual plots for an estimated ctsmTMB object}
 \usage{
-\method{plot}{ctsmTMB.fit}(x, plot.obs = 1, ggtheme = getggplot2theme(), ...)
+\method{plot}{ctsmTMB.fit}(
+  x,
+  print.plot = 1,
+  type = "residuals",
+  state.type = "prior",
+  against.obs = NULL,
+  ggtheme = getggplot2theme(),
+  ...
+)
 }
 \arguments{
 \item{x}{A R6 ctsmTMB fit object}
 
-\item{plot.obs}{a vector of integers to indicate which observations should be
-plotted. When multiple are requested a list of plots, one for each observation
-is returned instead.}
+\item{print.plot}{a single integer determining which element out of all
+states/observations (depending on the argument to \code{type}).}
+
+\item{type}{a character vector either 'residuals' or 'states' determining what
+to plot.}
+
+\item{state.type}{a character vector either 'prior', 'posterior' or 'smoothed'
+determining what kind of states to plot.}
+
+\item{against.obs}{name of an observation to plot state predictions against.}
 
 \item{ggtheme}{ggplot2 theme to use for creating the ggplot.}
 

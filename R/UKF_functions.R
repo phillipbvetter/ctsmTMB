@@ -769,8 +769,8 @@ calculate_fit_statistics_ukf <- function(self, private){
   # Extract reported items from nll
   estimated_pars <- self$getParameters()[,"estimate"]
   comptime <- system.time(rep <- ekf_r(estimated_pars, self, private))
-  comptime = format(round(as.numeric(comptime["elapsed"])*1e2)/1e2,digits=5,scientific=F)
-  if(!private$silent) message("...took ", comptime, " seconds")
+  # comptime = format(round(as.numeric(comptime["elapsed"])*1e2)/1e2,digits=5,scientific=F)
+  # if(!private$silent) message("...took ", comptime, " seconds")
   
   private$fit$rep <- rep
   

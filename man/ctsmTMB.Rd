@@ -28,7 +28,6 @@ thus must be functions of at least one state.
 \item \href{#method-ctsmTMB-setInitialVarianceScaling}{\code{ctsmTMB$setInitialVarianceScaling()}}
 \item \href{#method-ctsmTMB-setLamperti}{\code{ctsmTMB$setLamperti()}}
 \item \href{#method-ctsmTMB-setModelname}{\code{ctsmTMB$setModelname()}}
-\item \href{#method-ctsmTMB-setCppfilesDirectory}{\code{ctsmTMB$setCppfilesDirectory()}}
 \item \href{#method-ctsmTMB-setMAP}{\code{ctsmTMB$setMAP()}}
 \item \href{#method-ctsmTMB-getSystems}{\code{ctsmTMB$getSystems()}}
 \item \href{#method-ctsmTMB-getObservations}{\code{ctsmTMB$getObservations()}}
@@ -243,17 +242,13 @@ for \code{logtheta} now instead of \code{theta} when declaring parameters throug
 \subsection{Method \code{setInitialState()}}{
 Declare the initial state values i.e. mean and covariance for the system states.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setInitialState(initial.state, estimate = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setInitialState(initial.state)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{estimate}}{boolean value which indicates whether or not the initial conditions
-shall be estimated as fixed effects parameters. The provided mean and covariance are then
-used as initial guesses}
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state.}
 }
 \if{html}{\out{</div>}}
 }
@@ -324,26 +319,6 @@ method with name \code{<modelname>.cpp}
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{name}}{string defining the model name.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-setCppfilesDirectory"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-setCppfilesDirectory}{}}}
-\subsection{Method \code{setCppfilesDirectory()}}{
-Set the path directory where the constructed C++ file is created.
-You should specify the entire path, unless you want to construct a subfolder
-in the current working directory - then you can call e.g.
-\code{setCppfilesDirectory("folder_in_current_wd")}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setCppfilesDirectory(directory)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{directory}}{string specifying a local directory}
 }
 \if{html}{\out{</div>}}
 }
@@ -492,14 +467,12 @@ Estimate the fixed effects parameters in the specified model.
   ode.solver = "euler",
   ode.timestep = diff(data$t),
   loss = "quadratic",
-  loss_c = 3,
-  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
+  loss_c = NULL,
   control = list(trace = 1, iter.max = 1e+05, eval.max = 1e+05),
   use.hessian = FALSE,
   laplace.residuals = FALSE,
   unconstrained.optim = FALSE,
   estimate.initial.state = FALSE,
-  compile = FALSE,
   silent = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -511,20 +484,7 @@ Estimate the fixed effects parameters in the specified model.
 can take \code{NA}-values.}
 
 \item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
-Must be one of either "lkf", "ekf", "laplace", "ukf_cpp" or "ekf_cpp".
-\enumerate{
-\item "laplace" - the natural TMB-style formulation where latent states are considered random effects
-and are integrated out using the Laplace approximation. This method only yields the gradient
-of the (negative log) likelihood function with respect to the fixed effects for optimization.
-The method is slower although probably has some precision advantages, and allows for non-Gaussian
-observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-the package.
-\item "ekf"/"ekf_cpp" - (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-to handle potential non-linearities. This is computationally the fastest method.
-\item "ukf_cpp" - (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.
-}}
+Must be one of either "lkf", "ekf", "laplace".}
 
 \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
@@ -563,9 +523,6 @@ approxmation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
-\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-the unscented transformation.}
-
 \item{\code{control}}{list of control parameters parsed to \code{nlminb} as its \code{control} argument.
 See \code{?stats::nlminb} for more information}
 
@@ -583,14 +540,6 @@ without any of the parameter bounds specified during \code{setParameter}.}
 \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the
 system contains time-varying inputs, the first element of these is used.}
-
-\item{\code{compile}}{boolean value. The default (\code{FALSE}) is to not compile the C++ objective
-function but assume it is already compiled and corresponds to the specified model object. It is
-the user's responsibility to ensure correspondence between the specified model and the precompiled
-C++ object. If a precompiled C++ object is not found in the specified directory i.e.
-in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
-If the user makes changes to system equations, observation equations, observation variances,
-algebraic relations or lamperi transformations then the C++ object should be recompiled.}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
@@ -615,9 +564,8 @@ have more control of the optimization workflow.
   ode.solver = "euler",
   ode.timestep = diff(data$t),
   loss = "quadratic",
-  loss_c = 3,
-  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
-  compile = FALSE,
+  loss_c = NULL,
+  estimate.initial.state = FALSE,
   silent = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -628,27 +576,8 @@ have more control of the optimization workflow.
 \item{\code{data}}{a data.frame containing time-vector 't', observations and inputs.
 The observations can take \code{NA}-values.}
 
-\item{\code{method}}{character vector - one of either "ekf", "ukf" or "laplace". Sets the estimation
-method. The package has three available methods implemented:
-\enumerate{
-\item The natural TMB-style formulation where latent states are considered random effects
-and are integrated out using the Laplace approximation. This method only yields the gradient
-of the (negative log) likelihood function with respect to the fixed effects for optimization.
-The method is slower although probably has some precision advantages, and allows for non-Gaussian
-observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-the package.
-\item (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-to handle potential non-linearities. This is computationally the fastest method.
-\item (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-which improves the mean and covariance estimates when the system display high nonlinearity, and
-circumvents the necessity to compute the jacobian of the drift and observation functions.
-}
-
-All package features are currently available for the kalman filters, while TMB is limited to
-parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-with these methods (use the \code{predict} S3 method), and stochastic simulation is also available
-in the cases where long prediction horizons are sought, where the normality assumption will be
-inaccurate.}
+\item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
+Must be one of either "lkf", "ekf", "laplace".}
 
 \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
@@ -697,16 +626,9 @@ approxmation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
-\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-the unscented transformation.}
-
-\item{\code{compile}}{boolean value. The default (\code{FALSE}) is to not compile the C++ objective
-function but assume it is already compiled and corresponds to the specified model object. It is
-the user's responsibility to ensure correspondence between the specified model and the precompiled
-C++ object. If a precompiled C++ object is not found in the specified directory i.e.
-in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
-If the user makes changes to system equations, observation equations, observation variances,
-algebraic relations or lamperi transformations then the C++ object should be recompiled.}
+\item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
+estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+system contains time-varying inputs, the first element of these is used.}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
@@ -728,11 +650,11 @@ state estimate as the initial condition.
   method = "ekf",
   ode.solver = "euler",
   ode.timestep = diff(data$t),
-  k.ahead = Inf,
-  return.k.ahead = NULL,
+  k.ahead = nrow(data) - 1,
+  return.k.ahead = 0:k.ahead,
   return.covariance = TRUE,
   initial.state = self$getInitialState(),
-  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
+  estimate.initial.state = private$estimate.initial,
   silent = FALSE,
   use.cpp = FALSE
 )}\if{html}{\out{</div>}}
@@ -782,7 +704,7 @@ should be returned.}
 
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
 
-\item{\code{unscented_hyperpars}}{hyper-parameters for Unscented Kalman filter, \code{alpha}, \code{beta} and \code{kappa}.}
+\item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
@@ -808,17 +730,17 @@ state estimate as the initial condition.
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$simulate(
   data,
   pars = NULL,
+  use.cpp = FALSE,
   method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   simulation.timestep = diff(data$t),
-  k.ahead = Inf,
+  k.ahead = nrow(data) - 1,
   return.k.ahead = 0:k.ahead,
   n.sims = 100,
   initial.state = self$getInitialState(),
-  unscented_hyperpars = list(alpha = 1, beta = 0, kappa = 3 - private$number.of.states),
-  silent = FALSE,
-  use.cpp = FALSE
+  estimate.initial.state = private$estimate.initial,
+  silent = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -831,6 +753,8 @@ can take \code{NA}-values.}
 \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
 parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
 function has been run, then the default values will be those at the found optimum.}
+
+\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
 
 \item{\code{method}}{\enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects
@@ -885,13 +809,10 @@ should be returned.}
 
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
 
-\item{\code{unscented_hyperpars}}{the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-the unscented transformation.}
+\item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
-
-\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
 
 \item{\code{return.covariance}}{booelan value to indicate whether the covariance (instead of the correlation)
 should be returned.}

@@ -10,8 +10,8 @@
   grid.size = rep(10, length(parlist)),
   grid.qnt = rep(3, length(parlist)),
   hessian = FALSE,
-  trace = 0,
-  control = list(trace = trace, iter.max = 1000, eval.max = 1000)
+  silent = FALSE,
+  control = list(trace = 0, iter.max = 1000, eval.max = 1000)
 )
 }
 \arguments{
@@ -32,7 +32,7 @@ the grid points from the mean value in multiples of the standard deviation.}
 \item{hessian}{a boolean indicating whether to use the hessian or not during
 the profile optimization.}
 
-\item{trace}{the optimization output flag (see \link[stats]{nlminb}) given to
+\item{silent}{boolean whether or not to mute current iteration number
 the \code{control} argument.}
 
 \item{control}{a list of optimization output controls (see \link[stats]{nlminb})}

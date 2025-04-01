@@ -6,7 +6,7 @@
 # TOP-LAYER FUNCTION CALLING ALL OTHERS DEFINED IN THIS SCRIPT
 ###############################################################
 
-check_and_set_data = function(data, self, private, k.ahead=1) {
+check_and_set_data = function(data, self, private) {
   
   # convert to data.frame
   data = as.data.frame(data)
@@ -30,10 +30,8 @@ check_and_set_data = function(data, self, private, k.ahead=1) {
   if(private$method=="laplace"){
     set_data_for_laplace_method(data, self, private)
   }
-  
-  # k.ahead for predictions/simulations
-  if(any(private$procedure == c("prediction", "simulation"))){
-    set_n_ahead_and_last_pred_index(k.ahead, self, private)
+  if(private$method=="laplace2"){
+    set_data_for_laplace_method(data, self, private)
   }
   
   # Return
@@ -195,7 +193,7 @@ set_ode_timestep = function(data, self, private){
   ode.timesteps[bool] = data.dt[bool] / private$ode.timestep[bool]
   
   # Find those indices where the number of steps must increase
-  epsilon.step  = 1e-2
+  epsilon.step  = 1e-3
   residual.step.bool = (ode.timesteps %% 1) > epsilon.step 
   
   # increment these steps from N to N+1
@@ -369,27 +367,25 @@ set_parameters = function(pars, silent, self, private){
 }
 
 ########################################################################
-# UTILITY FUNCTION: FOR SETTING PREDICTION AHEAD AND LAST PRED INDEX
+# SET K STEP AHEAD (DEPENDS ON PRIVATE$DATA)
 ########################################################################
-# SET k step ahead and last pred index for obj$predict
-set_n_ahead_and_last_pred_index = function(n.ahead, self, private) {
+set_k_ahead = function(k.ahead, self, private) {
   
   # check if n.ahead is positive with length 1
-  if (!(is.numeric(n.ahead)) | !(length(n.ahead==1)) | !(n.ahead >= 1)) {
-    stop("n.ahead must be a non-negative numeric integer")
+  if (!(is.numeric(k.ahead)) | !(length(k.ahead==1)) | !(k.ahead >= 1)) {
+    stop("k.ahead must be a non-negative numeric integer")
   }
   
   # Find last prediction index to avoid exciting boundary
-  last.pred.index = nrow(private$data) - n.ahead
+  last.pred.index = nrow(private$data) - k.ahead
   if(last.pred.index < 1){
-    # message("The provided k.ahead is too large, setting it to the maximum value nrow(data)-1.")
-    n.ahead = nrow(private$data) - 1
+    k.ahead = nrow(private$data) - 1
     last.pred.index = 1
   }
   
   # set values
-  private$n.ahead = n.ahead
-  private$last.pred.index = nrow(private$data) - n.ahead
+  private$n.ahead = k.ahead
+  private$last.pred.index = last.pred.index
   
   # return values
   return(invisible(self))

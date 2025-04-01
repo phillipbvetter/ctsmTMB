@@ -321,7 +321,6 @@ create_return_prediction = function(return.covariance, return.k.ahead, use.cpp, 
   n.ahead = private$n.ahead
   state.names = private$state.names
   last.pred.index = private$last.pred.index
-  if(is.null(return.k.ahead)) return.k.ahead <- 0:n.ahead
   
   # Create return data.frame
   df.out = data.frame(matrix(nrow=last.pred.index*(n.ahead+1), ncol=5+n+n^2))

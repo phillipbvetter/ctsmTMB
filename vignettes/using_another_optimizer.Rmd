@@ -1,10 +1,10 @@
 ---
-title: "Using another Optimizer"
+title: "Extracting the Likelihood Function and Changing Optimizer"
 author: ""
 date: ""
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using another Optimizer}
+  %\VignetteIndexEntry{Extracting the Likelihood Function and Changing Optimizer}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -13,7 +13,7 @@ vignette: >
 library(ctsmTMB)
 ```
 
-In this document we show how to use the `likelihood` method to obtain function handlers for the objective function, and gradient, (and hessian if there are no random efects in your model formulation). These handlers can then be parsed to an optimization algorithm of your own choice.
+In this document we show how to use the `likelihood` method to obtain function handlers for the objective function, and gradient, (and hessian if using a Kalman filter), for instance to use another optimization algorithm than `stats::nlminb`.
 
 # Simulate from the Ornstein-Uhlenbeck process
 
@@ -67,9 +67,6 @@ We now construct the `ctsmTMB` model object
 # Create model object
 obj = ctsmTMB$new()
 
-# Set name of model (and the created .cpp file)
-obj$setModelname("ornstein_uhlenbeck")
-
 # Add system equations
 obj$addSystem(
   dx ~ theta * (mu-x) * dt + sigma_x*dw
@@ -102,11 +99,6 @@ obj$setParameter(
 
 # Set initial state mean and covariance
 obj$setInitialState(list(x[1], 1e-1*diag(1)))
-```
-
-```{r, include=FALSE}
-temporary_directory <- normalizePath(file.path(tempdir(),"ctsmTMB_cppfiles"))
-obj$setCppfilesDirectory(temporary_directory)
 ```
 
 # Estimation
@@ -197,8 +189,4 @@ data.frame(external=opt$value, internal=fit$nll)
 
 # Gradient components
 data.frame(external=t(nll$gr(opt$par)), internal=t(nll$gr(fit$par.fixed)))
-```
-
-```{r clean up, include=FALSE}
-unlink(temporary_directory, recursive=TRUE)
 ```

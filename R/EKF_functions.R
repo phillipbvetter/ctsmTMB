@@ -12,7 +12,6 @@ makeADFun_ekf_rtmb = function(self, private)
   # (x7 speed improvement of optimization) enabled by default, and keeping 
   # vectorized disabled
   RTMB::TapeConfig(atomic="disable")
-  # RTMB::TapeConfig(atomic="enable")
   RTMB::TapeConfig(vectorize="disable")
   
   # Data ----------------------------------------
@@ -44,33 +43,39 @@ makeADFun_ekf_rtmb = function(self, private)
   # parameters ----------------------------------------
   parameters = lapply(private$parameters, function(x) x[["initial"]])
   
-  # Loss function ----------------------------------------
-  loss_function = private$loss$loss
-  loss_threshold_value = private$loss$c
-  tukey_loss_parameters = private$tukey.pars
+  # Loss function ----------------------------------------a
   # quadratic loss
-  if(private$loss$loss==0){
+  if(private$loss$loss == "quadratic"){
     loss_fun = function(e,R) -RTMB::dmvnorm(e, Sigma=R, log=TRUE)
   }
-  # tukey loss
-  if(private$loss$loss==1){
+  # huber loss
+  if(private$loss$loss == "huber"){
+    loss.c <- private$loss$c
+    k.smooth <- 5
+    sigmoid <- function(r_sqr) 1/(1+exp(-k.smooth*(sqrt(r_sqr)-loss.c)))
+    huber.loss <- function(r_sqr) {
+      s <- sigmoid(r_sqr)
+      r_sqr * (1-s) + loss.c * (2*sqrt(r_sqr)-loss.c)*s
+    }
     log2pi = log(2*pi)
-    p_tukey = private$tukey.pars
     loss_fun = function(e,R){
-      r <- 0.5 * t(e) %*% RTMB::solve(R) %*% e
-      psi_r <- p_tukey[4]*(invlogit2(r,a=p_tukey[1],b=p_tukey[2])+p_tukey[3])^2
-      0.5 * logdet(R) + 0.5 * log2pi * length(e) + psi_r
+      r_squared <- t(e) %*% RTMB::solve(R) %*% e
+      0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*huber.loss(r_squared)
     }
   }
-  # huber loss
-  if(private$loss$loss==2){
+  # tukey loss
+  if(private$loss$loss == "tukey"){
+    loss.c <- private$loss$c
+    k.smooth <- 5
+    sigmoid <- function(r_sqr) 1/(1+exp(-k.smooth*(sqrt(r_sqr)-loss.c)))
+    tukey.loss <- function(r_sqr) {
+      s <- sigmoid(r_sqr)
+      r_sqr * (1-s) + loss.c^2*s
+    }
     log2pi = log(2*pi)
-    c_squared = private$loss$c^2
-    huber_loss = function(r) c_squared * (sqrt(1 + (2*r / c_squared)) - 1)  
     loss_fun = function(e,R){
-      r <- 0.5 * t(e) %*% RTMB::solve(R) %*% e
-      psi_r <- c_squared * (sqrt(1 + (2*r / c_squared)) - 1)
-      0.5 * logdet(R) + 0.5 * log2pi * length(e) + psi_r
+      r_squared <- t(e) %*% RTMB::solve(R) %*% e
+      0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*tukey.loss(r_squared)
     }
   }
   
@@ -370,10 +375,14 @@ makeADFun_ekf_rtmb = function(self, private)
   
   # construct AD-likelihood function ----------------------------------------
   
-  nll = RTMB::MakeADFun(func = ekf.nll,
-                        parameters=parameters,
-                        map = lapply(private$fixed.pars, function(x) x$factor),
-                        silent=TRUE)
+  comptime <- system.time(nll <- RTMB::MakeADFun(func = ekf.nll,
+                                                 parameters=parameters,
+                                                 map = lapply(private$fixed.pars, function(x) x$factor),
+                                                 silent=TRUE)
+  )
+  
+  comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
+  if(!private$silent) message("...took: ", comptime, " seconds.")
   
   # save objective function
   private$nll = nll
@@ -385,7 +394,7 @@ makeADFun_ekf_rtmb = function(self, private)
 
 #######################################################
 #######################################################
-# EKF R-IMPLEMENTATION (FOR REPORTING)
+# EKF FILTER (FOR REPORTING)
 #######################################################
 #######################################################
 
@@ -894,14 +903,10 @@ calculate_fit_statistics_ekf <- function(self, private){
   names(private$fit$states$cov$posterior) = paste("t = ",private$data$t,sep="")
   
   # Residuals -----------------------------------
-  
-  # rowNAs = as.matrix(!is.na(private$data[private$obs.names])[-1,])
   rowNAs = as.matrix(!is.na(private$data[private$obs.names]))
   sumrowNAs = rowSums(rowNAs)
   
   nr <- nrow(private$data)
-  # temp.res = matrix(nrow=length(private$data$t)-1, ncol=private$number.of.observations)
-  # temp.var =  matrix(nrow=length(private$data$t)-1, ncol=private$number.of.observations)
   temp.res = matrix(nrow=length(private$data$t), ncol=private$number.of.observations)
   temp.var =  matrix(nrow=length(private$data$t), ncol=private$number.of.observations)
   
@@ -915,8 +920,6 @@ calculate_fit_statistics_ekf <- function(self, private){
       temp.var[i,rowNAs[i,]] = diag(innovation.cov[[i]])
     }
   }
-  # temp.res = cbind(private$data$t, temp.res)
-  # temp.sd = cbind(private$data$t, try_withWarningRecovery(sqrt(temp.var)))
   temp.res <- data.frame(private$data$t, temp.res)
   temp.sd = data.frame(private$data$t, try_withWarningRecovery(sqrt(temp.var)))
   names(temp.res) = c("t", private$obs.names)
@@ -932,24 +935,24 @@ calculate_fit_statistics_ekf <- function(self, private){
   
   
   # Observations -----------------------------------
-  
+
   # We need all states, inputs and parameter values to evaluate the observation
   # put them in a list
   listofvariables.prior = c(
     # states
     as.list(private$fit$states$mean$prior[-1]),
-    # estimated free parameters 
+    # estimated free parameters
     as.list(private$fit$par.fixed),
     # fixed parameters
     lapply(private$fixed.pars, function(x) x$initial),
     # inputs
     as.list(private$data)
   )
-  
+
   listofvariables.posterior = c(
     # states
     as.list(private$fit$states$mean$posterior[-1]),
-    # estimated free parameters 
+    # estimated free parameters
     as.list(private$fit$par.fixed),
     # fixed parameters
     lapply(private$fixed.pars, function(x) x$initial),
@@ -962,19 +965,19 @@ calculate_fit_statistics_ekf <- function(self, private){
   obs.df.posterior = as.data.frame(
     lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.posterior)})
   )
-  
+
   private$fit$observations$mean$prior = data.frame(t=private$data$t, obs.df.prior)
   private$fit$observations$mean$posterior = data.frame(t=private$data$t, obs.df.posterior)
-  
+
   # Observation variances -----------------------------------
-  
-  # The observation variance (to first order) is: 
+
+  # The observation variance (to first order) is:
   #
   # y = h(x) + e -> var(y) = dhdx var(x) dhdx^T + var(e)
-  
+
   n <- private$number.of.states
   m <- private$number.of.observations
-  
+
   # create expression for observation covariance to be 'eval'-uated
   jac.h = c()
   for(i in seq_along(private$obs.names)){
@@ -989,18 +992,18 @@ calculate_fit_statistics_ekf <- function(self, private){
   }
   obsvar <- parse(text=sprintf("diag(%s)*c(%s)", m, paste(obs.var,collapse=",")))[[1]]
   yCov <- substitute(dhdx %*% xCov %*% t(dhdx) + eCov, list(dhdx=dhdx, eCov=obsvar))
-  
+
   # evaluate prior and posterior variance
   list.of.parameters <- c(
     as.list(private$fit$par.fixed),
     lapply(private$fixed.pars, function(x) x$initial)
   )
-  
+
   # prior
   obsvar.prior <- list()
   for(i in seq_along(private$data$t)){
     obsvar.prior[[i]] <- eval(expr = yCov,
-                              envir = c(list.of.parameters, 
+                              envir = c(list.of.parameters,
                                         as.list(private$fit$states$mean$prior[i,-1]),
                                         list(xCov = private$fit$states$cov$prior[[i]]),
                                         as.list(private$data[i,-1])
@@ -1012,12 +1015,12 @@ calculate_fit_statistics_ekf <- function(self, private){
   rownames(obs.sd.prior) <- NULL
   names(obs.sd.prior) <- c("t",private$obs.names)
   private$fit$observations$sd$prior <- obs.sd.prior
-  
+
   # posterior
   obsvar.post <- list()
   for(i in seq_along(private$data$t)){
     obsvar.post[[i]] <- eval(expr = yCov,
-                             envir = c(list.of.parameters, 
+                             envir = c(list.of.parameters,
                                        as.list(private$fit$states$mean$posterior[i,-1]),
                                        list(xCov = private$fit$states$cov$posterior[[i]]),
                                        as.list(private$data[i,-1])

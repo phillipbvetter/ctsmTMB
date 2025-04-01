@@ -66,13 +66,13 @@ ctsmTMB = R6::R6Class(
       private$lamperti = list(transform="identity",states=NULL)
       private$compile = FALSE
       private$loss = list(loss=0L,c=3)
-      private$tukey.pars = rep(0,4)
+      private$tukey.pars = rep(0,6)
       private$silent = FALSE
       private$map = NULL
       private$control.nlminb = list()
       private$ode.solver = NULL
       private$unconstrained.optim = NULL
-      private$estimate.initial = NULL
+      private$estimate.initial = FALSE
       private$initial.variance.scaling = 1
       
       # rebuild
@@ -363,6 +363,7 @@ ctsmTMB = R6::R6Class(
           
           # set or remove a fixed parameter (NA-bounds)
           private$fixed.pars[[par.name]] = NULL
+          private$free.pars[[par.name]] = NULL
           if (all(is.na(par.entry[c("lower","upper")]))){
             private$fixed.pars[[par.name]] = private$parameters[[par.name]]
             private$fixed.pars[[par.name]][["factor"]] = factor(NA)
@@ -398,6 +399,7 @@ ctsmTMB = R6::R6Class(
             
             # set or remove a fixed parameter (NA-bounds)
             private$fixed.pars[[parname]] = NULL
+            private$free.pars[[parname]] = NULL
             if(all(is.na(par.entry[i,c("lower","upper")]))){
               private$fixed.pars[[parname]] = private$parameters[[parname]]
               private$fixed.pars[[parname]][["factor"]] = factor(NA)
@@ -464,23 +466,16 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     #' @description Declare the initial state values i.e. mean and covariance for the system states.
     #' 
-    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
-    #' @param estimate boolean value which indicates whether or not the initial conditions
-    #' shall be estimated as fixed effects parameters. The provided mean and covariance are then
-    #' used as initial guesses
+    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state.
     #' 
-    setInitialState = function(initial.state, estimate=FALSE) {
+    setInitialState = function(initial.state) {
       
       if (is.null(private$sys.eqs)) {
         stop("Please specify system equations first")
       }
       
-      if (!is.list(initial.state)) {
-        stop("Please provide a list!")
-      }
-      
-      if (length(initial.state) != 2) {
-        stop("Please provide a list of length two")
+      if (!is.list(initial.state) || length(initial.state)!=2) {
+        stop("Please provide a list of length 2!")
       }
       
       # unpack list items
@@ -524,10 +519,6 @@ ctsmTMB = R6::R6Class(
         stop("The covariance matrix is symmetric")
       }
       
-      if(!is.logical(estimate)){
-        stop("Estimate must be a logical.")
-      }
-      
       names(initial.state) <- c("x0","p0")
       # Store old initial state
       bool <- identical(initial.state, private$initial.state)
@@ -538,12 +529,6 @@ ctsmTMB = R6::R6Class(
       # Store initial state
       private$initial.state = list(x0=x0, p0=as.matrix(p0))
       
-      # Set whether to estimate or not
-      bool <- identical(estimate, private$estimate.initial)
-      if(!bool){
-        private$rebuild.data <- TRUE
-      }
-      private$estimate.initial = estimate
       
       return(invisible(self))
     },
@@ -677,39 +662,6 @@ ctsmTMB = R6::R6Class(
       
       # set name field
       private$modelname = name
-      
-      # update path-field
-      # private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
-      
-      # return
-      return(invisible(self))
-    },
-    
-    ########################################################################
-    # SET CPP FILE DIRECTORY
-    ########################################################################
-    #' @description Set the path directory where the constructed C++ file is created.
-    #' You should specify the entire path, unless you want to construct a subfolder
-    #' in the current working directory - then you can call e.g. 
-    #' \code{setCppfilesDirectory("folder_in_current_wd")}.
-    #'
-    #' @param directory string specifying a local directory
-    setCppfilesDirectory = function(directory) {
-      
-      # Check if string
-      if (!is.character(directory)) {
-        stop("You must pass a string")
-      }
-      
-      # overwrite to proper file.path
-      directory <- normalizePath(file.path(directory), mustWork=FALSE, winslash = "/")
-      
-      # create directory if it does not exist
-      # if (!dir.exists(directory)) {
-      #   # message("The specified directory does not exist - creating it")
-      #   dir.create(directory, recursive=TRUE)
-      # }
-      private$cppfile.directory = directory
       
       # update path-field
       # private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
@@ -993,32 +945,8 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment 
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
-    #' @param compile boolean value. The default (\code{FALSE}) is to not compile the C++ objective
-    #' function but assume it is already compiled and corresponds to the specified model object. It is
-    #' the user's responsibility to ensure correspondence between the specified model and the precompiled
-    #' C++ object. If a precompiled C++ object is not found in the specified directory i.e. 
-    #' in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
-    #' If the user makes changes to system equations, observation equations, observation variances, 
-    #' algebraic relations or lamperi transformations then the C++ object should be recompiled.
     #' @param method character vector specifying the filtering method used for state/likelihood calculations. 
-    #' Must be one of either "lkf", "ekf", "laplace", "ukf_cpp" or "ekf_cpp".
-    #' 
-    #' 1. "laplace" - the natural TMB-style formulation where latent states are considered random effects
-    #' and are integrated out using the Laplace approximation. This method only yields the gradient
-    #' of the (negative log) likelihood function with respect to the fixed effects for optimization.
-    #' The method is slower although probably has some precision advantages, and allows for non-Gaussian
-    #' observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-    #' the package.
-    #' 
-    #' 2. "ekf"/"ekf_cpp" - (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-    #' to handle potential non-linearities. This is computationally the fastest method.
-    #' 
-    #' 3. "ukf_cpp" - (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-    #' which improves the mean and covariance estimates when the system display high nonlinearity, and
-    #' circumvents the necessity to compute the jacobian of the drift and observation functions.
-    #' 
-    #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-    #' the unscented transformation.
+    #' Must be one of either "lkf", "ekf", "laplace".
     #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
     #' without any of the parameter bounds specified during \code{setParameter}.
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
@@ -1049,14 +977,12 @@ ctsmTMB = R6::R6Class(
                         ode.solver = "euler",
                         ode.timestep = diff(data$t),
                         loss = "quadratic",
-                        loss_c = 3,
-                        unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
+                        loss_c = NULL,
                         control = list(trace=1,iter.max=1e5,eval.max=1e5),
                         use.hessian = FALSE,
                         laplace.residuals = FALSE,
                         unconstrained.optim = FALSE,
                         estimate.initial.state = FALSE,
-                        compile = FALSE,
                         silent = FALSE){
       
       # set flags
@@ -1064,16 +990,12 @@ ctsmTMB = R6::R6Class(
         method = method,
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
-        loss = loss,
-        loss_c = loss_c,
-        unscented_hyperpars = unscented_hyperpars,
         control = control,
         use.hessian = use.hessian,
         laplace.residuals = laplace.residuals,
         unconstrained.optim = unconstrained.optim,
-        compile = compile,
-        silent = silent,
-        estimate.initial.state = estimate.initial.state
+        estimate.initial.state = estimate.initial.state,
+        silent = silent
         
       )
       set_flags("estimation", args, self, private)
@@ -1094,14 +1016,11 @@ ctsmTMB = R6::R6Class(
       # check and set data
       if(!private$silent) message("Checking data...")
       check_and_set_data(data, self, private)
+      private$set_loss(loss, loss_c)
       
       # check for rebuild of ADfun
       check_for_data_rebuild(self, private)
       if(private$rebuild.data){
-        
-        # compile model
-        if(!private$silent) message("Compiling model...")
-        perform_compilation(self, private)
         
         # construct neg. log-likelihood function
         if(!private$silent) message("Constructing objective function and derivative tables...")
@@ -1169,34 +1088,8 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment 
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
-    #' @param compile boolean value. The default (\code{FALSE}) is to not compile the C++ objective
-    #' function but assume it is already compiled and corresponds to the specified model object. It is
-    #' the user's responsibility to ensure correspondence between the specified model and the precompiled
-    #' C++ object. If a precompiled C++ object is not found in the specified directory i.e. 
-    #' in \code{<cppfile_directory>/<modelname>/(dll/so)} then the compile flag is set to \code{TRUE}.
-    #' If the user makes changes to system equations, observation equations, observation variances, 
-    #' algebraic relations or lamperi transformations then the C++ object should be recompiled.
-    #' @param method character vector - one of either "ekf", "ukf" or "laplace". Sets the estimation 
-    #' method. The package has three available methods implemented:
-    #' 1. The natural TMB-style formulation where latent states are considered random effects
-    #' and are integrated out using the Laplace approximation. This method only yields the gradient
-    #' of the (negative log) likelihood function with respect to the fixed effects for optimization.
-    #' The method is slower although probably has some precision advantages, and allows for non-Gaussian
-    #' observation noise (not yet implemented). One-step / K-step residuals are not yet available in
-    #' the package.
-    #' 2. (Continous-Discrete) Extended Kalman Filter where the system dynamics are linearized
-    #' to handle potential non-linearities. This is computationally the fastest method.
-    #' 3. (Continous-Discrete) Unscented Kalman Filter. This is a higher order non-linear Kalman Filter
-    #' which improves the mean and covariance estimates when the system display high nonlinearity, and
-    #' circumvents the necessity to compute the jacobian of the drift and observation functions.
-    #' 
-    #' All package features are currently available for the kalman filters, while TMB is limited to
-    #' parameter estimation. In particular, it is straight-forward to obtain k-step-ahead predictions
-    #' with these methods (use the \code{predict} S3 method), and stochastic simulation is also available 
-    #' in the cases where long prediction horizons are sought, where the normality assumption will be 
-    #' inaccurate.
-    #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-    #' the unscented transformation.
+    #' @param method character vector specifying the filtering method used for state/likelihood calculations. 
+    #' Must be one of either "lkf", "ekf", "laplace".
     #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
     #' methods). The loss function is per default quadratic in the one-step residauls as is natural 
     #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the 
@@ -1211,6 +1104,9 @@ ctsmTMB = R6::R6Class(
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid 
     #' approxmation respectively) for smooth derivatives.
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
+    #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
+    #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+    #' system contains time-varying inputs, the first element of these is used.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     likelihood = function(data,
@@ -1218,9 +1114,8 @@ ctsmTMB = R6::R6Class(
                           ode.solver = "euler",
                           ode.timestep = diff(data$t),
                           loss = "quadratic",
-                          loss_c = 3,
-                          unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-                          compile=FALSE,
+                          loss_c = NULL,
+                          estimate.initial.state = FALSE,
                           silent=FALSE){
       
       # set flags
@@ -1228,10 +1123,7 @@ ctsmTMB = R6::R6Class(
         method = method,
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
-        loss = loss,
-        loss_c = loss_c,
-        unscented_hyperpars = unscented_hyperpars,
-        compile = compile,
+        estimate.initial.state = estimate.initial.state,
         silent = silent
       )
       set_flags("construction", args, self, private)
@@ -1252,14 +1144,11 @@ ctsmTMB = R6::R6Class(
       # check and set data
       if(!silent) message("Checking data...")
       check_and_set_data(data, self, private)
+      private$set_loss(loss, loss_c)
       
       # check for rebuild of ADfun
       check_for_data_rebuild(self, private)
       if(private$rebuild.data){
-        
-        # compile model
-        if(!private$silent) message("Compiling model...")
-        perform_compilation(self, private)
         
         # construct neg. log-likelihood
         if(!silent) message("Constructing objective function...")
@@ -1300,6 +1189,7 @@ ctsmTMB = R6::R6Class(
     #' should be returned.
     #' @param return.covariance booelan value to indicate whether the covariance (instead of the correlation) 
     #' should be returned.
+    #' @param estimate.initial.state bool - stationary estimation of initial mean and covariance
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param ode.timestep numeric value. Sets the time step-size in numerical filtering schemes. 
     #' The defined step-size is used to calculate the number of steps between observation time-points as 
@@ -1318,7 +1208,6 @@ ctsmTMB = R6::R6Class(
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param method The prediction method
-    #' @param unscented_hyperpars hyper-parameters for Unscented Kalman filter, \code{alpha}, \code{beta} and \code{kappa}.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
@@ -1327,11 +1216,11 @@ ctsmTMB = R6::R6Class(
                        method = "ekf",
                        ode.solver = "euler",
                        ode.timestep = diff(data$t),
-                       k.ahead = Inf,
-                       return.k.ahead = NULL,
+                       k.ahead = nrow(data)-1,
+                       return.k.ahead = 0:k.ahead,
                        return.covariance = TRUE,
                        initial.state = self$getInitialState(),
-                       unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
+                       estimate.initial.state = private$estimate.initial,
                        silent = FALSE,
                        use.cpp = FALSE){
       
@@ -1343,7 +1232,7 @@ ctsmTMB = R6::R6Class(
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
         initial.state = initial.state,
-        unscented_hyperpars = unscented_hyperpars,
+        estimate.initial.state = estimate.initial.state,
         silent = silent
       )
       set_flags("prediction", args, self, private)
@@ -1363,13 +1252,14 @@ ctsmTMB = R6::R6Class(
       
       ###### CHECK AND SET DATA, PARS, ETC.  #######
       if(!private$silent) message("Checking data...")
-      check_and_set_data(data, self, private, k.ahead)
+      check_and_set_data(data, self, private)
       set_parameters(pars, silent, self, private)
+      set_k_ahead(k.ahead, self, private)
       
       if(use.cpp){
         ##### COMPILE C++ FUNCTIONS #######
         if(!private$silent) message("Checking C++ function pointers...")
-        perform_compilation(self, private, "prediction")
+        compile_rcpp_functions(self, private)
         
         ##### PERFORM PREDICTION #######
         if(!private$silent) message("Predicting with C++...")
@@ -1429,6 +1319,7 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment 
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
+    #' @param estimate.initial.state bool - stationary estimation of initial mean and covariance
     #' @param method
     #' 1. The natural TMB-style formulation where latent states are considered random effects
     #' and are integrated out using the Laplace approximation. This method only yields the gradient
@@ -1447,8 +1338,6 @@ ctsmTMB = R6::R6Class(
     #' with these methods (use the \code{predict} S3 method), and stochastic simulation is also available 
     #' in the cases where long prediction horizons are sought, where the normality assumption will be 
     #' inaccurate
-    #' @param unscented_hyperpars the three hyper-parameters \code{alpha}, \code{beta} and \code{kappa} defining
-    #' the unscented transformation.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param n.sims number of simulations
@@ -1457,18 +1346,18 @@ ctsmTMB = R6::R6Class(
     #' 
     simulate = function(data,
                         pars = NULL,
+                        use.cpp = FALSE,
                         method = "ekf",
                         ode.solver = "rk4",
                         ode.timestep = diff(data$t),
                         simulation.timestep = diff(data$t),
-                        k.ahead = Inf,
+                        k.ahead = nrow(data)-1,
                         return.k.ahead = 0:k.ahead,
                         n.sims = 100,
                         initial.state = self$getInitialState(),
-                        unscented_hyperpars = list(alpha=1, beta=0, kappa=3-private$number.of.states),
-                        silent = FALSE,
-                        use.cpp = FALSE){
-
+                        estimate.initial.state = private$estimate.initial,
+                        silent = FALSE){
+      
       if(method!="ekf"){ stop("The simulate function is currently only implemented for method = 'ekf'.") }
       
       # set flags
@@ -1478,7 +1367,7 @@ ctsmTMB = R6::R6Class(
         ode.timestep = ode.timestep,
         simulation.timestep = simulation.timestep,
         initial.state = initial.state,
-        unscented_hyperpars = unscented_hyperpars,
+        estimate.initial.state = estimate.initial.state,
         silent = silent
       )
       set_flags("simulation", args, self, private)
@@ -1498,13 +1387,14 @@ ctsmTMB = R6::R6Class(
       
       ###### CHECK AND SET DATA, PARS, ETC.  #######
       if(!private$silent) message("Checking data...")
-      check_and_set_data(data, self, private, k.ahead)
+      check_and_set_data(data, self, private)
       set_parameters(pars, silent, self, private)
+      set_k_ahead(k.ahead, self, private)
       
       if(use.cpp){
         ##### COMPILE C++ FUNCTIONS #######
         if(!private$silent) message("Checking C++ function pointers...")
-        perform_compilation(self, private, "prediction")
+        compile_rcpp_functions(self, private)
         
         ##### PERFORM PREDICTION #######
         if(!private$silent) message("Simulating with C++...")
@@ -1540,9 +1430,13 @@ ctsmTMB = R6::R6Class(
       freepars = length(private$free.pars)
       
       # If the model is empty
-      cat("Stochastic State Space Model:")
-      basic.data = c(private$modelname,n,ng,m,p,par)
-      row.names = c("Name", "States","Diffusions",
+      cat("ctsmTMB model object:")
+      # basic.data = c(private$modelname,n,ng,m,p,par)
+      # row.names = c("Name", "States","Diffusions",
+      #               "Observations","Inputs",
+      #               "Parameters")
+      basic.data = c(n,ng,m,p,par)
+      row.names = c("States","Diffusions",
                     "Observations","Inputs",
                     "Parameters")
       mat=data.frame(basic.data,row.names=row.names,fix.empty.names=F)
@@ -1908,28 +1802,18 @@ ctsmTMB = R6::R6Class(
       }
       
       # check if method is available
-      available_methods = c("lkf", "ekf", "laplace", "ekf_cpp", "ukf_cpp", "ekf_rcpp")
+      available_methods = c("lkf", "ekf", "laplace", "laplace2")
       if (!(method %in% available_methods)) {
         stop("That method is not available. Please choose one of:
-             1. 'lkf' - Linear (Exact) Kalman Filter with RTMB (No C++ Compilation)
-             2. 'ekf' - Extended Kalman Filter with RTMB (No C++ Compilation)
-             3. 'laplace' - Laplace Approximation using Random Effects Formulation with RTMB (No C++ Compilation)
-             4. 'ekf_cpp' - Extended Kalman Filter with TMB (Requires Compilation),
-             5. 'ukf_cpp' - Unscented Kalman Filter with TMB (Requires Compilation)"
-             
+             1. 'lkf' - Linear Kalman Filter
+             2. 'ekf' - Extended Kalman Filter
+             3. 'laplace' - Laplace Approximation using Random Effects Formulation (X),
+             4. 'laplace2' - Laplace Approximation using Random Effects Formulation (XdB)"
         )
       }
       
       # set flag
       private$method = method
-      
-      # set file with method flag
-      private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
-      private$cppfile.path.with.method <- file.path(paste0(private$cppfile.path, sprintf("_%s",private$method)))
-      private$modelname.with.method <- paste0(private$modelname, sprintf("_%s",private$method))
-      # private$cppfile.path <- paste0(private$cppfile.directory,"\\",private$modelname)
-      # private$cppfile.path.with.method <- file.path(paste0(private$cppfile.path, sprintf("_%s",private$method)))
-      # private$modelname.with.method <- paste0(private$modelname, sprintf("_%s",private$method))
       
       # return
       return(invisible(self))
@@ -2116,7 +2000,7 @@ ctsmTMB = R6::R6Class(
     # SET LOSS FUNCTION
     ########################################################################
     # SET LOSS FUNCTION
-    set_loss = function(loss, loss_c=3) {
+    set_loss = function(loss, loss_c) {
       
       # check for string
       if (!(is.character(loss))) {
@@ -2132,46 +2016,16 @@ ctsmTMB = R6::R6Class(
              3. 'tukey' - quadratic-constant tukey loss")
       }
       
-      # IF QUADRATIC:
-      loss.flag = 0L
+      if(is.null(loss_c)){
+        loss_c <- qchisq(0.95,df=private$number.of.observations)
+      }
       
-      # IF HUBER:
-      if(loss=="huber"){
-        loss.flag = 2L
-      } 
-      
-      # IF TUKEY: We compute our own sigmoid approxmation to the tukey loss
-      # by nonlinear optimization
-      if (loss=="tukey") {
-        
-        loss.flag = 1L
-        
-        # compute tukey approx coefficients
-        rtukey = seq(0,25,by=1e-2)
-        ctukey = loss_c
-        
-        # define tukey function
-        funtukey = function(r){
-          ifelse(r^2 <= ctukey^2,
-                 ctukey^2/6 * (1-(1-(r/ctukey)^2)^3),
-                 ctukey^2/6
-          )
-        }
-        
-        # define least squares loss function between tukey and sigmoid function
-        tukeyloss = function(.pars){
-          res = sum((funtukey(rtukey) - .pars[4]*(invlogit2(rtukey,a=.pars[1],b=.pars[2])+.pars[3]))^2)
-        }
-        
-        # minimize least squares between tukey and sigmoid
-        tukeyopt = stats::nlminb(start=rep(1,4),objective=tukeyloss)
-        
-        # set the found parameters
-        private$tukey.pars = tukeyopt$par
-      } 
+      if(loss_c <= 0){
+        stop("The loss threshold must be positive")
+      }
       
       # set flag
-      private$loss = list(loss=loss.flag, c=loss_c)
+      private$loss = list(loss=loss, c=loss_c)
       
       # return
       return(invisible(self))
@@ -2192,6 +2046,19 @@ ctsmTMB = R6::R6Class(
       
       # return
       return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET INITIAL STATE ESTIMATION
+    ########################################################################
+    set_initial_state_estimation = function(bool){
+      
+      if(!is.logical(bool)){
+        stop("The initial state estimation must be TRUE or FALSE.")
+      }
+      
+      private$estimate.initial = bool
+      return(invisible(NULL))
     },
     
     ########################################################################
@@ -2226,4 +2093,3 @@ ctsmTMB = R6::R6Class(
     }
   )
 )
-

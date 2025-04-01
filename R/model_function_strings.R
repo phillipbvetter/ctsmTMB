@@ -10,10 +10,6 @@ create_rtmb_function_strings = function(self, private)
 {
   
   # Create substitution translation list
-  # obsList = lapply(seq_along(private$obs.names), function(id) substitute(obsVec[i],list(i=as.numeric(id))))
-  # parList = lapply(seq_along(private$parameter.names), function(id) substitute(parVec[i],list(i=as.numeric(id))))
-  # stateList = lapply(seq_along(private$state.names), function(id) substitute(stateVec[i],list(i=as.numeric(id))))
-  # inputList = lapply(seq_along(private$input.names), function(id) substitute(inputVec[i],list(i=as.numeric(id))))
   obsList = lapply(seq_along(private$obs.names), function(id) substitute(obsVec[[i]],list(i=as.numeric(id))))
   parList = lapply(seq_along(private$parameter.names), function(id) substitute(parVec[[i]],list(i=as.numeric(id))))
   stateList = lapply(seq_along(private$state.names), function(id) substitute(stateVec[[i]],list(i=as.numeric(id))))

@@ -36,33 +36,39 @@ makeADFun_lkf_rtmb = function(self, private)
   # parameters ----------------------------------------
   parameters = lapply(private$parameters, function(x) x[["initial"]])
   
-  # Loss function ----------------------------------------
-  loss_function = private$loss$loss
-  loss_threshold_value = private$loss$c
-  tukey_loss_parameters = private$tukey.pars
+  # Loss function ----------------------------------------a
   # quadratic loss
-  if(private$loss$loss==0){
+  if(private$loss$loss == "quadratic"){
     loss_fun = function(e,R) -RTMB::dmvnorm(e, Sigma=R, log=TRUE)
   }
-  # tukey loss
-  if(private$loss$loss==1){
+  # huber loss
+  if(private$loss$loss == "huber"){
+    loss.c <- private$loss$c
+    k.smooth <- 5
+    sigmoid <- function(r_sqr) 1/(1+exp(-k.smooth*(sqrt(r_sqr)-loss.c)))
+    huber.loss <- function(r_sqr) {
+      s <- sigmoid(r_sqr)
+      r_sqr * (1-s) + loss.c * (2*sqrt(r_sqr)-loss.c)*s
+    }
     log2pi = log(2*pi)
-    p_tukey = private$tukey.pars
     loss_fun = function(e,R){
-      r <- 0.5 * t(e) %*% RTMB::solve(R) %*% e
-      psi_r <- p_tukey[4]*(invlogit2(r,a=p_tukey[1],b=p_tukey[2])+p_tukey[3])^2
-      0.5 * logdet(R) + 0.5 * log2pi * length(e) + psi_r
+      r_squared <- t(e) %*% RTMB::solve(R) %*% e
+      0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*huber.loss(r_squared)
     }
   }
-  # huber loss
-  if(private$loss$loss==2){
+  # tukey loss
+  if(private$loss$loss == "tukey"){
+    loss.c <- private$loss$c
+    k.smooth <- 5
+    sigmoid <- function(r_sqr) 1/(1+exp(-k.smooth*(sqrt(r_sqr)-loss.c)))
+    tukey.loss <- function(r_sqr) {
+      s <- sigmoid(r_sqr)
+      r_sqr * (1-s) + loss.c^2*s
+    }
     log2pi = log(2*pi)
-    c_squared = private$loss$c^2
-    huber_loss = function(r) c_squared * (sqrt(1 + (2*r / c_squared)) - 1)  
     loss_fun = function(e,R){
-      r <- 0.5 * t(e) %*% RTMB::solve(R) %*% e
-      psi_r <- c_squared * (sqrt(1 + (2*r / c_squared)) - 1)
-      0.5 * logdet(R) + 0.5 * log2pi * length(e) + psi_r
+      r_squared <- t(e) %*% RTMB::solve(R) %*% e
+      0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*tukey.loss(r_squared)
     }
   }
   

@@ -193,15 +193,22 @@ plot.ctsmTMB = function(x,
 
 #' This function creates residual plots for an estimated ctsmTMB object
 #' @param x A R6 ctsmTMB fit object
-#' @param plot.obs a vector of integers to indicate which observations should be
-#' plotted. When multiple are requested a list of plots, one for each observation
-#' is returned instead.
+#' @param print.plot a single integer determining which element out of all
+#' states/observations (depending on the argument to \code{type}).
+#' @param type a character vector either 'residuals' or 'states' determining what
+#' to plot.
+#' @param state.type a character vector either 'prior', 'posterior' or 'smoothed'
+#' determining what kind of states to plot.
+#' @param against.obs name of an observation to plot state predictions against.
 #' @param ggtheme ggplot2 theme to use for creating the ggplot.
 #' @param ... additional arguments
 #' @returns a (list of) ggplot residual plot(s)
 #' @export
 plot.ctsmTMB.fit = function(x,
-                            plot.obs=1,
+                            print.plot=1,
+                            type="residuals",
+                            state.type="prior",
+                            against.obs=NULL,
                             ggtheme=getggplot2theme(),
                             ...) {
   
@@ -209,118 +216,175 @@ plot.ctsmTMB.fit = function(x,
   private <- fit$private
   
   if (!(inherits(ggtheme,"theme") & inherits(ggtheme,"gg"))) {
-    stop("ggtheme must be a ggplot2 theme")
+    stop("The provided theme is not a ggtheme")
   }
-  if(!is.numeric(plot.obs)){
-    stop("plot.obs must be a numeric (or integer) value")
+  if(!is.numeric(print.plot)){
+    stop("print.plot must be a numeric value")
+  }
+  if(!any(state.type %in% c("prior","posterior","smoothed"))){
+    stop("The state.type must be one of 'prior', 'posterior' or 'smoothed'.")
   }
   
-  if(is.null(fit$residuals)){
-    if(private$method=="laplace"){
-      stop("No residuals to plot. Did you calculate residuals with argument 'laplace.residuals=TRUE' when calling 'estimate'?")
+  # residual plots
+  ########################################
+  if(type=="residuals"){
+    
+    if(is.null(fit$residuals)){
+      if(private$method=="laplace"){
+        stop("No residuals to plot. Did you calculate residuals with argument 'laplace.residuals=TRUE' when calling 'estimate'?")
+      }
+      stop("Error: no residuals were found in the fit object.")
     }
-    stop("Error: no residuals were found in the fit object.")
+    
+    mycolor <- "steelblue"
+    plots = list()
+    t = fit$residuals$normalized[["t"]]
+    for (i in 1:private$number.of.observations) {
+      e = fit$residuals$normalized[[private$obs.names[i]]]
+      id = !is.na(e)
+      e = e[id]
+      t = t[id]
+      nam = private$obs.names[i]
+      
+      # time vs residuals
+      plot.res =
+        ggplot2::ggplot(data=data.frame(t,e)) +
+        ggplot2::geom_point(ggplot2::aes(x=t,y=e),color=mycolor) +
+        ggtheme +
+        ggplot2::labs(
+          title = paste("Time Series of Residuals: "),
+          y = "",
+          x = "Time"
+        )
+      # quantile plots
+      plot.qq =
+        ggplot2::ggplot(data=data.frame(e)) +
+        ggplot2::stat_qq(ggplot2::aes(sample=e),color=mycolor) +
+        ggplot2::stat_qq_line(ggplot2::aes(sample=e),lty="dashed") +
+        ggtheme +
+        ggplot2::labs(
+          title = paste("Normal Q-Q Plot: "),
+          y = "Sample Quantiles",
+          x = "Theoretical Quantiles"
+        )
+      # histogram
+      plot.hist =
+        ggplot2::ggplot(data=data.frame(e)) +
+        ggplot2::geom_histogram(ggplot2::aes(x=e,y=ggplot2::after_stat(density)),bins=100,color="black",fill=mycolor) +
+        ggtheme +
+        ggplot2::labs(
+          title = paste("Histogram: "),
+          y = "",
+          x = ""
+        )
+      # acf
+      myacf = stats::acf(e,na.action=na.pass,plot=FALSE)
+      plot.acf =
+        ggplot2::ggplot(data=data.frame(lag=myacf$lag[-1],acf=myacf$acf[-1])) +
+        ggplot2::geom_errorbar(ggplot2::aes(x=lag,ymax=acf,ymin=0),width=0,color=mycolor) +
+        ggplot2::geom_hline(yintercept=0) +
+        ggplot2::geom_hline(yintercept=c(-2/sqrt(myacf$n.used),2/sqrt(myacf$n.used)),color="blue",lty="dashed") +
+        ggtheme +
+        ggplot2::coord_cartesian(xlim=c(0,ceiling(max(myacf$lag)/10)*10)) +
+        ggplot2::labs(
+          title = paste("Auto-Correlation: "),
+          y = "",
+          x = "Lag"
+        )
+      # pacf
+      mypacf = stats::pacf(e,na.action=na.pass,plot=FALSE)
+      plot.pacf =
+        ggplot2::ggplot(data=data.frame(lag=mypacf$lag[-1], pacf=mypacf$acf[-1])) +
+        ggplot2::geom_errorbar(ggplot2::aes(x=lag,ymax=pacf,ymin=0),width=0,color=mycolor) +
+        ggplot2::geom_hline(yintercept=0) +
+        ggplot2::geom_hline(yintercept=c(-2/sqrt(mypacf$n.used),2/sqrt(mypacf$n.used)),color="blue",lty="dashed") +
+        ggtheme +
+        ggplot2::coord_cartesian(xlim=c(0,ceiling(max(mypacf$lag)/10)*10)) +
+        ggplot2::labs(
+          title = paste("Partial Auto-Correlation: "),
+          y = "",
+          x = "Lag"
+        )
+      # cpgram
+      plot.cpgram =
+        ggfortify::ggcpgram(e,colour=mycolor) +
+        ggtheme +
+        ggplot2::labs(
+          title = paste("Cumulative Periodogram: "),
+          y = "",
+          x = "Lag"
+        )
+      
+      plots[[i]] = patchwork::wrap_plots(plot.res,
+                                         plot.hist,
+                                         plot.qq,
+                                         plot.cpgram,
+                                         plot.acf,
+                                         plot.pacf ,
+                                         nrow=3) +
+        patchwork::plot_annotation(title=paste("Residual Analysis for ", nam),
+                                   theme= ggtheme + ggplot2::theme(text=ggplot2::element_text("Avenir Next Condensed", size=18, face="bold"))
+        )
+      
+    }
+    
   }
   
-  # retrieve user default parameter settings
-  
-  # use ggplot to plot
-  # mycolor = getggplot2colors(2)[2]
-  mycolor <- "steelblue"
-  # if (use.ggplot) {
-  plots = list()
-  t = fit$residuals$normalized[["t"]]
-  for (i in 1:private$number.of.observations) {
-    e = fit$residuals$normalized[[private$obs.names[i]]]
-    id = !is.na(e)
-    e = e[id]
-    t = t[id]
-    nam = private$obs.names[i]
+  # state plots
+  ########################################
+  if(type=="states"){
     
-    # time vs residuals
-    plot.res =
-      ggplot2::ggplot(data=data.frame(t,e)) +
-      ggplot2::geom_point(ggplot2::aes(x=t,y=e),color=mycolor) +
-      ggtheme +
-      ggplot2::labs(
-        title = paste("Time Series of Residuals: "),
-        y = "",
-        x = "Time"
-      )
-    # quantile plots
-    plot.qq =
-      ggplot2::ggplot(data=data.frame(e)) +
-      ggplot2::stat_qq(ggplot2::aes(sample=e),color=mycolor) +
-      ggplot2::stat_qq_line(ggplot2::aes(sample=e),lty="dashed") +
-      ggtheme +
-      ggplot2::labs(
-        title = paste("Normal Q-Q Plot: "),
-        y = "Sample Quantiles",
-        x = "Theoretical Quantiles"
-      )
-    # histogram
-    plot.hist =
-      ggplot2::ggplot(data=data.frame(e)) +
-      ggplot2::geom_histogram(ggplot2::aes(x=e,y=ggplot2::after_stat(density)),bins=100,color="black",fill=mycolor) +
-      ggtheme +
-      ggplot2::labs(
-        title = paste("Histogram: "),
-        y = "",
-        x = ""
-      )
-    # acf
-    myacf = stats::acf(e,na.action=na.pass,plot=FALSE)
-    plot.acf =
-      ggplot2::ggplot(data=data.frame(lag=myacf$lag[-1],acf=myacf$acf[-1])) +
-      ggplot2::geom_errorbar(ggplot2::aes(x=lag,ymax=acf,ymin=0),width=0,color=mycolor) +
-      ggplot2::geom_hline(yintercept=0) +
-      ggplot2::geom_hline(yintercept=c(-2/sqrt(myacf$n.used),2/sqrt(myacf$n.used)),color="blue",lty="dashed") +
-      ggtheme +
-      ggplot2::coord_cartesian(xlim=c(0,ceiling(max(myacf$lag)/10)*10)) +
-      ggplot2::labs(
-        title = paste("Auto-Correlation: "),
-        y = "",
-        x = "Lag"
-      )
-    # pacf
-    mypacf = stats::pacf(e,na.action=na.pass,plot=FALSE)
-    plot.pacf =
-      ggplot2::ggplot(data=data.frame(lag=mypacf$lag[-1], pacf=mypacf$acf[-1])) +
-      ggplot2::geom_errorbar(ggplot2::aes(x=lag,ymax=pacf,ymin=0),width=0,color=mycolor) +
-      ggplot2::geom_hline(yintercept=0) +
-      ggplot2::geom_hline(yintercept=c(-2/sqrt(mypacf$n.used),2/sqrt(mypacf$n.used)),color="blue",lty="dashed") +
-      ggtheme +
-      ggplot2::coord_cartesian(xlim=c(0,ceiling(max(mypacf$lag)/10)*10)) +
-      ggplot2::labs(
-        title = paste("Partial Auto-Correlation: "),
-        y = "",
-        x = "Lag"
-      )
-    # cpgram
-    plot.cpgram =
-      ggfortify::ggcpgram(e,colour=mycolor) +
-      ggtheme +
-      ggplot2::labs(
-        title = paste("Cumulative Periodogram: "),
-        y = "",
-        x = "Lag"
-      )
+    mycolors <- c("steelblue","tomato")
+    plots = list()
+    t <- fit$private$data$t
     
-    plots[[i]] = patchwork::wrap_plots(plot.res,
-                                       plot.hist,
-                                       plot.qq,
-                                       plot.cpgram,
-                                       plot.acf,
-                                       plot.pacf ,
-                                       nrow=3) +
-      patchwork::plot_annotation(title=paste("Residual Analysis for ", nam),
-                                 theme= ggtheme + ggplot2::theme(text=ggplot2::element_text("Avenir Next Condensed", size=18, face="bold"))
-      )
+    # check against obs
+    against.flag <- FALSE
+    if(!is.null(against.obs)){
+      against.flag <- TRUE
+      if(length(against.obs) == 1) c(against.obs, rep(NA, private$number.of.states-1))
+      if(length(against.obs) != private$number.of.states){
+        stop("'against.obs' should have length 1 or ",private$number.of.states)
+      } 
+      
+      x.obs <- fit$private$data[[against.obs]]
+    }
+    
+    for (i in 1:private$number.of.states) {
+      nam <- names(fit$states$mean[[state.type]])[i+1]
+      x <- fit$states$mean[[state.type]][[i+1]]
+      sd <- fit$states$sd[[state.type]][[i+1]]
+      
+      state.lab <- sprintf("%s (%s)", capitalize_first(state.type), nam)
+      
+      plots[[i]] <- ggplot2::ggplot() +
+        ggplot2::geom_ribbon(ggplot2::aes(x=t,ymin=x-2*sd,ymax=x+2*sd),fill="grey",alpha=0.6) +
+        ggplot2::geom_line(ggplot2::aes(x=t,y=x,color=state.lab)) +
+        { 
+          if(against.flag){
+            ytemp <- against.obs[i]
+            if(!is.na(ytemp)){
+              obs.lab <- sprintf("Observations (%s)", ytemp)
+              x.obs <- fit$private$data[[ytemp]]
+              ggplot2::geom_point(ggplot2::aes(x=t,y=x.obs,color=obs.lab))
+            }
+          }
+        } +
+        ggplot2::labs(
+          title = "State Estimates",
+          color="",
+          x = "Time",
+          y = "",
+        ) +
+        ggplot2::scale_color_manual(values=mycolors) +
+        getggplot2theme()
+      
+    }
     
   }
   
   # return plot list, and print one of the plots
-  print(plots[[plot.obs]])
+  print(plots[[print.plot]])
   return(invisible(plots))
 }
 
@@ -337,7 +401,7 @@ plot.ctsmTMB.fit = function(x,
 #' the grid points from the mean value in multiples of the standard deviation.
 #' @param hessian a boolean indicating whether to use the hessian or not during
 #' the profile optimization.
-#' @param trace the optimization output flag (see \link[stats]{nlminb}) given to
+#' @param silent boolean whether or not to mute current iteration number
 #' the \code{control} argument.
 #' @param control a list of optimization output controls (see \link[stats]{nlminb})
 #' @note The implemetation was modified from that of
@@ -348,8 +412,8 @@ profile.ctsmTMB.fit = function(fit,
                                grid.size = rep(10, length(parlist)),
                                grid.qnt = rep(3, length(parlist)),
                                hessian=FALSE,
-                               trace=0,
-                               control=list(trace=trace,iter.max=1e3,eval.max=1e3)
+                               silent=FALSE,
+                               control=list(trace=0,iter.max=1e3,eval.max=1e3)
 ){
   
   if(missing(fit)){
@@ -441,7 +505,7 @@ profile.ctsmTMB.fit = function(fit,
     par[names.in.parlist] = unlist(X[i,names.in.parlist])
     par.temp <- par
     #
-    cat("Iteration:", i, "/", n, "\n")
+    if(!silent) cat("Iteration:", i, "/", n, "\n")
     opt <- f(x0)
     #
     opt.list[[i]] <- opt
@@ -499,8 +563,9 @@ plot.ctsmTMB.profile = function(x,y,include.opt=TRUE,...){
       ggplot2::geom_line(ggplot2::aes(x=df[[par.names[1]]],y=df$nll)) +
       {if(include.opt) ggplot2::geom_vline(ggplot2::aes(xintercept=opt,color="Full Likelihood Optimum"))} +
       ggplot2::labs(color="",
-           title="Profile Likelihood",
-           y = "Negative Log-Likelihood") +
+                    title="Profile Likelihood",
+                    y = "Negative Log-Likelihood",
+                    x = par.names[1]) +
       getggplot2theme()
   } else if (l==2L){
     p <- ggplot2::ggplot() + 
@@ -508,10 +573,12 @@ plot.ctsmTMB.profile = function(x,y,include.opt=TRUE,...){
         x=df[[par.names[1]]],
         y=df[[par.names[2]]],
         z=df$nll), bins=100) + {
-      if(include.opt) ggplot2::geom_point(ggplot2::aes(x=opt[1], y=opt[2],fill="Full Likelihood Optimum"))
+          if(include.opt) ggplot2::geom_point(ggplot2::aes(x=opt[1], y=opt[2],fill="Full Likelihood Optimum"))
         } + 
       ggplot2::labs(fill="",
-           title="Profile Likelihood") +
+                    title="Profile Likelihood",
+                    x = par.names[1],
+                    y = par.names[2]) +
       getggplot2theme()
   } else {
     stop("Profile likelihood plotting for more than two parameters is not supported.")
@@ -519,3 +586,4 @@ plot.ctsmTMB.profile = function(x,y,include.opt=TRUE,...){
   
   return(p)
 }
+

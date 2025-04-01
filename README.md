@@ -205,7 +205,7 @@ or invidually using the standard syntax
 The methods documentation is also available on the [package
 homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
-## Code Example - Inference in 1D Ornstein-Uhlenbeck
+## Code Example - Inference in 1D Ornstein-Uhlenbeck Process
 
 ``` r
 library(ggplot2)

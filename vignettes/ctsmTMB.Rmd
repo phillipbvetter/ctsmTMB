@@ -9,122 +9,97 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-Let's get starting using `ctsmTMB`.
+Welcome to this guide on how to work with `ctsmTMB` for modelling time-series data.
 
-```{r, include=TRUE}
-library(ctsmTMB)
-```
-
-We shall assume that you have some time series data with observations and model inputs, and have a continous-time stochastic differential equation which you believe can be used to model some latent variable state which in turn can be linked to the gathered observations.
-
-# Model
-
-In this example we consider a simple mean-reverting model based on the Ornstein-Uhlenbeck process
+In this example we consider a simple 1D mean-reverting stochastic differential equation model, the Ornstein-Uhlenbeck process:
 $$ 
 \mathrm{d}x_{t} = \theta (\mu - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} 
 $$
-where $\theta$, $\mu$ and $\sigma_x$ are (fixed effects) parameters in the model to be estimated. 
+Here $\theta$, $\mu$ and $\sigma_x$ are (fixed effects) parameters to be estimated. 
   
-We assume that we have direct observations of the state $x_{t}$ i.e. the observation equation is
+We assume that we have **direct** observations of the state $x_{t}$, at discrete times $t_k$ for $k=0,1,2,...,N$ i.e. the observation equation is
 $$
-y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}} \qquad \varepsilon_{t_{k}} \sim N(0,\sigma_{y}^{2} \cdot u_{t_{k}})
+y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
 $$
-and the residuals are normally distributed with variance $\sigma_{y}^{2} \cdot u_{t}$, where $\sigma_{y}$ is a fixed effect (parameter) which should also be estimated, and $u_{t}$ is an input. Typically this input is not added, but it is done so here for sake of this example, to demonstrate how inputs are specified. It's effect here could e.g. be as the vector 
+
+The residuals are assumed to be Gaussian, and we choose the variance as
 $$
-u_{t_{i}} = \left\{ 1, 4, 1, 4, 1, 4 \cdots \right\}
+\varepsilon_{t_{k}} \sim N(0,\sigma_{y}^{2} \cdot u_{t_{k}})
 $$
-so that some observations have twice the standard deviation of others.
+
+
+Here $\sigma_{y}$ is a fixed effect parameter (also to be estimated), and $u_{t}$ is a known time-dependent input. The input is added here for sake of introduction, just to demonstrate how time-dependent inputs are specified. We could for example imagine the input to be given by
+$$
+u_{t_{k}} = \left\{ 1, 4, 1, 4, 1, 4 \cdots \right\}
+$$
+such that certain observations have twice the standard deviation of others, and thus carry less weight (information) about the latent state $x$. In the remainder of this vignette however, we simply set $u_{t} = 1$.
 
 # Initialising
   
 We initialise a `ctsmTMB` model object using
 
 ```{r}
-model = ctsmTMB$new()
+library(ctsmTMB)
+model <- ctsmTMB$new()
 ```
 
-<!-- We set the model name, which is used to generate the underlying C++ files -->
-
-<!-- ```{r} -->
-<!-- model$setModelname("getting_started_model") -->
-<!-- ``` -->
-
-<!-- By default the files are saved in a directory called *ctsmTMB_cppfiles* in the current working directory. The files can be stored in another location by specifying another directory as below: -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- model$setCppfilesDirectory("some_path_to_a_directory") -->
-<!-- ``` -->
-
-```{r, include=FALSE, eval=FALSE}
-temporary_directory <- file.path(tempdir(),"ctsmTMB_cppfiles")
-model$setCppfilesDirectory(temporary_directory)
-```
-
-Now that the object is created let us first inspect it's printout:
-
+Printing the model object in the console reveals some basic information about it:
 ```{r}
 print(model)
 ```
-
-We see that there are no states, diffusions, observations, inputs or parameters currently registered. 
 
 # Add system equations
 
 ---
 
-We can begin by adding the desired stochastic differential equation to the object, which is straighforward:
+First we specify the stochastic differential equation governing our latent state $x_t$. This is straight-forward using **R** formulas, choosing appropriate character names for the parameters.
 ```{r}
 model$addSystem(dx ~ theta * (mu - x) * dt + sigma_x * dw)
 ```
-We note that drift terms are specified in that they have a `* dt` and similary for diffusions with `* dw` or `* dw#` where `#` can be any sequence of numbers. A single equation can contain any number of
-diffusion terms i.e.
+
+We emphasize that drift terms must be multiplied by a `dt` and diffusion terms by a `dw` or `dw#` where # is some number e.g. `dw2`. A single state equation may contain any number of diffusion terms i.e.
 
 ```{r, eval=FALSE}
-model$addSystem(dx ~ theta * (mu - x) * dt + sigma_x * dw + sigma_x2 * dw2)
+model$addSystem(dx ~ theta * (mu - x) * dt + sigma_x1 * dw1 + x * sigma_x2 * dw2 + dw3)
 ```
 
 # Add observation equations
 
 ---
 
-Next we add the observation equations:
+Now the observation equations of the system must be specified. This amounts to specifying the mean and variance of the residual normal distribution. First the mean is specified i.e.
 ```{r}
 model$addObs(y ~ x)
 ```
-Here we are saying that the latent variable `x` is observed (directly) by the observations `y`. The observations for `y` are now identified in the (to-be provided) estimation data via the name "y".
+
+The variable used on the left-hand side, here `y`, determines the name of the relevant observations to-be provided in the data for maximum likelihood estimation later.
 
 # Add observation variances
 
 ---
 
-We must also specify the variance of the normally distributed residuals for each observation equation. This is done as follows:
+Next we specify the residual variance, using the name given to the observation equation above, in `addObs`:
 ```{r}
 model$setVariance(y ~ sigma_y^2 * u)
 ```
-The variable name `y` on the left-hand side of the formula must match a name previously defined via `addObs`. 
-
-Let's inspect the model object again
-```{r}
-print(model)
-```
-So now we have specified one state $x$ and an observation equation $y$. We also note that there are no inputs and no parameter specified yet.
 
 # Add inputs
 
 ---
 
-We tell the model which variable names are inputs via
+Next, we declare which variables are time-dependent inputs via
 ```{r}
 model$addInput(u)
 ```
-The input values should be provided in the estimation data, using the same name, exactly similar to how observations are provided.
+
+These shall must also be provided in the data later, similar to observations.
 
 
 # Add parameters
 
 ---
 
-We must also specify the (fixed effects) parameters, and in addition their values (initial, lower/upper bound) or the estimation procedure (likelihood optimization).
+We must also specify the (fixed effects) parameters, and in addition their initial/lower/upper values for the estimation.
 ```{r}
 model$setParameter(
   theta   = c(initial = 5,    lower = 0,    upper = 20),
@@ -134,16 +109,14 @@ model$setParameter(
 )
 ```
 
-We can fix a parameter value (so the parameter becomes a constant) by supplying just a single value. 
-
-It is for instance typically useful to fix some noise parameters, because they can be difficult to identify simultaneously. Here we fix the observation noise $\sigma_{y}$:
-```{r, eval=T}
+A parameter can be fixed by supplying just a single value. It is for instance typically useful to fix observation noise parameters because simultaneous identification of observation and process noise is difficult in practice, and some knowledge about observation noise may be known. Thus, let us fix $\sigma_{y}$ to a somewhat arbitrary but reasonable value:
+```{r}
 model$setParameter(
-  sigma_y  = 1e-1
+  sigma_y  = 0.05
 )
 ```
 
-Let's inspect the model object again, and see that inputs and parameters (both non-fixed and fixed) have been registered.
+Let's inspect the model object again, and see that it is no longer empty:
 ```{r}
 print(model)
 ```
@@ -152,82 +125,135 @@ print(model)
 
 ---
 
-Finally, we must set the state's expected value and (co)variance at the initial time-point, where the filtering algorithms begin, with the assumption that the state is normally distributed. The choice of values should reflect ones belief in the initial state, but it is probably just a ballpark figure.
+Lastly the state distribution at the initial time point must be specified via its mean and variance.
 ```{r}
-x0 <- 1
-p0 <- 1e-1 * diag(1)
-initial.state <- list(x0, p0)
-model$setInitialState(initial.state)
+initial.state <- list(mean=1, cov=1e-1)
+model$setInitialState(initial.state=initial.state)
 ```
-Note that we use `diag` to construct a 1x1 matrix for the covariance, as required by the method.
 
+Note that in higher dimensions the provided covariance `cov` must be a matrix. A simple initial covariance could just be a scaled identity e.g. in two dimensions `cov = 1e-1 * diag(2)`
 
-# Fit model parameters to data
+# Generate Data
 
 ---
 
-We are now ready to perform state filtration and parameter estimation. We first construct some fake data by simulating paths of the Ornstein-Uhlenbeck process using the [Euler-Maruyama scheme](https://en.wikipedia.org/wiki/Euler–Maruyama_method).
+The model has now been fully specified, and state and parameter estimation can be performed on the data at hand.
 
-```{r, fig.height=7,fig.width=7}
+In this particular example we generate some fake data. This can be achieved by simulating a stochastic realization of the stochastic differential equation, and adding some observation noise to it.
+
+We acheive this task using the  `simulate` method of the model object, which perform stochatic simulations based on the [Euler-Maruyama scheme](https://en.wikipedia.org/wiki/Euler–Maruyama_method). The user is referred to the [simulation vignette](https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html) for further details.
+
+We choose the true parameters to be
+$$
+\theta = 10.0 \qquad \mu=1.00 \qquad \sigma_{x} = 1.00 \qquad \sigma_{y}=0.05
+$$
+
+The code below performs the simulation and prepares data for likelihood estimation:
+```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center'}
 library(ggplot2)
-set.seed(10)
-simulation.pars <- c(theta=10, mu=1, sigma_x=1, sigma_y=5e-5)
+
+# Set simulation settings
+set.seed(11)
+true.pars <- c(theta=10, mu=1, sigma_x=1, sigma_y=0.05)
 dt.sim <- 1e-3
-t.sim <- seq(0,1,by=dt.sim)
+t.end <- 1
+t.sim <- seq(0, t.end, by=dt.sim)
 df.sim <- data.frame(t=t.sim, u=1, y=NA)
 
 # Perform simulation
-sim <- model$simulate(data=df.sim, pars=simulation.pars, n.sims=1, silent=T, initial.state=initial.state)
+sim <- model$simulate(data=df.sim, 
+                      pars=true.pars, 
+                      n.sims=1, 
+                      silent=T, 
+                      initial.state=initial.state)
 x <- sim$states$x$i0$x1
 
 # Extract observations from simulation and add noise
-dt.obs = 1e-2
-t.obs = seq(0,1,by=dt.obs)
-y = x[t.sim %in% t.obs] + simulation.pars["sigma_y"] * rnorm(length(t.obs))
+iobs <- seq(1,length(t.sim), by=10)
+t.obs <- t.sim[iobs]
+y = x[iobs] + true.pars["sigma_y"] * rnorm(length(iobs))
 
-data = data.frame(
+# Create data-frame
+data <- data.frame(
   t = t.obs,
   u = 1,
   y = y
 )
 
+# Plot the simulation and observed data
 ggplot() +
   geom_line(aes(x=t.sim,y=x,color="Simulation")) +
   geom_point(aes(x=t.obs,y=y,fill="Observations")) +
-  ctsmTMB:::getggplot2theme() + labs(color="",fill="")
+  ctsmTMB:::getggplot2theme() + labs(x="t", y="x",color="",fill="")
 ```
 
-The data must contain a time column named `t` and columns for each of the specified inputs and observations.
-
-We pass the `data` to the `estimate` method. This will build the model, perform various checks, construct the computational graph for automatic differentiation, and then perform the optimization.
-
-The output generated during the optimization is the objective (negativ log-likelihood) value and parameter values at the current step. The optimizer used in the package is `stats::nlminb`.
-
-```{r}
-fit = model$estimate(data)
-```
-
-# Parameter estimates
+# Perform estimation
 
 ---
 
-Let's inspect results from the estimation.
+We can now pass the `data` to the `estimate` method. This will build the model, perform various checks, construct the computational graph for automatic differentiation, and then perform the optimization.
 
-We can print the `fit` object to see a standard coefficient matrix for the parameter estimates.
+_**Note**: The data *must* contain an increasing time column named `t` and columns for each of the specified inputs and observations, in this case `u` and `y`._
+
+```{r}
+fit <- model$estimate(data)
+```
+
+_**Note**: a time-consuming step in the estimation procedure is construction of the AD graph of the underlying likelihood function, but the time spent for this task relative to the optimization time will even out for models with more parameters._
+
+The output generated during the optimization is the objective (negativ log-likelihood) value and the parameter values at the current step. The optimizer used by **ctsmTMB** is the *nlminb* optimizer from the *stats* library.
+
+We refer the user to the [estimation vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html) for further details on the available arguments to `estimate`, and to the ['use another optimizer' vignette](https://phillipbvetter.github.io/ctsmTMB/articles/using_another_optimizer.html) for details on how to use another optimizer than *nlminb*.
+
+# Inspecting the `fit` object
+
+---
+
+The `fit` object contains the following entries
+```{r}
+names(fit)
+```
+
+The first is a boolean which indicates whether estimation was succesful
+```{r}
+fit$convergence
+```
+which is just a copy of the optimization message from `stats::nlminb`.
+
+The second is the likelihood value at the found optimum
+```{r}
+fit$nll
+```
+
+the third is the likelihood gradient at the optimum
+```{r}
+fit$nll.gradient
+```
+
+and the fourth is the likelihood hessian at the optimum
+```{r}
+fit$nll.hessian
+```
+
+## Parameter estimates
+
+---
+
+Printing the `fit` object reveals a standard coefficient matrix for the parameter estimates.
+
 ```{r}
 print(fit)
 ```
 
-We can see the parameter estimate and the associated standard error together with the t-test statistic and P-value associated with the standard null-hypothesis 
+We can see the parameter estimate and the associated standard error together with a one-dimensional t-test statistic and associated P-value for the common hypothesis test
 $$
 H_{0}: p = 0 \\
 H_{1}: p \neq 0
 $$
-Note that the true parameter values were set during the simulation step as $\theta = 10$, $\mu=1$ and $\sigma_{X} = 1$.
 
-The parameter values, standard deviations and covariance matrix can be extracted via:
+_**Note** The large uncertainty in $\theta$ here is primarily caused by a relatively short time-series (2 seconds), relative to the characteristic time of the process $\tau = 1/\theta = 0.1 \, \text{sec}$._
 
-The estimated (fixed) parameters:
+The parameter-related information can be extracted from the fit object. The estimated (fixed) parameters:
 ```{r}
 fit$par.fixed
 ```
@@ -242,60 +268,105 @@ The covariance of the (fixed) parameters:
 fit$cov.fixed
 ```
 
-# State estimates
+The parameter covariance is found by inverting the likelihood hessian at the found optimum i.e.:
+```{r}
+solve(fit$nll.hessian)
+```
+
+## State estimates
 
 ---
 
-We can also plot prior and posterior state estimates The prior state estimate is the resulting estimate purely from integrating the mean and covariance of the SDE system forward in time, while the posterior state estimation is obtained from updating the prior estimate with the information contained in the observation (using Bayes' rule).
+The optimal state distributions associated with the estimated parameters can be extracted from the model object as well.
 
-```{r}
-library(ggplot2)
-library(patchwork)
-```
+In this example we used the Extended Kalman filter (this is the default filtering algorithm specified by the argument `method="ekf"` to `estimate`). This method produces  *prior* and *posterior* state estimates. The prior estimates are one-step-ahead predictions, while the posterior estimated are these priors but updated against the current-time available observations. The user is referred to the [Kalman Filter vignette](https://phillipbvetter.github.io/ctsmTMB/articles/extended_kalman_filter.html) for more information on the theoretical details.
 
-```{r, fig.height=7,fig.width=7}
+```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center', eval=F,include=F}
+# Extract time, and prior/posterior mean and standard deviation estimates
 t         = fit$states$mean$posterior$t
 xprior    = fit$states$mean$prior$x
 xprior_sd = fit$states$sd$prior$x
 xpost     = fit$states$mean$posterior$x
 xpost_sd  = fit$states$sd$posterior$x
 
+# Create vector c(xprior[1], xpost[1], xprior[2], xpost[2],...)
 t2 <- c(rbind(t,t))
-xprior_post <- c(rbind(xprior,xpost))
+xprior_post <- c(rbind(xprior, xpost))
 xprior_post_sd <- c(rbind(xprior_sd,xpost_sd))
 
+# Plot
 ggplot() +
   geom_line(aes(x=t2,y=xprior_post,color="State Estimates (Prior-Posterior)"),lwd=1) +
-  # geom_line(aes(x=t,y=xpost,color="State Estimates (Posterior)"),lwd=1) +
-  # geom_line(aes(x=t,y=xprior,color="State Estimates (Prior)"),lwd=1) +
-  # geom_ribbon(aes(x=t,ymin=xpost-2*xpost_sd,ymax=xpost+2*xpost_sd),fill="grey",alpha=0.5) +
   geom_point(aes(x=data$t,data$y, color="Observations")) +
   labs(x = "Time", y = "", color="") +
   ctsmTMB:::getggplot2theme()
 ```
+```{r eval=FALSE, include=FALSE}
+  # geom_line(aes(x=t,y=xpost,color="State Estimates (Posterior)"),lwd=1) +
+  # geom_line(aes(x=t,y=xprior,color="State Estimates (Prior)"),lwd=1) +
+  # geom_ribbon(aes(x=t,ymin=xpost-2*xpost_sd,ymax=xpost+2*xpost_sd),fill="grey",alpha=0.5) +
+```
 
-# Residual analysis
+The states can easily be plotted using the provided **S3** plot.ctsmTMB.fit method. Here we plot both prior and posterior states against the observations:
+
+```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center'}
+plot(fit, type="states",state.type="prior",against="y")
+```
+```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center'}
+plot(fit, type="states",state.type="posterior",against="y")
+```
+
+_**Note:** The decrease in variance for the posterior state estimate is expected because these states are updated to the observations._
+
+<!-- We can quickly perform a comparison with the *smoothed* state estimates from the `laplace` estimation method (we suppress the output): -->
+<!-- ```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center'} -->
+<!-- fit2 <- model$estimate(data, method="laplace", silent=TRUE, control=list(trace=0)) -->
+<!-- plot(fit2, type="states", state.type="smoothed", against="y") -->
+<!-- ``` -->
+
+
+## Residual analysis
 
 ---
 
-We can display a standard residual analysis for the observations by calling `plot` on the `fit` object, which invokes the `S3` `plot.ctsmTMB.fit` method of `plot`. This includes a quantile-quantile plot, histogram, auto-correlations and cumulative periodogram.
+Model validation typically involves inspecting the properties of prediction residuals. The model residuals are contained in `fit$residuals` with the entries:
 
-```{r, fig.height=7, fig.width=7}
+```{r}
+names(fit$residuals)
+```
+
+We can also easily generate a reisdual analysis plot with the **S3** plot.ctsmTMB.fit method. This is actually the default arguments to `plot.ctsmTMB.fit`. This produces a time-series of the residuals, a histogram, a quantile-quantile plot, auto/partial-correlations and a cumulative periodogram:
+
+```{r, fig.height=9,fig.width=9, out.width="100%", fig.align='center'}
 plot(fit)
 ```
 
-The residuals (both standard and normalized) can be extracted as well, together with their standard deviation and covariance matrix via `fit$residuals`
-
-# **Extra:** Adding algebraic equations
+# Profiling the likelihood
 
 ---
 
-In order to keep the code clean, one can define algebraic expressions, that replace variables in the defined equations. As an example estimating $\theta$ as strictly positive corresponds to estimating $\log(\theta)$ so really we are looking for the parameter $\hat{\theta} = \exp(\log(\theta))$. This can be achieved by setting the following algrabic expression:
+We can perform likelihood profiling with the `profile` S3 method on the `fit` object, and further plot the result by calling the `plot` S3 method on that.
+
+For an example we can inspect the profile likelihood of $\theta$ as follows:
+```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center'}
+a <- fit$par.fixed["theta"] - 5
+b <- fit$par.fixed["theta"] + 5
+prof <- profile(fit, list("theta"=seq(a,b,length.out=25)), silent=TRUE)
+plot(prof)
+```
+
+# **Extra:** Algebraic equations
+
+---
+
+The model definitions can be kept clean by defining algebraic expressions which replace variables in the defined equations. A typical scenario where algebraic equations can be used is to rename parameters which must be strictly positive. 
+
+**Example** In this model $\theta$ should be a strictly positive parameter $\hat{\theta} = \exp(\log\theta)$. This can be achieved by setting the following algrabic expression:
 ```{r}
 model$setAlgebraics(theta ~ exp(logtheta))
 ```
 
-A new parameter entry must be added to the model object which describes values for `logtheta` which has replaced `theta`:
+The effect of this is to replace all occurences of `theta` in the model equations with `exp(logtheta)`. The final thing to do is to add a new parameter entry to the model object which describes values for `logtheta` 
 ```{r}
 model$setParameter(logtheta = log(c(initial=5, lower=0, upper=20)))
 ```

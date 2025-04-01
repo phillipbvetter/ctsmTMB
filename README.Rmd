@@ -40,12 +40,12 @@ $$
 
 Here the latent state $x_t$ evolves continuously in time, governed by a set of stochastic differential equations, and information about the system is available at discrete times through the observations $y_{t_k}$.
 
-The **ctsmTMB** package is essentially "just" a convience wrapper for the **TMB**/**RTMB** packages [(Template Model Builder)](https://github.com/kaskr/adcomp) that provide automatic differentiation of the likelihood function, and access to other computational tools such as the Laplace approximation. The likelihood function is constructed based on the (symbolic) user-provided state space equations, which may be specified using the implemented OOP-style **R6** `ctsmTMB` class, with methods such as `addSystem` (for defining system equations), and `addObs` (for defining observation equations).
+The **ctsmTMB** package is essentially wrapper around the **TMB/RTMB** packages [(Template Model Builder)](https://github.com/kaskr/adcomp) that provide automatic differentiation of the likelihood function, and access to other computational tools such as the Laplace approximation. The likelihood function is constructed based on the (symbolic) user-provided state space equations, which may be specified using the implemented OOP-style **R6** `ctsmTMB` class, with methods such as `addSystem` (for defining system equations), and `addObs` (for defining observation equations).
 
 The primary work-horse of **ctsmTMB** is the `estimate` method, which carries out inference by minimizing the (negative log) likelihood using the `stats::nlminb` quasi-Newton optimizer due to [D. Gay](https://dl.acm.org/doi/pdf/10.1145/355958.355965). The resulting object contains the maximum likelihood parameter and state estimates, and associated marginal uncertainties. The available inference methods are the Linear and Extended Kalman filters in addition to filtration (actually smoothing) using a Laplace approximation approach. 
 <!-- The user can extract the likelihood function handles (function, gradient and hessian) with the `likelihood` method if e.g. they want to use another optimizer. -->
 
-The package facilities forecasting through the `predict` (momen forecasts) and `simulate` (stochastic path simulations) methods. The calculations may be carried out in either **R** (default) or for additional speed in **C++** using `Rcpp`.
+The package facilities forecasting through the `predict` (moment forecasts) and `simulate` (stochastic path simulations) methods. The calculations for these may be carried out in either **R** (default) or for additional speed in **C++** using `Rcpp`.
 <!-- in particular using the `RcppXPtrUtils` package for sending **C++** pointers of the model-specific functions (drift, diffusion, observation and jacobians) rather than sending (slow to evaluate) **R** functions. -->
 
 <!-- Estimation Methods -->
@@ -68,17 +68,15 @@ The package is currently mostly tailored towards the Kalman Filter. The advantag
 
 3. Multi-step predictions / simulations with state updates are easier to compute.
 
-In these cases **TMB** simply provides an easy framework for automatic differentiation.
-
-The package is currently mostly tailored towards the Kalman Filters, with its available methods `predict` and `simulate`  for k-step-ahead predictions and simulations. It also has an `S3 method` implementation of `plot` to be called on the `ctsmTMB.fit` class object returned from the `estimate` method, which plots a basic residuals analysis using the `ggplot2` package.
+In these cases **TMB** simply provides the automatic differentiation.
 
 <!-- The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242). -->
 
-## Laplace Filter / Approximation
+## Laplace "Filter"
 
-The state-reconstructions based on the `laplace` method are *smoothed* estimates, meaning that all states are optimized jointly, given all observations in the data. For further mathematicals details, see [this](https://phillipbvetter.github.io/ctsmTMB/articles/laplace_approx.html) article on the package webpage. The Laplace Approximation is natively built-into and completely handled by **TMB**. 
+The state-reconstructions based on the `laplace` (approximation) method are *smoothed* estimates, meaning that all states are optimized jointly, given all observations in the data. The Laplace Approximation is natively built-into and completely handled by **TMB**. The advantages of this approach are:
 
-1. The possibility for non-Gaussian (but unimodal) observation densities to accommodate the need for e.g. heavier distribution tails. (not yet implemented).
+1. The possibility for unimodal non-Gaussian observation densities to accommodate the need for e.g. heavier distribution tails. Not implemented.
 
 The method *may* be less useful in the context of model-training towards forecasting because the likelihood contributions are based on these smoothed estimates, rather than one-step predictions (as is the case of the Kalman filters). 
 
@@ -145,7 +143,7 @@ or invidually using the standard syntax
 
 The methods documentation is also available on the [package homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
-## Code Example - Inference in 1D Ornstein-Uhlenbeck
+## Code Example - Inference in 1D Ornstein-Uhlenbeck Process
 
 ```{r, eval=FALSE}
 library(ggplot2)

@@ -6,12 +6,6 @@ construct_makeADFun = function(self, private){
   
   # TMB::openmp(max=TRUE, autopar=TRUE, DLL=private$modelname.with.method)
   
-  if(any(private$method == c("ekf_cpp","ukf_cpp"))){
-    comptime <- system.time(
-      makeADFun_ekf_cpp(self, private)
-    )
-  }
-  
   if(private$method == "lkf"){
     comptime <- system.time(
       makeADFun_lkf_rtmb(self, private)
@@ -19,15 +13,18 @@ construct_makeADFun = function(self, private){
   }
   
   if(private$method == "ekf"){
-    comptime <- system.time(
-      makeADFun_ekf_rtmb(self, private)
-    )
-    # comptime <- system.time(construct_rtmb_ekf_makeADFun(self, private))
+    makeADFun_ekf_rtmb(self, private)
   }
   
   if(private$method=="laplace"){
     comptime <- system.time(
       makeADFun_laplace_rtmb(self, private)
+    )
+  }
+  
+  if(private$method=="laplace2"){
+    comptime <- system.time(
+      makeADFun_laplace2_rtmb(self, private)
     )
   }
   
@@ -38,8 +35,8 @@ construct_makeADFun = function(self, private){
   #     )
   # }
   
-  comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
-  if(!private$silent) message("...took: ", comptime, " seconds.")
+  # comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
+  # if(!private$silent) message("...took: ", comptime, " seconds.")
   
   return(invisible(self))
 }
@@ -57,21 +54,6 @@ create_fit = function(self, private, laplace.residuals){
   
   if(private$method == "ekf"){
     calculate_fit_statistics_ekf(self, private)
-    
-    # this is the old function using nll$report instead of ekf_r 
-    # must be paired with construct_rtmb_ekf_makeADFun to work
-    # create_fit_ekf_rtmb(self, private) 
-  }
-  
-  if(private$method == "ekf_cpp"){
-    calculate_fit_statistics_ekf(self, private)
-    
-    # this is the old function using nll$report instead of ekf_r 
-    # calculate_fit_statistics_ukf_cpp(self, private)
-  }
-  
-  if(private$method == "ukf_cpp"){
-    calculate_fit_statistics_ukf_cpp(self, private)
   }
   
   # if(private$method == "ekf_rcpp"){
@@ -80,6 +62,10 @@ create_fit = function(self, private, laplace.residuals){
   
   if(private$method=="laplace"){
     calculcate_fit_statistics_laplace(self, private, laplace.residuals)
+  }
+  
+  if(private$method=="laplace2"){
+    calculcate_fit_statistics_laplace2(self, private, laplace.residuals)
   }
   
   return(invisible(self))
@@ -131,7 +117,7 @@ perform_estimation = function(self, private) {
   }
   
   # IF METHOD IS LAPLACE
-  if (any(private$method == c("laplace"))) {
+  if (any(private$method == c("laplace","laplace2"))) {
     comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
                                                                          objective = private$nll$fn,
                                                                          gradient = private$nll$gr,
@@ -185,7 +171,7 @@ perform_estimation = function(self, private) {
   }
   
   # For TMB method: run sdreport
-  if (any(private$method== c("laplace"))) {
+  if (any(private$method== c("laplace","laplace2"))) {
     if(!private$silent) message("Calculating standard deviations...")
     comptime = system.time(
       private$sdr <- TMB::sdreport(private$nll, getJointPrecision=T)
@@ -193,8 +179,8 @@ perform_estimation = function(self, private) {
       # NOTE: The state covariances can be retrived by inverting sdr$jointPrecision
       # but this takes very long time. Should it be an option?
     )
-    comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
-    if(!private$silent) message("...took: ", comptime, " seconds.")
+    # comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
+    # if(!private$silent) message("...took: ", comptime, " seconds.")
   }
   
   # return
