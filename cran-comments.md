@@ -14,19 +14,25 @@ Hello CRAN team. This is the first submission of the 'ctsmTMB' package. The pack
       with the `usethis::use_github_action` command
       
   2) using  the `devtools` package via the commands: 
-    `devtools::check()`
-    `devtools::check_win_devel()`
-    `devtools::check_win_release()`
-    `devtools::check_mac_release()`
+  - `devtools::check()`
+  - `devtools::check_win_devel()`
+  - `devtools::check_win_release()`
+  - `devtools::check_mac_release()`
 
   3) Using a CRAN-like test via
   `withr::with_options(list(repos = c(CRAN = "https://cloud.r-project.org/")), {callr::default_repos() rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran")) })`
 
+  4) Spellchecking and URL checking via
+  `spelling::spell_check_package()` and `urlchecker::url_check()`
+
 The testing has revealed the following NOTE, which have been addressed:
 
-  1) *Package suggested but not available for checking: ‘RTMBode’*.
-  The *Suggested* 'RTMBode' package is not on **CRAN**. We have added to the **DESCRIPTION** file the r-universe repository in the *Additional_repositories* field. 
+  1)  The *Suggested* 'RTMBode' package is not on **CRAN**. We have added to the **DESCRIPTION** file the r-universe repository in the *Additional_repositories* field. 
   We have also added an `.onLoad()` function which checks for the package via `requireNamespace()`. In addition, the functionalities in 'ctsmTMB' that require the 'RTMBode' package are similarly wrapped in a `requireNamespace()` throwing an error if the package is not installed.
+
+  2) The use of `.onLoad()` throws a NOTE. We have checked that the outlines in "Good Practices" are upheld.
+
+  3) Ubuntu throws a NOTE regarding sub-directories more than 1Mb. This has not been further addressed.
 
 
                         

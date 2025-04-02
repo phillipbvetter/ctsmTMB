@@ -35,7 +35,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">ctsmTMB</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -139,11 +139,16 @@ this vignette however, we simply set <span class="math inline">\(u_{t} =
 </h2>
 <p>We initialise a <code>ctsmTMB</code> model object using</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/phillipbvetter/ctsmTMB" class="external-link">ctsmTMB</a></span><span class="op">)</span></span>
-<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/phillipbvetter/ctsmTMB" class="external-link">ctsmTMB</a></span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Note: The RTMBode package for adaptive ODE-solvers is not installed.</span></span>
+<span><span class="co">## The package can be installed from source using</span></span>
+<span><span class="co">##   install.packages('RTMBode', repos = c('https://kaskr.r-universe.dev', 'https://cloud.r-project.org'))</span></span>
+<span><span class="co">## </span></span></code></pre>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Printing the model object in the console reveals some basic
 information about it:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## ctsmTMB model object:              </span></span>
 <span><span class="co">## States       0</span></span>
@@ -160,13 +165,13 @@ information about it:</p>
 latent state <span class="math inline">\(x_t\)</span>. This is
 straight-forward using <strong>R</strong> formulas, choosing appropriate
 character names for the parameters.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span></code></pre></div>
 <p>We emphasize that drift terms must be multiplied by a <code>dt</code>
 and diffusion terms by a <code>dw</code> or <code>dw#</code> where # is
 some number e.g. <code>dw2</code>. A single state equation may contain
 any number of diffusion terms i.e.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x1</span> <span class="op">*</span> <span class="va">dw1</span> <span class="op">+</span> <span class="va">x</span> <span class="op">*</span> <span class="va">sigma_x2</span> <span class="op">*</span> <span class="va">dw2</span> <span class="op">+</span> <span class="va">dw3</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -176,7 +181,7 @@ any number of diffusion terms i.e.</p>
 <p>Now the observation equations of the system must be specified. This
 amounts to specifying the mean and variance of the residual normal
 distribution. First the mean is specified i.e.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span><span class="op">)</span></span></code></pre></div>
 <p>The variable used on the left-hand side, here <code>y</code>,
 determines the name of the relevant observations to-be provided in the
@@ -188,7 +193,7 @@ data for maximum likelihood estimation later.</p>
 <hr>
 <p>Next we specify the residual variance, using the name given to the
 observation equation above, in <code>addObs</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span> <span class="op">*</span> <span class="va">u</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -196,7 +201,7 @@ observation equation above, in <code>addObs</code>:</p>
 </h2>
 <hr>
 <p>Next, we declare which variables are time-dependent inputs via</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">addInput</span><span class="op">(</span><span class="va">u</span><span class="op">)</span></span></code></pre></div>
 <p>These shall must also be provided in the data later, similar to
 observations.</p>
@@ -207,7 +212,7 @@ observations.</p>
 <hr>
 <p>We must also specify the (fixed effects) parameters, and in addition
 their initial/lower/upper values for the estimation.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
 <span>  theta   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">5</span>,    lower <span class="op">=</span> <span class="fl">0</span>,    upper <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>,</span>
 <span>  mu      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">0</span>,    lower <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>,  upper <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
@@ -220,13 +225,13 @@ simultaneous identification of observation and process noise is
 difficult in practice, and some knowledge about observation noise may be
 known. Thus, let us fix <span class="math inline">\(\sigma_{y}\)</span>
 to a somewhat arbitrary but reasonable value:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
 <span>  sigma_y  <span class="op">=</span> <span class="fl">0.05</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Let’s inspect the model object again, and see that it is no longer
 empty:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## ctsmTMB model object:              </span></span>
 <span><span class="co">## States       1</span></span>
@@ -256,7 +261,7 @@ empty:</p>
 <hr>
 <p>Lastly the state distribution at the initial time point must be
 specified via its mean and variance.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">initial.state</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>mean<span class="op">=</span><span class="fl">1</span>, cov<span class="op">=</span><span class="fl">1e-1</span><span class="op">)</span></span>
 <span><span class="va">model</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span>initial.state<span class="op">=</span><span class="va">initial.state</span><span class="op">)</span></span></code></pre></div>
 <p>Note that in higher dimensions the provided covariance
@@ -283,7 +288,7 @@ vignette</a> for further details.</p>
 \]</span></p>
 <p>The code below performs the simulation and prepares data for
 likelihood estimation:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Set simulation settings</span></span>
@@ -333,11 +338,11 @@ optimization.</p>
 increasing time column named <code>t</code> and columns for each of the
 specified inputs and observations, in this case <code>u</code> and
 <code>y</code>.</em></p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
-<pre><code><span><span class="co">## ...took: 0.051 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## ...took: 0.052 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
 <pre><code><span><span class="co">##   0:     1400.0171:  5.00000  0.00000 0.100000</span></span>
 <span><span class="co">##   1:    -64.612226:  4.98142 0.0913549  1.09565</span></span>
@@ -361,7 +366,7 @@ specified inputs and observations, in this case <code>u</code> and
 <span><span class="co">##  19:    -75.852209:  9.27737  1.03232 0.912025</span></span>
 <span><span class="co">##  20:    -75.852209:  9.27778  1.03232 0.912024</span></span></code></pre>
 <pre><code><span><span class="co">##   Optimization finished!:</span></span>
-<span><span class="co">##             Elapsed time: 0.004 seconds.</span></span>
+<span><span class="co">##             Elapsed time: 0.003 seconds.</span></span>
 <span><span class="co">##             The objective value is: -7.585221e+01</span></span>
 <span><span class="co">##             The maximum gradient component is: 5.4e-05</span></span>
 <span><span class="co">##             The convergence message is: relative convergence (4)</span></span>
@@ -389,29 +394,29 @@ optimizer than <em>nlminb</em>.</p>
 </h2>
 <hr>
 <p>The <code>fit</code> object contains the following entries</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##  [1] "convergence"  "nll"          "nll.gradient" "nll.hessian"  "par.fixed"   </span></span>
 <span><span class="co">##  [6] "sd.fixed"     "cov.fixed"    "states"       "residuals"    "observations"</span></span>
 <span><span class="co">## [11] "tvalue"       "Pr.tvalue"    "private"</span></span></code></pre>
 <p>The first is a boolean which indicates whether estimation was
 successful</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">convergence</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] 0</span></span></code></pre>
 <p>which is just a copy of the optimization message from
 <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code>.</p>
 <p>The second is the likelihood value at the found optimum</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">nll</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] -75.85221</span></span></code></pre>
 <p>the third is the likelihood gradient at the optimum</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">nll.gradient</span></span></code></pre></div>
 <pre><code><span><span class="co">##         theta            mu       sigma_x </span></span>
 <span><span class="co">## -2.315829e-07  5.350033e-05  7.049035e-06</span></span></code></pre>
 <p>and the fourth is the likelihood hessian at the optimum</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">nll.hessian</span></span></code></pre></div>
 <pre><code><span><span class="co">##               theta           mu     sigma_x</span></span>
 <span><span class="co">## theta    0.05211939  -0.05360169  -0.5703124</span></span>
@@ -423,7 +428,7 @@ successful</p>
 <hr>
 <p>Printing the <code>fit</code> object reveals a standard coefficient
 matrix for the parameter estimates.</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Coefficent Matrix </span></span>
 <span><span class="co">##         Estimate Std. Error t value  Pr(&gt;|t|)    </span></span>
@@ -444,17 +449,17 @@ time of the process <span class="math inline">\(\tau = 1/\theta = 0.1 \,
 \text{sec}\)</span>.</em></p>
 <p>The parameter-related information can be extracted from the fit
 object. The estimated (fixed) parameters:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span></span></code></pre></div>
 <pre><code><span><span class="co">##     theta        mu   sigma_x </span></span>
 <span><span class="co">## 9.2777787 1.0323200 0.9120244</span></span></code></pre>
 <p>The standard deviations of the (fixed) parameters:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">sd.fixed</span></span></code></pre></div>
 <pre><code><span><span class="co">##      theta         mu    sigma_x </span></span>
 <span><span class="co">## 4.50595858 0.09857172 0.09612767</span></span></code></pre>
 <p>The covariance of the (fixed) parameters:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">cov.fixed</span></span></code></pre></div>
 <pre><code><span><span class="co">##               theta           mu      sigma_x</span></span>
 <span><span class="co">## theta   20.30366268 1.010851e-02 1.011246e-01</span></span>
@@ -462,7 +467,7 @@ object. The estimated (fixed) parameters:</p>
 <span><span class="co">## sigma_x  0.10112465 1.058147e-05 9.240528e-03</span></span></code></pre>
 <p>The parameter covariance is found by inverting the likelihood hessian
 at the found optimum i.e.:</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">nll.hessian</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##               theta           mu      sigma_x</span></span>
 <span><span class="co">## theta   20.30366268 1.010851e-02 1.011246e-01</span></span>
@@ -486,10 +491,10 @@ Filter vignette</a> for more information on the theoretical details.</p>
 <p>The states can easily be plotted using the provided
 <strong>S3</strong> plot.ctsmTMB.fit method. Here we plot both prior and
 posterior states against the observations:</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type<span class="op">=</span><span class="st">"states"</span>,state.type<span class="op">=</span><span class="st">"prior"</span>,against<span class="op">=</span><span class="st">"y"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ctsmTMB_files/figure-html/unnamed-chunk-26-1.png" width="100%" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type<span class="op">=</span><span class="st">"states"</span>,state.type<span class="op">=</span><span class="st">"posterior"</span>,against<span class="op">=</span><span class="st">"y"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ctsmTMB_files/figure-html/unnamed-chunk-27-1.png" width="100%" style="display: block; margin: auto;"></p>
 <p><em><strong>Note:</strong> The decrease in variance for the posterior
@@ -508,7 +513,7 @@ observations.</em></p>
 <p>Model validation typically involves inspecting the properties of
 prediction residuals. The model residuals are contained in
 <code>fit$residuals</code> with the entries:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">residuals</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] "residuals"  "sd"         "normalized" "cov"</span></span></code></pre>
 <p>We can also easily generate a residual analysis plot with the
@@ -516,7 +521,7 @@ prediction residuals. The model residuals are contained in
 default arguments to <code>plot.ctsmTMB.fit</code>. This produces a
 time-series of the residuals, a histogram, a quantile-quantile plot,
 auto/partial-correlations and a cumulative periodogram:</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ctsmTMB_files/figure-html/unnamed-chunk-29-1.png" width="100%" style="display: block; margin: auto;"></p>
 </div>
@@ -529,7 +534,7 @@ auto/partial-correlations and a cumulative periodogram:</p>
 method on the <code>fit</code> object, and further plot the result by
 calling the <code>plot</code> S3 method on that.</p>
 <p>For an example we can inspect the profile likelihood of <span class="math inline">\(\theta\)</span> as follows:</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">[</span><span class="st">"theta"</span><span class="op">]</span> <span class="op">-</span> <span class="fl">5</span></span>
 <span><span class="va">b</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">[</span><span class="st">"theta"</span><span class="op">]</span> <span class="op">+</span> <span class="fl">5</span></span>
 <span><span class="va">prof</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/profile.html" class="external-link">profile</a></span><span class="op">(</span><span class="va">fit</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"theta"</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="va">a</span>,<span class="va">b</span>,length.out<span class="op">=</span><span class="fl">25</span><span class="op">)</span><span class="op">)</span>, silent<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
@@ -549,14 +554,14 @@ which must be strictly positive.</p>
 parameter <span class="math inline">\(\hat{\theta} =
 \exp(\log\theta)\)</span>. This can be achieved by setting the following
 algebraic expression:</p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>The effect of this is to replace all occurrences of
 <code>theta</code> in the model equations with
 <code>exp(logtheta)</code>. The final thing to do is to add a new
 parameter entry to the model object which describes values for
 <code>logtheta</code></p>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span>logtheta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial<span class="op">=</span><span class="fl">5</span>, lower<span class="op">=</span><span class="fl">0</span>, upper<span class="op">=</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
