@@ -28,11 +28,4 @@ Hello CRAN team. This is the first submission of the 'ctsmTMB' package. The pack
 The testing has revealed the following NOTE, which have been addressed:
 
   1)  The *Suggested* 'RTMBode' package is not on **CRAN**. We have added to the **DESCRIPTION** file the r-universe repository in the *Additional_repositories* field. 
-  We have also added an `.onLoad()` function which checks for the package via `requireNamespace()`. In addition, the functionalities in 'ctsmTMB' that require the 'RTMBode' package are similarly wrapped in a `requireNamespace()` throwing an error if the package is not installed.
-
-  2) The use of `.onLoad()` throws a NOTE. We have checked that the outlines in "Good Practices" are upheld.
-
-  3) Ubuntu throws a NOTE regarding sub-directories more than 1Mb. This has not been further addressed.
-
-
-                        
+  The functionalities in 'ctsmTMB' that require the 'RTMBode' package have been wrapped in a `requireNamespace()` throwing an error if the package is not installed.
