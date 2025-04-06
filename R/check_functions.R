@@ -303,7 +303,7 @@ check_parameter_matrix <- function(parmat, self, private) {
   # set column names if 3 columns and no column names
   if(is.null(colnames(parmat)) & ncol(parmat)==3){
     colnames(parmat) = expected.names
-    message("Note: No colnames were provided in parameter matrix - assuming order 'initial', 'lower', 'upper'")
+    # message("Note: No colnames were provided in parameter matrix - assuming order 'initial', 'lower', 'upper'")
   }
   
   # change parameter names to expected

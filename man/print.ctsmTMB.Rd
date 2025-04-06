@@ -7,13 +7,33 @@
 \method{print}{ctsmTMB}(x, ...)
 }
 \arguments{
-\item{x}{a R6 ctsmTMB model object}
+\item{x}{an object of class 'ctsmTMB'}
 
-\item{...}{additional arguments}
+\item{...}{additional arguments (not in use)}
 }
 \value{
 Print of ctsmTMB model object
 }
 \description{
 Basic print of ctsmTMB objects
+}
+\examples{
+library(ctsmTMB)
+model <- ctsmTMB$new()
+
+# print empty model
+print(model)
+
+# add elements to model and see new print
+model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+model$addObs(y ~ x)
+model$setVariance(y ~ sigma_y^2)
+model$addInput(u)
+model$setParameter(
+  theta   = c(initial = 1, lower=1e-5, upper=50),
+  mu      = c(initial=1.5, lower=0, upper=5),
+  sigma_x = c(initial=1, lower=1e-10, upper=30),
+  sigma_y = 1e-2
+)
+print(model)
 }

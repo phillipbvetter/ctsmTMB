@@ -150,6 +150,28 @@ makeADFun_ekf_rtmb = function(self, private)
   }
   
   
+  # Implicit Euler Solver
+  
+  # ids.states <- 1:n.states
+  # ids.cov <- max(ids.states) + 1:n.states^2
+  # ids.pars <- max(ids.cov) + 1:n.pars
+  # ids.inputs <- max(ids.pars) + 1:n.inputs
+  # 
+  # makeTape.implicit.euler <- function(x){
+  #   stateVec <- x[ids.states]
+  #   covMat <- RTMB::matrix(x[ids.cov],ncol=n.states)
+  #   parVec <- x[ids.pars]
+  #   inputVec <- x[ids.inputs]
+  #   
+  #   a <- stateVec - stateVec0 - f__(stateVec, parVec, inputVec) * dt
+  #   b <- covMat - covMat0 - cov_ode_1step(covMat, stateVec, parVec, inputVec) * dt
+  #   
+  #   return(c(a,b))
+  # }
+  # RTMB::MakeTape(makeTape.implicit.euler, numeric())
+  
+  
+  
   # forward euler ----------------------------------------
   if(ode.solver==1){
     ode_integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){

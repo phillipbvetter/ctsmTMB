@@ -9,7 +9,7 @@ Authors@R: c(person("Phillip", "Vetter", email="pbrve@dtu.dk", role = c("aut", "
 	       person("Peder", "Bacher", email="pbac@dtu.dk", role="ctb"),
 	       person("Henrik", "Madsen", email="hmad@dtu.dk", role="ctb"))
 Copyright: See the file COPYRIGHTS
-Description: The purpose of 'ctsmTMB' (Continuous-Time Stochastic Modelling using Template Model Builder) is to enable user-friendly parameter and state inference and forecasting in (multi-dimensional) stochastic state space systems. These are partially observed systems whose latent states evolve according to a set of stochastic differential equations, and with algebraic discrete-time observation equations. A user-friendly interface is provided with the object-oriented 'R6' package for defining, estimating and forecasting a user-defined model. The 'TMB'/'RTMB' packages provide automatic differentiation of the likelihood function, in addition to other computational advantages and convenience features, for fast and accurate inference. The forecasting features of the package are available in C++ using the 'Rcpp' package universe, to improve computational speed. The available inference methods are variations of linear and non-linear Kalman filters, in addition to a method based on the Laplace approximation.
+Description: Perform state and parameter inference, and forecasting, in stochastic state-space systems using the 'ctsmTMB' class. This class, built with the 'R6' package, provides a user-friendly interface for defining and handling state-space models. Inference is based on maximum likelihood estimation, with derivatives efficiently computed through automatic differentiation enabled by the 'TMB'/'RTMB' packages (Kristensen et al., 2016) <doi:10.18637/jss.v070.i05>. The available inference methods include Kalman filters, in addition to a Laplace approximation-based smoothing method. For further details of these methods refer to the documentation of the 'CTSMR' package <https://ctsm.info/ctsmr-reference.pdf> and Thygesen (2025) <arXiv:2503.21358>. Forecasting capabilities include moment predictions and stochastic path simulations, both implemented in 'C++' using 'Rcpp' (Eddelbuettel et al., 2018) <doi:10.1080/00031305.2017.1375990> for computational efficiency.
 License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -47,3 +47,4 @@ Suggests:
 	RTMBode
 Additional_repositories:
 	https://kaskr.r-universe.dev
+LazyData: true

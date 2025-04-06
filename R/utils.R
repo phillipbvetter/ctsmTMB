@@ -1,3 +1,21 @@
+#' Shortcut class constructor
+#' @description
+#' This is just a short-cut class constructor so that users can do
+#' 
+#' `model <- ctsm()` 
+#' 
+#' instead of 
+#' 
+#' `model <- ctsmTMB$new()`.
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsm()
+#' @export
+ctsm <- function(){
+  return(ctsmTMB$new())
+}
+
+
 #######################################################
 # CHANGE FROM R POWER NOTATION TO C++
 #######################################################
@@ -41,3 +59,32 @@ capitalize_first <- function(s) {
   if (nchar(s) == 0) return(s)  # Handle empty string case
   paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
 }
+
+#######################################################
+# GGPLOT2 FUNCTIONS FOR USE IN PLOTS
+#######################################################
+
+getggplot2theme = function() {
+  mytheme =
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      # text = ggplot2::element_text("Avenir Next Condensed",size=12),
+      text = ggplot2::element_text(size=12),
+      legend.text = ggplot2::element_text(size=12),
+      axis.text = ggplot2::element_text(size=12),
+      strip.text = ggplot2::element_text(face="bold",size=12),
+      # panel.grid.major = element_blank(),
+      # panel.grid.minor = element_blank(),
+      legend.box = "horizontal",
+      legend.direction = "horizontal",
+      legend.position = "top",
+      plot.title = ggplot2::element_text(hjust=0.5)
+    )
+  return(mytheme)
+}
+
+# getggplot2colors = function(n) {
+#   hues = seq(15, 375, length = n + 1)
+#   ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
+#   return(ggcolors)
+# }

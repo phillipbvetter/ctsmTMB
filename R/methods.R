@@ -2,10 +2,28 @@
 # Print - S3 Method
 #######################################################
 
-
 #' Basic print of ctsmTMB objects
-#' @param x a R6 ctsmTMB model object
-#' @param ... additional arguments
+#' @param x  an object of class 'ctsmTMB'
+#' @param ... additional arguments (not in use)
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsmTMB$new()
+#' 
+#' # print empty model
+#' print(model)
+#' 
+#' # add elements to model and see new print
+#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+#' model$addObs(y ~ x)
+#' model$setVariance(y ~ sigma_y^2)
+#' model$addInput(u)
+#' model$setParameter(
+#'   theta   = c(initial = 1, lower=1e-5, upper=50),
+#'   mu      = c(initial=1.5, lower=0, upper=5),
+#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
+#'   sigma_y = 1e-2
+#' )
+#' print(model)
 #' @returns Print of ctsmTMB model object
 #' @export
 print.ctsmTMB = function(x,...) {
@@ -18,10 +36,32 @@ print.ctsmTMB = function(x,...) {
 #' Basic print of objects ctsmTMB fit objects
 #' @param x a ctsmTMB fit object
 #' @param ... additional arguments
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsmTMB$new()
+#' 
+#' # create model
+#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+#' model$addObs(y ~ x)
+#' model$setVariance(y ~ sigma_y^2)
+#' model$addInput(u)
+#' model$setParameter(
+#'   theta   = c(initial = 1, lower=1e-5, upper=50),
+#'   mu      = c(initial=1.5, lower=0, upper=5),
+#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
+#'   sigma_y = 1e-2
+#' )
+#' model$setInitialState(list(1,1e-1))
+#' 
+#' # fit model to data
+#' fit <- model$estimate(Ornstein)
+#' 
+#' # print fit
+#' print(fit)
 #' @returns Print of ctsmTMB fit object
 #' @export
 print.ctsmTMB.fit = function(x,...) {
-  fit <- x #method consistency (argument must be called x)
+  fit <- x
   if(is.null(fit$sd.fixed)) {
     fit$sd.fixed <- rep(NA,length(fit$par.fixed))
     fit$tvalue <- rep(NA,length(fit$par.fixed))
@@ -35,30 +75,33 @@ print.ctsmTMB.fit = function(x,...) {
   return(invisible(mat))
 }
 
-
-#######################################################
-# Summary - S3 Method
-#######################################################
-
-#' Basic summary of objects of class 'ctsmTMB'
-#' @param object a R6 ctsmTMB model object
-#' @param correlation a boolean to indicate whether to return parameter correlations
-#' @param ... additional arguments
-#' @returns a summary of the model object
-#' @export
-summary.ctsmTMB = function(object,
-                           correlation = FALSE,
-                           ...) {
-  obj = object$summary(correlation)
-  
-  return(invisible(obj))
-}
-
 #' Basic summary of ctsmTMB fit object
 #' @param object a ctsmTMB fit object
 #' @param correlation boolean indicating whether or not to display the
 #' parameter correlation structure
 #' @param ... additional arguments
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsmTMB$new()
+#' 
+#' # create model
+#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+#' model$addObs(y ~ x)
+#' model$setVariance(y ~ sigma_y^2)
+#' model$addInput(u)
+#' model$setParameter(
+#'   theta   = c(initial = 1, lower=1e-5, upper=50),
+#'   mu      = c(initial=1.5, lower=0, upper=5),
+#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
+#'   sigma_y = 1e-2
+#' )
+#' model$setInitialState(list(1,1e-1))
+#' 
+#' # fit model to data
+#' fit <- model$estimate(Ornstein)
+#' 
+#' # print model summary
+#' summary(fit, correlation=TRUE)
 #' @returns a summary of the estimated ctsmTMB model fit
 #' @export
 summary.ctsmTMB.fit = function(object, 
@@ -92,34 +135,6 @@ summary.ctsmTMB.fit = function(object,
 }
 
 #######################################################
-# GGPLOT2 FUNCTIONS FOR USE IN PLOTS
-#######################################################
-
-getggplot2theme = function() {
-  mytheme =
-    ggplot2::theme_minimal() +
-    ggplot2::theme(
-      text = ggplot2::element_text("Avenir Next Condensed",size=12),
-      legend.text = ggplot2::element_text(size=12),
-      axis.text = ggplot2::element_text(size=12),
-      strip.text = ggplot2::element_text(face="bold",size=12),
-      # panel.grid.major = element_blank(),
-      # panel.grid.minor = element_blank(),
-      legend.box = "horizontal",
-      legend.direction = "horizontal",
-      legend.position = "top",
-      plot.title = ggplot2::element_text(hjust=0.5)
-    )
-  return(mytheme)
-}
-
-# getggplot2colors = function(n) {
-#   hues = seq(15, 375, length = n + 1)
-#   ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
-#   return(ggcolors)
-# }
-
-#######################################################
 # Plot - S3 Method
 #######################################################
 
@@ -131,6 +146,35 @@ getggplot2theme = function() {
 #' @param type one of 'states' or 'observations', to plot
 #' @param against name of an observations to plot predictions against
 #' @param ... additional arguments
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsmTMB$new()
+#' 
+#' # create model
+#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+#' model$addObs(y ~ x)
+#' model$setVariance(y ~ sigma_y^2)
+#' model$addInput(u)
+#' model$setParameter(
+#'   theta   = c(initial = 1, lower=1e-5, upper=50),
+#'   mu      = c(initial=1.5, lower=0, upper=5),
+#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
+#'   sigma_y = 1e-2
+#' )
+#' model$setInitialState(list(1,1e-1))
+#' 
+#' # fit model to data
+#' fit <- model$estimate(Ornstein)
+#' 
+#' # perform moment predictions
+#' pred <- model$predict(Ornstein)
+#' 
+#' # plot the k.ahead=10 predictions
+#' plot(pred, against="y.data")
+#' 
+#' 
+#' # plot filtered states
+#' plot(fit, type="states", against="y")
 #' @returns A plot of predicted states
 #' @export
 plot.ctsmTMB.pred = function(x, 
@@ -170,27 +214,6 @@ plot.ctsmTMB.pred = function(x,
   return(invisible(NULL))
 }
 
-
-#' This function creates residual plots for an estimated ctsmTMB object
-#' @param x A R6 ctsmTMB object
-#' @param plot.obs a vector of integers to indicate which observations should be
-#' plotted. When multiple are requested a list of plots, one for each observation
-#' is returned instead.
-#' @param ggtheme ggplot2 theme to use for creating the ggplot.
-#' @param ... additional arguments
-#' @returns a (list of) ggplot residual plot(s)
-#' @export
-plot.ctsmTMB = function(x,
-                        plot.obs=1,
-                        ggtheme=getggplot2theme(),
-                        ...) {
-  
-  object <- x
-  object$plot(plot.obs=plot.obs, ggtheme=ggtheme)
-  
-  return(invisible(NULL))
-}
-
 #' This function creates residual plots for an estimated ctsmTMB object
 #' @param x A R6 ctsmTMB fit object
 #' @param print.plot a single integer determining which element out of all
@@ -202,6 +225,31 @@ plot.ctsmTMB = function(x,
 #' @param against.obs name of an observation to plot state predictions against.
 #' @param ggtheme ggplot2 theme to use for creating the ggplot.
 #' @param ... additional arguments
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsmTMB$new()
+#' 
+#' # create model
+#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+#' model$addObs(y ~ x)
+#' model$setVariance(y ~ sigma_y^2)
+#' model$addInput(u)
+#' model$setParameter(
+#'   theta   = c(initial = 1, lower=1e-5, upper=50),
+#'   mu      = c(initial=1.5, lower=0, upper=5),
+#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
+#'   sigma_y = 1e-2
+#' )
+#' model$setInitialState(list(1,1e-1))
+#' 
+#' # fit model to data
+#' fit <- model$estimate(Ornstein)
+#' 
+#' # plot residuals
+#' plot(fit)
+#' 
+#' # plot filtered states
+#' plot(fit, type="states", against="y")
 #' @returns a (list of) ggplot residual plot(s)
 #' @export
 plot.ctsmTMB.fit = function(x,
@@ -405,6 +453,28 @@ plot.ctsmTMB.fit = function(x,
 #' @param silent boolean whether or not to mute current iteration number
 #' the \code{control} argument.
 #' @param control a list of optimization output controls (see \link[stats]{nlminb})
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsmTMB$new()
+#' 
+#' # create model
+#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+#' model$addObs(y ~ x)
+#' model$setVariance(y ~ sigma_y^2)
+#' model$addInput(u)
+#' model$setParameter(
+#'   theta   = c(initial = 1, lower=1e-5, upper=50),
+#'   mu      = c(initial=1.5, lower=0, upper=5),
+#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
+#'   sigma_y = 1e-2
+#' )
+#' model$setInitialState(list(1,1e-1))
+#' 
+#' # fit model to data
+#' fit <- model$estimate(Ornstein)
+#' 
+#' # calculate profile likelihood
+#' out <- profile(fit,parlist=list(theta=NULL))
 #' @note The implementation was modified from that of
 #' https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R
 #' @export
@@ -553,6 +623,31 @@ profile.ctsmTMB.fit = function(fitted,
 #' @param include.opt boolean which indicates whether or not to include the
 #' total likelihood optimizer in the plot.
 #' @param ... additional arguments
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsmTMB$new()
+#' 
+#' # create model
+#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+#' model$addObs(y ~ x)
+#' model$setVariance(y ~ sigma_y^2)
+#' model$addInput(u)
+#' model$setParameter(
+#'   theta   = c(initial = 1, lower=1e-5, upper=50),
+#'   mu      = c(initial=1.5, lower=0, upper=5),
+#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
+#'   sigma_y = 1e-2
+#' )
+#' model$setInitialState(list(1,1e-1))
+#' 
+#' # fit model to data
+#' fit <- model$estimate(Ornstein)
+#' 
+#' # calculate profile likelihood
+#' out <- profile(fit,parlist=list(theta=NULL))
+#' 
+#' # plot profile
+#' plot(out)
 #' @export
 plot.ctsmTMB.profile = function(x,y,include.opt=TRUE,...){
   list <- x

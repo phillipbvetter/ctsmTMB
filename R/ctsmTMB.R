@@ -8,7 +8,48 @@
 #' @returns The function returns an object of class \code{R6} and \code{ctsmTMB}, 
 #' which can be used to define a stochastic state space system.
 #' 
-# #' @docType package
+#' @examples
+#' library(ctsmTMB)
+#' model <- ctsmTMB$new()
+#' 
+#' # adding a single system equations
+#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+#' 
+#' # adding an observation equation and setting variance
+#' model$addObs(y ~ x)
+#' model$setVariance(y ~ sigma_y^2)
+#' 
+#' # add model input
+#' model$addInput(u)
+#' 
+#' # add parameters
+#' model$setParameter(
+#'   theta   = c(initial = 1, lower=1e-5, upper=50),
+#'   mu      = c(initial=1.5, lower=0, upper=5),
+#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
+#'   sigma_y = 1e-2
+#' )
+#' 
+#' # set the model initial state
+#' model$setInitialState(list(1,1e-1))
+#' 
+#' # extract the likelihood handlers
+#' nll <- model$likelihood(data=Ornstein)
+#' 
+#' # calculate likelihood, gradient and hessian w.r.t parameters
+#' nll$fn(nll$par)
+#' nll$gr(nll$par)
+#' nll$he(nll$par)
+#' 
+#' # estimate the parameters using an extended kalman filter
+#' fit <- model$estimate(data=Ornstein)
+#' 
+#' # perform moment predictions
+#' pred <- model$predict(data=Ornstein)
+#' 
+#' # perform stochatic simulations
+#' sim <- model$simulate(data=Ornstein, n.sims=10)
+#' 
 #' @name ctsmTMB
 #' @export
 ctsmTMB = R6::R6Class(
@@ -34,7 +75,6 @@ ctsmTMB = R6::R6Class(
     initialize = function() {
       # modelname, directory and path (directory+name)
       private$modelname = "ctsmTMB_model"
-      # private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE, winslash = "/")
       private$cppfile.directory = NULL
       private$cppfile.path = NULL
       private$cppfile.path.with.method = NULL
@@ -136,7 +176,8 @@ ctsmTMB = R6::R6Class(
     # GET OBJECT PRIVATE FIELDS
     ########################################################################
     #' @description 
-    #' Extract the private fields of a ctsmTMB model object
+    #' Extract the private fields of a ctsmTMB model object. Primarily used for
+    #' debugging.
     .private = function(){
       return(invisible(private))
     },
@@ -145,22 +186,17 @@ ctsmTMB = R6::R6Class(
     # ADD SYSTEMS
     ########################################################################
     #' @description 
-    #' Define and add multiple stochastic differential equation governing the 
-    #' process of individual state variables on the form 
+    #' Define stochastic differential equation(s) on the form
     #' 
-    #' \code{d<state> ~ f(t,<states>,<inputs>) * dt + g1(t,<states>,<inputs>) * dw1 
-    #' + g2(t,<states>,<inputs>) * dw2 + ... + gN(t,<states>,<inputs>) * dwN}
-    #'                                            
-    #' where \code{f} is the drift, and \code{g1, g2, ..., gN} are diffusions, with 
-    #' differential brownian motions dw1, dw2, ..., dwN.
-    #'              
-    #' @param form formula specifying the stochastic differential equation to be 
-    #' added to the system.
+    #' \code{d<state> ~ f(t,<states>, <inputs>) * dt + g(t, <states>, <inputs>) * dw}
+    #' 
+    #' 
+    #' @param form a formula specifying a stochastic differential equation
     #' @param ... additional formulas similar to \code{form} for specifying 
     #' multiple equations at once.
     addSystem = function(form,...) {
       
-      # trigger a rebuild
+      # adding a state triggers a model rebuild
       private$rebuild.model <- TRUE
       
       # store each provided formula
@@ -184,30 +220,30 @@ ctsmTMB = R6::R6Class(
     # ADD OBSERVATIONS
     ########################################################################
     #' @description
-    #' Define and add a relationship between an observed variable and system states. 
-    #' The observation equation takes the form
+    #' Define algebraic observation equations on the form
     #' 
-    #' \code{<observation> ~ h(t,<states>,<inputs>) + e)}
+    #' \code{<observation> ~ h(t, <states>, <inputs>) + e)}
     #' 
     #' where \code{h} is the observation function, and \code{e} is normally 
-    #' distributed noise with zero mean and variance to be specified. The 
-    #' observation variable should be present in the data provided when calling
-    #' \code{estimate(.data)} for parameter estimation.
+    #' distributed noise with zero mean. 
     #' 
-    #' @param form formula class specifying the observation equation to be added to the system.
-    #' @param ... additional formulas identical to \code{form} to specify multiple observation equations at a time.
-    #' @param obsnames character vector specifying the name of the observation. When the observation left-hand side
-    #' consists of more than just a single variable name (when its class is 'call' instead of 'name') it will be 
-    #' given a name on the form obs__# where # is a number, unless obsnames is provided.
+    #' This function only specifies the observation name, and its mean through \code{h}.
+    #' 
+    #' @param form a formula specifying an observation equation
+    #' @param ... additional formulas similar to \code{form} for specifying 
+    #' multiple equations at once.
+    #' @param obsnames character vector specifying the name of the observation. 
+    #' This is used when the left-hand side of `form` consists of more than just 
+    #' a single variable (of class 'call').
     addObs = function(form,...,obsnames=NULL) {
       
       # Check obsnames
       if(!is.null(obsnames)){
         if(length(c(form,...))!=length(obsnames)){
-          stop("You must supply as many observation names as there are observation equations")
+          stop("You must supply as many observation names as there are observation equations.")
         }
         if(!is.character(obsnames)){
-          stop("The observation names in obsnames must be characters")
+          stop("The observation names in 'obsnames' must be strings.")
         }
       }
       
@@ -319,7 +355,7 @@ ctsmTMB = R6::R6Class(
     # ADD PARAMETERS
     ########################################################################
     #' @description Declare which variables that are (fixed effects) parameters in
-    #' the specified model, and specify the initial optimizer value, as well as
+    #' the specified model, and specify the initial optimizer guess, as well as
     #' lower / upper bounds during optimization. There are two ways to declare parameters:
     #' 
     #' 1. You can declare parameters using formulas i.e. \code{setParameter( 
@@ -330,7 +366,7 @@ ctsmTMB = R6::R6Class(
     #' 2. You can provide a 3-column matrix where rows corresponds to different 
     #' parameters, and the parameter names are provided as rownames of the matrix. 
     #' The columns values corresponds to the description in the vector format above.
-    #'
+    #' 
     #' @param ... a named vector or matrix as described above.
     setParameter = function(...) {
       
@@ -405,7 +441,7 @@ ctsmTMB = R6::R6Class(
               private$fixed.pars[[parname]] = private$parameters[[parname]]
               private$fixed.pars[[parname]][["factor"]] = factor(NA)
             } else {
-              private$free.pars[[par.name]] = private$parameters[[par.name]]
+              private$free.pars[[parname]] = private$parameters[[parname]]
             }
             
             # update parameter names
@@ -1491,53 +1527,6 @@ ctsmTMB = R6::R6Class(
       
       # return
       return(invisible(self))
-    },
-    
-    ########################################################################
-    # SUMMARY
-    ########################################################################
-    #' @description Summary function for fit
-    #' @param correlation boolean value. The default (\code{FALSE}) is to not provide the fixed effects parameter
-    #' correlation matrix. 
-    summary = function(correlation=FALSE) {
-      
-      # check if model was estimated
-      if (is.null(private$fit)) {
-        message("Please estimate your model to get a fit summary.")
-        return(invisible(NULL))
-      }
-      
-      # return summary fit
-      sumfit = summary(private$fit,correlation=correlation)
-      
-      return(invisible(sumfit$parameters))
-    },
-    
-    ########################################################################
-    # PLOT USING GGPLOT
-    ########################################################################
-    #' @description Function to print the model object
-    #' @param plot.obs a vector to indicate which observations should be plotted for. If multiple
-    #' are chosen a list of plots for each observation is returned.
-    #' @param pacf logical to indicate whether or not the partial autocorrelations should be returned.
-    #' The default is FALSE in which case a histogram is returned instead.
-    #' @param extended logical. if TRUE additional information is printed
-    #' @param ggtheme ggplot2 theme to use for creating the ggplot.
-    plot = function(plot.obs=1, 
-                    ggtheme=getggplot2theme()){
-      
-      # check if the estimate method has been run i.e. and private$fit has been created
-      if (is.null(private$fit)) {
-        message("Please estimate your model in order to plot residuals.")
-        return(invisible(NULL))
-      }
-      
-      plotlist = plot(private$fit, 
-                      plot.obs=plot.obs,
-                      ggtheme=ggtheme)
-      
-      # return
-      return(invisible(plotlist))
     }
   ),
   
@@ -2112,9 +2101,6 @@ ctsmTMB = R6::R6Class(
       
       # set parameters
       private$ukf_hyperpars = do.call(c,unname(parlist))
-      # private$ukf_alpha = parlist[["alpha"]]
-      # private$ukf_beta = parlist[["beta"]]
-      # private$ukf_kappa = parlist[["kappa"]]
       
       # return
       return(invisible(self))

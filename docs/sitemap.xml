@@ -46,6 +46,9 @@
     <loc>/news/index.html</loc>
   </url>
   <url>
+    <loc>/reference/Ornstein.html</loc>
+  </url>
+  <url>
     <loc>/reference/addInput.html</loc>
   </url>
   <url>
@@ -53,6 +56,9 @@
   </url>
   <url>
     <loc>/reference/addSystem.html</loc>
+  </url>
+  <url>
+    <loc>/reference/ctsm.html</loc>
   </url>
   <url>
     <loc>/reference/ctsmTMB.html</loc>

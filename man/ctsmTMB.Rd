@@ -13,6 +13,49 @@ system, consisting of a set of stochastic differential equations (SDEs), and one
 equations (AOEs). The AOEs are used to infer information about the value of the (latent) states governed by the SDEs, and
 thus must be functions of at least one state.
 }
+\examples{
+library(ctsmTMB)
+model <- ctsmTMB$new()
+
+# adding a single system equations
+model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
+
+# adding an observation equation and setting variance
+model$addObs(y ~ x)
+model$setVariance(y ~ sigma_y^2)
+
+# add model input
+model$addInput(u)
+
+# add parameters
+model$setParameter(
+  theta   = c(initial = 1, lower=1e-5, upper=50),
+  mu      = c(initial=1.5, lower=0, upper=5),
+  sigma_x = c(initial=1, lower=1e-10, upper=30),
+  sigma_y = 1e-2
+)
+
+# set the model initial state
+model$setInitialState(list(1,1e-1))
+
+# extract the likelihood handlers
+nll <- model$likelihood(data=Ornstein)
+
+# calculate likelihood, gradient and hessian w.r.t parameters
+nll$fn(nll$par)
+nll$gr(nll$par)
+nll$he(nll$par)
+
+# estimate the parameters using an extended kalman filter
+fit <- model$estimate(data=Ornstein)
+
+# perform moment predictions
+pred <- model$predict(data=Ornstein)
+
+# perform stochatic simulations
+sim <- model$simulate(data=Ornstein, n.sims=10)
+
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -44,8 +87,6 @@ thus must be functions of at least one state.
 \item \href{#method-ctsmTMB-predict}{\code{ctsmTMB$predict()}}
 \item \href{#method-ctsmTMB-simulate}{\code{ctsmTMB$simulate()}}
 \item \href{#method-ctsmTMB-print}{\code{ctsmTMB$print()}}
-\item \href{#method-ctsmTMB-summary}{\code{ctsmTMB$summary()}}
-\item \href{#method-ctsmTMB-plot}{\code{ctsmTMB$plot()}}
 \item \href{#method-ctsmTMB-clone}{\code{ctsmTMB$clone()}}
 }
 }
@@ -63,7 +104,8 @@ Initialize private fields
 \if{html}{\out{<a id="method-ctsmTMB-.private"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-.private}{}}}
 \subsection{Method \code{.private()}}{
-Extract the private fields of a ctsmTMB model object
+Extract the private fields of a ctsmTMB model object. Primarily used for
+debugging.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$.private()}\if{html}{\out{</div>}}
 }
@@ -73,14 +115,9 @@ Extract the private fields of a ctsmTMB model object
 \if{html}{\out{<a id="method-ctsmTMB-addSystem"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-addSystem}{}}}
 \subsection{Method \code{addSystem()}}{
-Define and add multiple stochastic differential equation governing the
-process of individual state variables on the form
+Define stochastic differential equation(s) on the form
 
-\code{d<state> ~ f(t,<states>,<inputs>) * dt + g1(t,<states>,<inputs>) * dw1 
-+ g2(t,<states>,<inputs>) * dw2 + ... + gN(t,<states>,<inputs>) * dwN}
-
-where \code{f} is the drift, and \code{g1, g2, ..., gN} are diffusions, with
-differential brownian motions dw1, dw2, ..., dwN.
+\code{d<state> ~ f(t,<states>, <inputs>) * dt + g(t, <states>, <inputs>) * dw}
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$addSystem(form, ...)}\if{html}{\out{</div>}}
 }
@@ -88,8 +125,7 @@ differential brownian motions dw1, dw2, ..., dwN.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{form}}{formula specifying the stochastic differential equation to be
-added to the system.}
+\item{\code{form}}{a formula specifying a stochastic differential equation}
 
 \item{\code{...}}{additional formulas similar to \code{form} for specifying
 multiple equations at once.}
@@ -101,15 +137,14 @@ multiple equations at once.}
 \if{html}{\out{<a id="method-ctsmTMB-addObs"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-addObs}{}}}
 \subsection{Method \code{addObs()}}{
-Define and add a relationship between an observed variable and system states.
-The observation equation takes the form
+Define algebraic observation equations on the form
 
-\code{<observation> ~ h(t,<states>,<inputs>) + e)}
+\code{<observation> ~ h(t, <states>, <inputs>) + e)}
 
 where \code{h} is the observation function, and \code{e} is normally
-distributed noise with zero mean and variance to be specified. The
-observation variable should be present in the data provided when calling
-\code{estimate(.data)} for parameter estimation.
+distributed noise with zero mean.
+
+This function only specifies the observation name, and its mean through \code{h}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$addObs(form, ..., obsnames = NULL)}\if{html}{\out{</div>}}
 }
@@ -117,13 +152,14 @@ observation variable should be present in the data provided when calling
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{form}}{formula class specifying the observation equation to be added to the system.}
+\item{\code{form}}{a formula specifying an observation equation}
 
-\item{\code{...}}{additional formulas identical to \code{form} to specify multiple observation equations at a time.}
+\item{\code{...}}{additional formulas similar to \code{form} for specifying
+multiple equations at once.}
 
-\item{\code{obsnames}}{character vector specifying the name of the observation. When the observation left-hand side
-consists of more than just a single variable name (when its class is 'call' instead of 'name') it will be
-given a name on the form obs__# where # is a number, unless obsnames is provided.}
+\item{\code{obsnames}}{character vector specifying the name of the observation.
+This is used when the left-hand side of \code{form} consists of more than just
+a single variable (of class 'call').}
 }
 \if{html}{\out{</div>}}
 }
@@ -185,7 +221,7 @@ when calling the \code{estimate} or \code{predict} methods.
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setParameter}{}}}
 \subsection{Method \code{setParameter()}}{
 Declare which variables that are (fixed effects) parameters in
-the specified model, and specify the initial optimizer value, as well as
+the specified model, and specify the initial optimizer guess, as well as
 lower / upper bounds during optimization. There are two ways to declare parameters:
 \enumerate{
 \item You can declare parameters using formulas i.e. \code{setParameter( 
@@ -834,49 +870,6 @@ Function to print the model object
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$print()}\if{html}{\out{</div>}}
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-summary"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-summary}{}}}
-\subsection{Method \code{summary()}}{
-Summary function for fit
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$summary(correlation = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{correlation}}{boolean value. The default (\code{FALSE}) is to not provide the fixed effects parameter
-correlation matrix.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-plot"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-plot}{}}}
-\subsection{Method \code{plot()}}{
-Function to print the model object
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$plot(plot.obs = 1, ggtheme = getggplot2theme())}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{plot.obs}}{a vector to indicate which observations should be plotted for. If multiple
-are chosen a list of plots for each observation is returned.}
-
-\item{\code{ggtheme}}{ggplot2 theme to use for creating the ggplot.}
-
-\item{\code{pacf}}{logical to indicate whether or not the partial autocorrelations should be returned.
-The default is FALSE in which case a histogram is returned instead.}
-
-\item{\code{extended}}{logical. if TRUE additional information is printed}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-clone"></a>}}

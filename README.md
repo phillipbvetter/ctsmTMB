@@ -187,13 +187,6 @@ You can access the documentation for all methods with
 ?ctsmTMB
 ```
 
-or individually using the standard syntax
-
-``` r
-?ctsmTMB::addSystem
-?ctsmTMB::estimate
-```
-
 The methods documentation is also available on the [package
 homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
