@@ -149,9 +149,7 @@ makeADFun_ekf_rtmb = function(self, private)
     return(AcovMat + t(AcovMat) + G %*% t(G))
   }
   
-  
   # Implicit Euler Solver
-  
   # ids.states <- 1:n.states
   # ids.cov <- max(ids.states) + 1:n.states^2
   # ids.pars <- max(ids.cov) + 1:n.pars
@@ -169,8 +167,6 @@ makeADFun_ekf_rtmb = function(self, private)
   #   return(c(a,b))
   # }
   # RTMB::MakeTape(makeTape.implicit.euler, numeric())
-  
-  
   
   # forward euler ----------------------------------------
   if(ode.solver==1){
@@ -295,12 +291,13 @@ makeADFun_ekf_rtmb = function(self, private)
   stateVec <- RTMB::AD(stateVec,force=TRUE)
   covMat <- RTMB::AD(covMat,force=TRUE)
   
-  # obsMat <- RTMB::AD(obsMat,force=F)
+  # obsMat <- RTMB::AD(obsMat,force=T)
   # inputMat <- RTMB::AD(inputMat,force=T)
   
   # likelihood function --------------------------------------
   ekf.nll = function(p){
     
+    ####### Sometimes necessary to avoid rtmb errors #######
     # "[<-" <- RTMB::ADoverload("[<-")
     # "diag<-" <- RTMB::ADoverload("diag<-")
     # "c" <- RTMB::ADoverload("c")
@@ -315,17 +312,13 @@ makeADFun_ekf_rtmb = function(self, private)
     I0 <- RTMB::diag(n.states)
     E0 <- RTMB::diag(n.obs)
     
-    ####### INITIAL STATE / COVARIANCE #######
-    # The state/covariance is either given by user or obtained from solving the
-    # stationary mean, and then solving for the covariance.
-    # In principle these are coupled equations, but believe that root-finding
-    # both simultaneously can lead to likelihood blow-up.
+    ####### Stationary Solution #######
     inputVec = inputMat[1,]
     if(estimate.initial){
-      # 1. Root-find stationary mean
+      # 1. Mean (root-find)
       .F <- RTMB::MakeTape(function(x) sum(f__(x, parVec, inputVec)^2), numeric(n.states))
       stateVec <- .F$newton(1:n.states)(numeric(0))
-      # 2. Use stationary mean to solve lyapunov eq. for associated covariance
+      # 2. Covar (Lyapunov via vectorization)
       A <- dfdx__(stateVec, parVec, inputVec)
       G <- g__(stateVec, parVec, inputVec)
       Q <- G %*% t(G)
@@ -334,9 +327,7 @@ makeADFun_ekf_rtmb = function(self, private)
       covMat <- RTMB::matrix(X, nrow=n.states)
     }
     
-    ######## (PRE) DATA UPDATE ########
-    # This is done to include the first measurements in the provided data
-    # We update the state and covariance based on the "new" measurement
+    ######## Data update ########
     obsVec = obsMat[1,]
     obsVec_bool = !is.na(obsVec)
     if(any(obsVec_bool)){
@@ -354,29 +345,29 @@ makeADFun_ekf_rtmb = function(self, private)
       covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
     }
     
-    ###### MAIN LOOP START #######
+    ###### Main Loop #######
     for(i in 1:(nrow(obsMat)-1)){
       
+      # load input vector
       inputVec = inputMat[i,]
       dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
       
-      ###### TIME UPDATE #######
-      # We solve the first two moments forward in time
+      ###### time update - ode solve moments #######
       for(j in 1:ode_timesteps[i]){
         sol = ode_integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size[i])
         stateVec = sol[[1]]
         covMat = sol[[2]]
+        # update input vec (first order interpolation ish)
         inputVec = inputVec + dinputVec
       }
       
-      ######## DATA UPDATE ########
-      # We update the state and covariance based on the "new" measurement
+      ######## data update ########
       inputVec = inputMat[i+1,]
       obsVec = obsMat[i+1,]
       obsVec_bool = !is.na(obsVec)
       if(any(obsVec_bool)){
         y = obsVec[obsVec_bool]
-        E = E0[obsVec_bool,, drop=FALSE] #permutation matrix with rows removed
+        E = E0[obsVec_bool,, drop=FALSE]
         C = E %*% dhdx__(stateVec, parVec, inputVec)
         e = y - E %*% h__(stateVec, parVec, inputVec)
         V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
@@ -388,15 +379,15 @@ makeADFun_ekf_rtmb = function(self, private)
         stateVec = stateVec + K %*% e
         covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
       }
+      
+      # end of main loop
     }
-    ###### MAIN LOOP END #######
     
-    # ###### RETURN #######
+    # return
     return(nll)
   }
   
   # construct AD-likelihood function ----------------------------------------
-  
   comptime <- system.time(nll <- RTMB::MakeADFun(func = ekf.nll,
                                                  parameters=parameters,
                                                  map = lapply(private$fixed.pars, function(x) x$factor),
@@ -673,97 +664,6 @@ ekf_r = function(parVec, self, private)
                      InnovationCovariance = InnovationCovariance)
   
   return(invisible(returnlist))
-}
-
-#######################################################
-#######################################################
-# EKF CPP IMPLEMENTATION (FOR OPTIMIZATION)
-#######################################################
-#######################################################
-makeADFun_ekf_cpp = function(self, private){
-  
-  # Data ----------------------------------------
-  
-  # add mandatory entries to data
-  tmb.data = list(
-    
-    # methods and purpose
-    ode_solver = private$ode.solver,
-    
-    # initial
-    stateVec = private$initial.state$x0,
-    covMat = private$initial.state$p0,
-    
-    # time-steps
-    ode_timestep_size = private$ode.timestep.size,
-    ode_timesteps = private$ode.timesteps,
-    
-    # loss function
-    loss_function = private$loss$loss,
-    loss_threshold_value = private$loss$c,
-    tukey_loss_parameters = private$tukey.pars,
-    
-    # system size
-    number_of_state_eqs = private$number.of.states,
-    number_of_obs_eqs = private$number.of.observations,
-    number_of_diffusions = private$number.of.diffusions,
-    
-    # estimate stationary levels
-    estimate_stationary_initials = as.numeric(private$estimate.initial),
-    initial_variance_scaling = private$initial.variance.scaling,
-    
-    # parameter bounds
-    par_lb = sapply(private$parameters, function(x) x$lower),
-    par_ub = sapply(private$parameters, function(x) x$lower),
-    
-    # inputs
-    inputMat = as.matrix(private$data[private$input.names]),
-    
-    # observations
-    obsMat = as.matrix(private$data[private$obs.names])
-  )
-  
-  # unscented parameters
-  ukf_hyperpars = c()
-  if(private$method=="ukf_cpp"){
-    ukf_hyperpars = list(private$ukf_hyperpars)
-  }
-  
-  # MAP Estimation?
-  tmb.map.data = list(
-    MAP_bool = 0L
-  )
-  if (!is.null(private$map)) {
-    bool = self$getParameters()[,"type"] == "free"
-    tmb.map.data = list(
-      MAP_bool = 1L,
-      map_mean__ = private$map$mean[bool],
-      map_cov__ = private$map$cov[bool,bool],
-      map_ints__ = as.numeric(bool),
-      sum_map_ints__ = sum(as.numeric(bool))
-    )
-  }
-  
-  # construct final data list
-  data = c(tmb.data, tmb.map.data, ukf_pars=ukf_hyperpars)
-  
-  
-  # Parameters ----------------------------------------
-  parameters = lapply(private$parameters, function(x) x[["initial"]]) # Initial parameter values
-  
-  
-  # Create AD-likelihood function ---------------------------------------
-  nll = TMB::MakeADFun(data = data,
-                       parameters = parameters,
-                       map = lapply(private$fixed.pars, function(x) x$factor),
-                       DLL = private$modelname.with.method,
-                       silent = TRUE)
-  
-  # save objective function
-  private$nll = nll
-  
-  # return
-  return(invisible(self))
 }
 
 #######################################################

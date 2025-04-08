@@ -5,8 +5,9 @@
 # ctsmTMB <img src='man/figures/logo.png' align="right" height="150" />
 
 <!-- Badges -->
-<!-- [![CRAN status](https://www.r-pkg.org/badges/version/geomtextpath)](https://CRAN.R-project.org/package=geomtextpath) -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/ctsmTMB)](https://CRAN.R-project.org/package=ctsmTMB)
 [![R-CMD-check](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml)
 <!-- [![metacran downloads](https://cranlogs.r-pkg.org/badges/geomtextpath)](https://cran.r-project.org/package=geomtextpath) -->
 <!-- Package Description -->
@@ -118,7 +119,13 @@ estimates, rather than the one-step predictions of Kalman filters.
 
 # Installation
 
-You can install the package by copying the command below into `R`.
+The package can be installed from CRAN using
+
+``` r
+install.packages("ctsmTMB")
+```
+
+The development version is available on GitHub
 
 ``` r
 remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
