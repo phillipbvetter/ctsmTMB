@@ -1,10 +1,15 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
-#include <Ziggurat.h>
 #include "helper_funs2.h"
 using namespace Rcpp;
 using namespace Eigen;
 // [[Rcpp::depends(RcppEigen)]]
+
+// [[Rcpp::export]]
+void ziggsetseed(double s) {
+    uint32_t su = static_cast<uint32_t>(s);
+    ziggurat.setSeed(su);
+}
 
 //  This is the predict kalman filter function
 template<typename T1, typename T2>
@@ -92,7 +97,8 @@ List ekf_simulation2(
     */
     for(int j=0; j < n; j++){
       for(int k=0; k < nsims; k++){
-        randN(j,k) = zigg.norm();
+        // randN(j,k) = zigg.norm();
+        randN(j,k) = ziggurat.rnorm();
       }
     }
     stateMat = (stateVec.replicate(1, nsims) + covMat.llt().matrixL() * randN).transpose(); 

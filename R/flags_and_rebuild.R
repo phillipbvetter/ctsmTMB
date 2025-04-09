@@ -58,6 +58,7 @@ set_flags = function(proc, args, self, private){
     private$set_silence(args$silent)
     private$set_initial_state_estimation(args$estimate.initial.state)
     # private$set_k_ahead(args$k.ahead)
+    private$set_cpp_seed(args$cpp.seed)
     
   }
   

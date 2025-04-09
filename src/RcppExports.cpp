@@ -42,6 +42,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ziggsetseed
+void ziggsetseed(double s);
+RcppExport SEXP _ctsmTMB_ziggsetseed(SEXP sSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type s(sSEXP);
+    ziggsetseed(s);
+    return R_NilValue;
+END_RCPP
+}
 // execute_ekf_simulation2
 List execute_ekf_simulation2(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, int n, int m, int ng, int last_pred_id, int k_step_ahead, int ode_solver, int nsims);
 RcppExport SEXP _ctsmTMB_execute_ekf_simulation2(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP simulation_timestep_sizeSEXP, SEXP simulation_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP nSEXP, SEXP mSEXP, SEXP ngSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP, SEXP nsimsSEXP) {
@@ -79,6 +89,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ctsmTMB_execute_ekf_prediction2", (DL_FUNC) &_ctsmTMB_execute_ekf_prediction2, 20},
+    {"_ctsmTMB_ziggsetseed", (DL_FUNC) &_ctsmTMB_ziggsetseed, 1},
     {"_ctsmTMB_execute_ekf_simulation2", (DL_FUNC) &_ctsmTMB_execute_ekf_simulation2, 24},
     {NULL, NULL, 0}
 };

@@ -5,7 +5,7 @@
 #' @importFrom deSolve ode
 #' @importFrom Matrix expm chol
 #' @import R6
-#' @rawNamespace import(Rcpp, except=LdFlags)
-#' @rawNamespace import(RcppEigen, except=c(fastLmPure, fastLm))
-#' @import RcppZiggurat
+# #' @import Rcpp #necessary to avoid cran note/warning?
+# #' @rawNamespace import(Rcpp, except=LdFlags)
+# #' @rawNamespace import(RcppEigen, except=c(fastLmPure, fastLm))
 NULL

@@ -1,9 +1,9 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
-#include <Ziggurat.h>
+#include <zigg/header>  
 using namespace Rcpp;
 using namespace Eigen;
-static Ziggurat::Ziggurat::Ziggurat zigg; //zigg.norm() draws from a normal distribution?
+static zigg::Ziggurat ziggurat;
 const double pi = M_PI;
 
 // Inverse logit function
@@ -142,7 +142,8 @@ MatrixXd euler_maruyama_simulation2(
 
     // Generate dW vector by sampling from standard normal
     for(int i=0; i < ng; i++){
-      dW(i) = zigg.norm();
+      // dW(i) = zigg.norm();
+      dW(i) = ziggurat.rnorm();
     }
 
     // Perform euler-maruyama step

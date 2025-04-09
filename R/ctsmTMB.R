@@ -1380,10 +1380,12 @@ ctsmTMB = R6::R6Class(
     #' @param n.sims number of simulations
     #' @param simulation.timestep timestep used in the euler-maruyama scheme
     #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
+    #' @param cpp.seed an integer seed value to control RNG normal draws on the C++ side.
     #' 
     simulate = function(data,
                         pars = NULL,
                         use.cpp = FALSE,
+                        cpp.seed = NULL,
                         method = "ekf",
                         ode.solver = "rk4",
                         ode.timestep = diff(data$t),
@@ -1405,7 +1407,8 @@ ctsmTMB = R6::R6Class(
         simulation.timestep = simulation.timestep,
         initial.state = initial.state,
         estimate.initial.state = estimate.initial.state,
-        silent = silent
+        silent = silent,
+        cpp.seed = cpp.seed
       )
       set_flags("simulation", args, self, private)
       
@@ -2104,6 +2107,32 @@ ctsmTMB = R6::R6Class(
       
       # return
       return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET CPP SEED FOR SIMULATIONS
+    ########################################################################
+    set_cpp_seed = function(seed) {
+      
+      # return if null (unset)
+      if(is.null(seed)){
+        return(invisible(self))
+      }
+      
+      if(!is.numeric(seed)){
+        stop("The cpp.seed should be a scalar numeric value")
+      }
+      
+      if(!length(seed) < 1){
+        seed <- seed[[1]]
+      }
+      
+      # set the seed
+      ziggsetseed(seed)
+      
+      # return
+      return(invisible(self))
     }
+    
   )
 )

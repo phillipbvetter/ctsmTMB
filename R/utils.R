@@ -88,3 +88,17 @@ getggplot2theme = function() {
 #   ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
 #   return(ggcolors)
 # }
+
+# #' setting seed normal draws from ziggurat in C++ simulations
+# #' @description
+# #' Sets the RNG seed in C++. 
+# #' 
+# #' Doubles are automatically rounded to nearest integer.
+# #' 
+# #' @examples
+# #' library(ctsmTMB)
+# #' set.cpp.seed(10)
+# #' @export
+# set.seed.ctsmTMB <- function(s){
+#   ziggsetseed(s)
+# }

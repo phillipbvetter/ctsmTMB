@@ -394,8 +394,8 @@ makeADFun_ekf_rtmb = function(self, private)
                                                  silent=TRUE)
   )
   
-  comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
-  if(!private$silent) message("...took: ", comptime, " seconds.")
+  # comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
+  # if(!private$silent) message("...took: ", comptime, " seconds.")
   
   # save objective function
   private$nll = nll

@@ -767,6 +767,7 @@ state estimate as the initial condition.
   data,
   pars = NULL,
   use.cpp = FALSE,
+  cpp.seed = NULL,
   method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
@@ -791,6 +792,8 @@ parameter values used are the initial parameters provided through \code{setParam
 function has been run, then the default values will be those at the found optimum.}
 
 \item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
+
+\item{\code{cpp.seed}}{an integer seed value to control RNG normal draws on the C++ side.}
 
 \item{\code{method}}{\enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects
