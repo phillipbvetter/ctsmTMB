@@ -605,6 +605,9 @@ profile.ctsmTMB.fit = function(fitted,
   }
   
   # return
+  # profile.grid.and.nll[,len+1] <- exp(-profile.grid.and.nll[,len+1])/exp(-fit$nll)
+  
+  X[,len+1] <- exp(fit$nll - X[,len+1])
   returnlist = list(
     profile.grid.and.nll = X,
     parameter.values = parlist,
@@ -653,12 +656,15 @@ plot.ctsmTMB.profile = function(x,y,include.opt=TRUE,...){
   list <- x
   l <- length(list$parameter.values)
   df <- list$profile.grid.and.nll
-  par.names <- head(names(df),l)
+  par.names <- head(names(df), l)
   opt <- list$full.likelihood.optimum[par.names]
+  
+  threshold <- qchisq(0.95, df=length(par.names))/2
   
   # A simple plot is only needed if we are profiling one parameter
   if(l==1L){
     p <- ggplot2::ggplot() +
+      ggplot2::geom_hline(yintercept=exp(-threshold)) +
       ggplot2::geom_line(ggplot2::aes(x=df[[par.names[1]]],y=df$nll)) +
       {if(include.opt) ggplot2::geom_vline(ggplot2::aes(xintercept=opt,color="Full Likelihood Optimum"))} +
       ggplot2::labs(color="",

@@ -217,8 +217,10 @@ makeADFun_ekf_rtmb = function(self, private)
       return(list(X1,P1))
     }
   } else {
-    # Construct input interpolators
-    #---------------------------------
+    # desolve ODE solver ----------------------------------------
+    
+    # Step 1: construct input interpolators
+    
     # Expand time-domain slightly to avoid NAs in RTMB::interpol1Dfun
     # if ODE is evaluated slightly outside domain
     time <- inputMat[,1]
@@ -235,8 +237,7 @@ makeADFun_ekf_rtmb = function(self, private)
       input.interp.funs[[i]] <- RTMB::interpol1Dfun(z=out$y, xlim=range(new.time), R=1)
     }
     
-    # Construct ode fun for DeSolve
-    #---------------------------------
+    # Step 2: construct ode fun for DeSolve
     ode.fun <- function(time, stateVec_and_covMat, parVec){
       inputVec <- RTMB::sapply(input.interp.funs, function(f) f(time))
       # 
@@ -251,8 +252,7 @@ makeADFun_ekf_rtmb = function(self, private)
       return(list(c(dX,dP)))
     }
     
-    # Construct function to call in likelihood functon
-    #---------------------------------
+    # Step 3: construct function to call in likelihood functon
     ode_integrator <- function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       out <- RTMBode::ode(y = c(stateVec, covMat),
                           times = c(inputVec[1], inputVec[1]+dt),
@@ -292,7 +292,7 @@ makeADFun_ekf_rtmb = function(self, private)
   covMat <- RTMB::AD(covMat,force=TRUE)
   
   # obsMat <- RTMB::AD(obsMat,force=T)
-  # inputMat <- RTMB::AD(inputMat,force=T)
+  inputMat <- RTMB::AD(inputMat,force=T)
   
   # likelihood function --------------------------------------
   ekf.nll = function(p){

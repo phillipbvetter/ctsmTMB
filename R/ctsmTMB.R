@@ -1009,13 +1009,15 @@ ctsmTMB = R6::R6Class(
     #' See \code{?stats::nlminb} for more information
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
+    #' @param trace 0 or 1, passed to \code{control} to determine whether to print optimization information at each step.
     estimate = function(data, 
                         method = "ekf",
                         ode.solver = "euler",
                         ode.timestep = diff(data$t),
                         loss = "quadratic",
                         loss_c = NULL,
-                        control = list(trace=1,iter.max=1e5,eval.max=1e5),
+                        trace = 1,
+                        control = list(trace=trace,iter.max=1e5,eval.max=1e5),
                         use.hessian = FALSE,
                         laplace.residuals = FALSE,
                         unconstrained.optim = FALSE,

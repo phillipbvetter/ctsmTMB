@@ -354,7 +354,8 @@ create_return_prediction = function(return.covariance, return.k.ahead, use.cpp, 
   inputs.df = private$data[df.out[,"j."]+1,private$input.names]
   
   named.pars.list = as.list(private$pars)
-  names(named.pars.list) = names(private$free.pars)
+  # names(named.pars.list) = names(private$free.pars)
+  names(named.pars.list) = private$parameter.names
   # create environment
   env.list = c(
     # states
@@ -362,9 +363,9 @@ create_return_prediction = function(return.covariance, return.k.ahead, use.cpp, 
     # inputs
     as.list(inputs.df),
     # free parameters
-    named.pars.list,
+    named.pars.list
     # fixed parameters
-    lapply(private$fixed.pars, function(x) x$initial)
+    # lapply(private$fixed.pars, function(x) x$initial)
   )
   
   # calculate observations

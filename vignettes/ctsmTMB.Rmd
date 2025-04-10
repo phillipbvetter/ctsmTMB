@@ -40,7 +40,7 @@ We initialise a `ctsmTMB` model object using
 
 ```{r}
 library(ctsmTMB)
-model <- ctsmTMB$new()
+model <- ctsm()
 ```
 
 Printing the model object in the console reveals some basic information about it:
@@ -199,6 +199,12 @@ _**Note**: The data *must* contain an increasing time column named `t` and colum
 fit <- model$estimate(data)
 ```
 
+```{r, eval=FALSE,echo=FALSE}
+fit2 <- model$estimate(data, method="lkf")
+fit3 <- model$estimate(data, method="laplace")
+```
+
+
 _**Note**: a time-consuming step in the estimation procedure is construction of the AD graph of the underlying likelihood function, but the time spent for this task relative to the optimization time will even out for models with more parameters._
 
 The output generated during the optimization is the objective (negative log-likelihood) value and the parameter values at the current step. The optimizer used by **ctsmTMB** is the *nlminb* optimizer from the *stats* library.
@@ -244,6 +250,12 @@ Printing the `fit` object reveals a standard coefficient matrix for the paramete
 ```{r}
 print(fit)
 ```
+
+```{r, eval=FALSE, echo=FALSE}
+print(fit2)
+print(fit3)
+```
+
 
 We can see the parameter estimate and the associated standard error together with a one-dimensional t-test statistic and associated P-value for the common hypothesis test
 $$

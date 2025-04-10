@@ -194,6 +194,7 @@ makeADFun_lkf_rtmb = function(self, private)
     I0 <- RTMB::diag(n.states)
     E0 <- RTMB::diag(n.obs)
     
+    inputVec <- inputMat[1,]
     ####### Compute Matrix Exponentials for 1-Step Mean and Variance #######
     # dX = A*X + B*U + G*dB
     A <- dfdx__(stateVec, parVec, inputVec) #states
@@ -410,6 +411,7 @@ lkf_r = function(parVec, self, private)
   
   ####### Compute Matrix Exponentials for 1-Step Mean and Variance #######
   # dX = A*X + B*U + G*dB
+  inputVec <-  inputMat[1,]
   A <- dfdx__(stateVec, parVec, inputVec) #states
   B <- dfdu__(stateVec, parVec, inputVec) #inputs
   G <- g__(stateVec, parVec, inputVec) #diffusions
@@ -919,14 +921,14 @@ calculate_fit_statistics_lkf <- function(self, private){
     private$fit$Pr.tvalue = 2*pt(q=abs(private$fit$tvalue),df=sum(sumrowNAs),lower.tail=FALSE)
     
   } else {
+    
     message("Unable to perform filtering with the following warning:\n\t", rep)
+    
   }
   
   # clone and return -----------------------------------
   
   # clone private and return fit
-  # self.clone <- self$clone()$.__enclos_env__$private
-  # private$fit$private = self.clone$.__enclos_env__$private
   private$fit$private <- self$clone()$.__enclos_env__$private
   
   # set s3 class
