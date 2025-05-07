@@ -7,7 +7,14 @@
 
 build_model = function(self, private) {
   
+  # Check if model is already built
   if(!private$rebuild.model) return(invisible(self))
+  private$rebuild.model <- FALSE
+  private$rebuild.ad <- TRUE
+  private$rebuild.data <- TRUE
+  
+  # Print
+  if(!private$silent) message("Building model...")
   
   # check_model
   basic_model_check(self, private)
@@ -30,7 +37,7 @@ build_model = function(self, private) {
   create_r_function_strings(self, private)
   create_rcpp_function_strings(self, private)
   # create_rcpp_function_strings2(self, private)
-  
+
   # last check
   final_build_check(self, private)
   

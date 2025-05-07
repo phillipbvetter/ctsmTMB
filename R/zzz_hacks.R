@@ -13,3 +13,4 @@ h__ <- function(stateVec, parVec, inputVec) NULL
 hvar__ <- function(stateVec, parVec, inputVec) NULL
 hvar__matrix <- function(stateVec, parVec, inputVec) NULL
 x <- NULL
+level <- NULL

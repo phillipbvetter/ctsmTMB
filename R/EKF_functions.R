@@ -281,7 +281,7 @@ makeADFun_ekf_rtmb = function(self, private)
   }
   
   # AD overwrites ----------------------------------------
-  f_vec <- RTMB::AD(numeric(n.obs),force=TRUE)
+  f_vec <- RTMB::AD(numeric(n.states),force=TRUE)
   dfdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.states, ncol=n.states),force=TRUE)
   g_mat <- RTMB::AD(RTMB::matrix(0,nrow=n.states, ncol=n.diffusions),force=TRUE)
   h_vec <- RTMB::AD(numeric(n.obs),force=TRUE)
@@ -379,7 +379,6 @@ makeADFun_ekf_rtmb = function(self, private)
         stateVec = stateVec + K %*% e
         covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
       }
-      
       # end of main loop
     }
     
@@ -411,7 +410,7 @@ makeADFun_ekf_rtmb = function(self, private)
 #######################################################
 #######################################################
 
-ekf_r = function(parVec, self, private)
+ekf_filter_r = function(parVec, self, private)
 {
   
   # parameters ----------------------------------------
@@ -747,7 +746,7 @@ calculate_fit_statistics_ekf <- function(self, private){
       }
       if(!inherits(std.dev,"try-error")){
         stdtemp = rep(NA, length(private$fit$par.fixed))
-        sdttemp[-remove.ids] <- std.dev
+        stdtemp[-remove.ids] <- std.dev
         std.dev <- stdtemp
       }
     }
@@ -800,7 +799,7 @@ calculate_fit_statistics_ekf <- function(self, private){
   
   # Extract reported items from nll
   estimated_pars <- self$getParameters()[,"estimate"]
-  rep <- ekf_r(estimated_pars, self, private)
+  rep <- ekf_filter_r(estimated_pars, self, private)
   # private$fit$rep <- rep
   
   # Prior States

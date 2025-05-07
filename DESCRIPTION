@@ -26,13 +26,13 @@ Imports:
 	R6,
 	Deriv,
 	stringr,
-	Rcpp,
 	RcppXPtrUtils,
 	Matrix,
 	deSolve,
 	ggplot2,
 	ggfortify,
-	patchwork
+	patchwork,
+	geomtextpath
 LinkingTo:
 	Rcpp,
 	RcppEigen,

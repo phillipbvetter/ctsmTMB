@@ -7,6 +7,7 @@
 ekf_r_simulation = function(self, private, nsims)
 {
   
+  if(!private$silent) message("Simulating with R...")
   
   # parameters ----------------------------------------
   parVec <- private$pars
@@ -274,6 +275,8 @@ ekf_r_simulation = function(self, private, nsims)
 # Stochastic Euler-Maruyama simulation function that calls the underlying Rcpp simulation function
 rcpp_simulation = function(self, private, n.sims){
   
+  if(!private$silent) message("Simulating with C++...")
+  
   # observation/input matrix
   obsMat = as.matrix(private$data[private$obs.names])
   inputMat = as.matrix(private$data[private$input.names])
@@ -319,6 +322,7 @@ rcpp_simulation = function(self, private, n.sims){
 # Generates a user-friendly data.frame of prediction results from private$prediction
 create_return_simulation = function(return.k.ahead, n.sims, self, private){
   
+  if(!private$silent) message("Constructing return data.frame...")
   
   list.out = vector("list",length=private$number.of.states)
   names(list.out) = private$state.names

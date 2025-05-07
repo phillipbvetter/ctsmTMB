@@ -157,7 +157,7 @@ makeADFun_lkf_rtmb = function(self, private)
   estimate.initial <- private$estimate.initial
   
   # AD overwrites ----------------------------------------
-  f_vec <- RTMB::AD(numeric(n.obs),force=TRUE)
+  f_vec <- RTMB::AD(numeric(n.states),force=TRUE)
   dfdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.states, ncol=n.states),force=TRUE)
   dfdu_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.states, ncol=n.inputs+1),force=TRUE)
   g_mat <- RTMB::AD(RTMB::matrix(0,nrow=n.states, ncol=n.diffusions),force=TRUE)
@@ -348,7 +348,7 @@ makeADFun_lkf_rtmb = function(self, private)
 #######################################################
 #######################################################
 
-lkf_r = function(parVec, self, private)
+lkf_filter_r = function(parVec, self, private)
 {
   
   # parameters ----------------------------------------
@@ -706,7 +706,7 @@ calculate_fit_statistics_lkf <- function(self, private){
       }
       if(!inherits(std.dev,"try-error")){
         stdtemp = rep(NA, length(private$fit$par.fixed))
-        sdttemp[-remove.ids] <- std.dev
+        stdtemp[-remove.ids] <- std.dev
         std.dev <- stdtemp
       }
     }
@@ -759,7 +759,7 @@ calculate_fit_statistics_lkf <- function(self, private){
   # States -----------------------------------
   # Extract reported items from nll
   estimated_pars <- self$getParameters()[,"estimate"]
-  rep <- try_withWarningRecovery((lkf_r(estimated_pars, self, private)))
+  rep <- try_withWarningRecovery((lkf_filter_r(estimated_pars, self, private)))
   
   if(!inherits(rep,"try-error")){
     

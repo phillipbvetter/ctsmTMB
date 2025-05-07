@@ -5,7 +5,7 @@ set_flags = function(proc, args, self, private){
   private$set_procedure(proc)
   
   if(private$procedure == "estimation"){
-    
+
     private$set_method(args$method)
     private$set_ode_solver(args$ode.solver)
     private$set_timestep(args$ode.timestep)
@@ -62,20 +62,42 @@ set_flags = function(proc, args, self, private){
     
   }
   
+  if(private$procedure == "filter"){
+    
+    private$set_method(args$method)
+    private$set_ode_solver(args$ode.solver)
+    private$set_timestep(args$ode.timestep)
+    private$set_simulation_timestep(args$ode.timestep)
+    private$set_silence(args$silent)
+    private$set_initial_state_estimation(args$estimate.initial.state)
+    
+  }
+  
+  if(private$procedure == "smoother"){
+    
+    private$set_method(args$method)
+    private$set_ode_solver(args$ode.solver)
+    private$set_timestep(args$ode.timestep)
+    private$set_simulation_timestep(args$ode.timestep)
+    private$set_silence(args$silent)
+    private$set_initial_state_estimation(args$estimate.initial.state)
+    
+  }
+  
 }
 
-temporary_save_old_data <- function(self, private){
+save_settings_for_comparison_next_time <- function(self, private){
   
-  newobj <- self$clone(deep=TRUE)
-  private <- self$.private()
+  cloned.self <- self$clone(deep=TRUE)
+  cloned.private <- cloned.self$.private()
   
-  private$old.data = list()
-  private$old.data$data = private$data
-  private$old.data$method = private$method
-  private$old.data$ode.solver = private$ode.solver
-  private$old.data$ode.timestep = private$ode.timestep
-  private$old.data$loss$loss = private$loss$loss
-  private$old.data$estimate.initial = private$estimate.initial
+  # private$old.data = list()
+  # private$old.data$data = private$data
+  private$old.data$method = cloned.private$method
+  private$old.data$ode.solver = cloned.private$ode.solver
+  private$old.data$ode.timestep = cloned.private$ode.timestep
+  private$old.data$loss = cloned.private$loss
+  private$old.data$estimate.initial = cloned.private$estimate.initial
   
   # private$simulation.timestep.size
   # private$simulation.timesteps
@@ -83,19 +105,36 @@ temporary_save_old_data <- function(self, private){
   return(invisible(self))
 }
 
-check_for_data_rebuild <- function(self, private){
+check_for_ADfun_rebuild <- function(self, private){
   
+  # print(str(private$old.data))
+  
+  # We perform checks against the old data on the entries that would
+  # require a new call to RTMB::MakeADFun (i.e. entries that affect the
+  # calculations in the likelihood function)
   bool <- c(
-    private$rebuild.data,
-    !identical(private$old.data$data, private$data),
+    private$rebuild.ad,
     !identical(private$old.data$method, private$method),
     !identical(private$old.data$ode.solver, private$ode.solver),
     !identical(private$old.data$ode.timestep, private$ode.timestep),
-    !identical(private$old.data$loss$loss, private$loss$loss),
+    !identical(private$old.data$loss, private$loss),
     !identical(private$old.data$estimate.initial, private$estimate.initial)
   )
   
-  private$rebuild.data = any(bool)
+  private$rebuild.ad <- any(bool)
+  
+  return(invisible(self))
+}
+
+check_for_data_rebuild <- function(data, self, private){
+  
+  # We check if the data needs to reset
+  bool <- c(
+    private$rebuild.data,
+    !identical(private$old.data$entry.data, data)
+  )
+  
+  private$rebuild.data <- any(bool)
   
   return(invisible(self))
 }

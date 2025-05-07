@@ -202,16 +202,19 @@ create_rtmb_function_strings = function(self, private)
   # and U = Transpose([1, t, u(t)])
   
   # Therefore: For each system equation - find all constants, and derivatives w.r.t inputs
-  
-  
   # 1. We first find constant terms
   # this corresponds to an input that is always 1 (first element of U)
   zero.list <- as.list(numeric(private$number.of.inputs + private$number.of.states))
   names(zero.list) <-c(private$input.names, private$state.names)
-  constant.terms <- unname(sapply(
+  constant.terms <- try_withWarningRecovery(
+  unname(sapply(
     sapply(private$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list)))),
     function(x) deparse1(do.call(substitute, list(x, subsList)))
   ))
+  )
+  if(inherits(constant.terms, "try-error")){
+    constant.terms <- rep(0, private$number.of.states)
+  }
   # constant.terms <- as.vector(sapply(constant.terms, function(x) deparse1(do.call(substitute, list(x, subsList)))))
   
   dfdu.elements <- c()
@@ -425,9 +428,9 @@ create_rtmb_function_strings_new = function(self, private)
     out <- suppressWarnings(as.numeric(term))
     if(!is.na(out)){
       # hack
-      hvar.elements <- c(h.elements, sprintf("hvar_vec[[%s]] <- RTMB::AD(%s);",i, out))
+      hvar.elements <- c(hvar.elements, sprintf("hvar_vec[[%s]] <- RTMB::AD(%s);",i, out))
     } else{
-      hvar.elements <- c(h.elements, sprintf("hvar_vec[[%s]] <- %s;",i, term))
+      hvar.elements <- c(hvar.elements, sprintf("hvar_vec[[%s]] <- %s;",i, term))
     }
   }
   ftext <- 'hvar__ = function(stateVec, parVec, inputVec){
@@ -476,24 +479,30 @@ create_rtmb_function_strings_new = function(self, private)
   # Therefore: For each system equation - find all constants, and derivatives w.r.t inputs
   
   
+# FIXME::: We have an issue when e.g. two inputs are divided input1 / input2. This is a zero division,
+  # and simplify throws an error. How to avoid this?
+  # Right now, we just tryCatch and set constants to zero...
+  
   # 1. We first find constant terms
   # this corresponds to an input that is always 1 (first element of U)
   zero.list <- as.list(numeric(private$number.of.inputs + private$number.of.states))
   names(zero.list) <-c(private$input.names, private$state.names)
-  constant.terms <- unname(sapply(
-    sapply(private$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list)))),
-    function(x) deparse1(do.call(substitute, list(x, subsList)))
-  ))
+  constant.terms <- try_withWarningRecovery(
+    unname(sapply(
+      sapply(private$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list)))),
+      function(x) deparse1(do.call(substitute, list(x, subsList)))
+    ))
+  )
+  if(inherits(constant.terms, "try-error")){
+    constant.terms <- rep(0, private$number.of.states)
+  }
   
   dfdu.elements <- c()
   # 2. Now we find input-terms by differentiation
   for(i in seq_along(private$state.names)){
     # for(j in seq_along(private$input.names)){
     for(j in 1:(private$number.of.inputs+1)){
-      
-      # if(j==1) dfdu.elements <- c(dfdu.elements, constant.terms[i])
-      # term <- ctsmTMB.Deriv(f = private$sys.eqs.trans[[i]]$diff.dt, x=private$input.names[j])
-      
+
       if(j==1){
         term <- constant.terms[i]
       } else {
@@ -734,10 +743,15 @@ create_r_function_strings = function(self, private)
   # this corresponds to an input that is always 1 (first element of U)
   zero.list <- as.list(numeric(private$number.of.inputs + private$number.of.states))
   names(zero.list) <-c(private$input.names, private$state.names)
-  constant.terms <- unname(sapply(
-    sapply(private$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list)))),
-    function(x) deparse1(do.call(substitute, list(x, subsList)))
-  ))
+  constant.terms <- try_withWarningRecovery(
+    unname(sapply(
+      sapply(private$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list)))),
+      function(x) deparse1(do.call(substitute, list(x, subsList)))
+    ))
+  )
+  if(inherits(constant.terms, "try-error")){
+    constant.terms <- rep(0, private$number.of.states)
+  }
   
   dfdu.elements <- c()
   # 2. Now we find input-terms by differentiation

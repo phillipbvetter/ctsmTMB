@@ -6,28 +6,42 @@ construct_makeADFun = function(self, private){
   
   # TMB::openmp(max=TRUE, autopar=TRUE, DLL=private$modelname.with.method)
   
+  # Check for AD rebuild
+  check_for_ADfun_rebuild(self, private)
+  if(!private$rebuild.ad) return(invisible(self))
+  save_settings_for_comparison_next_time(self, private)
+  private$rebuild.ad <- FALSE
+  
+  if(!private$silent) message("Constructing objective function and derivative tables...")
+  
   if(private$method == "lkf"){
-    comptime <- system.time(
+    # comptime <- system.time(
       makeADFun_lkf_rtmb(self, private)
-    )
+    # )
   }
   
   if(private$method == "ekf"){
-    comptime <- system.time(
+    # comptime <- system.time(
       makeADFun_ekf_rtmb(self, private)
-    )
+    # )
+  }
+  
+  if(private$method == "ukf"){
+    # comptime <- system.time(
+      makeADFun_ukf_rtmb(self, private)
+    # )
   }
   
   if(private$method=="laplace"){
-    comptime <- system.time(
+    # comptime <- system.time(
       makeADFun_laplace_rtmb(self, private)
-    )
+    # )
   }
   
   if(private$method=="laplace2"){
-    comptime <- system.time(
+    # comptime <- system.time(
       makeADFun_laplace2_rtmb(self, private)
-    )
+    # )
   }
   
   # experimental
@@ -36,9 +50,6 @@ construct_makeADFun = function(self, private){
   #     rcpp_ekf_estimate(self, private)
   #     )
   # }
-  
-  comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
-  if(!private$silent) message("...took: ", comptime, " seconds.")
   
   return(invisible(self))
 }
@@ -49,6 +60,8 @@ construct_makeADFun = function(self, private){
 
 create_fit = function(self, private, laplace.residuals){
   
+  if(!private$silent) message("Returning results...")
+  
   # TMB::openmp(max=TRUE, autopar=TRUE, DLL=private$modelname.with.method)
   if(private$method == "lkf"){
     calculate_fit_statistics_lkf(self, private)
@@ -58,9 +71,9 @@ create_fit = function(self, private, laplace.residuals){
     calculate_fit_statistics_ekf(self, private)
   }
   
-  # if(private$method == "ekf_rcpp"){
-  # calculate_fit_statistics_ekf(self, private)
-  # }
+  if(private$method == "ukf"){
+  calculate_fit_statistics_ukf(self, private)
+  }
   
   if(private$method=="laplace"){
     calculate_fit_statistics_laplace(self, private, laplace.residuals)
@@ -79,6 +92,8 @@ create_fit = function(self, private, laplace.residuals){
 
 perform_estimation = function(self, private) {
   
+  if(!private$silent) message("Minimizing the negative log-likelihood...")
+  
   # Parameter Bounds
   lower.parameter.bound = unlist(lapply(private$free.pars, function(par) par$lower))
   upper.parameter.bound = unlist(lapply(private$free.pars, function(par) par$upper))
@@ -88,12 +103,7 @@ perform_estimation = function(self, private) {
   }
   
   # IF METHOD IS KALMAN FILTER
-  if (any(private$method==c("lkf","ekf","ukf_cpp","ekf_cpp"))) {
-    
-    if(private$method=="ekf_cpp"){
-      # TMB::openmp(max=TRUE, DLL=private$modelname.with.method, autopar=TRUE)
-      # TMB::config(trace.atomic=FALSE, DLL=private$modelname.with.method)
-    }
+  if (any(private$method==c("lkf","ekf","ukf"))) {
     
     # use function, gradient and hessian
     if (private$use.hessian) {

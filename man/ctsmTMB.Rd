@@ -82,6 +82,8 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
 \item \href{#method-ctsmTMB-getLikelihood}{\code{ctsmTMB$getLikelihood()}}
 \item \href{#method-ctsmTMB-getPrediction}{\code{ctsmTMB$getPrediction()}}
 \item \href{#method-ctsmTMB-getSimulation}{\code{ctsmTMB$getSimulation()}}
+\item \href{#method-ctsmTMB-filter}{\code{ctsmTMB$filter()}}
+\item \href{#method-ctsmTMB-smoother}{\code{ctsmTMB$smoother()}}
 \item \href{#method-ctsmTMB-estimate}{\code{ctsmTMB$estimate()}}
 \item \href{#method-ctsmTMB-likelihood}{\code{ctsmTMB$likelihood()}}
 \item \href{#method-ctsmTMB-predict}{\code{ctsmTMB$predict()}}
@@ -492,6 +494,176 @@ Retrieve initially set state and covariance
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-filter"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-filter}{}}}
+\subsection{Method \code{filter()}}{
+Perform state filtering (or smoothing for the 'laplace' method)
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$filter(
+  data,
+  pars = NULL,
+  method = "ekf",
+  ode.solver = "euler",
+  ode.timestep = diff(data$t),
+  loss = "quadratic",
+  loss_c = NULL,
+  laplace.residuals = FALSE,
+  estimate.initial.state = FALSE,
+  silent = FALSE,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
+can take \code{NA}-values.}
+
+\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}}
+
+\item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
+Must be one of either "lkf", "ekf", "laplace".}
+
+\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+differential equations. The default "euler" is the Forward Euler method, alternatively the classical
+4th order Runge Kutta method is available via "rk4".}
+
+\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
+The defined step-size is used to calculate the number of steps between observation time-points as
+defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
+is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
+The step-size is used in the two following ways depending on the
+chosen method:
+\enumerate{
+\item Kalman filters: The time-step is used as the step-size in the
+numerical Forward-Euler scheme to compute the prior state mean and
+covariance estimate as the final time solution to the first and second
+order moment differential equations.
+\item TMB method: The time-step is used as the step-size in the Euler-Maruyama
+scheme for simulating a sample path of the stochastic differential equation,
+which serves to link together the latent (random effects) states.
+}}
+
+\item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
+methods). The loss function is per default quadratic in the one-step residuals as is natural
+when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
+distribution is considered too small i.e. outliers are weighted too much, then one
+can choose loss functions that accounts for this. The three available types available:
+\enumerate{
+\item Quadratic loss (\code{quadratic}).
+\item Quadratic-Linear (\code{huber})
+\item Quadratic-Constant (\code{tukey})
+}
+
+The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
+parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
+approximation respectively) for smooth derivatives.}
+
+\item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+
+\item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
+using the method of \link[TMB]{oneStepPredict}.}
+
+\item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
+estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+system contains time-varying inputs, the first element of these is used.}
+
+\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+
+\item{\code{...}}{additional arguments}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-smoother"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-smoother}{}}}
+\subsection{Method \code{smoother()}}{
+Perform state filtering (or smoothing for the 'laplace' method)
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$smoother(
+  data,
+  pars = NULL,
+  method = "ekf",
+  ode.solver = "euler",
+  ode.timestep = diff(data$t),
+  loss = "quadratic",
+  loss_c = NULL,
+  laplace.residuals = FALSE,
+  estimate.initial.state = FALSE,
+  silent = FALSE,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
+can take \code{NA}-values.}
+
+\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}}
+
+\item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
+Must be one of either "lkf", "ekf", "laplace".}
+
+\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+differential equations. The default "euler" is the Forward Euler method, alternatively the classical
+4th order Runge Kutta method is available via "rk4".}
+
+\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
+The defined step-size is used to calculate the number of steps between observation time-points as
+defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
+is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
+The step-size is used in the two following ways depending on the
+chosen method:
+\enumerate{
+\item Kalman filters: The time-step is used as the step-size in the
+numerical Forward-Euler scheme to compute the prior state mean and
+covariance estimate as the final time solution to the first and second
+order moment differential equations.
+\item TMB method: The time-step is used as the step-size in the Euler-Maruyama
+scheme for simulating a sample path of the stochastic differential equation,
+which serves to link together the latent (random effects) states.
+}}
+
+\item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
+methods). The loss function is per default quadratic in the one-step residuals as is natural
+when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
+distribution is considered too small i.e. outliers are weighted too much, then one
+can choose loss functions that accounts for this. The three available types available:
+\enumerate{
+\item Quadratic loss (\code{quadratic}).
+\item Quadratic-Linear (\code{huber})
+\item Quadratic-Constant (\code{tukey})
+}
+
+The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
+parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
+approximation respectively) for smooth derivatives.}
+
+\item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+
+\item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
+using the method of \link[TMB]{oneStepPredict}.}
+
+\item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
+estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+system contains time-varying inputs, the first element of these is used.}
+
+\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+
+\item{\code{...}}{additional arguments}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-estimate}{}}}
 \subsection{Method \code{estimate()}}{
@@ -504,12 +676,14 @@ Estimate the fixed effects parameters in the specified model.
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = NULL,
-  control = list(trace = 1, iter.max = 1e+05, eval.max = 1e+05),
+  trace = 1,
+  control = list(trace = trace, iter.max = 1e+05, eval.max = 1e+05),
   use.hessian = FALSE,
   laplace.residuals = FALSE,
   unconstrained.optim = FALSE,
   estimate.initial.state = FALSE,
-  silent = FALSE
+  silent = FALSE,
+  ...
 )}\if{html}{\out{</div>}}
 }
 
@@ -559,6 +733,8 @@ approximation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
+\item{\code{trace}}{0 or 1, passed to \code{control} to determine whether to print optimization information at each step.}
+
 \item{\code{control}}{list of control parameters parsed to \code{nlminb} as its \code{control} argument.
 See \code{?stats::nlminb} for more information}
 
@@ -579,6 +755,8 @@ system contains time-varying inputs, the first element of these is used.}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+
+\item{\code{...}}{additional arguments}
 }
 \if{html}{\out{</div>}}
 }
@@ -602,7 +780,8 @@ have more control of the optimization workflow.
   loss = "quadratic",
   loss_c = NULL,
   estimate.initial.state = FALSE,
-  silent = FALSE
+  silent = FALSE,
+  ...
 )}\if{html}{\out{</div>}}
 }
 
@@ -668,6 +847,8 @@ system contains time-varying inputs, the first element of these is used.}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+
+\item{\code{...}}{additional arguments}
 }
 \if{html}{\out{</div>}}
 }
@@ -691,8 +872,9 @@ state estimate as the initial condition.
   return.covariance = TRUE,
   initial.state = self$getInitialState(),
   estimate.initial.state = private$estimate.initial,
+  use.cpp = FALSE,
   silent = FALSE,
-  use.cpp = FALSE
+  ...
 )}\if{html}{\out{</div>}}
 }
 
@@ -742,10 +924,12 @@ should be returned.}
 
 \item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
 
+\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
+
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
 
-\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
+\item{\code{...}}{additional arguments}
 }
 \if{html}{\out{</div>}}
 }
@@ -777,7 +961,8 @@ state estimate as the initial condition.
   n.sims = 100,
   initial.state = self$getInitialState(),
   estimate.initial.state = private$estimate.initial,
-  silent = FALSE
+  silent = FALSE,
+  ...
 )}\if{html}{\out{</div>}}
 }
 
@@ -852,6 +1037,8 @@ should be returned.}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+
+\item{\code{...}}{additional arguments}
 
 \item{\code{return.covariance}}{boolean value to indicate whether the covariance (instead of the correlation)
 should be returned.}

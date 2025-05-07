@@ -49,7 +49,8 @@ check_system_eqs = function(form, self, private) {
   }
   
   # dont use dt or dw in the state name
-  match = stringr::str_match(deparse1(lhs),"^(?!d[tw])")
+  # match = stringr::str_match(deparse1(lhs),"^(?!d[tw])")
+  match = stringr::str_match(deparse1(lhs),"^(?!d[w])")
   if (is.na(match)) {
     stop("The state name can't begin with dt or dw")
   }

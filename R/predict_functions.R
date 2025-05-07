@@ -7,6 +7,8 @@
 ekf_r_prediction = function(self, private)
 {
   
+  if(!private$silent) message("Predicting with R...")
+  
   
   # parameters ----------------------------------------
   parVec <- private$pars
@@ -254,6 +256,8 @@ ekf_rcpp_prediction = function(self, private){
     stop("Predictions using C++ currently only support 'euler' or 'rk4' ODE solvers.") 
   }
   
+  if(!private$silent) message("Predicting with C++...")
+  
   # observation/input matrix
   obsMat = as.matrix(private$data[private$obs.names])
   inputMat = as.matrix(private$data[private$input.names])
@@ -266,26 +270,6 @@ ekf_rcpp_prediction = function(self, private){
   number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
   
   # predict using c++ function
-  # mylist <- execute_ekf_prediction(private$rcpp_function_ptr$f,
-  #                                  private$rcpp_function_ptr$g,
-  #                                  private$rcpp_function_ptr$dfdx,
-  #                                  private$rcpp_function_ptr$h,
-  #                                  private$rcpp_function_ptr$dhdx,
-  #                                  private$rcpp_function_ptr$hvar,
-  #                                  obsMat,
-  #                                  inputMat,
-  #                                  private$pars,
-  #                                  private$pred.initial.state$p0,
-  #                                  private$pred.initial.state$x0,
-  #                                  private$ode.timestep.size,
-  #                                  private$ode.timesteps,
-  #                                  numeric_is_not_na_obsMat,
-  #                                  number_of_available_obs,
-  #                                  private$number.of.states,
-  #                                  private$number.of.observations,
-  #                                  private$last.pred.index,
-  #                                  private$n.ahead,
-  #                                  private$ode.solver)
   mylist <- execute_ekf_prediction2(private$rcpp_function_ptr$f,
                                     private$rcpp_function_ptr$g,
                                     private$rcpp_function_ptr$dfdx,
@@ -315,6 +299,8 @@ ekf_rcpp_prediction = function(self, private){
 }
 
 create_return_prediction = function(return.covariance, return.k.ahead, use.cpp, self, private){
+  
+  if(!private$silent) message("Returning results...")
   
   # Simlify variable names
   n = private$number.of.states
@@ -354,7 +340,6 @@ create_return_prediction = function(return.covariance, return.k.ahead, use.cpp, 
   inputs.df = private$data[df.out[,"j."]+1,private$input.names]
   
   named.pars.list = as.list(private$pars)
-  # names(named.pars.list) = names(private$free.pars)
   names(named.pars.list) = private$parameter.names
   # create environment
   env.list = c(

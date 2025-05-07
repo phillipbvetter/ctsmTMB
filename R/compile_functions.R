@@ -1,5 +1,7 @@
 compile_rcpp_functions = function(self, private){
   
+  if(!private$silent) message("Compiling C++ function pointers...")
+  
   .depends <- c("RcppEigen", "ctsmTMB")
   
   private$rcpp_function_ptr$f <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$f, depends=.depends)

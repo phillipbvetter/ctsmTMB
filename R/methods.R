@@ -605,11 +605,10 @@ profile.ctsmTMB.fit = function(fitted,
   }
   
   # return
-  # profile.grid.and.nll[,len+1] <- exp(-profile.grid.and.nll[,len+1])/exp(-fit$nll)
-  
   X[,len+1] <- exp(fit$nll - X[,len+1])
+  names(X)[ncol(X)] <- "likelihood"
   returnlist = list(
-    profile.grid.and.nll = X,
+    profile.grid.and.likelihood = X,
     parameter.values = parlist,
     parameter.pairs = prof.pars,
     optimiser.results = opt.list,
@@ -652,41 +651,62 @@ profile.ctsmTMB.fit = function(fitted,
 #' # plot profile
 #' plot(out)
 #' @export
-plot.ctsmTMB.profile = function(x,y,include.opt=TRUE,...){
+plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
   list <- x
   l <- length(list$parameter.values)
-  df <- list$profile.grid.and.nll
+  df <- list$profile.grid.and.likelihood
   par.names <- head(names(df), l)
   opt <- list$full.likelihood.optimum[par.names]
   
-  threshold <- qchisq(0.95, df=length(par.names))/2
-  
   # A simple plot is only needed if we are profiling one parameter
   if(l==1L){
+    
+    threshold <- exp(-qchisq(0.95, df=1)/2)
+    
     p <- ggplot2::ggplot() +
-      ggplot2::geom_hline(yintercept=exp(-threshold)) +
-      ggplot2::geom_line(ggplot2::aes(x=df[[par.names[1]]],y=df$nll)) +
+      ggplot2::geom_hline(yintercept=threshold) +
+      ggplot2::geom_line(ggplot2::aes(x=df[[par.names[1]]],y=df$likelihood)) +
       {if(include.opt) ggplot2::geom_vline(ggplot2::aes(xintercept=opt,color="Full Likelihood Optimum"))} +
       ggplot2::labs(color="",
                     title="Profile Likelihood",
                     y = "Negative Log-Likelihood",
                     x = par.names[1]) +
       getggplot2theme()
+    
   } else if (l==2L){
-    p <- ggplot2::ggplot() + 
-      ggplot2::stat_contour(ggplot2::aes(
-        x=df[[par.names[1]]],
-        y=df[[par.names[2]]],
-        z=df$nll), bins=100) + {
-          if(include.opt) ggplot2::geom_point(ggplot2::aes(x=opt[1], y=opt[2],fill="Full Likelihood Optimum"))
-        } + 
-      ggplot2::labs(fill="",
+    
+    quants <- c(0.75, 0.90, 0.95, 0.99)
+    chisquared_contours <- exp(-qchisq(quants, df=2)/2)
+    labelfun <- function(x){
+      y <- (1-x)*100
+      y <- paste0(y,"%")
+    }
+  
+    p <- ggplot2::ggplot() +
+      geomtextpath::geom_textcontour(
+        data = df, 
+        aes(x=.data[[par.names[1]]], y=.data[[par.names[2]]], z=.data$likelihood, 
+            label=labelfun(after_stat(level)),
+            color=after_stat(level)
+            ),
+        breaks = chisquared_contours,
+        linewidth = 1
+      ) +
+      ggplot2::labs(color="",
                     title="Profile Likelihood",
                     x = par.names[1],
                     y = par.names[2]) +
+      scale_color_continuous(guide="none") +
       getggplot2theme()
+    
+    if(include.opt) {
+      p <- p + ggplot2::geom_point(data=data.frame(x=opt[1],y=opt[2]), ggplot2::aes(x=x, y=y), size=1)
+    }
+    
   } else {
+    
     stop("Profile likelihood plotting for more than two parameters is not supported.")
+    
   }
   
   return(p)
