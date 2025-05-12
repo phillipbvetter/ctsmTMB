@@ -6,40 +6,46 @@
 #######################################################
 
 build_model = function(self, private) {
-  
-  # Check if model is already built
-  if(!private$rebuild.model) return(invisible(self))
-  private$rebuild.model <- FALSE
-  private$rebuild.ad <- TRUE
-  private$rebuild.data <- TRUE
-  
-  # Print
-  if(!private$silent) message("Building model...")
-  
-  # check_model
-  basic_model_check(self, private)
-  
-  # set dimensions, diff processes, etc...
-  set_model_settings(self, private)
-  
-  # 1) apply algebraics, and define new trans_system
-  # 2) calculate new diff terms
-  apply_algebraics_and_define_trans_equations(self, private)
-  calculate_diff_terms(self, private)
-  
-  # apply lamperti and update diff terms
-  apply_lamperti(self, private) 
-  calculate_diff_terms(self, private)
-  
-  # function strings
-  create_rtmb_function_strings(self, private)
-  create_rtmb_function_strings_new(self, private)
-  create_r_function_strings(self, private)
-  create_rcpp_function_strings(self, private)
-  # create_rcpp_function_strings2(self, private)
 
-  # last check
-  final_build_check(self, private)
+  build_time <- system.time({
+  
+    # Check if model is already built
+    if(!private$rebuild.model) return(invisible(self))
+    private$rebuild.model <- FALSE
+    private$rebuild.ad <- TRUE
+    private$rebuild.data <- TRUE
+    
+    # Print
+    if(!private$silent) message("Building model...")
+    
+    # check_model
+    basic_model_check(self, private)
+    
+    # set dimensions, diff processes, etc...
+    set_model_settings(self, private)
+    
+    # 1) apply algebraics, and define new trans_system
+    # 2) calculate new diff terms
+    apply_algebraics_and_define_trans_equations(self, private)
+    calculate_diff_terms(self, private)
+    
+    # apply lamperti and update diff terms
+    apply_lamperti(self, private) 
+    calculate_diff_terms(self, private)
+    
+    # function strings
+    create_rtmb_function_strings(self, private)
+    create_rtmb_function_strings_new(self, private)
+    create_r_function_strings(self, private)
+    create_rcpp_function_strings(self, private)
+    # create_rcpp_function_strings2(self, private)
+  
+    # last check
+    final_build_check(self, private)
+
+  })
+
+  private$build_time <- build_time
   
   # set initial state
   # if(any(private$procedure == c("estimation","construction"))){
