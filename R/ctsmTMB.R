@@ -156,6 +156,7 @@ ctsmTMB = R6::R6Class(
       private$simulation = NULL
       private$filt = NULL
       private$smooth = NULL
+      private$construct_ADFun_time = NULL
       
       # predict
       private$n.ahead = 0
@@ -1777,6 +1778,7 @@ ctsmTMB = R6::R6Class(
         simulation = NULL,
         filt = NULL,
         smooth = NULL,
+        construct_ADFun_time = NULL,
         
         # predict
         n.ahead = NULL,

@@ -13,36 +13,32 @@ construct_makeADFun = function(self, private){
   private$rebuild.ad <- FALSE
   
   if(!private$silent) message("Constructing objective function and derivative tables...")
+
+  construct_ADFun_time <- system.time({
+    
+    if(private$method == "lkf"){
+        makeADFun_lkf_rtmb(self, private)
+    }
+    
+    if(private$method == "ekf"){
+        makeADFun_ekf_rtmb(self, private)
+    }
+    
+    if(private$method == "ukf"){
+        makeADFun_ukf_rtmb(self, private)
+    }
+    
+    if(private$method=="laplace"){
+        makeADFun_laplace_rtmb(self, private)
+    }
+    
+    if(private$method=="laplace2"){
+        makeADFun_laplace2_rtmb(self, private)
+    }
   
-  if(private$method == "lkf"){
-    # comptime <- system.time(
-      makeADFun_lkf_rtmb(self, private)
-    # )
-  }
-  
-  if(private$method == "ekf"){
-    # comptime <- system.time(
-      makeADFun_ekf_rtmb(self, private)
-    # )
-  }
-  
-  if(private$method == "ukf"){
-    # comptime <- system.time(
-      makeADFun_ukf_rtmb(self, private)
-    # )
-  }
-  
-  if(private$method=="laplace"){
-    # comptime <- system.time(
-      makeADFun_laplace_rtmb(self, private)
-    # )
-  }
-  
-  if(private$method=="laplace2"){
-    # comptime <- system.time(
-      makeADFun_laplace2_rtmb(self, private)
-    # )
-  }
+  },gcFirst = FALSE)
+
+  private$construct_ADFun_time <- construct_ADFun_time
   
   # experimental
   # if(private$method == "ekf_rcpp"){
