@@ -17,7 +17,7 @@ check_and_set_data = function(data, self, private) {
   # store the data
   private$old.data$entry.data <- data
   
-  if(!private$silent) message("Checking and setting data...")
+  if(!private$silent) message("Setting data...")
   
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)

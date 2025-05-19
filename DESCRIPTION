@@ -23,6 +23,7 @@ Depends:
 Imports:
 	TMB,
 	RTMB (>= 1.7),
+	Rcpp,
 	R6,
 	Deriv,
 	stringr,

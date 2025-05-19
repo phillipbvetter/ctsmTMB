@@ -1024,6 +1024,7 @@ ctsmTMB = R6::R6Class(
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
+    #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
     #' @param ... additional arguments
     filter = function(data,
                       pars = NULL,
@@ -1034,6 +1035,7 @@ ctsmTMB = R6::R6Class(
                       loss_c = NULL,
                       laplace.residuals = FALSE,
                       estimate.initial.state = FALSE,
+                      use.cpp = FALSE,
                       silent = FALSE,
                       ...){
       
@@ -1058,8 +1060,13 @@ ctsmTMB = R6::R6Class(
       # set parameters
       set_parameters(pars, self, private)
       
+      # compile cpp functions if using cpp
+      if(use.cpp){
+        compile_rcpp_functions(self, private)
+      }
+      
       # filter
-      perform_filtering(self, private)
+      perform_filtering(self, private, use.cpp)
       
       # create return fit
       create_filter_results(self, private, laplace.residuals)
@@ -2268,15 +2275,17 @@ ctsmTMB = R6::R6Class(
             return(invisible(self))
           }
           
+          # check for numeric
           if(!is.numeric(seed)){
             stop("The cpp.seed should be a scalar numeric value")
           }
           
+          # take first entry if longer than 1
           if(!length(seed) < 1){
             seed <- seed[[1]]
           }
           
-          # set the seed
+          # set the seed with Rcpp function
           ziggsetseed(seed)
           
           # return

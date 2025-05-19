@@ -509,6 +509,7 @@ Perform state filtering (or smoothing for the 'laplace' method)
   loss_c = NULL,
   laplace.residuals = FALSE,
   estimate.initial.state = FALSE,
+  use.cpp = FALSE,
   silent = FALSE,
   ...
 )}\if{html}{\out{</div>}}
@@ -569,6 +570,8 @@ using the method of \link[TMB]{oneStepPredict}.}
 \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the
 system contains time-varying inputs, the first element of these is used.}
+
+\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}

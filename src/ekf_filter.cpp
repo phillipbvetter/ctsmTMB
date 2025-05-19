@@ -7,7 +7,7 @@ using namespace Eigen;
 
 //  This is the predict kalman filter function
 template <typename T1, typename T2>
-List ekf_prediction2(
+List ekf_filter(
   T1 f__, 
   T2 g__,
   T2 dfdx__,
@@ -25,12 +25,11 @@ List ekf_prediction2(
   Eigen::VectorXi number_of_available_obs,
   const int n,
   const int m,
-  const int last_pred_id,
-  const int k_step_ahead,
   const int ode_solver)
 {
 
   // misc  
+  const int tsize = inputMat.col(0).size();
   const int ni = inputMat.row(0).size();
   const int n_squared = n*n;
   Eigen::VectorXd inputVec(ni), dinputVec(ni), obsVec(m), e, y, obsVec_all;
@@ -41,16 +40,12 @@ List ekf_prediction2(
   Eigen::MatrixXd Hvar, dHdX;
 
   // storage for predictions
-  //Rcpp::List xk_temp(k_step_ahead+1), pk_temp(k_step_ahead+1), xk(last_pred_id), pk(last_pred_id);
-  Rcpp::List xk(last_pred_id), ode_1step_integration(2);
+  Rcpp::List ode_1step_integration(2), Innovation(tsize), InnovationCovariance(tsize);
+  Eigen::MatrixXd xPrior(tsize, n), xPost(tsize,n);
+  Eigen::MatrixXd pPrior(tsize, n_squared), pPost(tsize, n_squared);
 
-  Eigen::MatrixXd predMat(k_step_ahead+1, n + n_squared);
-  predMat.setZero();
-
-  /*We can save the predictions in a matrix of columns:
-  n.states + n.states^2, and k.step.ahead+1 rows
-  */
-  //Eigen::MatrixXd xk_temp_2(k_step_ahead+1, n + n*n);
+  xPrior.row(0) = stateVec;
+  pPrior.row(0) = covMat.reshaped();
 
   //////////// INITIAL DATA-UPDATE ///////////
   // Only update if there is any available data
@@ -78,49 +73,32 @@ List ekf_prediction2(
     K = covMat * C.transpose() * Ri;
     stateVec = stateVec + K * e;
     covMat = (I - K * C) * covMat * (I - K * C).transpose() + K*V*K.transpose();
+    // Store innovations
+    Innovation(0) = e;
+    InnovationCovariance(0) = R;
   }
+  xPost.row(0) = stateVec;
+  pPost.row(0) = covMat.reshaped();
 
   //////////// MAIN LOOP OVER TIME POINTS ///////////
-  for(int i=0 ; i < last_pred_id ; i++){
-    //xk_temp[0] = stateVec;
-    //pk_temp[0] = covMat;
-    predMat.row(0).head(n) = stateVec;
-    predMat.row(0).tail(n_squared) = covMat.reshaped();
+  for(int i=0 ; i < (tsize-1) ; i++){
 
     //////////// K-STEP-AHEAD LOOP ///////////
-    for(int k=0 ; k < k_step_ahead ; k++){
-      inputVec = inputMat.row(i+k);
-      dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k))/ode_timesteps(i+k);
+    inputVec = inputMat.row(i);
+    dinputVec = (inputMat.row(i+1) - inputMat.row(i))/ode_timesteps(i);
 
-      //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
-      // Integrate moments between two time points
-      for(int j=0 ; j < ode_timesteps(i+k) ; j++){
-        ode_1step_integration = ode_integrator2(f__, g__, dfdx__, covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size(i+k), ode_solver);
-        stateVec = ode_1step_integration["X1"];
-        covMat = ode_1step_integration["P1"];
-        inputVec += dinputVec;
-      }
-
-      // Save the prediction
-      //xk_temp[k+1] = stateVec;
-      //pk_temp[k+1] = covMat;
-      predMat.row(k+1).head(n) = stateVec;
-      predMat.row(k+1).tail(n_squared) = covMat.reshaped();
+    //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
+    // Integrate moments between two time points
+    for(int j=0 ; j < ode_timesteps(i) ; j++){
+      ode_1step_integration = ode_integrator2(f__, g__, dfdx__, covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size(i), ode_solver);
+      stateVec = ode_1step_integration["X1"];
+      covMat = ode_1step_integration["P1"];
+      inputVec += dinputVec;
     }
-
-    // Save a clone of the lists (if we dont use clone then all entries in xk and pk are identical,
-    // because of the way pointers work here)
-    //xk[i] = clone(xk_temp);
-    //pk[i] = clone(pk_temp);
-    xk[i] = predMat;
+    xPrior.row(i+1) = stateVec;
+    pPrior.row(i+1) = covMat.reshaped();
 
     //////////// DATA-UPDATE ///////////
-    // Grab the one-step-ahead prediction (prior prediction)
-    //stateVec = xk_temp[1];
-    //covMat = pk_temp[1];
-    stateVec = predMat.row(1).head(n);
-    covMat = predMat.row(1).tail(n_squared).reshaped(n,n);
-
     // Only update if there is any available data
     if( number_of_available_obs(i+1) > 0 ){
       // Get i+1 entries
@@ -146,7 +124,12 @@ List ekf_prediction2(
       K = covMat * C.transpose() * Ri;
       stateVec = stateVec + K * e;
       covMat = (I - K * C) * covMat * (I - K * C).transpose() + K*V*K.transpose();
+      // Store innovations
+      Innovation(i+1) = e;
+      InnovationCovariance(i+1) = R;
     }
+    xPost.row(i+1) = stateVec;
+    pPost.row(i+1) = covMat.reshaped();
   }
   
   /*return List::create(
@@ -154,7 +137,12 @@ List ekf_prediction2(
     Named("Ppred")=pk
     );*/
   return List::create(
-    Named("predMats") = xk
+    Named("xPrior") = xPrior,
+    Named("xPost") = xPost,
+    Named("pPrior") = pPrior,
+    Named("pPost") = pPost,
+    Named("Innovation") = Innovation,
+    Named("InnovationCovariance") = InnovationCovariance
     );
 }
 
@@ -164,7 +152,7 @@ typedef Eigen::MatrixXd (*funPtr_mat)(Eigen::VectorXd, Eigen::VectorXd, Eigen::V
 
 // Function exported to R that performs (Extended Kalman) filtering
 // [[Rcpp::export]]
-List execute_ekf_prediction2(
+List ekf_filter_cpp(
   SEXP f__R, 
   SEXP g__R,
   SEXP dfdx__R,
@@ -182,8 +170,6 @@ List execute_ekf_prediction2(
   Eigen::VectorXi number_of_available_obs,
   int n,
   int m,
-  int last_pred_id,
-  int k_step_ahead,
   int ode_solver)
 {
 
@@ -194,7 +180,7 @@ List execute_ekf_prediction2(
   funPtr_mat  dhdx__ = *XPtr<funPtr_mat>(dhdx__R);
   funPtr_mat  hvar__ = *XPtr<funPtr_mat>(hvar__R);
 
-  return ekf_prediction2<funPtr_vec, funPtr_mat>(
+  return ekf_filter<funPtr_vec, funPtr_mat>(
     f__, 
     g__, 
     dfdx__, 
@@ -212,7 +198,5 @@ List execute_ekf_prediction2(
     number_of_available_obs,
     n,
     m,
-    last_pred_id,
-    k_step_ahead,
     ode_solver);
 }
