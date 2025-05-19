@@ -1,22 +1,52 @@
+#ifndef HELPER_FUNS2_H
+#define HELPER_FUNS2_H
+
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <zigg/header>  
-using namespace Rcpp;
-using namespace Eigen;
 static zigg::Ziggurat ziggurat;
 const double pi = M_PI;
 
 // Inverse logit function
 // double invlogit2(double x);
 
+// Note to self:
+// The use of 'inline' and header guards allow (recommended only for small utility) functions to be placed in this header file
+// as opposed to placing the full function in a .cpp file and placing a function declaration here (as commented out below)
 // function for constructing permutation matrix that removes NA data
-Eigen::MatrixXd construct_permutation_matrix2(int number_of_available_obs, int number_of_obs_eqs, Eigen::VectorXi bool_is_not_na_obsVec);
-
+// Eigen::MatrixXd construct_permutation_matrix2(int number_of_available_obs, int number_of_obs_eqs, Eigen::VectorXi bool_is_not_na_obsVec);
 // Function for removing NA entries from data vector
-Eigen::VectorXd remove_NAs2(Eigen::VectorXd obsVec, int number_of_available_obs, Eigen::VectorXi bool_is_not_na_obsVec);
+// Eigen::VectorXd remove_NAs2(Eigen::VectorXd obsVec, int number_of_available_obs, Eigen::VectorXi bool_is_not_na_obsVec);
+inline Eigen::MatrixXd construct_permutation_matrix2(int number_of_available_obs, int number_of_obs_eqs, Eigen::VectorXi bool_is_not_na_obsVec){
+  Eigen::MatrixXd E(number_of_available_obs, number_of_obs_eqs);
+  E.setZero();
+  int j=0;
+  for(int i=0; i < number_of_obs_eqs; i++){
+    /*if p(i) is 1 then include by setting 1 in diagonal of matrix*/
+    if(bool_is_not_na_obsVec(i) == 1){
+      E(j,i) = 1.0;
+      j += 1;
+    }
+  }
+  return E;
+}
+
+inline Eigen::VectorXd remove_NAs2(Eigen::VectorXd obsVec, int number_of_available_obs, Eigen::VectorXi bool_is_not_na_obsVec){
+  // Initialize
+  int ii = 0;
+  Eigen::VectorXd obsVec_without_NAs(number_of_available_obs);
+  // For loop to remove NA observations
+  for(int i=0; i < obsVec.size(); i++){
+    if( bool_is_not_na_obsVec(i) == 1){
+      obsVec_without_NAs(ii) = obsVec(i);
+      ii++;
+    }
+  }
+  // Return
+  return obsVec_without_NAs;
+}
 
 // Solving the variance moment differential equation 1-step forward
-/*template<typename T2, typename T3>*/
 template<typename T2>
 Eigen::MatrixXd cov_ode_1step2(
   T2 g__,
@@ -39,9 +69,8 @@ Eigen::MatrixXd cov_ode_1step2(
 }
 
 // forward-euler and rk4 ode integrator function
-/*template <typename T1, typename T2, typename T3>*/
 template <typename T1, typename T2>
-List ode_integrator2(
+Rcpp::List ode_integrator2(
   T1 f__, 
   T2 g__,
   T2 dfdx__, 
@@ -108,12 +137,12 @@ List ode_integrator2(
   }
 
   // Return
-  return Rcpp::List::create(Named("X1")=X1, Named("P1")=P1);
+  return Rcpp::List::create(Rcpp::Named("X1")=X1, Rcpp::Named("P1")=P1);
 }
 
 // Euler-maruyama simulation scheme for 1-step for all simulations
 template<typename T1, typename T2>
-MatrixXd euler_maruyama_simulation2(
+Eigen::MatrixXd euler_maruyama_simulation2(
   T1 f__, 
   T2 g__, 
   Eigen::MatrixXd stateMat, 
@@ -126,8 +155,8 @@ MatrixXd euler_maruyama_simulation2(
 {
   // Returns a matrix with nsims rows and columns equal to the number of system states - each row corresponds to taking a single
   // Euler-Maruyama step
-  MatrixXd stateMat_next(nsims, n), G;
-  VectorXd stateVec, dW(ng), F;
+  Eigen::MatrixXd stateMat_next(nsims, n), G;
+  Eigen::VectorXd stateVec, dW(ng), F;
   double sqrt_timestep = sqrt(timestep);
   
   // Perform one-step simulation for each row in stateMat
@@ -153,3 +182,5 @@ MatrixXd euler_maruyama_simulation2(
   // Return
   return stateMat_next;
 }
+
+#endif

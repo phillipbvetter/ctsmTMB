@@ -1025,6 +1025,7 @@ ctsmTMB = R6::R6Class(
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
+    #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
     #' @param ... additional arguments
     filter = function(data,
                       pars = NULL,
@@ -1035,6 +1036,7 @@ ctsmTMB = R6::R6Class(
                       loss_c = NULL,
                       laplace.residuals = FALSE,
                       estimate.initial.state = FALSE,
+                      use.cpp = FALSE,
                       silent = FALSE,
                       ...){
       
@@ -1059,8 +1061,13 @@ ctsmTMB = R6::R6Class(
       # set parameters
       set_parameters(pars, self, private)
       
+      # compile cpp functions if using cpp
+      if(use.cpp){
+        compile_rcpp_functions(self, private)
+      }
+      
       # filter
-      perform_filtering(self, private)
+      perform_filtering(self, private, use.cpp)
       
       # create return fit
       create_filter_results(self, private, laplace.residuals)
@@ -1166,7 +1173,7 @@ ctsmTMB = R6::R6Class(
       # return
       if(!private$silent) message("Finished!")
       return(invisible(private$smooth))
-      },
+    },
     
     
     ########################################################################
@@ -1675,617 +1682,645 @@ ctsmTMB = R6::R6Class(
       # return
       return(invisible(self))
     }
-    ),
+  ),
+  
+  ################################################################################################################################################
+  ################################################################################################################################################
+  ################################################################################################################################################
+  # Private Methods
+  ################################################################################################################################################
+  ################################################################################################################################################
+  ################################################################################################################################################
+  
+  private = list(
+    
+    # model stats
+    modelname = character(0),
+    cppfile.directory = NULL,
+    cppfile.path = character(0),
+    cppfile.path.with.method = NULL,
+    modelname.with.method = NULL,
+    
+    # estimation, prediction or simulation?
+    procedure = NULL,
+    
+    # model equations
+    sys.eqs = NULL,
+    obs.eqs = NULL,
+    obs.var = NULL,
+    alg.eqs = NULL,
+    inputs = NULL,
+    parameters = NULL,
+    initial.state = NULL,
+    pred.initial.state = NULL,
+    tmb.initial.state = NULL,
+    iobs = NULL,
+    
+    # after algebraics
+    sys.eqs.trans = NULL,
+    obs.eqs.trans = NULL,
+    obs.var.trans = NULL,
+    
+    # names
+    state.names = NULL,
+    obs.names = NULL,
+    obsvar.names = NULL,
+    input.names = NULL,
+    parameter.names = NULL,
+    
+    # options
+    method = NULL,
+    use.hessian = NULL,
+    state.dep.diff = NULL,
+    lamperti = NULL,
+    compile = NULL,
+    loss = NULL,
+    tukey.pars = NULL,
+    silent = NULL,
+    map = NULL,
+    control.nlminb = NULL,
+    ode.timestep = NULL,
+    ode.timestep.size = NULL,
+    ode.timesteps = NULL,
+    ode.timesteps.cumsum = NULL,
+    simulation.timestep = NULL,
+    simulation.timesteps = NULL,
+    simulation.timestep.size = NULL,
+    ode.solver = NULL,
+    unconstrained.optim = NULL,
+    estimate.initial = NULL,
+    initial.variance.scaling = NULL,
+    
+    # rebuild
+    rebuild.model = FALSE,
+    rebuild.ad = FALSE,
+    rebuild.data = FALSE,
+    old.data = list(),
+    
+    # hidden
+    fixed.pars = NULL,
+    free.pars = NULL,
+    pars = NULL,
+    
+    # lengths
+    number.of.states = NULL,
+    number.of.observations = NULL,
+    number.of.diffusions = NULL,
+    number.of.pars = NULL,
+    number.of.inputs = NULL,
+    
+    # differentials
+    diff.processes = NULL,
+    diff.terms = NULL,
+    diff.terms.obs = NULL,
+    diff.terms.drift = NULL,
+    
+    # data, nll, opt
+    data = NULL,
+    nll = NULL,
+    opt = NULL,
+    sdr = NULL,
+    fit = NULL,
+    prediction = NULL,
+    simulation = NULL,
+    filt = NULL,
+    smooth = NULL,
+    construct_ADFun_time = NULL,
+    
+    # predict
+    n.ahead = NULL,
+    last.pred.index = NULL,
+    
+    # function strings
+    rtmb.function.strings = NULL,
+    rtmb.function.strings.indexed = NULL,
+    rekf.function.strings = NULL,
+    rtmb.nll.strings = NULL,
+    rcpp.function.strings = NULL,
+    
+    # rcpp
+    rcpp_function_ptr = NULL,
+    
+    # unscented transform
+    ukf_hyperpars = NULL,
+    
+    ########################################################################
+    # ADD TRANSFORMED SYSTEM EQS
+    ########################################################################
+    add_trans_systems = function(formlist) {
       
-      ################################################################################################################################################
-      ################################################################################################################################################
-      ################################################################################################################################################
-      # Private Methods
-      ################################################################################################################################################
-      ################################################################################################################################################
-      ################################################################################################################################################
+      # result = check_system_eqs(form, self, private)
+      # private$sys.eqs.trans[[result$name]] = result
       
-      private = list(
-        
-        # model stats
-        modelname = character(0),
-        cppfile.directory = NULL,
-        cppfile.path = character(0),
-        cppfile.path.with.method = NULL,
-        modelname.with.method = NULL,
-        
-        # estimation, prediction or simulation?
-        procedure = NULL,
-        
-        # model equations
-        sys.eqs = NULL,
-        obs.eqs = NULL,
-        obs.var = NULL,
-        alg.eqs = NULL,
-        inputs = NULL,
-        parameters = NULL,
-        initial.state = NULL,
-        pred.initial.state = NULL,
-        tmb.initial.state = NULL,
-        iobs = NULL,
-        
-        # after algebraics
-        sys.eqs.trans = NULL,
-        obs.eqs.trans = NULL,
-        obs.var.trans = NULL,
-        
-        # names
-        state.names = NULL,
-        obs.names = NULL,
-        obsvar.names = NULL,
-        input.names = NULL,
-        parameter.names = NULL,
-        
-        # options
-        method = NULL,
-        use.hessian = NULL,
-        state.dep.diff = NULL,
-        lamperti = NULL,
-        compile = NULL,
-        loss = NULL,
-        tukey.pars = NULL,
-        silent = NULL,
-        map = NULL,
-        control.nlminb = NULL,
-        ode.timestep = NULL,
-        ode.timestep.size = NULL,
-        ode.timesteps = NULL,
-        ode.timesteps.cumsum = NULL,
-        simulation.timestep = NULL,
-        simulation.timesteps = NULL,
-        simulation.timestep.size = NULL,
-        ode.solver = NULL,
-        unconstrained.optim = NULL,
-        estimate.initial = NULL,
-        initial.variance.scaling = NULL,
-        
-        # rebuild
-        rebuild.model = FALSE,
-        rebuild.ad = FALSE,
-        rebuild.data = FALSE,
-        old.data = list(),
-        
-        # hidden
-        fixed.pars = NULL,
-        free.pars = NULL,
-        pars = NULL,
-        
-        # lengths
-        number.of.states = NULL,
-        number.of.observations = NULL,
-        number.of.diffusions = NULL,
-        number.of.pars = NULL,
-        number.of.inputs = NULL,
-        
-        # differentials
-        diff.processes = NULL,
-        diff.terms = NULL,
-        diff.terms.obs = NULL,
-        diff.terms.drift = NULL,
-        
-        # data, nll, opt
-        data = NULL,
-        nll = NULL,
-        opt = NULL,
-        sdr = NULL,
-        fit = NULL,
-        prediction = NULL,
-        simulation = NULL,
-        filt = NULL,
-        smooth = NULL,
-        construct_ADFun_time = NULL,
-        
-        # predict
-        n.ahead = NULL,
-        last.pred.index = NULL,
-        
-        # function strings
-        rtmb.function.strings = NULL,
-        rtmb.function.strings.indexed = NULL,
-        rekf.function.strings = NULL,
-        rtmb.nll.strings = NULL,
-        rcpp.function.strings = NULL,
-        
-        # rcpp
-        rcpp_function_ptr = NULL,
-        
-        # unscented transform
-        ukf_hyperpars = NULL,
-        
-        ########################################################################
-        # ADD TRANSFORMED SYSTEM EQS
-        ########################################################################
-        add_trans_systems = function(formlist) {
-          
-          # result = check_system_eqs(form, self, private)
-          # private$sys.eqs.trans[[result$name]] = result
-          
-          form = formlist$form
-          rhs = form[[3]]
-          lhs = form[[2]]
-          name = formlist$name
-          
-          # extract all variables
-          bool = unique(all.vars(rhs)) %in% private$diff.processes
-          variables = unique(all.vars(rhs))[!bool]
-          
-          # create transformed system equation
-          private$sys.eqs.trans[[name]] = list(
-            name = name,
-            form = form,
-            rhs = rhs,
-            diff.dt = ctsmTMB.Deriv(f=rhs, x="dt"),
-            allvars = variables,
-            diff = private$sys.eqs[[name]]$diff
-          )
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # ADD TRANSFORMED OBS EQS
-        ########################################################################
-        add_trans_observations = function(formlist) {
-          
-          # result = check_observation_eqs(forms, self, private)
-          # private$obs.eqs.trans[[result$name]] = result
-          
-          form = formlist$form
-          name = formlist$name
-          
-          private$obs.eqs.trans[[name]] = list(
-            name = name,
-            form = form,
-            rhs = form[[3]],
-            lhs = form[[2]],
-            allvars = all.vars(form[[3]])
-          )
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # ADD TRANSFORMED OBS VAR EQS
-        ########################################################################
-        # lamperti transform functions
-        add_trans_observation_variances = function(formlist) {
-          
-          # result = check_observation_variance_eqs(form, self, private)
-          # private$obs.var.trans[[result$name]] = result
-          
-          form = formlist$form
-          name = formlist$name
-          
-          private$obs.var.trans[[name]] = list(
-            name = name,
-            form = form,
-            rhs = form[[3]],
-            lhs = form[[2]],
-            allvars = all.vars(form[[3]])
-          )
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET COMPILE
-        ########################################################################
-        set_procedure = function(str) {
-          
-          # check logical
-          if (!is.character(str)) {
-            stop("The procedure must be a string - estimation / prediction / simulation")
-          }
-          
-          # set flag
-          switch(str,
-                 filter = {private$procedure <- "filter"},
-                 smoother = {private$procedure <- "smoother"},
-                 estimation = {private$procedure <- "estimation"},
-                 prediction = {private$procedure <- "prediction"},
-                 simulation = {private$procedure <- "simulation"},
-                 construction = {private$procedure <- "construction"}
-          )
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET COMPILE
-        ########################################################################
-        set_compile = function(bool) {
-          
-          # check logical
-          if (!is.logical(bool)) {
-            stop("You must pass a logical value")
-          }
-          
-          # set flag
-          private$compile = bool
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET SILENT
-        ########################################################################
-        set_silence = function(bool) {
-          
-          # check logical
-          if (!is.logical(bool)) {
-            stop("You must pass a logical value")
-          }
-          
-          # set flag
-          private$silent = bool
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET METHOD
-        ########################################################################
-        # set method
-        set_method = function(method) {
-          
-          # check string
-          if (!(is.character(method))) {
-            stop("You must pass a string")
-          }
-          
-          # check if method is available
-          available_methods = c("lkf", "ekf", "ukf" , "laplace", "laplace2")
-          if (!(method %in% available_methods)) {
-            stop("That method is not available. Please choose one of:
+      form = formlist$form
+      rhs = form[[3]]
+      lhs = form[[2]]
+      name = formlist$name
+      
+      # extract all variables
+      bool = unique(all.vars(rhs)) %in% private$diff.processes
+      variables = unique(all.vars(rhs))[!bool]
+      
+      # create transformed system equation
+      private$sys.eqs.trans[[name]] = list(
+        name = name,
+        form = form,
+        rhs = rhs,
+        diff.dt = ctsmTMB.Deriv(f=rhs, x="dt"),
+        allvars = variables,
+        diff = private$sys.eqs[[name]]$diff
+      )
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # ADD TRANSFORMED OBS EQS
+    ########################################################################
+    add_trans_observations = function(formlist) {
+      
+      # result = check_observation_eqs(forms, self, private)
+      # private$obs.eqs.trans[[result$name]] = result
+      
+      form = formlist$form
+      name = formlist$name
+      
+      private$obs.eqs.trans[[name]] = list(
+        name = name,
+        form = form,
+        rhs = form[[3]],
+        lhs = form[[2]],
+        allvars = all.vars(form[[3]])
+      )
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # ADD TRANSFORMED OBS VAR EQS
+    ########################################################################
+    # lamperti transform functions
+    add_trans_observation_variances = function(formlist) {
+      
+      # result = check_observation_variance_eqs(form, self, private)
+      # private$obs.var.trans[[result$name]] = result
+      
+      form = formlist$form
+      name = formlist$name
+      
+      private$obs.var.trans[[name]] = list(
+        name = name,
+        form = form,
+        rhs = form[[3]],
+        lhs = form[[2]],
+        allvars = all.vars(form[[3]])
+      )
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET COMPILE
+    ########################################################################
+    set_procedure = function(str) {
+      
+      # check logical
+      if (!is.character(str)) {
+        stop("The procedure must be a string - estimation / prediction / simulation")
+      }
+      
+      # set flag
+      switch(str,
+             filter = {private$procedure <- "filter"},
+             smoother = {private$procedure <- "smoother"},
+             estimation = {private$procedure <- "estimation"},
+             prediction = {private$procedure <- "prediction"},
+             simulation = {private$procedure <- "simulation"},
+             construction = {private$procedure <- "construction"}
+      )
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET COMPILE
+    ########################################################################
+    set_compile = function(bool) {
+      
+      # check logical
+      if (!is.logical(bool)) {
+        stop("You must pass a logical value")
+      }
+      
+      # set flag
+      private$compile = bool
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET SILENT
+    ########################################################################
+    set_silence = function(bool) {
+      
+      # check logical
+      if (!is.logical(bool)) {
+        stop("You must pass a logical value")
+      }
+      
+      # set flag
+      private$silent = bool
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET METHOD
+    ########################################################################
+    # set method
+    set_method = function(method) {
+      
+      # check string
+      if (!(is.character(method))) {
+        stop("You must pass a string")
+      }
+      
+      # check if method is available
+      available_methods = c("lkf", "ekf", "ukf" , "laplace", "laplace2")
+      if (!(method %in% available_methods)) {
+        stop("That method is not available. Please choose one of:
              1. 'lkf' - Linear Kalman Filter
              2. 'ekf' - Extended Kalman Filter
              3. 'ukf' - Unscented Kalman Filter
              4. 'laplace' - Laplace Approximation using Random Effects Formulation (X),
              5. 'laplace2' - Laplace Approximation using Random Effects Formulation (XdB)"
-            )
-          }
-          
-          # set flag
-          private$method = method
-          
-          # return
-          return(invisible(self))
-        },
-        ########################################################################
-        # SET UNCONSTRAINED OPTIMIZATION
-        ########################################################################
-        # set predict
-        set_unconstrained_optim = function(bool) {
-          
-          # check string
-          if (!(is.logical(bool))) {
-            stop("You must pass a logical")
-          }
-          
-          # set flag
-          private$unconstrained.optim = bool
-          
-          # return
-          return(invisible(self))
-        },
-        ########################################################################
-        # SET ODE TIME-STEP
-        ########################################################################
-        set_timestep = function(dt) {
-          
-          # must be numeric
-          if (!is.numeric(dt)) {
-            stop("The timestep should be a numeric value.")
-          }
-          
-          private$ode.timestep = dt
-        },
-        ########################################################################
-        # SET SIMULATION TIME-STEP
-        ########################################################################
-        set_simulation_timestep = function(dt) {
-          
-          # must be numeric
-          if (!is.numeric(dt)) {
-            stop("The timestep should be a numeric value.")
-          }
-          
-          private$simulation.timestep = dt
-        },
-        
-        ########################################################################
-        # SET USE OF HESSIAN
-        ########################################################################
-        # USE HESSIAN FUNCTION
-        use_hessian = function(bool) {
-          
-          # check logical
-          if (!is.logical(bool)) {
-            stop("The entry must be logical")
-          }
-          
-          # set flag
-          private$use.hessian = bool
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET ODE SOLVER 
-        ########################################################################
-        set_ode_solver = function(ode.solver){
-          
-          if(any(private$method == c("lkf","laplace"))){
-            return(invisible(self))
-          }
-          
-          if(private$method=="ekf"){
-            available.ode.solvers <- c("euler", 
-                                       "rk4", 
-                                       "lsoda", 
-                                       "lsode", 
-                                       "lsodes", 
-                                       "lsodar", 
-                                       "vode", 
-                                       "daspk",
-                                       "ode23", 
-                                       "ode45", 
-                                       "radau", 
-                                       "bdf", 
-                                       "bdf_d", 
-                                       "adams", 
-                                       "impAdams", 
-                                       "impAdams_d")
-          } else {
-            available.ode.solvers <- c("euler","rk4")
-          }
-          
-          # is numeric
-          bool = ode.solver %in% available.ode.solvers
-          if(!bool){
-            stop("You must choose one of the following ode solvers:\n",
-                 paste(available.ode.solvers,collase=" "))
-          }
-          
-          # If using an RTMBode solver check if RTMBode is available
-          RTMBode.solvers <- c("lsoda", 
-                               "lsode", 
-                               "lsodes", 
-                               "lsodar", 
-                               "vode", 
-                               "daspk",
-                               "ode23", 
-                               "ode45", 
-                               "radau", 
-                               "bdf", 
-                               "bdf_d", 
-                               "adams", 
-                               "impAdams", 
-                               "impAdams_d")
-          bool = ode.solver %in% RTMBode.solvers
-          if(bool){
-            check.for.package <- requireNamespace("RTMBode", quietly=TRUE)
-            if(!check.for.package){
-              stop("The RTMBode package is not installed. Please install the package with:
-        install.packages('RTMBode', repos = c('https://kaskr.r-universe.dev', 'https://cloud.r-project.org'))
-  or visit https://github.com/kaskr/RTMB for more information."
-              )
-            }
-          }
-          
-          
-          # set flag
-          private$ode.solver <- switch(ode.solver,
-                                       euler = 1,
-                                       rk4 = 2,
-                                       # otherwise
-                                       ode.solver
-          )
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET INITIAL PREDICTION STATE / COVARIANCE
-        ########################################################################
-        set_pred_initial_state = function(initial.state) {
-          
-          if(is.null(initial.state)){
-            stop("Please provide an initial state for the mean and covariance")
-          }
-          
-          if (is.null(private$sys.eqs)) {
-            stop("Please specify system equations first")
-          }
-          
-          if (!is.list(initial.state)) {
-            stop("Please provide a list of length two!")
-          }
-          
-          if (length(initial.state) != 2) {
-            stop("Please provide a list of length two")
-          }
-          
-          # unpack list items
-          x0 = initial.state[[1]]
-          p0 = initial.state[[2]]
-          
-          if (!is.numeric(x0)) {
-            stop("The mean vector is not a numeric")
-          }
-          
-          if (any(is.na(x0))) {
-            stop("The mean vector contains NAs.")
-          }
-          
-          if (length(x0)!=length(private$sys.eqs)) {
-            stop("The initial state vector should have length ",length(private$sys.eqs))
-          }
-          
-          if (!all(dim(p0)==c(length(private$sys.eqs),length(private$sys.eqs)))) {
-            stop("The covariance matrix should be square with dimension ", length(private$sys.eqs))
-          }
-          
-          # convert scalar to matrix
-          if(!is.matrix(p0) & is.numeric(p0) & length(p0)==1){
-            p0 = p0 * diag(1)
-          }
-          
-          if (!is.numeric(p0)) {
-            stop("The covariance matrix is not a numeric")
-          }
-          
-          if (any(is.na(p0))) {
-            stop("The covariance matrix contains NAs")
-          }
-          
-          if (any(eigen(p0)$values < 0)){
-            stop("The covariance matrix is not positive semi-definite")
-          }
-          
-          if (!isSymmetric.matrix(p0)){
-            stop("The covariance matrix is symmetric")
-          }
-          
-          # set field
-          private$pred.initial.state = list(x0=x0, p0=as.matrix(p0))
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET LOSS FUNCTION
-        ########################################################################
-        # SET LOSS FUNCTION
-        set_loss = function(loss, loss_c) {
-          
-          # check for string
-          if (!(is.character(loss))) {
-            stop("You must pass a string")
-          }
-          
-          # check if method is available
-          available_losses = c("quadratic","huber","tukey")
-          if (!(loss %in% available_losses)) {
-            stop("That method is not available. Please choose one of the following:
+        )
+      }
+      
+      # set flag
+      private$method = method
+      
+      # return
+      return(invisible(self))
+    },
+    ########################################################################
+    # SET UNCONSTRAINED OPTIMIZATION
+    ########################################################################
+    # set predict
+    set_unconstrained_optim = function(bool) {
+      
+      # check string
+      if (!(is.logical(bool))) {
+        stop("You must pass a logical")
+      }
+      
+      # set flag
+      private$unconstrained.optim = bool
+      
+      # return
+      return(invisible(self))
+    },
+    ########################################################################
+    # SET ODE TIME-STEP
+    ########################################################################
+    set_timestep = function(dt) {
+      
+      # must be numeric
+      if (!is.numeric(dt)) {
+        stop("The timestep should be a numeric value.")
+      }
+      
+      private$ode.timestep = dt
+    },
+    ########################################################################
+    # SET SIMULATION TIME-STEP
+    ########################################################################
+    set_simulation_timestep = function(dt) {
+      
+      # must be numeric
+      if (!is.numeric(dt)) {
+        stop("The timestep should be a numeric value.")
+      }
+      
+      private$simulation.timestep = dt
+    },
+    
+    ########################################################################
+    # SET USE OF HESSIAN
+    ########################################################################
+    # USE HESSIAN FUNCTION
+    use_hessian = function(bool) {
+      
+      # check logical
+      if (!is.logical(bool)) {
+        stop("The entry must be logical")
+      }
+      
+      # set flag
+      private$use.hessian = bool
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET ODE SOLVER 
+    ########################################################################
+    #       set_ode_solver = function(ode.solver){
+    #         
+    #         if(any(private$method == c("lkf","laplace"))){
+    #           return(invisible(self))
+    #         }
+    #         
+    #         if(private$method=="ekf"){
+    #           available.ode.solvers <- c("euler", 
+    #                                      "rk4", 
+    #                                      "lsoda", 
+    #                                      "lsode", 
+    #                                      "lsodes", 
+    #                                      "lsodar", 
+    #                                      "vode", 
+    #                                      "daspk",
+    #                                      "ode23", 
+    #                                      "ode45", 
+    #                                      "radau", 
+    #                                      "bdf", 
+    #                                      "bdf_d", 
+    #                                      "adams", 
+    #                                      "impAdams", 
+    #                                      "impAdams_d")
+    #         } else {
+    #           available.ode.solvers <- c("euler","rk4")
+    #         }
+    #         
+    #         # is numeric
+    #         bool = ode.solver %in% available.ode.solvers
+    #         if(!bool){
+    #           stop("You must choose one of the following ode solvers:\n",
+    #                paste(available.ode.solvers,collase=" "))
+    #         }
+    #         
+    #         # If using an RTMBode solver check if RTMBode is available
+    #         RTMBode.solvers <- c("lsoda", 
+    #                              "lsode", 
+    #                              "lsodes", 
+    #                              "lsodar", 
+    #                              "vode", 
+    #                              "daspk",
+    #                              "ode23", 
+    #                              "ode45", 
+    #                              "radau", 
+    #                              "bdf", 
+    #                              "bdf_d", 
+    #                              "adams", 
+    #                              "impAdams", 
+    #                              "impAdams_d")
+    #         bool = ode.solver %in% RTMBode.solvers
+    #         if(bool){
+    #           check.for.package <- requireNamespace("RTMBode", quietly=TRUE)
+    #           if(!check.for.package){
+    #             stop("The RTMBode package is not installed. Please install the package with:
+    #       install.packages('RTMBode', repos = c('https://kaskr.r-universe.dev', 'https://cloud.r-project.org'))
+    # or visit https://github.com/kaskr/RTMB for more information."
+    #             )
+    #           }
+    #         }
+    #         
+    #         
+    #         # set flag
+    #         private$ode.solver <- switch(ode.solver,
+    #                                      euler = 1,
+    #                                      rk4 = 2,
+    #                                      # otherwise
+    #                                      ode.solver
+    #         )
+    #         
+    #         # return
+    #         return(invisible(self))
+    #       },
+    
+    ########################################################################
+    # SET ODE SOLVER 
+    ########################################################################
+    set_ode_solver = function(ode.solver){
+      
+      # these meethods dont use ode solvers
+      if(any(private$method == c("lkf","laplace","laplace2"))){
+        return(invisible(self))
+      }
+      
+      # check input
+      available.ode.solvers <- c("euler","rk4")
+      bool = ode.solver %in% available.ode.solvers
+      if(!bool){
+        stop("You must choose one of the following ode solvers:\n\t",
+             paste(available.ode.solvers, collapse = ", "))
+      }
+      
+      # set solver
+      private$ode.solver <- switch(ode.solver,
+                                   euler = 1,
+                                   rk4 = 2)
+      
+      # return
+      return(invisible(self))
+    },
+    ########################################################################
+    # SET INITIAL PREDICTION STATE / COVARIANCE
+    ########################################################################
+    set_pred_initial_state = function(initial.state) {
+      
+      if(is.null(initial.state)){
+        stop("Please provide an initial state for the mean and covariance")
+      }
+      
+      if (is.null(private$sys.eqs)) {
+        stop("Please specify system equations first")
+      }
+      
+      if (!is.list(initial.state)) {
+        stop("Please provide a list of length two!")
+      }
+      
+      if (length(initial.state) != 2) {
+        stop("Please provide a list of length two")
+      }
+      
+      # unpack list items
+      x0 = initial.state[[1]]
+      p0 = initial.state[[2]]
+      
+      if (!is.numeric(x0)) {
+        stop("The mean vector is not a numeric")
+      }
+      
+      if (any(is.na(x0))) {
+        stop("The mean vector contains NAs.")
+      }
+      
+      if (length(x0)!=length(private$sys.eqs)) {
+        stop("The initial state vector should have length ",length(private$sys.eqs))
+      }
+      
+      if (!all(dim(p0)==c(length(private$sys.eqs),length(private$sys.eqs)))) {
+        stop("The covariance matrix should be square with dimension ", length(private$sys.eqs))
+      }
+      
+      # convert scalar to matrix
+      if(!is.matrix(p0) & is.numeric(p0) & length(p0)==1){
+        p0 = p0 * diag(1)
+      }
+      
+      if (!is.numeric(p0)) {
+        stop("The covariance matrix is not a numeric")
+      }
+      
+      if (any(is.na(p0))) {
+        stop("The covariance matrix contains NAs")
+      }
+      
+      if (any(eigen(p0)$values < 0)){
+        stop("The covariance matrix is not positive semi-definite")
+      }
+      
+      if (!isSymmetric.matrix(p0)){
+        stop("The covariance matrix is symmetric")
+      }
+      
+      # set field
+      private$pred.initial.state = list(x0=x0, p0=as.matrix(p0))
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET LOSS FUNCTION
+    ########################################################################
+    # SET LOSS FUNCTION
+    set_loss = function(loss, loss_c) {
+      
+      # check for string
+      if (!(is.character(loss))) {
+        stop("You must pass a string")
+      }
+      
+      # check if method is available
+      available_losses = c("quadratic","huber","tukey")
+      if (!(loss %in% available_losses)) {
+        stop("That method is not available. Please choose one of the following:
              1. 'quadratic' - default quadratic loss
              2. 'huber' - quadratic-linear pseudo-huber loss
              3. 'tukey' - quadratic-constant tukey loss")
-          }
-          
-          if(is.null(loss_c)){
-            loss_c <- qchisq(0.95, df=private$number.of.observations)
-          }
-          
-          if(loss_c <= 0){
-            stop("The loss threshold must be positive")
-          }
-          
-          # set flag
-          private$loss = list(loss=loss, c=loss_c)
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET NLMIN CONTROL OPTIONS
-        ########################################################################
-        set_control = function(control) {
-          
-          # is the control a list?
-          if (!(is.list(control))) {
-            stop("The control argument must be a list. See ?stats::nlminb for control options")
-          }
-          
-          # set flag
-          private$control.nlminb = control
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET INITIAL STATE ESTIMATION
-        ########################################################################
-        set_initial_state_estimation = function(bool){
-          
-          if(!is.logical(bool)){
-            stop("The initial state estimation must be TRUE or FALSE.")
-          }
-          
-          private$estimate.initial = bool
-          return(invisible(NULL))
-        },
-        
-        ########################################################################
-        # SET UNSCENTED TRANSFORMATION HYPERPARAMAETERS
-        ########################################################################
-        set_ukf_hyperpars = function(parlist) {
-          
-          # is the control a list?
-          if (!(is.list(parlist))) {
-            stop("Please provide a named list containing 'alpha', 'beta' and 'kappa'")
-          }
-          
-          # check if entries are numerics
-          if (!is.numeric(parlist[["alpha"]])){
-            stop("'alpha' must be a numeric")
-          }
-          if (!is.numeric(parlist[["beta"]])){
-            stop("'beta' must be a numeric")
-          }
-          if (!is.numeric(parlist[["kappa"]])){
-            stop("'kappa' must be a numeric")
-          }
-          
-          # set parameters
-          private$ukf_hyperpars = do.call(c,unname(parlist))
-          
-          # return
-          return(invisible(self))
-        },
-        
-        ########################################################################
-        # SET CPP SEED FOR SIMULATIONS
-        ########################################################################
-        set_cpp_seed = function(seed) {
-          
-          # return if null (unset)
-          if(is.null(seed)){
-            return(invisible(self))
-          }
-          
-          if(!is.numeric(seed)){
-            stop("The cpp.seed should be a scalar numeric value")
-          }
-          
-          if(!length(seed) < 1){
-            seed <- seed[[1]]
-          }
-          
-          # set the seed
-          ziggsetseed(seed)
-          
-          # return
-          return(invisible(self))
-        }
-        
-      )
+      }
+      
+      if(is.null(loss_c)){
+        loss_c <- qchisq(0.95, df=private$number.of.observations)
+      }
+      
+      if(loss_c <= 0){
+        stop("The loss threshold must be positive")
+      }
+      
+      # set flag
+      private$loss = list(loss=loss, c=loss_c)
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET NLMIN CONTROL OPTIONS
+    ########################################################################
+    set_control = function(control) {
+      
+      # is the control a list?
+      if (!(is.list(control))) {
+        stop("The control argument must be a list. See ?stats::nlminb for control options")
+      }
+      
+      # set flag
+      private$control.nlminb = control
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET INITIAL STATE ESTIMATION
+    ########################################################################
+    set_initial_state_estimation = function(bool){
+      
+      if(!is.logical(bool)){
+        stop("The initial state estimation must be TRUE or FALSE.")
+      }
+      
+      private$estimate.initial = bool
+      return(invisible(NULL))
+    },
+    
+    ########################################################################
+    # SET UNSCENTED TRANSFORMATION HYPERPARAMAETERS
+    ########################################################################
+    set_ukf_hyperpars = function(parlist) {
+      
+      # is the control a list?
+      if (!(is.list(parlist))) {
+        stop("Please provide a named list containing 'alpha', 'beta' and 'kappa'")
+      }
+      
+      # check if entries are numerics
+      if (!is.numeric(parlist[["alpha"]])){
+        stop("'alpha' must be a numeric")
+      }
+      if (!is.numeric(parlist[["beta"]])){
+        stop("'beta' must be a numeric")
+      }
+      if (!is.numeric(parlist[["kappa"]])){
+        stop("'kappa' must be a numeric")
+      }
+      
+      # set parameters
+      private$ukf_hyperpars = do.call(c,unname(parlist))
+      
+      # return
+      return(invisible(self))
+    },
+    
+    ########################################################################
+    # SET CPP SEED FOR SIMULATIONS
+    ########################################################################
+    set_cpp_seed = function(seed) {
+      
+      # return if null (unset)
+      if(is.null(seed)){
+        return(invisible(self))
+      }
+      
+      # check for numeric
+      if(!is.numeric(seed)){
+        stop("The cpp.seed should be a scalar numeric value")
+      }
+      
+      # take first entry if longer than 1
+      if(!length(seed) < 1){
+        seed <- seed[[1]]
+      }
+      
+      # set the seed with Rcpp function
+      ziggsetseed(seed)
+      
+      # return
+      return(invisible(self))
+    }
+    
   )
-  
-  
+)
+
+

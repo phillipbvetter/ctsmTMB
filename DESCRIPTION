@@ -40,8 +40,5 @@ LinkingTo:
 Suggests:
 	testthat (>= 3.0.0),
 	knitr,
-	rmarkdown,
-	RTMBode
-Additional_repositories:
-	https://kaskr.r-universe.dev
+	rmarkdown
 LazyData: true
