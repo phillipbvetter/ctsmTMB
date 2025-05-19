@@ -216,57 +216,58 @@ makeADFun_ekf_rtmb = function(self, private)
       
       return(list(X1,P1))
     }
-  } else {
-    # desolve ODE solver ----------------------------------------
-    
-    # Step 1: construct input interpolators
-    
-    # Expand time-domain slightly to avoid NAs in RTMB::interpol1Dfun
-    # if ODE is evaluated slightly outside domain
-    time <- inputMat[,1]
-    time.range <- range(time)
-    time.range.diff <- diff(time.range)
-    new.range = time.range + rep(time.range.diff/10, 2) * c(-1,1)
-    new.time <- seq(new.range[1], new.range[2], by=min(diff(time)))
-    input.interp.funs <- vector("list",length=n.inputs)
-    # Create interpolation on uniform grid
-    for(i in 1:length(input.interp.funs)){
-      # create uniform time grid
-      out <- stats::approx(x=time, y=inputMat[,i], xout=new.time, rule=2)
-      # interpol1Dfun assumes uniform distances in x-coordinates
-      input.interp.funs[[i]] <- RTMB::interpol1Dfun(z=out$y, xlim=range(new.time), R=1)
-    }
-    
-    # Step 2: construct ode fun for DeSolve
-    ode.fun <- function(time, stateVec_and_covMat, parVec){
-      inputVec <- RTMB::sapply(input.interp.funs, function(f) f(time))
-      # 
-      stateVec <- head(stateVec_and_covMat, n.states)
-      covMat <- RTMB::matrix(tail(stateVec_and_covMat, -n.states),nrow=n.states)
-      # 
-      G <- g__(stateVec, parVec, inputVec)
-      AcovMat = dfdx__(stateVec, parVec, inputVec) %*% covMat
-      #
-      dX <- f__(stateVec, parVec, inputVec)
-      dP <- AcovMat + t(AcovMat) + G %*% t(G)
-      return(list(c(dX,dP)))
-    }
-    
-    # Step 3: construct function to call in likelihood functon
-    ode_integrator <- function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
-      out <- RTMBode::ode(y = c(stateVec, covMat),
-                          times = c(inputVec[1], inputVec[1]+dt),
-                          func = ode.fun,
-                          parms = parVec,
-                          method=ode.solver)[2,-1]
-      
-      return(
-        list(head(out,n.states),
-             RTMB::matrix(tail(out,-n.states),nrow=n.states)
-        )
-      )
-    }
-  }
+  } 
+  # else {
+  #   # desolve ODE solver ----------------------------------------
+  #   
+  #   # Step 1: construct input interpolators
+  #   
+  #   # Expand time-domain slightly to avoid NAs in RTMB::interpol1Dfun
+  #   # if ODE is evaluated slightly outside domain
+  #   time <- inputMat[,1]
+  #   time.range <- range(time)
+  #   time.range.diff <- diff(time.range)
+  #   new.range = time.range + rep(time.range.diff/10, 2) * c(-1,1)
+  #   new.time <- seq(new.range[1], new.range[2], by=min(diff(time)))
+  #   input.interp.funs <- vector("list",length=n.inputs)
+  #   # Create interpolation on uniform grid
+  #   for(i in 1:length(input.interp.funs)){
+  #     # create uniform time grid
+  #     out <- stats::approx(x=time, y=inputMat[,i], xout=new.time, rule=2)
+  #     # interpol1Dfun assumes uniform distances in x-coordinates
+  #     input.interp.funs[[i]] <- RTMB::interpol1Dfun(z=out$y, xlim=range(new.time), R=1)
+  #   }
+  #   
+  #   # Step 2: construct ode fun for DeSolve
+  #   ode.fun <- function(time, stateVec_an d_covMat, parVec){
+  #     inputVec <- RTMB::sapply(input.interp.funs, function(f) f(time))
+  #     # 
+  #     stateVec <- head(stateVec_and_covMat, n.states)
+  #     covMat <- RTMB::matrix(tail(stateVec_and_covMat, -n.states),nrow=n.states)
+  #     # 
+  #     G <- g__(stateVec, parVec, inputVec)
+  #     AcovMat = dfdx__(stateVec, parVec, inputVec) %*% covMat
+  #     #
+  #     dX <- f__(stateVec, parVec, inputVec)
+  #     dP <- AcovMat + t(AcovMat) + G %*% t(G)
+  #     return(list(c(dX,dP)))
+  #   }
+  #   
+  #   # Step 3: construct function to call in likelihood functon
+  #   ode_integrator <- function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
+  #     out <- RTMBode::ode(y = c(stateVec, covMat),
+  #                         times = c(inputVec[1], inputVec[1]+dt),
+  #                         func = ode.fun,
+  #                         parms = parVec,
+  #                         method=ode.solver)[2,-1]
+  #     
+  #     return(
+  #       list(head(out,n.states),
+  #            RTMB::matrix(tail(out,-n.states),nrow=n.states)
+  #       )
+  #     )
+  #   }
+  # }
   
   # user-defined functions ---------------------------
   for(i in seq_along(private$rtmb.function.strings.indexed)){

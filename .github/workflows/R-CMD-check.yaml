@@ -39,7 +39,7 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
-          extra-repositories: "https://kaskr.r-universe.dev"
+          # extra-repositories: "https://kaskr.r-universe.dev"
 
       # Download RTMBode
      # - name: add r-universe to repos
