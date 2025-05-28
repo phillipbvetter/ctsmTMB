@@ -10,8 +10,8 @@ build_model = function(self, private) {
   # Check if model is already built
   if(!private$rebuild.model) return(invisible(self))
   private$rebuild.model <- FALSE
-  private$rebuild.ad <- TRUE
   private$rebuild.data <- TRUE
+  private$rebuild.ad <- TRUE
   
   # Print
   if(!private$silent) message("Building model...")

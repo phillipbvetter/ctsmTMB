@@ -44,3 +44,9 @@ model$setInitialState(list(rep(1,2), 0.656*diag(2)))
 # testthat::expect_no_error(
 #   model$simulate(fake.data, silent=T, use.cpp=TRUE)
 # )
+
+# something like this for testing
+# identical(
+#   model$predict(data=.data, method="ekf", use.cpp=T),
+#   model$predict(data=.data, method="ekf", use.cpp=F)
+# )

@@ -4,7 +4,7 @@
 
 construct_makeADFun = function(self, private){
   
-  # TMB::openmp(max=TRUE, autopar=TRUE, DLL=private$modelname.with.method)
+  # TMB::openmp(n=1, autopar=TRUE, DLL=private$modelname.with.method)
   
   # Check for AD rebuild
   check_for_ADfun_rebuild(self, private)
@@ -13,53 +13,66 @@ construct_makeADFun = function(self, private){
   private$rebuild.ad <- FALSE
   
   if(!private$silent) message("Constructing objective function and derivative tables...")
-
-  construct_ADFun_time <- system.time({
+  
+  comptime <- system.time({
     
     if(private$method == "lkf"){
-        makeADFun_lkf_rtmb(self, private)
+      makeADFun_lkf_rtmb(self, private)
+    }
+    
+    if(private$method == "lkf_cpp"){
+      makeADFun_lkf_tmb(self, private)
     }
     
     if(private$method == "ekf"){
-        makeADFun_ekf_rtmb(self, private)
+      makeADFun_ekf_rtmb(self, private)
+    }
+    
+    if(private$method == "ekf_cpp"){
+      makeADFun_ekf_tmb(self, private)
     }
     
     if(private$method == "ukf"){
-        makeADFun_ukf_rtmb(self, private)
+      makeADFun_ukf_rtmb(self, private)
+    }
+    
+    if(private$method == "ukf_cpp"){
+      makeADFun_ukf_tmb(self, private)
     }
     
     if(private$method=="laplace"){
-        makeADFun_laplace_rtmb(self, private)
+      makeADFun_laplace_rtmb(self, private)
     }
     
     if(private$method=="laplace2"){
-        makeADFun_laplace2_rtmb(self, private)
+      makeADFun_laplace2_rtmb(self, private)
     }
+    
+    # experimental
+    # if(private$method == "ekf_rcpp"){
+    #     rcpp_ekf_estimate(self, private)
+    # }
+    
+  }, gcFirst = FALSE)
   
-  },gcFirst = FALSE)
-
-  private$construct_ADFun_time <- construct_ADFun_time
-  
-  # experimental
-  # if(private$method == "ekf_rcpp"){
-  #   comptime <- system.time(
-  #     rcpp_ekf_estimate(self, private)
-  #     )
-  # }
+  private$timer_construct_adfun <- comptime
   
   return(invisible(self))
 }
 
 #######################################################
-# MAIN CONSTRUCT MAKEADFUN FUNCTION THAT CALL OTHERS
+# MAIN RETURN FIT FUNCTION THAT CALL OTHERS
 #######################################################
 
-create_fit = function(self, private, laplace.residuals){
+create_return_fit = function(self, private, laplace.residuals){
   
   if(!private$silent) message("Returning results...")
   
-  # TMB::openmp(max=TRUE, autopar=TRUE, DLL=private$modelname.with.method)
   if(private$method == "lkf"){
+    calculate_fit_statistics_lkf(self, private)
+  }
+  
+  if(private$method == "lkf_cpp"){
     calculate_fit_statistics_lkf(self, private)
   }
   
@@ -67,8 +80,16 @@ create_fit = function(self, private, laplace.residuals){
     calculate_fit_statistics_ekf(self, private)
   }
   
+  if(private$method == "ekf_cpp"){
+    calculate_fit_statistics_ekf(self, private)
+  }
+  
   if(private$method == "ukf"){
-  calculate_fit_statistics_ukf(self, private)
+    calculate_fit_statistics_ukf(self, private)
+  }
+  
+  if(private$method == "ukf_cpp"){
+    calculate_fit_statistics_ukf(self, private)
   }
   
   if(private$method=="laplace"){
@@ -91,49 +112,55 @@ perform_estimation = function(self, private) {
   if(!private$silent) message("Minimizing the negative log-likelihood...")
   
   # Parameter Bounds
-  lower.parameter.bound = unlist(lapply(private$free.pars, function(par) par$lower))
-  upper.parameter.bound = unlist(lapply(private$free.pars, function(par) par$upper))
+  # lower.parameter.bound = unlist(lapply(private$free.pars, function(par) par$lower))
+  # upper.parameter.bound = unlist(lapply(private$free.pars, function(par) par$upper))
+  lower.parameter.bound = sapply(private$free.pars, function(par) par$lower)
+  upper.parameter.bound = sapply(private$free.pars, function(par) par$upper)
   if(private$unconstrained.optim){
     lower.parameter.bound = -Inf
     upper.parameter.bound = Inf
   }
   
-  # IF METHOD IS KALMAN FILTER
-  if (any(private$method==c("lkf","ekf","ukf"))) {
-    
-    # use function, gradient and hessian
-    if (private$use.hessian) {
-      comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
-                                                                           objective = private$nll$fn,
-                                                                           gradient = private$nll$gr,
-                                                                           hessian = private$nll$he,
-                                                                           lower = lower.parameter.bound,
-                                                                           upper = upper.parameter.bound,
-                                                                           control=private$control.nlminb))
-      )
-      # or just function and gradient
-    } else {
-      comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
-                                                                           objective = private$nll$fn,
-                                                                           gradient = private$nll$gr,
-                                                                           lower = lower.parameter.bound,
-                                                                           upper = upper.parameter.bound,
-                                                                           control=private$control.nlminb))
-      )
-    }
-    
-  }
+  comptime <- system.time(
+    {
+      
+      # IF METHOD IS KALMAN FILTER
+      if ( any(private$method == c("lkf","lkf_cpp","ekf","ekf_cpp","ukf","ukf_cpp")) ) {
+        
+        # use function, gradient and hessian
+        if (private$use.hessian) {
+          opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+                                                       objective = private$nll$fn,
+                                                       gradient = private$nll$gr,
+                                                       hessian = private$nll$he,
+                                                       lower = lower.parameter.bound,
+                                                       upper = upper.parameter.bound,
+                                                       control=private$control.nlminb))
+          # or just function and gradient
+        } else {
+          opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+                                                       objective = private$nll$fn,
+                                                       gradient = private$nll$gr,
+                                                       lower = lower.parameter.bound,
+                                                       upper = upper.parameter.bound,
+                                                       control=private$control.nlminb))
+        }
+      }
+      
+      # IF METHOD IS LAPLACE
+      if ( any(private$method == c("laplace","laplace2")) ) {
+        opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+                                                     objective = private$nll$fn,
+                                                     gradient = private$nll$gr,
+                                                     lower = lower.parameter.bound,
+                                                     upper = upper.parameter.bound,
+                                                     control=private$control.nlminb))
+      }
+      
+    }, gcFirst = FALSE)
   
-  # IF METHOD IS LAPLACE
-  if (any(private$method == c("laplace","laplace2"))) {
-    comptime = system.time( opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
-                                                                         objective = private$nll$fn,
-                                                                         gradient = private$nll$gr,
-                                                                         lower = lower.parameter.bound,
-                                                                         upper = upper.parameter.bound,
-                                                                         control=private$control.nlminb))
-    )
-  }
+  # add timer to estimation
+  private$timer_estimation <- comptime
   
   # DID THE OPTIMIZATION FAIL?
   if (inherits(opt,"try-error")) {
@@ -150,12 +177,13 @@ perform_estimation = function(self, private) {
               7. Change the optimization tolerances for 'nlminb' with the 'control' argument.")
     }
     
+    # exit if optimization failed
     private$opt = NULL
-    
     return(invisible(self))
   }
   
   # store optimization object
+  names(opt$par) <- names(private$free.pars)
   private$opt = opt
   
   # extract maxmimum gradient component, and format computation time to 5 digits
@@ -180,15 +208,17 @@ perform_estimation = function(self, private) {
   
   # For TMB method: run sdreport
   if (any(private$method== c("laplace","laplace2"))) {
+    
     if(!private$silent) message("Calculating standard deviations...")
-    comptime = system.time(
+    
+    # NOTE: The state covariances can be retrived by inverting sdr$jointPrecision
+    # but this takes very long time. Should it be an option?
+    comptime <- system.time(
+      {
+        
       private$sdr <- TMB::sdreport(private$nll, getJointPrecision=T)
       
-      # NOTE: The state covariances can be retrived by inverting sdr$jointPrecision
-      # but this takes very long time. Should it be an option?
-    )
-    # comptime = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
-    # if(!private$silent) message("...took: ", comptime, " seconds.")
+      }, gcFirst = FALSE)
   }
   
   # return

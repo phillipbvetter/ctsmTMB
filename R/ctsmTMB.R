@@ -75,7 +75,7 @@ ctsmTMB = R6::R6Class(
     initialize = function() {
       # modelname, directory and path (directory+name)
       private$modelname = "ctsmTMB_model"
-      private$cppfile.directory = NULL
+      private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE, winslash = "/")
       private$cppfile.path = NULL
       private$cppfile.path.with.method = NULL
       private$modelname.with.method = NULL
@@ -120,6 +120,7 @@ ctsmTMB = R6::R6Class(
       private$rebuild.model = TRUE
       private$rebuild.ad = TRUE
       private$rebuild.data = TRUE
+      private$rebuild.cpp = TRUE
       private$old.data = list()
       
       # hidden
@@ -156,7 +157,12 @@ ctsmTMB = R6::R6Class(
       private$simulation = NULL
       private$filt = NULL
       private$smooth = NULL
-      private$construct_ADFun_time = NULL
+      
+      # timers
+      private$timer_construct_adfun = NA
+      private$timer_estimation = NA
+      private$timer_cppbuild = NA
+      private$timer_prediction = NA
       
       # predict
       private$n.ahead = 0
@@ -907,6 +913,29 @@ ctsmTMB = R6::R6Class(
     },
     
     ########################################################################
+    # GET SYSTEM TIMERS
+    ########################################################################
+    #' @description Retrieve initially timers
+    getTimers = function() {
+      
+      x <- rbind(
+        private$timer_cppbuild,
+        private$timer_construct_adfun,
+        private$timer_estimation,
+        private$timer_prediction
+      )
+      rownames(x) <- c(
+        "C++ Compilation",
+        "Constructing AD Fun",
+        "Estimation",
+        "Prediction"
+        )
+      
+      
+      return(x)
+    },
+    
+    ########################################################################
     # GET ESTIMATION
     ########################################################################
     #' @description Retrieve initially set state and covariance
@@ -1205,6 +1234,7 @@ ctsmTMB = R6::R6Class(
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param method character vector specifying the filtering method used for state/likelihood calculations. 
     #' Must be one of either "lkf", "ekf", "laplace".
+    #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
     #' without any of the parameter bounds specified during \code{setParameter}.
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
@@ -1231,6 +1261,7 @@ ctsmTMB = R6::R6Class(
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param trace 0 or 1, passed to \code{control} to determine whether to print optimization information at each step.
+    #' @param compile boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.
     #' @param ... additional arguments
     estimate = function(data, 
                         method = "ekf",
@@ -1238,6 +1269,7 @@ ctsmTMB = R6::R6Class(
                         ode.timestep = diff(data$t),
                         loss = "quadratic",
                         loss_c = NULL,
+                        ukf.hyperpars = c(1, 0, 3),
                         trace = 1,
                         control = list(trace=trace,iter.max=1e5,eval.max=1e5),
                         use.hessian = FALSE,
@@ -1245,6 +1277,7 @@ ctsmTMB = R6::R6Class(
                         unconstrained.optim = FALSE,
                         estimate.initial.state = FALSE,
                         silent = FALSE,
+                        compile = FALSE,
                         ...){
       
       # set flags
@@ -1252,16 +1285,17 @@ ctsmTMB = R6::R6Class(
         method = method,
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
+        ukf.hyperpars = ukf.hyperpars,
         control = control,
         use.hessian = use.hessian,
         laplace.residuals = laplace.residuals,
         unconstrained.optim = unconstrained.optim,
         estimate.initial.state = estimate.initial.state,
+        compile = compile,
         silent = silent
         
       )
       set_flags("estimation", args, self, private)
-      
       
       # build model
       build_model(self, private)
@@ -1271,6 +1305,7 @@ ctsmTMB = R6::R6Class(
       private$set_loss(loss, loss_c)
       
       # construct nll AD function
+      compile_cppfile(self, private)
       construct_makeADFun(self, private)
       
       # estimate
@@ -1282,7 +1317,7 @@ ctsmTMB = R6::R6Class(
       }
       
       # create return fit
-      create_fit(self, private, laplace.residuals)
+      create_return_fit(self, private, laplace.residuals)
       
       # return
       if(!private$silent) message("Finished!")
@@ -1328,6 +1363,7 @@ ctsmTMB = R6::R6Class(
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param method character vector specifying the filtering method used for state/likelihood calculations. 
     #' Must be one of either "lkf", "ekf", "laplace".
+    #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
     #' methods). The loss function is per default quadratic in the one-step residuals as is natural 
     #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the 
@@ -1347,6 +1383,7 @@ ctsmTMB = R6::R6Class(
     #' system contains time-varying inputs, the first element of these is used.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
+    #' @param compile boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.
     #' @param ... additional arguments
     likelihood = function(data,
                           method = "ekf",
@@ -1354,8 +1391,10 @@ ctsmTMB = R6::R6Class(
                           ode.timestep = diff(data$t),
                           loss = "quadratic",
                           loss_c = NULL,
+                          ukf.hyperpars = c(1, 0, 3),
                           estimate.initial.state = FALSE,
                           silent=FALSE,
+                          compile = FALSE,
                           ...){
       
       # set flags
@@ -1363,7 +1402,9 @@ ctsmTMB = R6::R6Class(
         method = method,
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
+        ukf.hyperpars = ukf.hyperpars,
         estimate.initial.state = estimate.initial.state,
+        compile = compile,
         silent = silent
       )
       set_flags("construction", args, self, private)
@@ -1376,6 +1417,7 @@ ctsmTMB = R6::R6Class(
       private$set_loss(loss, loss_c)
       
       # construct nll AD function
+      compile_cppfile(self, private)
       construct_makeADFun(self, private)
       
       # return
@@ -1443,8 +1485,6 @@ ctsmTMB = R6::R6Class(
                        silent = FALSE,
                        ...){
       
-      if(method!="ekf"){ stop("The predict function is currently only implemented for method = 'ekf'.") }
-      
       # set flags
       args = list(
         method = method,
@@ -1466,16 +1506,16 @@ ctsmTMB = R6::R6Class(
       set_parameters(pars, self, private)
       set_k_ahead(k.ahead, self, private)
       
-      # predict
+      # compile C++ funs
       if(use.cpp){
         compile_rcpp_functions(self, private)
-        ekf_rcpp_prediction(self, private)
-      } else {
-        ekf_r_prediction(self, private)
       }
       
+      # estimate
+      perform_prediction(self, private, use.cpp)
+      
       # return
-      create_return_prediction(return.covariance, return.k.ahead, use.cpp, self, private)
+      create_return_prediction(return.covariance, return.k.ahead, self, private)
       
       # return
       if(!private$silent) message("Finished!")
@@ -1589,15 +1629,15 @@ ctsmTMB = R6::R6Class(
       set_k_ahead(k.ahead, self, private)
       set_parameters(pars, self, private)
       
-      # simulate
+      # compile C++ funs
       if(use.cpp){
         compile_rcpp_functions(self, private)
-        rcpp_simulation(self, private, n.sims)
-      } else {
-        ekf_r_simulation(self, private, n.sims)
       }
       
-      # construct return data.frame
+      # estimate
+      perform_simulation(self, private, use.cpp, n.sims)
+      
+      # return
       create_return_simulation(return.k.ahead, n.sims, self, private)
       
       # return
@@ -1755,6 +1795,7 @@ ctsmTMB = R6::R6Class(
     rebuild.model = FALSE,
     rebuild.ad = FALSE,
     rebuild.data = FALSE,
+    rebuild.cpp = FALSE,
     old.data = list(),
     
     # hidden
@@ -1785,7 +1826,12 @@ ctsmTMB = R6::R6Class(
     simulation = NULL,
     filt = NULL,
     smooth = NULL,
-    construct_ADFun_time = NULL,
+    
+    # timers
+    timer_construct_adfun = NULL,
+    timer_estimation = NULL,
+    timer_cppbuild = NULL,
+    timer_prediction = NULL,
     
     # predict
     n.ahead = NULL,
@@ -1952,19 +1998,27 @@ ctsmTMB = R6::R6Class(
       }
       
       # check if method is available
-      available_methods = c("lkf", "ekf", "ukf" , "laplace", "laplace2")
+      available_methods = c("lkf", "lkf_cpp", "ekf", "ekf_cpp", "ukf", "ukf_cpp", "laplace", "laplace2")
       if (!(method %in% available_methods)) {
         stop("That method is not available. Please choose one of:
-             1. 'lkf' - Linear Kalman Filter
-             2. 'ekf' - Extended Kalman Filter
-             3. 'ukf' - Unscented Kalman Filter
-             4. 'laplace' - Laplace Approximation using Random Effects Formulation (X),
-             5. 'laplace2' - Laplace Approximation using Random Effects Formulation (XdB)"
+             - 'lkf' - Linear Kalman Filter
+             - 'lkf_cpp' - Linear Kalman Filter (TMB w. C++ Compilation)
+             - 'ekf' - Extended Kalman Filter
+             - 'ekf_cpp' - Extended Kalman Filter (TMB w. C++ Compilation)
+             - 'ukf' - Unscented Kalman Filter
+             - 'ukf_cpp' - Unscented Kalman Filter (TMB w. C++ Compilation)
+             - 'laplace' - Laplace Approximation using Random Effects Formulation (X),
+             - 'laplace2' - Laplace Approximation using Random Effects Formulation (XdB)"
         )
       }
       
       # set flag
       private$method = method
+      
+      # set file with method flag
+      private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
+      private$cppfile.path.with.method <- file.path(paste0(private$cppfile.path, sprintf("_%s",private$method)))
+      private$modelname.with.method <- paste0(private$modelname, sprintf("_%s",private$method))
       
       # return
       return(invisible(self))
@@ -2268,26 +2322,25 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # SET UNSCENTED TRANSFORMATION HYPERPARAMAETERS
     ########################################################################
-    set_ukf_hyperpars = function(parlist) {
+    set_ukf_hyperpars = function(par.vector) {
       
-      # is the control a list?
-      if (!(is.list(parlist))) {
-        stop("Please provide a named list containing 'alpha', 'beta' and 'kappa'")
+      if(is.null(names(par.vector))) {
+        names(par.vector) <- c("alpha","beta","kappa")
       }
       
       # check if entries are numerics
-      if (!is.numeric(parlist[["alpha"]])){
+      if (!is.numeric(par.vector[["alpha"]])){
         stop("'alpha' must be a numeric")
       }
-      if (!is.numeric(parlist[["beta"]])){
+      if (!is.numeric(par.vector[["beta"]])){
         stop("'beta' must be a numeric")
       }
-      if (!is.numeric(parlist[["kappa"]])){
+      if (!is.numeric(par.vector[["kappa"]])){
         stop("'kappa' must be a numeric")
       }
       
       # set parameters
-      private$ukf_hyperpars = do.call(c,unname(parlist))
+      private$ukf_hyperpars = par.vector
       
       # return
       return(invisible(self))

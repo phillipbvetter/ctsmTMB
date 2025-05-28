@@ -33,6 +33,11 @@ makeADFun_ukf_rtmb = function(self, private)
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
   
+  # ukf pars
+  ukf.alpha <- private$ukf_hyperpars[1]
+  ukf.beta <- private$ukf_hyperpars[2]
+  ukf.kappa <- private$ukf_hyperpars[3]
+  
   # inputs
   inputMat = as.matrix(private$data[private$input.names])
   
@@ -143,10 +148,6 @@ makeADFun_ukf_rtmb = function(self, private)
   
   # ukf constants and functions -----------------------------------
   nn <- 2*n.states + 1
-  ukf.alpha <- 1
-  ukf.beta <- 0
-  # ukf.kappa <- 3 - n.states
-  ukf.kappa <- 3
   sqrt_c <- sqrt(ukf.alpha^2*(n.states + ukf.kappa))
   ukf.lambda <- sqrt_c^2 - n.states
   
@@ -165,11 +166,12 @@ makeADFun_ukf_rtmb = function(self, private)
   # [X0, X0,...,X0] + sqrt(c) [0, chol(P), -chol(P)]
   create.sigmaPoints <- function(stateVec, chol.covMat){
     # Copy state vector
-    x <- RTMB::matrix(rep(stateVec,nn), ncol=nn)
+    x <- rep(stateVec, nn)
+    dim(x) <- c(n.states, nn)
     
     # Compute sqrt(c) * [0, A, -A], with A = chol(P)
-    # y <- sqrt_c * cbind(0, chol.covMat, -chol.covMat)
-    y <- sqrt(1+n.states) * cbind(0, chol.covMat, -chol.covMat)
+    y <- sqrt_c * c(n.zeros, chol.covMat, -chol.covMat)
+    dim(y) <- c(n.states, nn)
     
     X.sigma <- x+y
     return(X.sigma)
@@ -177,28 +179,30 @@ makeADFun_ukf_rtmb = function(self, private)
   
   # get chol(P) from sigma points
   sigma2chol <- function(X.sigma){
-    # ((X.sigma - X.sigma[,1])/sqrt_c)[,2:(n.states+1)]
-    ((X.sigma - X.sigma[,1])/sqrt(3))[,2:(n.states+1)]
+    (X.sigma[,2:(n.states+1)] - X.sigma[,1])/sqrt_c
   }
   
   # create f of sigma points
   f.sigma <- function(sigmaPoints, parVec, inputVec){
-    Fsigma <- RTMB::matrix(0,nrow=n.states,ncol=nn)
+    # Fsigma <- RTMB::matrix(0,nrow=n.states,ncol=nn)
     for(i in 1:nn){
-      Fsigma[,i] <- f__(sigmaPoints[,i], parVec, inputVec)
+      # Fsigma[,i] <- f__(sigmaPoints[,i], parVec, inputVec)
+      Fsigma[[1,i]] <- f__(sigmaPoints[,i], parVec, inputVec)
     }
-    return(Fsigma)
+    x <- do.call("c", Fsigma)
+    dim(x) <- c(n.states, nn)
+    return(x)
+    # return(Fsigma)
   }
   
-  # create h of sigma point
   h.sigma <- function(sigmaPoints, parVec, inputVec){
-    Hsigma <- RTMB::matrix(0,nrow=n.obs,ncol=nn)
+    # Hsigma <- RTMB::matrix(0,nrow=n.obs,ncol=nn)
     for(i in 1:nn){
       Hsigma[,i] <- h__(sigmaPoints[,i], parVec, inputVec)
     }
     return(Hsigma)
   }
-
+  
   # 1-step UKF ODE ----------------------------------------
   ukf_ode_1step = function(X.sigma, chol.covMat, parVec, inputVec){
     
@@ -209,7 +213,8 @@ makeADFun_ukf_rtmb = function(self, private)
     F.sigma <- f.sigma(X.sigma, parVec, inputVec)
     
     # Rhs term 1:
-    y <- RTMB::matrix(rep(F.sigma %*% W.m,nn), ncol=nn)
+    y <- rep(F.sigma %*% W.m, nn)
+    dim(y) <- c(n.states, nn)
     
     # Rhs term 2: Compute [0 , chol(P) * Phi(M) , -chol(P)*Phi(M)]
     
@@ -223,11 +228,11 @@ makeADFun_ukf_rtmb = function(self, private)
     
     # Create [0, chol(P) * Phi(M), -chol(P) * Phi(M)]
     z0 <- chol.covMat %*% Phi.M
-    z <- cbind(0, z0, -z0)
+    z <- c(n.zeros, z0, -z0)
+    dim(z) <- c(n.states, nn)
     
     # Create dX = RHS1 + sqrt(c) * RHS2
-    # dx <- y + sqrt_c * z
-    dx <- y + sqrt(3) * z
+    dx <- y + sqrt_c * z
     
     # return
     return(dx)
@@ -280,13 +285,13 @@ makeADFun_ukf_rtmb = function(self, private)
   }
   
   # user-defined functions ---------------------------
-  # for(i in seq_along(private$rtmb.function.strings.indexed)){
-  #   eval(parse(text=private$rtmb.function.strings.indexed[[i]]))
-  # }
-  
-  for(i in seq_along(private$rtmb.function.strings)){
-    eval(parse(text=private$rtmb.function.strings[[i]]))
+  for(i in seq_along(private$rtmb.function.strings.indexed)){
+    eval(parse(text=private$rtmb.function.strings.indexed[[i]]))
   }
+  
+  # for(i in seq_along(private$rtmb.function.strings)){
+  #   eval(parse(text=private$rtmb.function.strings[[i]]))
+  # }
   
   # new functions ----------------------------------------
   
@@ -297,17 +302,20 @@ makeADFun_ukf_rtmb = function(self, private)
   }
   
   # AD overwrites ----------------------------------------
-  # f_vec <- RTMB::AD(numeric(n.states),force=TRUE)
+  f_vec <- RTMB::AD(numeric(n.states),force=TRUE)
   # Fsigma <- RTMB::AD(RTMB::matrix(0,nrow=n.states,ncol=nn),force=TRUE)
-  # Hsigma <- RTMB::AD(RTMB::matrix(0,nrow=n.obs,ncol=nn),force=TRUE)
-  # dfdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.states, ncol=n.states),force=TRUE)
-  # g_mat <- RTMB::AD(RTMB::matrix(0,nrow=n.states, ncol=n.diffusions),force=TRUE)
-  # h_vec <- RTMB::AD(numeric(n.obs),force=TRUE)
-  # dhdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.states),force=TRUE)
-  # hvar_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.obs),force=TRUE)
-  # 
-  # stateVec <- RTMB::AD(stateVec,force=TRUE)
-  # covMat <- RTMB::AD(covMat,force=TRUE)
+  Hsigma <- RTMB::AD(RTMB::matrix(0,nrow=n.obs,ncol=nn),force=TRUE)
+  dfdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.states, ncol=n.states),force=TRUE)
+  g_mat <- RTMB::AD(RTMB::matrix(0,nrow=n.states, ncol=n.diffusions),force=TRUE)
+  h_vec <- RTMB::AD(numeric(n.obs),force=TRUE)
+  dhdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.states),force=TRUE)
+  hvar_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.obs),force=TRUE)
+  
+  n.zeros <- RTMB::AD(numeric(n.states),force=TRUE)
+  Fsigma <- array(list(),c(1,nn))
+  
+  stateVec <- RTMB::AD(stateVec,force=TRUE)
+  covMat <- RTMB::AD(covMat,force=TRUE)
   
   # obsMat <- RTMB::AD(obsMat,force=F)
   # inputMat <- RTMB::AD(inputMat,force=F)
@@ -357,7 +365,7 @@ makeADFun_ukf_rtmb = function(self, private)
     
     # chol.covMat <- covMat
     X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
-
+    
     ######## (PRE) DATA UPDATE ########
     # This is done to include the first measurements in the provided data
     # We update the state and covariance based on the "new" measurement
@@ -392,7 +400,7 @@ makeADFun_ukf_rtmb = function(self, private)
     
     ###### MAIN LOOP START #######
     for(i in 1:(nrow(obsMat)-1)){
-  
+      
       # Compute sigma points
       covMat <- covMat + eps.chol * diag(n.states)
       chol.covMat <- t(base::chol(covMat))
@@ -401,7 +409,7 @@ makeADFun_ukf_rtmb = function(self, private)
       # Inputs
       inputVec = inputMat[i,]
       dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
-
+      
       ###### TIME UPDATE #######
       # We solve sigma points forward in time
       for(j in 1:ode_timesteps[i]){
@@ -471,6 +479,92 @@ makeADFun_ukf_rtmb = function(self, private)
 
 #######################################################
 #######################################################
+# UKF TMB-IMPLEMENTATION (FOR OPTIMIZATION)
+#######################################################
+#######################################################
+makeADFun_ukf_tmb = function(self, private){
+  
+  # Data ----------------------------------------
+  
+  # add mandatory entries to data
+  tmb.data = list(
+    
+    # observations
+    obsMat = as.matrix(private$data[private$obs.names]),
+    
+    # inputs
+    inputMat = as.matrix(private$data[private$input.names]),
+    
+    # initial
+    stateVec = private$initial.state$x0,
+    covMat = private$initial.state$p0,
+    
+    # ode
+    ode_solver = private$ode.solver,
+    ode_timestep_size = private$ode.timestep.size,
+    ode_timesteps = private$ode.timesteps,
+    
+    # loss function
+    loss_type = private$loss$loss,
+    loss_c = private$loss$c,
+    
+    # ukf parameters
+    ukf_pars = private$ukf_hyperpars,
+    
+    # system size
+    n_states = private$number.of.states,
+    n_obs = private$number.of.observations,
+    n_inputs = private$number.of.inputs,
+    
+    # estimate stationary levels
+    estimate_stationary_initials = as.numeric(private$estimate.initial)
+  )
+  
+  # MAP Estimation?
+  tmb.map.data = list(
+    MAP_bool = 0L
+  )
+  if (!is.null(private$map)) {
+    bool = self$getParameters()[,"type"] == "free"
+    tmb.map.data = list(
+      MAP_bool = 1L,
+      map_mean__ = private$map$mean[bool],
+      map_cov__ = private$map$cov[bool,bool],
+      map_ints__ = as.numeric(bool),
+      sum_map_ints__ = sum(as.numeric(bool))
+    )
+  }
+  
+  # construct final data list
+  data = c(tmb.data, tmb.map.data)
+  
+  
+  # Parameters ----------------------------------------
+  parVec = sapply(private$parameters, function(x) x[["initial"]])
+  parameters = list(parVec = parVec)
+  
+  # Create map for fixed parameters ----------------------------------------
+  pseq <- 1:private$number.of.pars
+  id.fixed.pars <- private$parameter.names %in% names(private$fixed.pars)
+  pseq[id.fixed.pars] <- NA
+  map <- list(parVec = factor(pseq))
+  
+  # Create AD-likelihood function ---------------------------------------
+  nll <- TMB::MakeADFun(data = data,
+                        parameters = parameters,
+                        map = map,
+                        DLL = private$modelname.with.method,
+                        silent = TRUE)
+  
+  # save objective function
+  private$nll = nll
+  
+  # return
+  return(invisible(self))
+}
+
+#######################################################
+#######################################################
 # EKF R-IMPLEMENTATION (FOR REPORTING)
 #######################################################
 #######################################################
@@ -515,7 +609,7 @@ ukf_filter_r = function(parVec, self, private)
   ukf.beta <- 0
   # ukf.kappa <- 3 - n.states
   ukf.kappa <- 3
-
+  
   # values from: 
   # S. Sarkka - On Unscented Kalman Filtering for State Estimation of Continuous-Time Nonlinear Systems 2007
   # ukf.alpha = 0.5
@@ -531,7 +625,7 @@ ukf_filter_r = function(parVec, self, private)
   W.c[1] <- ukf.lambda/((n.states+ukf.lambda)+(1-ukf.alpha^2+ukf.beta))
   W.m.mat <- replicate(nn, W.m)
   W <- (diag(nn) - W.m.mat) %*% diag(W.c) %*% t(diag(nn) - W.m.mat)
-
+  
   # Sample sigma-points from mean and sqrt-covariance
   # [X0, X0,...,X0] + sqrt(c) [0, chol(P), -chol(P)]
   create.sigmaPoints <- function(stateVec, chol.covMat){
@@ -570,7 +664,7 @@ ukf_filter_r = function(parVec, self, private)
     }
     return(Hsigma)
   }
-
+  
   # 1-step UKF ODE ----------------------------------------
   ukf_ode_1step = function(X.sigma, chol.covMat, parVec, inputVec){
     
@@ -811,7 +905,7 @@ ukf_filter_r = function(parVec, self, private)
                      pPrior = pPrior,
                      Innovation = Innovation,
                      InnovationCovariance = InnovationCovariance
-                     )
+  )
   
   return(invisible(returnlist))
 }
@@ -829,6 +923,8 @@ calculate_fit_statistics_ukf <- function(self, private){
     return(NULL)
   }
   
+  estimated.parameters <- private$opt$par
+  
   # clear fit
   private$fit = NULL
   
@@ -844,7 +940,7 @@ calculate_fit_statistics_ukf <- function(self, private){
   # gradient
   private$fit$nll.gradient = try_withWarningRecovery(
     {
-      nll.grad = as.vector(private$nll$gr(private$opt$par))
+      nll.grad = as.vector(private$nll$gr(estimated.parameters))
       names(nll.grad) = names(private$free.pars)
       nll.grad
     }
@@ -856,7 +952,7 @@ calculate_fit_statistics_ukf <- function(self, private){
   # # hessian
   private$fit$nll.hessian = try_withWarningRecovery(
     {
-      nll.hess = private$nll$he(private$opt$par)
+      nll.hess = private$nll$he(estimated.parameters)
       rownames(nll.hess) = names(private$free.pars)
       colnames(nll.hess) = names(private$free.pars)
       nll.hess
@@ -867,8 +963,8 @@ calculate_fit_statistics_ukf <- function(self, private){
   }
   
   # parameter estimates and standard deviation
-  npars <- length(private$opt$par)
-  private$fit$par.fixed = private$opt$par
+  npars <- length(estimated.parameters)
+  private$fit$par.fixed = estimated.parameters
   private$fit$sd.fixed = rep(NA,npars)
   private$fit$cov.fixed = array(NA,dim=c(npars,npars))
   
@@ -950,8 +1046,8 @@ calculate_fit_statistics_ukf <- function(self, private){
   # States -----------------------------------
   
   # Extract reported items from nll
-  estimated_pars <- self$getParameters()[,"estimate"]
-  rep <- ukf_filter_r(estimated_pars, self, private)
+  estimated.and.fixed.pars <- self$getParameters()[,"estimate"]
+  rep <- ukf_filter_r(estimated.and.fixed.pars, self, private)
   
   private$fit$rep <- rep
   

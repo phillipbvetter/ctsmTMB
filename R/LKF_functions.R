@@ -344,7 +344,7 @@ makeADFun_lkf_rtmb = function(self, private)
 
 #######################################################
 #######################################################
-# LKF R-IMPLEMENTATION (FOR REPORTING)
+# LKF FILTER R-IMPLEMENTATION
 #######################################################
 #######################################################
 
@@ -403,7 +403,7 @@ lkf_filter_r = function(parVec, self, private)
   xPrior <- pPrior <- xPost <- pPost <- Innovation <- InnovationCovariance <- vector("list",length=nrow(obsMat))
   
   ####### Neg. LogLikelihood #######
-  nll <- 0
+  # nll <- 0
   
   ####### Pre-Allocated Object #######
   I0 <- diag(n.states)
@@ -471,7 +471,7 @@ lkf_filter_r = function(parVec, self, private)
     R = C %*% covMat %*% t(C) + V
     K = covMat %*% t(C) %*% RTMB::solve(R)
     # Likelihood Contribution
-    nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+    # nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
     # Update State/Cov
     stateVec = stateVec + K %*% e
     covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -510,7 +510,7 @@ lkf_filter_r = function(parVec, self, private)
       R = C %*% covMat %*% t(C) + V
       K = covMat %*% t(C) %*% RTMB::solve(R)
       # Likelihood Contribution
-      nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
+      # nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
       # Update State/Cov
       stateVec = stateVec + K %*% e
       covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -523,66 +523,52 @@ lkf_filter_r = function(parVec, self, private)
   ###### MAIN LOOP END #######
   
   ####### RETURN #######
-  returnlist <- list(nll=nll,
-                     xPost = xPost,
-                     pPost = pPost,
-                     xPrior = xPrior,
-                     pPrior = pPrior,
-                     Innovation = Innovation,
-                     InnovationCovariance = InnovationCovariance)
+  returnlist <- list(
+    # nll=nll,
+    xPost = xPost,
+    pPost = pPost,
+    xPrior = xPrior,
+    pPrior = pPrior,
+    Innovation = Innovation,
+    InnovationCovariance = InnovationCovariance
+  )
   
   return(invisible(returnlist))
 }
 
 #######################################################
 #######################################################
-# EKF CPP IMPLEMENTATION (FOR OPTIMIZATION)
+# LKF TMB-IMPLEMENTATION (FOR OPTIMIZATION)
 #######################################################
 #######################################################
-makeADFun_lkf_cpp = function(self, private){
-  
-  # This function has no use currently - just a placeholder for a future
-  # TMB LKF implementation
+makeADFun_ekf_tmb = function(self, private){
   
   # Data ----------------------------------------
   
   # add mandatory entries to data
   tmb.data = list(
     
-    # methods and purpose
-    ode_solver = private$ode.solver,
+    # observations
+    obsMat = as.matrix(private$data[private$obs.names]),
+    
+    # inputs
+    inputMat = as.matrix(private$data[private$input.names]),
     
     # initial
     stateVec = private$initial.state$x0,
     covMat = private$initial.state$p0,
     
-    # time-steps
-    ode_timestep_size = private$ode.timestep.size,
-    ode_timesteps = private$ode.timesteps,
-    
     # loss function
-    loss_function = private$loss$loss,
-    loss_threshold_value = private$loss$c,
-    tukey_loss_parameters = private$tukey.pars,
+    loss_type = private$loss$loss,
+    loss_c = private$loss$c,
     
     # system size
-    number_of_state_eqs = private$number.of.states,
-    number_of_obs_eqs = private$number.of.observations,
-    number_of_diffusions = private$number.of.diffusions,
+    n_states = private$number.of.states,
+    n_obs = private$number.of.observations,
+    n_inputs = private$number.of.inputs,
     
     # estimate stationary levels
-    estimate_stationary_initials = as.numeric(private$estimate.initial),
-    initial_variance_scaling = private$initial.variance.scaling,
-    
-    # parameter bounds
-    par_lb = sapply(private$parameters, function(x) x$lower),
-    par_ub = sapply(private$parameters, function(x) x$lower),
-    
-    # inputs
-    inputMat = as.matrix(private$data[private$input.names]),
-    
-    # observations
-    obsMat = as.matrix(private$data[private$obs.names])
+    estimate_stationary_initials = as.numeric(private$estimate.initial)
   )
   
   # MAP Estimation?
@@ -605,15 +591,21 @@ makeADFun_lkf_cpp = function(self, private){
   
   
   # Parameters ----------------------------------------
-  parameters = lapply(private$parameters, function(x) x[["initial"]]) # Initial parameter values
+  parVec = sapply(private$parameters, function(x) x[["initial"]])
+  parameters = list(parVec = parVec)
   
+  # Create map for fixed parameters ----------------------------------------
+  pseq <- 1:private$number.of.pars
+  id.fixed.pars <- private$parameter.names %in% names(private$fixed.pars)
+  pseq[id.fixed.pars] <- NA
+  map <- list(parVec = factor(pseq))
   
   # Create AD-likelihood function ---------------------------------------
-  nll = TMB::MakeADFun(data = data,
-                       parameters = parameters,
-                       map = lapply(private$fixed.pars, function(x) x$factor),
-                       DLL = private$modelname.with.method,
-                       silent = TRUE)
+  nll <- TMB::MakeADFun(data = data,
+                        parameters = parameters,
+                        map = map,
+                        DLL = private$modelname.with.method,
+                        silent = TRUE)
   
   # save objective function
   private$nll = nll

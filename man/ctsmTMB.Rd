@@ -78,6 +78,7 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
 \item \href{#method-ctsmTMB-getAlgebraics}{\code{ctsmTMB$getAlgebraics()}}
 \item \href{#method-ctsmTMB-getInitialState}{\code{ctsmTMB$getInitialState()}}
 \item \href{#method-ctsmTMB-getParameters}{\code{ctsmTMB$getParameters()}}
+\item \href{#method-ctsmTMB-getTimers}{\code{ctsmTMB$getTimers()}}
 \item \href{#method-ctsmTMB-getEstimate}{\code{ctsmTMB$getEstimate()}}
 \item \href{#method-ctsmTMB-getLikelihood}{\code{ctsmTMB$getLikelihood()}}
 \item \href{#method-ctsmTMB-getPrediction}{\code{ctsmTMB$getPrediction()}}
@@ -454,6 +455,16 @@ Get initial (and estimated) parameters.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-getTimers"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getTimers}{}}}
+\subsection{Method \code{getTimers()}}{
+Retrieve initially timers
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getTimers()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getEstimate"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getEstimate}{}}}
 \subsection{Method \code{getEstimate()}}{
@@ -679,6 +690,7 @@ Estimate the fixed effects parameters in the specified model.
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = NULL,
+  ukf.hyperpars = c(1, 0, 3),
   trace = 1,
   control = list(trace = trace, iter.max = 1e+05, eval.max = 1e+05),
   use.hessian = FALSE,
@@ -686,6 +698,7 @@ Estimate the fixed effects parameters in the specified model.
   unconstrained.optim = FALSE,
   estimate.initial.state = FALSE,
   silent = FALSE,
+  compile = FALSE,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -736,6 +749,8 @@ approximation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
+\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+
 \item{\code{trace}}{0 or 1, passed to \code{control} to determine whether to print optimization information at each step.}
 
 \item{\code{control}}{list of control parameters parsed to \code{nlminb} as its \code{control} argument.
@@ -758,6 +773,8 @@ system contains time-varying inputs, the first element of these is used.}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+
+\item{\code{compile}}{boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.}
 
 \item{\code{...}}{additional arguments}
 }
@@ -782,8 +799,10 @@ have more control of the optimization workflow.
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = NULL,
+  ukf.hyperpars = c(1, 0, 3),
   estimate.initial.state = FALSE,
   silent = FALSE,
+  compile = FALSE,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -844,12 +863,16 @@ approximation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
+\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+
 \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the
 system contains time-varying inputs, the first element of these is used.}
 
 \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+
+\item{\code{compile}}{boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.}
 
 \item{\code{...}}{additional arguments}
 }
