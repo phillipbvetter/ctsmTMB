@@ -289,7 +289,8 @@ check_inputs <- function(input, self, private) {
   all.names = all.names[!bool]
   check.bool = parname %in% all.names
   if(!check.bool){
-    stop("The following parameter is missing from the defined model (after applying the algebraic substitutions): ", parname)
+    stop("The following parameter(s) is/are missing from the defined model (after applying algebraic substitutions):
+         ", parname)
   }
   
   return(invisible(par))

@@ -7,9 +7,6 @@
 static zigg::Ziggurat ziggurat;
 const double pi = M_PI;
 
-// Inverse logit function
-// double invlogit2(double x);
-
 // Note to self:
 // The use of 'inline' and header guards allow (recommended only for small utility) functions to be placed in this header file
 // as opposed to placing the full function in a .cpp file and placing a function declaration here (as commented out below)

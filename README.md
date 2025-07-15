@@ -76,7 +76,9 @@ The following state reconstruction algorithms are currently available:
 
 2.  The (Continuous-Discrete) Extended Kalman Filter, `ekf`.
 
-3.  The (Continuous-Discrete) Laplace “Filter” `laplace`.
+3.  The (Continuous-Discrete) Unscented Kalman Filter, `ukf`.
+
+4.  The (Continuous-Discrete) Laplace “Filter” `laplace`.
 
 ## Kalman Filters
 
@@ -93,18 +95,19 @@ advantages of the methods are:
 
 In these cases **TMB** simply provides the automatic differentiation.
 
-<!-- The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242). -->
+The Unscented Kalman Filter implementation is based on *Algorithm 4.7*
+in [S. Särkkä, 2007](https://ieeexplore.ieee.org/document/4303242).
 
-## Laplace “Filter”
+## Laplace Smoother
 
 The state-reconstructions based on the `laplace` (approximation) method
-are *smoothed* estimates, meaning that all states are optimized jointly,
-given all observations in the data. The Laplace Approximation is
-natively built-into and completely handled by **TMB**. The package
-implements the stability-improved method due to [Thygesen,
-2025](https://arxiv.org/abs/2503.21358).
+are *smoothed* estimates, meaning that states are optimized jointly
+conditioned on all observations. The Laplace approximation is natively
+built-into and completely handled by **TMB**. The package also
+implements the stability-improved method for state-dependent diffusion
+due to [Thygesen, 2025](https://arxiv.org/abs/2503.21358) `laplace2`.
 
-A particular advantage of Laplace filter is:
+A particular advantage of the Laplace smoother is:
 
 1.  The possibility for unimodal non-Gaussian observation densities to
     accommodate the need for e.g. heavier distribution tails. *Not yet
@@ -345,3 +348,8 @@ patchwork::wrap_plots(p1,p2[[1]], ncol=2)
   differential equations using the Laplace approximation: Demonstration
   and examples”*. In:
   [arXiv:2503.21358v2](https://arxiv.org/abs/2503.21358).
+
+- S. Särkkä, *“On Unscented Kalman Filtering for State Estimation of
+  Continuous-Time Nonlinear Systems”*. In: [IEEE Transactions on
+  Automatic Control, 52(9),
+  1631-1641](https://ieeexplore.ieee.org/document/4303242).

@@ -288,8 +288,8 @@ makeADFun_ekf_rtmb = function(self, private)
   dhdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.states),force=TRUE)
   hvar_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.obs),force=TRUE)
   
-  stateVec <- RTMB::AD(stateVec,force=TRUE)
-  covMat <- RTMB::AD(covMat,force=TRUE)
+  # stateVec <- RTMB::AD(stateVec,force=TRUE)
+  # covMat <- RTMB::AD(covMat,force=TRUE)
   
   # obsMat <- RTMB::AD(obsMat,force=T)
   inputMat <- RTMB::AD(inputMat,force=T)
@@ -304,6 +304,7 @@ makeADFun_ekf_rtmb = function(self, private)
     
     ####### Parameters into vector #######
     parVec <- do.call(c, p[1:n.pars])
+    # stateVec <- do.call(c, p[(n.pars+1):(n.pars+n.states)])
     
     ####### Neg. LogLikelihood #######
     nll <- 0
@@ -387,9 +388,17 @@ makeADFun_ekf_rtmb = function(self, private)
   }
   
   # construct AD-likelihood function ----------------------------------------
+  
+  # add states to parameters
+  # state.list <- as.list(stateVec)
+  # names(state.list) <- private$state.names
+  # parameters <- c(parameters, state.list)
+  
+  map <- lapply(private$fixed.pars, function(x) x$factor)
+  
   nll <- RTMB::MakeADFun(func = ekf.nll,
                          parameters = parameters,
-                         map = lapply(private$fixed.pars, function(x) x$factor),
+                         map = map,
                          silent=TRUE)
   
   # save objective function
@@ -677,8 +686,6 @@ ekf_filter_r = function(parVec, self, private)
     V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
     R = C %*% covMat %*% t(C) + V
     K = covMat %*% t(C) %*% solve(R)
-    # Likelihood Contribution
-    # nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
     # Update State/Cov
     stateVec = stateVec + K %*% e
     covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -719,8 +726,6 @@ ekf_filter_r = function(parVec, self, private)
       V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
       R = C %*% covMat %*% t(C) + V
       K = covMat %*% t(C) %*% solve(R)
-      # Likelihood Contribution
-      # nll = nll - RTMB::dmvnorm(e, Sigma=R, log=TRUE)
       # Update State/Cov
       stateVec = stateVec + K %*% e
       covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
@@ -1264,8 +1269,8 @@ ekf_r_prediction = function(self, private)
       
     }
     
-    stateVec <- head(predMats[[i]][2,],n.states)
-    covMat <- matrix(tail(predMats[[i]][2,],n.states^2),nrow=n.states)
+    stateVec <- head(predMats[[i]][2,], n.states)
+    covMat <- matrix(tail(predMats[[i]][2,], n.states^2), nrow=n.states)
     
     ######## DATA UPDATE ########
     # We update the state and covariance based on the "new" measurement
@@ -1391,10 +1396,8 @@ create_ekf_predict_return = function(return.covariance, return.k.ahead, self, pr
     as.list(df.out[state.names]),
     # inputs
     as.list(inputs.df),
-    # free parameters
+    # free and fixed parameters
     named.pars.list
-    # fixed parameters
-    # lapply(private$fixed.pars, function(x) x$initial)
   )
   
   # calculate observations

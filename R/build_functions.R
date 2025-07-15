@@ -123,14 +123,17 @@ apply_algebraics_and_define_trans_equations = function(self, private) {
   obs.var.rhs = lapply(private$obs.var,function(x) x$rhs)
   alg.rhs = lapply(private$alg.eqs, function(x) x$rhs)
   
+  # order doesnt matter now after new line below - so we dont need rev anymore actually..
   for(i in rev(seq_along(alg.rhs))){
     this.alg <- alg.rhs[i]
+    # This line below is new: We also substitute algebraics into the other algebraics
+    alg.rhs <- lapply(alg.rhs, function(x) do.call(substitute, list(x, this.alg)))
+    # 
     sys.rhs = lapply(sys.rhs, function(x) do.call(substitute, list(x, this.alg)))
     obs.rhs = lapply(obs.rhs, function(x) do.call(substitute, list(x, this.alg)))
     obs.var.rhs = lapply(obs.var.rhs, function(x) do.call(substitute, list(x, this.alg)))
   }
-  
-  
+
   # replace rhs in the already defined system, obs, obs.var equations and
   # add these to the transformed systems/obs/obs.var private fields
   # system
@@ -140,7 +143,7 @@ apply_algebraics_and_define_trans_equations = function(self, private) {
     temp.list = list(form=temp.form, name=private$state.names[i])
     private$add_trans_systems(temp.list)
   }
-  
+
   # observations
   for(i in seq_along(private$obs.eqs)) {
     temp.form = private$obs.eqs[[i]]$form
@@ -406,11 +409,11 @@ final_build_check = function(self, private) {
   
   ##### NOTE::: Do we need to remove this? doesnt really matter right? ####
   # Verify that all input and parameters are used in the model
-  given.vars = c( private$parameter.names, private$input.names[-1])
-  bool = given.vars %in% rhs.vars
-  if (any(!bool)) {
-    stop("The following variables(s) are unused: \n\t ", paste(given.vars[!bool],collapse=", "))
-  }
+  # given.vars = c( private$parameter.names, private$input.names[-1])
+  # bool = given.vars %in% rhs.vars
+  # if (any(!bool)) {
+  #   stop("The following variables(s) are unused: \n\t ", paste(given.vars[!bool],collapse=", "))
+  # }
   
   # return
   return(invisible(self))

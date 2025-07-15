@@ -9,15 +9,17 @@
 check_and_set_data = function(data, self, private) {
   
   # Check data for re-set
-  check_for_data_rebuild(data, self, private)
-  if(!private$rebuild.data) return(invisible(self))
-  private$rebuild.data <- FALSE
-  private$rebuild.ad <- TRUE
+  if(private$procedure == "estimation"){
+    check_for_data_rebuild(data, self, private)
+    if(!private$rebuild.data) return(invisible(self))
+    private$rebuild.data <- FALSE
+    private$rebuild.ad <- TRUE
+    
+    # store the data
+    private$old.data$entry.data <- data
+  }
   
-  # store the data
-  private$old.data$entry.data <- data
-  
-  if(!private$silent) message("Setting data...")
+  if(!private$silent) message("Checking and setting data...")
   
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)
@@ -153,26 +155,22 @@ set_ode_timestep = function(data, self, private){
   # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333 
   # down from the set ode.timestep = 1
   
-  
-  # check for no provided time.step
-  # if(is.null(private$ode.timestep)){
-  # private$ode.timestep = diff(data$t)
-  # }
+  ode.timestep <- private$ode.timestep
   
   # check that ode.timestep has length 1 or at least nrow(data)-1.
-  if (length(private$ode.timestep) == 1) {
+  if (length(ode.timestep) == 1) {
     
     # Recycle to correct length
-    private$ode.timestep = rep(private$ode.timestep, nrow(data)-1)
+    ode.timestep = rep(ode.timestep, nrow(data)-1)
     
-  }  else if (length(private$ode.timestep) == nrow(data) -1) {
+  }  else if (length(ode.timestep) == nrow(data) -1) {
     
     # do nothing
     
-  } else if (length(private$ode.timestep) > nrow(data) - 1 ) {
+  } else if (length(ode.timestep) > nrow(data) - 1 ) {
     
     # trim if it is larger than nrow(data)-1
-    private$ode.timestep = head(private$ode.timestep, nrow(data)-1)
+    ode.timestep = head(ode.timestep, nrow(data)-1)
     warning("The provided ode.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.")
     
   } else {
@@ -189,11 +187,11 @@ set_ode_timestep = function(data, self, private){
   # For the data time-gaps larger than ode.timestep, we set the time-step to the requested ode.timestep
   # For all others just take a timestep equal to the time-gap in the data (which will be smaller than ode.timestep)
   ode_timestep_size = data.dt
-  bool = data.dt > private$ode.timestep
-  ode_timestep_size[bool] = private$ode.timestep[bool]
+  bool = data.dt > ode.timestep
+  ode_timestep_size[bool] = ode.timestep[bool]
   
   # where data.dt > ode.timestep, calculate the required number of steps using ode.timestep
-  ode.timesteps[bool] = data.dt[bool] / private$ode.timestep[bool]
+  ode.timesteps[bool] = data.dt[bool] / ode.timestep[bool]
   
   # Find those indices where the number of steps must increase
   epsilon.step  = 1e-3
@@ -276,20 +274,22 @@ set_simulation_timestep = function(data, self, private){
   # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333 
   # down from the set ode.timestep = 1
   
+  simulation.timestep <- private$simulation.timestep
+  
   # check that simulation.timestep has length 1 or at least nrow(data)-1.
-  if (length(private$simulation.timestep) == 1) {
+  if (length(simulation.timestep) == 1) {
     
     # Recycle to correct length
-    private$simulation.timestep = rep(private$simulation.timestep, nrow(data)-1)
+    simulation.timestep = rep(simulation.timestep, nrow(data)-1)
     
-  }  else if (length(private$simulation.timestep) == nrow(data) - 1) {
+  }  else if (length(simulation.timestep) == nrow(data) - 1) {
     
     # do nothing
     
-  } else if (length(private$simulation.timestep) > nrow(data) - 1 ) {
+  } else if (length(simulation.timestep) > nrow(data) - 1 ) {
     
     # trim if it is larger than nrow(data)-1
-    private$simulation.timestep = head(private$simulation.timestep, nrow(data)-1)
+    simulation.timestep = head(simulation.timestep, nrow(data)-1)
     # warning("The provided simulation.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.")
     
   } else {
@@ -306,11 +306,11 @@ set_simulation_timestep = function(data, self, private){
   # For the data time-gaps larger than ode.timestep, we set the time-step to the requested ode.timestep
   # For all others just take a timestep equal to the time-gap in the data (which will be smaller than ode.timestep)
   simulation_timestep_size = data.dt
-  bool = data.dt > private$simulation.timestep
-  simulation_timestep_size[bool] = private$simulation.timestep[bool]
+  bool = data.dt > simulation.timestep
+  simulation_timestep_size[bool] = simulation.timestep[bool]
   
   # where data.dt > ode.timestep, calculate the required number of steps using ode.timestep
-  simulation.timesteps[bool] = data.dt[bool] / private$simulation.timestep[bool]
+  simulation.timesteps[bool] = data.dt[bool] / simulation.timestep[bool]
   
   # Find those indices where the number of steps must increase
   epsilon.step  = 1e-2

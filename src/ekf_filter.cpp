@@ -31,7 +31,7 @@ List ekf_filter(
   // misc  
   const int tsize = inputMat.col(0).size();
   const int ni = inputMat.row(0).size();
-  const int n_squared = n*n;
+  // const int n_squared = n*n;
   Eigen::VectorXd inputVec(ni), dinputVec(ni), obsVec(m), e, y, obsVec_all;
   Eigen::VectorXi bool_is_not_na_obsVec;
   Eigen::MatrixXd C, R, K, E, V, Ri, I(n,n);
@@ -39,13 +39,16 @@ List ekf_filter(
   Eigen::VectorXd H;
   Eigen::MatrixXd Hvar, dHdX;
 
-  // storage for predictions
-  Rcpp::List ode_1step_integration(2), Innovation(tsize), InnovationCovariance(tsize);
-  Eigen::MatrixXd xPrior(tsize, n), xPost(tsize,n);
-  Eigen::MatrixXd pPrior(tsize, n_squared), pPost(tsize, n_squared);
+  // storage
+  Rcpp::List ode_1step_integration(2);
+  Rcpp::List Innovation(tsize), InnovationCovariance(tsize), xPrior(tsize), xPost(tsize), pPrior(tsize), pPost(tsize);
+  //Eigen::MatrixXd xPrior(tsize, n), xPost(tsize,n);
+  //Eigen::MatrixXd pPrior(tsize, n_squared), pPost(tsize, n_squared);
 
-  xPrior.row(0) = stateVec;
-  pPrior.row(0) = covMat.reshaped();
+  /*xPrior.row(0) = stateVec;*/
+  /*pPrior.row(0) = covMat.reshaped();*/
+  xPrior(0) = stateVec;
+  pPrior(0) = covMat;
 
   //////////// INITIAL DATA-UPDATE ///////////
   // Only update if there is any available data
@@ -77,8 +80,10 @@ List ekf_filter(
     Innovation(0) = e;
     InnovationCovariance(0) = R;
   }
-  xPost.row(0) = stateVec;
-  pPost.row(0) = covMat.reshaped();
+  /*xPost.row(0) = stateVec;*/
+  /*pPost.row(0) = covMat.reshaped();*/
+  xPost(0) = stateVec;
+  pPost(0) = covMat;
 
   //////////// MAIN LOOP OVER TIME POINTS ///////////
   for(int i=0 ; i < (tsize-1) ; i++){
@@ -95,8 +100,10 @@ List ekf_filter(
       covMat = ode_1step_integration["P1"];
       inputVec += dinputVec;
     }
-    xPrior.row(i+1) = stateVec;
-    pPrior.row(i+1) = covMat.reshaped();
+    /*xPrior.row(i+1) = stateVec;*/
+    /*pPrior.row(i+1) = covMat.reshaped();*/
+    xPrior(i+1) = stateVec;
+    pPrior(i+1) = covMat;
 
     //////////// DATA-UPDATE ///////////
     // Only update if there is any available data
@@ -128,8 +135,10 @@ List ekf_filter(
       Innovation(i+1) = e;
       InnovationCovariance(i+1) = R;
     }
-    xPost.row(i+1) = stateVec;
-    pPost.row(i+1) = covMat.reshaped();
+    /*xPost.row(i+1) = stateVec;*/
+    /*pPost.row(i+1) = covMat.reshaped();*/
+    xPost(i+1) = stateVec;
+    pPost(i+1) = covMat;
   }
   
   /*return List::create(

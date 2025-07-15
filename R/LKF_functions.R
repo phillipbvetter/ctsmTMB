@@ -541,7 +541,7 @@ lkf_filter_r = function(parVec, self, private)
 # LKF TMB-IMPLEMENTATION (FOR OPTIMIZATION)
 #######################################################
 #######################################################
-makeADFun_ekf_tmb = function(self, private){
+makeADFun_lkf_tmb = function(self, private){
   
   # Data ----------------------------------------
   

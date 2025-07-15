@@ -9,7 +9,7 @@ construct_makeADFun = function(self, private){
   # Check for AD rebuild
   check_for_ADfun_rebuild(self, private)
   if(!private$rebuild.ad) return(invisible(self))
-  save_settings_for_comparison_next_time(self, private)
+  save_settings_for_check(self, private)
   private$rebuild.ad <- FALSE
   
   if(!private$silent) message("Constructing objective function and derivative tables...")

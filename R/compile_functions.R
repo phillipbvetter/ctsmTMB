@@ -5,19 +5,40 @@ compile_rcpp_functions = function(self, private){
   
   if(!private$silent) message("Compiling C++ function pointers...")
   
+  # Settings
   .depends <- c("RcppEigen", "ctsmTMB")
   
-  private$rcpp_function_ptr$f <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$f, depends=.depends)
+  # COMMENT:
+  # These .includes should in principle be added via the .depends = 'ctsmTMB'.
+  # This automatically fetches the code in inst/include/ctsmTMB.h
+  # This does not work however when using devtools::load_all.
+  .includes <- "double invlogit(double x){return 1/(1 + exp(-x));}"
   
-  private$rcpp_function_ptr$dfdx <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$dfdx, depends=.depends)
+  # Create XPtr's
+  outlist <- lapply(private$rcpp.function.strings, function(s) RcppXPtrUtils::cppXPtr(s, depends=.depends, includes = .includes))
   
-  private$rcpp_function_ptr$g <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$g, depends=.depends)
+  # Add to private fields
+  nams <- c("f","dfdx","g","h","dhdx","hvar")
+  names(outlist) <- nams
+  private$rcpp_function_ptr[nams] <- outlist[nams]
   
-  private$rcpp_function_ptr$h <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$h, depends=.depends)
+  # private$rcpp_function_ptr$f <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$f, 
+                                                        # depends=.depends)
   
-  private$rcpp_function_ptr$dhdx <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$dhdx, depends=.depends)
+  # private$rcpp_function_ptr$dfdx <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$dfdx, 
+                                                           # depends=.depends)
   
-  private$rcpp_function_ptr$hvar <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$hvar, depends=.depends)
+  # private$rcpp_function_ptr$g <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$g, 
+                                                        # depends=.depends)
+  
+  # private$rcpp_function_ptr$h <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$h, 
+                                                        # depends=.depends)
+  
+  # private$rcpp_function_ptr$dhdx <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$dhdx, 
+                                                           # depends=.depends)
+  
+  # private$rcpp_function_ptr$hvar <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$hvar, 
+                                                           # depends=.depends)
   
 }
 
@@ -119,7 +140,6 @@ compile_cppfile <- function(self, private) {
     # get the compiled dynamic library file
     model.dyn.path <- paste0(private$cppfile.path.with.method, file.end)
     
-    
     # If the model exists, check that dimensions are correct
     if (file.exists(model.dyn.path)) {
       model.cpp.path <- paste0(private$cppfile.path.with.method, ".cpp")
@@ -147,7 +167,6 @@ compile_cppfile <- function(self, private) {
     # reload shared libraries
     # Suppress TMB output 'removing X pointers' with capture.output
     utils::capture.output(try(dyn.load(TMB::dynlib(private$cppfile.path.with.method)), silent=T))
-    
   }
   
   # return
