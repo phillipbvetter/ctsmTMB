@@ -288,8 +288,8 @@ makeADFun_ekf_rtmb = function(self, private)
   dhdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.states),force=TRUE)
   hvar_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.obs),force=TRUE)
   
-  # stateVec <- RTMB::AD(stateVec,force=TRUE)
-  # covMat <- RTMB::AD(covMat,force=TRUE)
+  stateVec <- RTMB::AD(stateVec,force=TRUE)
+  covMat <- RTMB::AD(covMat,force=TRUE)
   
   # obsMat <- RTMB::AD(obsMat,force=T)
   inputMat <- RTMB::AD(inputMat,force=T)
