@@ -9,13 +9,19 @@
 check_and_set_data = function(data, self, private) {
   
   # Check data for re-set
-  if(private$procedure == "estimation"){
+  if(any(private$procedure == c("estimation","construction"))){
+    
     check_for_data_rebuild(data, self, private)
+    
+    # if the data is identical to previous calls do nothing
     if(!private$rebuild.data) return(invisible(self))
+    
+    # if the data changed then we continue in this loop - so disable flag
     private$rebuild.data <- FALSE
+    # if when
     private$rebuild.ad <- TRUE
     
-    # store the data
+    # store this newly provided estimation data
     private$old.data$entry.data <- data
   }
   

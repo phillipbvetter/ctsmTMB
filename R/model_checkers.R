@@ -37,7 +37,7 @@ check_system_eqs = function(form, self, private) {
   lhs = form[[2]]
   rhs = form[[3]]
   
-  # If  LHS has length one (single term) and class "name"
+  # LHS consists of only 1 variable
   if (!(length(lhs) == 1)) {
     stop("You have multiple terms on the left-hand side")
   }
@@ -49,7 +49,6 @@ check_system_eqs = function(form, self, private) {
   }
   
   # dont use dt or dw in the state name
-  # match = stringr::str_match(deparse1(lhs),"^(?!d[tw])")
   match = stringr::str_match(deparse1(lhs),"^(?!d[w])")
   if (is.na(match)) {
     stop("The state name can't begin with dt or dw")
@@ -275,19 +274,21 @@ check_inputs <- function(input, self, private) {
     }
   }
   
-  # IS THE PARAMETER IN THE MODEL?
-  # the parameter name must be present in the object already - check all entries
-  # but disregard parameter names on LHS of algebraics that will be replaced by
-  # the algebraic RHS
-  all.names = unique(unlist(c(
-    lapply(private$sys.eqs, function(x) x$allvars),
-    lapply(private$obs.eqs, function(x) x$allvars),
-    lapply(private$obs.var, function(x) x$allvars),
-    lapply(private$alg.eqs, function(x) all.vars(x$rhs))
-  ))) 
-  bool = all.names %in% names(private$alg.eqs)
-  all.names = all.names[!bool]
-  check.bool = parname %in% all.names
+  # check if parameter is in the defined model
+  .f <- function(ls) unname(unlist(ls))
+  allvars <- c(
+    .f(lapply(private$sys.eqs, function(x) x$allvars)),
+    .f(lapply(private$obs.eqs, function(x) x$allvars)),
+    .f(lapply(private$obs.var, function(x) x$allvars))
+  )
+  # remove algebraic LHS variables
+  alg.eqs.lhs <- .f(lapply(private$alg.eqs, function(x) x$name))
+  allvars <- allvars[!(allvars %in% alg.eqs.lhs)]
+  # add parameter names on algebraic rhs
+  alg.rhs.vars <- .f(lapply(private$alg.eqs, function(x) all.vars(x$rhs)))
+  allvars <- unique(c(allvars, alg.rhs.vars))
+  # now check if parname is any of these available names, otherwise throw error
+  check.bool = parname %in% allvars
   if(!check.bool){
     stop("The following parameter(s) is/are missing from the defined model (after applying algebraic substitutions):
          ", parname)
@@ -358,8 +359,7 @@ check_parameter_matrix <- function(parmat, self, private) {
     lapply(private$obs.eqs, function(x) x$allvars),
     lapply(private$obs.var, function(x) x$allvars),
     lapply(private$alg.eqs, function(x) all.vars(x$rhs))
-  ))) 
-  
+  )))
   bool = all.names %in% names(private$alg.eqs)
   all.names = all.names[!bool]
   check.bool = parnames %in% all.names
@@ -367,8 +367,6 @@ check_parameter_matrix <- function(parmat, self, private) {
     stop("The following parameter is not a part of the current model, after applying the algebraic substitutions: ", paste(parnames[!check.bool],collapse=", "))
   }
   
-  # result = list(parnames)
-  # return(invisible(result))
   return(parmat)
 }
 
@@ -387,7 +385,7 @@ check_algebraics = function(form, self, private) {
   
   # Only single terms on LHS
   if (!(length(lhs) == 1)) {
-    stop("You have multiple terms on the left-hand side")
+    stop("Only a single variable is allowed on the left-hand side")
   }
   
   name = deparse1(lhs)
@@ -442,4 +440,60 @@ remove_parameter = function(parname, self, private) {
   private$fixed.pars = private$fixed.pars[bool]
   
   return(invisible(self))
+}
+
+check_for_bad_algebraics <- function(added.name, self, private){
+  remove.bool <- names(private$alg.eqs) %in% added.name
+  if(any(remove.bool)){
+    private$alg.eqs <- private$alg.eqs[!remove.bool]
+    message("The algebraic equation for ", added.name, " is no longer allowed and was therefore removed.")
+  }
+}
+
+check_initial_state <- function(x0, p0, self, private){
+  
+  n.states <- private$number.of.states
+  
+  ###### mean vector checks ######
+  if (!is.numeric(x0)) {
+    stop("The mean vector is not a numeric")
+  }
+  
+  if (any(is.na(x0))) {
+    stop("The mean vector contains NAs.")
+  }
+  
+  if (length(x0) != n.states) {
+    stop("The initial state vector should have length ", n.states)
+  }
+  
+  ###### covariance matrix checks ######
+  # convert scalar to matrix
+  if(!is.matrix(p0) & is.numeric(p0) & length(p0)==1){
+    p0 <- p0 * diag(1)
+  }
+  
+  if (!all(dim(p0)==c(n.states, n.states))) {
+    stop("The covariance matrix should be square with dimension ", n.states)
+  }
+  
+  
+  if (!is.numeric(p0)) {
+    stop("The covariance matrix is not a numeric")
+  }
+  
+  if (any(is.na(p0))) {
+    stop("The covariance matrix contains NAs")
+  }
+  
+  if (any(eigen(p0)$values < 0)){
+    stop("The covariance matrix is not positive semi-definite")
+  }
+  
+  if (!isSymmetric.matrix(p0)){
+    stop("The covariance matrix is not symmetric")
+  }
+  
+  return(invisible(self))
+  
 }

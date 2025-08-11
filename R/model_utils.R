@@ -1,21 +1,3 @@
-#' Shortcut class constructor
-#' @description
-#' This is just a short-cut class constructor so that users can do
-#' 
-#' `model <- ctsm()` 
-#' 
-#' instead of 
-#' 
-#' `model <- ctsmTMB$new()`.
-#' @examples
-#' library(ctsmTMB)
-#' model <- ctsm()
-#' @export
-ctsm <- function(){
-  return(ctsmTMB$new())
-}
-
-
 #######################################################
 # CHANGE FROM R POWER NOTATION TO C++
 #######################################################
@@ -78,7 +60,8 @@ getggplot2theme = function() {
       legend.box = "horizontal",
       legend.direction = "horizontal",
       legend.position = "top",
-      plot.title = ggplot2::element_text(hjust=0.5)
+      plot.title = ggplot2::element_text(hjust=0.5),
+      plot.subtitle = ggplot2::element_text(hjust=0.5)
     )
   return(mytheme)
 }
@@ -87,18 +70,4 @@ getggplot2theme = function() {
 #   hues = seq(15, 375, length = n + 1)
 #   ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
 #   return(ggcolors)
-# }
-
-# #' setting seed normal draws from ziggurat in C++ simulations
-# #' @description
-# #' Sets the RNG seed in C++. 
-# #' 
-# #' Doubles are automatically rounded to nearest integer.
-# #' 
-# #' @examples
-# #' library(ctsmTMB)
-# #' set.cpp.seed(10)
-# #' @export
-# set.seed.ctsmTMB <- function(s){
-#   ziggsetseed(s)
 # }

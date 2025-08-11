@@ -9,7 +9,7 @@ perform_simulation <- function(self, private, use.cpp, n.sims){
     stop("Simulations arent available for laplace")
   }
   
-  if(private$method=="laplace2"){
+  if(private$method=="laplace.thygesen"){
     stop("Simulations arent available for laplace")
   }
   
@@ -23,15 +23,15 @@ perform_simulation <- function(self, private, use.cpp, n.sims){
         if(!private$silent) message("Simulating with C++...")
         
         
-        if(any(private$method == c("lkf","lkf_cpp"))){
+        if(any(private$method == c("lkf","lkf.cpp"))){
           stop("Simulations arent available for LKF")
         }
         
-        if(any(private$method == c("ekf","ekf_cpp"))){
-          ekf_rcpp_simulation(self, private)
+        if(any(private$method == c("ekf","ekf.cpp"))){
+          ekf_rcpp_simulation(private$pars, self, private, n.sims)
         }
         
-        if(any(private$method == c("ukf","ukf_cpp"))){
+        if(any(private$method == c("ukf","ukf.cpp"))){
           stop("Simulations arent available for UKF")
         }
         
@@ -41,15 +41,15 @@ perform_simulation <- function(self, private, use.cpp, n.sims){
         if(!private$silent) message("Predicting with R...")
         
         
-        if(any(private$method == c("lkf","lkf_cpp"))){
+        if(any(private$method == c("lkf","lkf.cpp"))){
           stop("Simulations arent available for LKF")
         }
         
-        if(any(private$method == c("ekf","ekf_cpp"))){
-          ekf_r_simulation(self, private, n.sims)
+        if(any(private$method == c("ekf","ekf.cpp"))){
+          ekf_r_simulation(private$pars, self, private, n.sims)
         }
         
-        if(any(private$method == c("ukf","ukf_cpp"))){
+        if(any(private$method == c("ukf","ukf.cpp"))){
           stop("Simulations arent available for UKF")
         }
         
@@ -69,15 +69,15 @@ create_return_simulation <- function(return.k.ahead, n.sims, self, private){
   
   if(!private$silent) message("Returning results...")
   
-  if(any(private$method == c("lkf","lkf_cpp"))){
+  if(any(private$method == c("lkf","lkf.cpp"))){
     
   }
   
-  if(any(private$method == c("ekf","ekf_cpp"))){
+  if(any(private$method == c("ekf","ekf.cpp"))){
     create_ekf_simulation_return(return.k.ahead, n.sims, self, private)
   }
   
-  if(any(private$method == c("ukf","ukf_cpp"))){
+  if(any(private$method == c("ukf","ukf.cpp"))){
     
   }
   

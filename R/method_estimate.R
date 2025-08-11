@@ -20,7 +20,7 @@ construct_makeADFun = function(self, private){
       makeADFun_lkf_rtmb(self, private)
     }
     
-    if(private$method == "lkf_cpp"){
+    if(private$method == "lkf.cpp"){
       makeADFun_lkf_tmb(self, private)
     }
     
@@ -28,7 +28,7 @@ construct_makeADFun = function(self, private){
       makeADFun_ekf_rtmb(self, private)
     }
     
-    if(private$method == "ekf_cpp"){
+    if(private$method == "ekf.cpp"){
       makeADFun_ekf_tmb(self, private)
     }
     
@@ -36,7 +36,7 @@ construct_makeADFun = function(self, private){
       makeADFun_ukf_rtmb(self, private)
     }
     
-    if(private$method == "ukf_cpp"){
+    if(private$method == "ukf.cpp"){
       makeADFun_ukf_tmb(self, private)
     }
     
@@ -44,7 +44,7 @@ construct_makeADFun = function(self, private){
       makeADFun_laplace_rtmb(self, private)
     }
     
-    if(private$method=="laplace2"){
+    if(private$method=="laplace.thygesen"){
       makeADFun_laplace2_rtmb(self, private)
     }
     
@@ -64,39 +64,26 @@ construct_makeADFun = function(self, private){
 # MAIN RETURN FIT FUNCTION THAT CALL OTHERS
 #######################################################
 
-create_return_fit = function(self, private, laplace.residuals){
+create_estimation_return_fit = function(self, private, laplace.residuals){
   
   if(!private$silent) message("Returning results...")
   
-  if(private$method == "lkf"){
+  if(private$method %in% c("lkf","lkf.cpp")){
     calculate_fit_statistics_lkf(self, private)
   }
   
-  if(private$method == "lkf_cpp"){
-    calculate_fit_statistics_lkf(self, private)
-  }
-  
-  if(private$method == "ekf"){
+  if(private$method %in% c("ekf","ekf.cpp")){
     calculate_fit_statistics_ekf(self, private)
   }
   
-  if(private$method == "ekf_cpp"){
-    calculate_fit_statistics_ekf(self, private)
-  }
-  
-  if(private$method == "ukf"){
-    calculate_fit_statistics_ukf(self, private)
-  }
-  
-  if(private$method == "ukf_cpp"){
+  if(private$method %in% c("ukf","ukf.cpp")){
     calculate_fit_statistics_ukf(self, private)
   }
   
   if(private$method=="laplace"){
     calculate_fit_statistics_laplace(self, private, laplace.residuals)
   }
-  
-  if(private$method=="laplace2"){
+  if(private$method=="laplace.thygesen"){
     calculate_fit_statistics_laplace2(self, private, laplace.residuals)
   }
   
@@ -112,8 +99,6 @@ perform_estimation = function(self, private) {
   if(!private$silent) message("Minimizing the negative log-likelihood...")
   
   # Parameter Bounds
-  # lower.parameter.bound = unlist(lapply(private$free.pars, function(par) par$lower))
-  # upper.parameter.bound = unlist(lapply(private$free.pars, function(par) par$upper))
   lower.parameter.bound = sapply(private$free.pars, function(par) par$lower)
   upper.parameter.bound = sapply(private$free.pars, function(par) par$upper)
   if(private$unconstrained.optim){
@@ -125,7 +110,11 @@ perform_estimation = function(self, private) {
     {
       
       # IF METHOD IS KALMAN FILTER
-      if ( any(private$method == c("lkf","lkf_cpp","ekf","ekf_cpp","ukf","ukf_cpp")) ) {
+      if ( any(private$method == c("lkf","lkf.cpp","ekf","ekf.cpp","ukf","ukf.cpp")) ) {
+        
+        if(private$method=="ukf"){
+          message("Note: The Unscented Kalman Filter in RTMB is often unstable and causes R to crash - you can try 'ukf_cpp' instead.")
+        }
         
         # use function, gradient and hessian
         if (private$use.hessian) {
@@ -148,7 +137,7 @@ perform_estimation = function(self, private) {
       }
       
       # IF METHOD IS LAPLACE
-      if ( any(private$method == c("laplace","laplace2")) ) {
+      if ( any(private$method == c("laplace","laplace.thygesen")) ) {
         opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
                                                      objective = private$nll$fn,
                                                      gradient = private$nll$gr,
@@ -206,20 +195,23 @@ perform_estimation = function(self, private) {
     )
   }
   
+  # 
   # For TMB method: run sdreport
-  if (any(private$method== c("laplace","laplace2"))) {
-    
+  if (any(private$method== c("laplace","laplace.thygesen"))) {
     if(!private$silent) message("Calculating standard deviations...")
-    
     # NOTE: The state covariances can be retrived by inverting sdr$jointPrecision
     # but this takes very long time. Should it be an option?
-    comptime <- system.time(
-      {
-        
-      private$sdr <- TMB::sdreport(private$nll, getJointPrecision=T)
-      
-      }, gcFirst = FALSE)
+    private$sdr <- TMB::sdreport(private$nll, getJointPrecision=T)
   }
+  
+  # The use of MakeTape for implicit euler method does not allow for calculating
+  # fixed effects hessian, so std. dev must be obtained from sdreport
+  # if(any(private$method==c("ekf","ekf_cpp","ukf","ukf_cpp"))){
+  #   if (private$ode.solver == 3) {
+  #     if(!private$silent) message("Calculating standard deviations...")
+  #     private$sdr <- TMB::sdreport(private$nll)
+  #   }
+  # }
   
   # return
   return(invisible(self))

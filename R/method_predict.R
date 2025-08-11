@@ -9,7 +9,7 @@ perform_prediction <- function(self, private, use.cpp){
     stop("Predictions arent available for laplace")
   }
   
-  if(private$method=="laplace2"){
+  if(private$method=="laplace.thygesen"){
     stop("Predictions arent available for laplace")
   }
   
@@ -23,15 +23,15 @@ perform_prediction <- function(self, private, use.cpp){
         if(!private$silent) message("Predicting with C++...")
         
         
-        if(any(private$method == c("lkf","lkf_cpp"))){
+        if(any(private$method == c("lkf","lkf.cpp"))){
           stop("Predictions arent available for LKF")
         }
         
-        if(any(private$method == c("ekf","ekf_cpp"))){
-          ekf_rcpp_prediction(self, private)
+        if(any(private$method == c("ekf","ekf.cpp"))){
+          ekf_rcpp_prediction(private$pars, self, private)
         }
         
-        if(any(private$method == c("ukf","ukf_cpp"))){
+        if(any(private$method == c("ukf","ukf.cpp"))){
           stop("Predictions arent available for UKF")
         }
         
@@ -41,15 +41,15 @@ perform_prediction <- function(self, private, use.cpp){
         if(!private$silent) message("Predicting with R...")
         
         
-        if(any(private$method == c("lkf","lkf_cpp"))){
+        if(any(private$method == c("lkf","lkf.cpp"))){
           stop("Predictions arent available for LKF")
         }
         
-        if(any(private$method == c("ekf","ekf_cpp"))){
-          ekf_r_prediction(self, private)
+        if(any(private$method == c("ekf","ekf.cpp"))){
+          ekf_r_prediction(private$pars, self, private)
         }
         
-        if(any(private$method == c("ukf","ukf_cpp"))){
+        if(any(private$method == c("ukf","ukf.cpp"))){
           stop("Predictions arent available for UKF")
         }
         
@@ -69,15 +69,15 @@ create_return_prediction <- function(return.covariance, return.k.ahead, self, pr
   
   if(!private$silent) message("Returning results...")
   
-  if(any(private$method == c("lkf","lkf_cpp"))){
+  if(any(private$method == c("lkf","lkf.cpp"))){
     
   }
   
-  if(any(private$method == c("ekf","ekf_cpp"))){
+  if(any(private$method == c("ekf","ekf.cpp"))){
     create_ekf_predict_return(return.covariance, return.k.ahead, self, private)
   }
   
-  if(any(private$method == c("ukf","ukf_cpp"))){
+  if(any(private$method == c("ukf","ukf.cpp"))){
     
   }
   

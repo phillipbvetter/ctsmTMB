@@ -12,9 +12,16 @@ using namespace density;
 const double pi = M_PI;
 const double k_smooth = 5.0; // for loss function
 
-// INSERT F
+// EXTRA FUNCTIONS
+template<class Type>
+Type erf(Type x){
+  Type y = sqrt(Type(2.0)) * x;
+  Type z = Type(2.0) * pnorm(y) - Type(1.0);
+  return z;
+}
 
-// INSERT DFDU
+// STATE SPACE FUNCTIONS
+// INSERT F
 
 // INSERT DFDX
 
@@ -24,14 +31,9 @@ const double k_smooth = 5.0; // for loss function
 
 // INSERT HVAR
 
-// HELPER FUNCTIONS
-template<class Type>
-Type erf(Type x){
-  Type y = sqrt(Type(2.0)) * x;
-  Type z = Type(2.0) * pnorm(y) - Type(1.0);
-  return z;
-}
+// INSERT DFDU
 
+// HELPER FUNCTIONS
 template<class Type>
 Type sigmoid_fun(Type r_squared, Type loss_c){
   Type x = 1/(1+exp(-k_smooth * (sqrt(r_squared) - loss_c)));

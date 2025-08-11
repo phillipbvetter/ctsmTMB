@@ -23,13 +23,6 @@ parameter) inference, and forecasting, in (multi-dimensional)
 continuous-discrete stochastic state space systems, i.e. systems on the
 form
 
-<!-- $$ -->
-<!-- \begin{align} -->
-<!-- dx_{t} & = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t} \\ -->
-<!-- y_{t_k} & = h(t, x_t, u_t, \theta) -->
-<!-- \end{align} -->
-<!-- $$ -->
-
 $$
 dx_{t} = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t}
 $$ $$
@@ -72,28 +65,26 @@ for additional speed in **C++** using `Rcpp`.
 
 The following state reconstruction algorithms are currently available:
 
-1.  The (Continuous-Discrete) Linear Kalman Filter, `lkf`.
+1.  The Linear Kalman Filter, `lkf`.
 
-2.  The (Continuous-Discrete) Extended Kalman Filter, `ekf`.
+2.  The Extended Kalman Filter, `ekf`.
 
-3.  The (Continuous-Discrete) Unscented Kalman Filter, `ukf`.
+3.  The Unscented Kalman Filter, `ukf`.
 
-4.  The (Continuous-Discrete) Laplace “Filter” `laplace`.
+4.  The Laplace Smoothers `laplace` and `laplace.thygesen`.
 
 ## Kalman Filters
 
 The package is currently mostly tailored towards the Kalman Filter. The
 advantages of the methods are:
 
-1.  The hessian of the likelihood function (w.r.t parameters) is
-    available.
+1.  The hessian of the likelihood function (w.r.t the fixed parameters)
+    is available.
 
 2.  The model residuals are easier to compute for e.g. model validation.
 
 3.  Multi-step predictions / simulations with state updates are easier
     to compute.
-
-In these cases **TMB** simply provides the automatic differentiation.
 
 The Unscented Kalman Filter implementation is based on *Algorithm 4.7*
 in [S. Särkkä, 2007](https://ieeexplore.ieee.org/document/4303242).
@@ -103,9 +94,10 @@ in [S. Särkkä, 2007](https://ieeexplore.ieee.org/document/4303242).
 The state-reconstructions based on the `laplace` (approximation) method
 are *smoothed* estimates, meaning that states are optimized jointly
 conditioned on all observations. The Laplace approximation is natively
-built-into and completely handled by **TMB**. The package also
-implements the stability-improved method for state-dependent diffusion
-due to [Thygesen, 2025](https://arxiv.org/abs/2503.21358) `laplace2`.
+built-into and completely handled by **TMB**. The additional method
+`laplace.thygesen` is an implementation of the the stability-improved
+laplace method for systems with state-dependent diffusion and is due to
+[Thygesen, 2025](https://arxiv.org/abs/2503.21358).
 
 A particular advantage of the Laplace smoother is:
 
@@ -113,21 +105,17 @@ A particular advantage of the Laplace smoother is:
     accommodate the need for e.g. heavier distribution tails. *Not yet
     implemented*.
 
-The method is typically not useful for model-training with the goal of
-forecasting because the likelihood contributions are based on smoothed
-estimates, rather than the one-step predictions of Kalman filters.
-
 <!-- Installation -->
 
 # Installation
 
-The package can be installed from CRAN using
+The package can be installed from CRAN:
 
 ``` r
 install.packages("ctsmTMB")
 ```
 
-The development version is available on GitHub
+The development version is available on GitHub:
 
 ``` r
 remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
@@ -156,14 +144,6 @@ in the Terminal
 ``` bash
 xcode-select --install
 ```
-
-<!---
-Linux also need to make sure that GSL is installed for `RcppZiggurat` which is necessary for the `simulate` method. You can try the following command, or google yourself.
-&#10;
-``` bash
-sudo apt-get install libgsl-dev
-```
---->
 
 ## Test the Installation
 

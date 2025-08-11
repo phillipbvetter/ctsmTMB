@@ -6,39 +6,30 @@ compile_rcpp_functions = function(self, private){
   if(!private$silent) message("Compiling C++ function pointers...")
   
   # Settings
-  .depends <- c("RcppEigen", "ctsmTMB")
+  .depends <- c("Rcpp", "RcppEigen", "ctsmTMB")
   
   # COMMENT:
   # These .includes should in principle be added via the .depends = 'ctsmTMB'.
   # This automatically fetches the code in inst/include/ctsmTMB.h
   # This does not work however when using devtools::load_all.
-  .includes <- "double invlogit(double x){return 1/(1 + exp(-x));}"
+  .includes <- c(
+    "double invlogit(double x){return 1/(1 + exp(-x));}",
+    "const double pi = 3.14159265358979323846;"
+  )
   
   # Create XPtr's
-  outlist <- lapply(private$rcpp.function.strings, function(s) RcppXPtrUtils::cppXPtr(s, depends=.depends, includes = .includes))
+  outlist <- lapply(private$rcpp.function.strings, 
+                    function(s) RcppXPtrUtils::cppXPtr(s, 
+                                                       depends=.depends, 
+                                                       includes = .includes)
+                    )
   
   # Add to private fields
   nams <- c("f","dfdx","g","h","dhdx","hvar")
   names(outlist) <- nams
   private$rcpp_function_ptr[nams] <- outlist[nams]
   
-  # private$rcpp_function_ptr$f <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$f, 
-                                                        # depends=.depends)
-  
-  # private$rcpp_function_ptr$dfdx <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$dfdx, 
-                                                           # depends=.depends)
-  
-  # private$rcpp_function_ptr$g <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$g, 
-                                                        # depends=.depends)
-  
-  # private$rcpp_function_ptr$h <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$h, 
-                                                        # depends=.depends)
-  
-  # private$rcpp_function_ptr$dhdx <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$dhdx, 
-                                                           # depends=.depends)
-  
-  # private$rcpp_function_ptr$hvar <- RcppXPtrUtils::cppXPtr(private$rcpp.function.strings$hvar, 
-                                                           # depends=.depends)
+  return(invisible(self))
   
 }
 
@@ -55,7 +46,7 @@ compile_cppfile <- function(self, private) {
   
   # Start Check:
   # - Exit if the method uses RTMB and does not need C++ compilation.
-  bool <- any(private$method == c("lkf", "ekf", "ukf", "laplace", "laplace2"))
+  bool <- any(private$method == c("lkf", "ekf", "ukf", "laplace", "laplace.thygesen"))
   if(bool){
     return(invisible(self))
   }

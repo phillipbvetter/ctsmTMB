@@ -10,7 +10,7 @@ perform_filtering = function(self, private, use.cpp){
     stop("The Laplace method is a smoothing method. Use 'smooth' method instead.")
   }
   
-  if(private$method == c("laplace2")){
+  if(private$method == c("laplace.thygesen")){
     stop("The Laplace method is a smoothing method. Use 'smooth' method instead.")
   }
   

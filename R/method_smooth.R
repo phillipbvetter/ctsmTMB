@@ -7,23 +7,23 @@ perform_smoothing = function(self, private){
   if(!private$silent) message("Smoothing...")
   
   if(private$method=="lkf"){
-    stop("The lkf method can't perform smoothing. Use the 'filter' method instead.")
+    stop("Smoothing with the lkf method is not available. Use the 'filter' method instead.")
   }
   if(private$method=="ekf"){
-    stop("The ekf method can't perform smoothing. Use the 'filter' method instead.")
+    stop("Smoothing with the ekf method is not available. Use the 'filter' method instead.")
   }
   if(private$method=="ukf"){
-    stop("The ukf method can't perform smoothing. Use the 'filter' method instead.")
+    stop("Smoothing with the ukf method is not available. Use the 'filter' method instead.")
   }
   
   # Kalman smoothers
   private$smooth <- switch(private$method,
                            # These must be changed to e.g. lkf_smoother_r when available
-                           lkf = lkf_filter_r(private$pars, self, private),
-                           ekf = ekf_filter_r(private$pars, self, private),
-                           ukf = ukf_filter_r(private$pars, self, private),
+                           # lkf = lkf_smoother_r(private$pars, self, private),
+                           # ekf = ekf_smoother_r(private$pars, self, private),
+                           # ukf = ukf_smoother_r(private$pars, self, private),
                            laplace = laplace_smooth(self, private),
-                           laplace2 = laplace_smooth(self, private)
+                           laplace.thygesen = laplace_smooth(self, private)
   )
   
   return(invisible(self))
@@ -47,7 +47,7 @@ create_smooth_results <- function(self, private, laplace.residuals){
   
   smooth <- list()
   
-  if(any(private$method == c("laplace","laplace2"))){
+  if(any(private$method == c("laplace","laplace.thygesen"))){
     
     random.effects.ids <- private$ode.timesteps.cumsum + 1
   

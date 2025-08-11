@@ -56,7 +56,6 @@ y = x[t.sim %in% t.obs] + sigma_y * rnorm(length(t.obs))
 )
 ```
 
-
 # Construct model object
 
 ---

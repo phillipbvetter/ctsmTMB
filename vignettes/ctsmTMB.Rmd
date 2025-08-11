@@ -40,7 +40,7 @@ We initialise a `ctsmTMB` model object using
 
 ```{r}
 library(ctsmTMB)
-model <- ctsm()
+model <- ctsmTMB$new()
 ```
 
 Printing the model object in the console reveals some basic information about it:

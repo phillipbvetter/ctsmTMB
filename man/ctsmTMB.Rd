@@ -61,6 +61,7 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
 \itemize{
 \item \href{#method-ctsmTMB-new}{\code{ctsmTMB$new()}}
 \item \href{#method-ctsmTMB-.private}{\code{ctsmTMB$.private()}}
+\item \href{#method-ctsmTMB-getPrivateFields}{\code{ctsmTMB$getPrivateFields()}}
 \item \href{#method-ctsmTMB-addSystem}{\code{ctsmTMB$addSystem()}}
 \item \href{#method-ctsmTMB-addObs}{\code{ctsmTMB$addObs()}}
 \item \href{#method-ctsmTMB-setVariance}{\code{ctsmTMB$setVariance()}}
@@ -72,6 +73,7 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
 \item \href{#method-ctsmTMB-setLamperti}{\code{ctsmTMB$setLamperti()}}
 \item \href{#method-ctsmTMB-setModelname}{\code{ctsmTMB$setModelname()}}
 \item \href{#method-ctsmTMB-setMAP}{\code{ctsmTMB$setMAP()}}
+\item \href{#method-ctsmTMB-setAdvancedSettings}{\code{ctsmTMB$setAdvancedSettings()}}
 \item \href{#method-ctsmTMB-getSystems}{\code{ctsmTMB$getSystems()}}
 \item \href{#method-ctsmTMB-getObservations}{\code{ctsmTMB$getObservations()}}
 \item \href{#method-ctsmTMB-getVariances}{\code{ctsmTMB$getVariances()}}
@@ -107,10 +109,21 @@ Initialize private fields
 \if{html}{\out{<a id="method-ctsmTMB-.private"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-.private}{}}}
 \subsection{Method \code{.private()}}{
-Extract the private fields of a ctsmTMB model object. Primarily used for
-debugging.
+Extract the private fields of a ctsmTMB model object.
+Primarily used for debugging.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$.private()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-getPrivateFields"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getPrivateFields}{}}}
+\subsection{Method \code{getPrivateFields()}}{
+Extract the private fields of a ctsmTMB model object.
+Primarily used for debugging.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getPrivateFields()}\if{html}{\out{</div>}}
 }
 
 }
@@ -386,6 +399,29 @@ with \code{mean} and \code{covariance} as provided.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-setAdvancedSettings"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setAdvancedSettings}{}}}
+\subsection{Method \code{setAdvancedSettings()}}{
+Enable maximum a posterior (MAP) estimation.
+
+Adds a maximum a posterior contribution to the (negative log) likelihood
+function by  evaluating the fixed effects parameters in a multivariate Gaussian
+with \code{mean} and \code{covariance} as provided.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setAdvancedSettings(forceAD = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{forceAD}}{a boolean indicating whether to use stace space functions that take advtange of the
+RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun by 20\%. This breaks
+some functionalities such as REPORT.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getSystems"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getSystems}{}}}
 \subsection{Method \code{getSystems()}}{
@@ -518,6 +554,8 @@ Perform state filtering (or smoothing for the 'laplace' method)
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = NULL,
+  ukf.hyperpars = c(1, 0, 3),
+  initial.state = self$getInitialState(),
   laplace.residuals = FALSE,
   estimate.initial.state = FALSE,
   use.cpp = FALSE,
@@ -575,6 +613,10 @@ approximation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
+\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+
 \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
 
@@ -606,6 +648,7 @@ Perform state filtering (or smoothing for the 'laplace' method)
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = NULL,
+  initial.state = self$getInitialState(),
   laplace.residuals = FALSE,
   estimate.initial.state = FALSE,
   silent = FALSE,
@@ -662,6 +705,8 @@ approximation respectively) for smooth derivatives.}
 
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+
 \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
 
@@ -691,7 +736,8 @@ Estimate the fixed effects parameters in the specified model.
   loss = "quadratic",
   loss_c = NULL,
   ukf.hyperpars = c(1, 0, 3),
-  trace = 1,
+  initial.state = self$getInitialState(),
+  trace = 10,
   control = list(trace = trace, iter.max = 1e+05, eval.max = 1e+05),
   use.hessian = FALSE,
   laplace.residuals = FALSE,
@@ -751,7 +797,10 @@ approximation respectively) for smooth derivatives.}
 
 \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
 
-\item{\code{trace}}{0 or 1, passed to \code{control} to determine whether to print optimization information at each step.}
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+
+\item{\code{trace}}{integer passed to \code{control} which determines number of steps between each print-out
+during optimization (use 0 to disable tracing print-outs).}
 
 \item{\code{control}}{list of control parameters parsed to \code{nlminb} as its \code{control} argument.
 See \code{?stats::nlminb} for more information}
@@ -800,6 +849,7 @@ have more control of the optimization workflow.
   loss = "quadratic",
   loss_c = NULL,
   ukf.hyperpars = c(1, 0, 3),
+  initial.state = self$getInitialState(),
   estimate.initial.state = FALSE,
   silent = FALSE,
   compile = FALSE,
@@ -864,6 +914,8 @@ approximation respectively) for smooth derivatives.}
 \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
 
 \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+
+\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
 
 \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the

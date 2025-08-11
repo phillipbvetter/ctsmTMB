@@ -91,7 +91,7 @@ ctsmTMB = R6::R6Class(
       private$inputs = list(t=list(name="t",input=quote(t)))
       private$parameters = NULL
       private$initial.state = NULL
-      private$pred.initial.state = list(mean=NULL,cov=NULL)
+      private$initial.state.fixed = NULL
       private$tmb.initial.state = NULL
       private$iobs = NULL
       
@@ -115,6 +115,7 @@ ctsmTMB = R6::R6Class(
       private$unconstrained.optim = NULL
       private$estimate.initial = FALSE
       private$initial.variance.scaling = 1
+      private$advanced.settings = list(forceAD = TRUE)
       
       # rebuild
       private$rebuild.model = TRUE
@@ -140,7 +141,9 @@ ctsmTMB = R6::R6Class(
       private$number.of.observations = 0
       private$number.of.diffusions = 0
       private$number.of.pars = 0
-      private$number.of.inputs = 0
+      private$number.of.free.pars = 0
+      private$number.of.fixed.pars = 0
+      private$number.of.inputs = length(private$inputs) # for 't', in case addInput is never called
       
       # differentials
       private$diff.processes = NULL
@@ -168,11 +171,9 @@ ctsmTMB = R6::R6Class(
       private$n.ahead = 0
       private$last.pred.index = 0
       
-      # rtmb
-      private$rtmb.function.strings = NULL
-      private$rtmb.function.strings.indexed = NULL
-      private$rekf.function.strings = NULL
-      private$rtmb.nll.strings = NULL
+      # function strings
+      private$rtmb.function.strings.indexed2 = NULL
+      private$r.function.strings = NULL
       private$rcpp.function.strings = NULL
       
       # rcpp functions
@@ -186,9 +187,19 @@ ctsmTMB = R6::R6Class(
     # GET OBJECT PRIVATE FIELDS
     ########################################################################
     #' @description 
-    #' Extract the private fields of a ctsmTMB model object. Primarily used for
-    #' debugging.
+    #' Extract the private fields of a ctsmTMB model object. 
+    #' Primarily used for debugging.
     .private = function(){
+      return(invisible(private))
+    },
+    
+    ########################################################################
+    # GET OBJECT PRIVATE FIELDS
+    ########################################################################
+    #' @description 
+    #' Extract the private fields of a ctsmTMB model object. 
+    #' Primarily used for debugging.
+    getPrivateFields = function(){
       return(invisible(private))
     },
     
@@ -222,7 +233,20 @@ ctsmTMB = R6::R6Class(
         private$sys.eqs[[result$name]] = result
         private$state.names = names(private$sys.eqs)
         
+        # Remove algebraics with state names
+        check_for_bad_algebraics(result$name, self, private)
+        
       })
+      
+      # update system size
+      private$number.of.states = length(private$sys.eqs)
+      private$diff.processes = unique(unlist(lapply(private$sys.eqs, function(x) x$diff)))
+      private$number.of.diffusions =  length(private$diff.processes) - 1 # minus 1 to remove 'dt'
+      
+      # apply algebraics/transformations and create stace space funs
+      apply_algebraics_and_lamperti(self, private)
+      create_state_space_function_strings(self, private)
+      
       return(invisible(self))
     },
     
@@ -282,7 +306,17 @@ ctsmTMB = R6::R6Class(
         if(length(holder)==0){
           private$obs.var[[result$name]] = list()
         }
+        
+        # Remove algebraics with state names
+        check_for_bad_algebraics(result$name, self, private)
       })
+      
+      # update system size
+      private$number.of.observations = length(private$obs.eqs)
+      
+      # apply algebraics/transformations and create stace space funs
+      apply_algebraics_and_lamperti(self, private)
+      create_state_space_function_strings(self, private)
       
       return(invisible(self))
     },
@@ -322,7 +356,13 @@ ctsmTMB = R6::R6Class(
         private$obs.var[[result$name]] = result
         private$obsvar.names = names(private$obs.var)
         
+        # Remove algebraics with state names
+        check_for_bad_algebraics(result$name, self, private)
       })
+      
+      # apply algebraics/transformations and create stace space funs
+      apply_algebraics_and_lamperti(self, private)
+      create_state_space_function_strings(self, private)
       
       return(invisible(self))
     },
@@ -356,8 +396,18 @@ ctsmTMB = R6::R6Class(
         # Update equations and names
         private$inputs[[result$name]] = result
         private$input.names = names(private$inputs)
+        
+        # Remove algebraics with state names
+        check_for_bad_algebraics(result$name, self, private)
       })
-      #
+      
+      # update system size
+      private$number.of.inputs = length(private$inputs)
+      
+      # apply algebraics/transformations and create stace space funs
+      apply_algebraics_and_lamperti(self, private)
+      create_state_space_function_strings(self, private)
+      
       return(invisible(self))
     },
     
@@ -436,8 +486,6 @@ ctsmTMB = R6::R6Class(
             private$fixed.pars[[par.name]] = NULL
           }
           
-          # print(private$fixed.pars)
-          
           # update parameter names
           private$parameter.names = names(private$parameters)
           
@@ -486,7 +534,15 @@ ctsmTMB = R6::R6Class(
           
         }
         
+        # update system size
+        private$number.of.pars = length(private$parameters)
+        private$number.of.free.pars = length(private$free.pars)
+        private$number.of.fixed.pars = length(private$fixed.pars)
+        
       }
+      
+      # create stace space funs
+      create_state_space_function_strings(self, private)
       
       # return
       return(invisible(self))
@@ -525,6 +581,9 @@ ctsmTMB = R6::R6Class(
         remove_parameter(result$name, self, private)
       })
       
+      apply_algebraics_and_lamperti(self, private)
+      create_state_space_function_strings(self, private)
+      
       return(invisible(self))
     },
     
@@ -536,66 +595,8 @@ ctsmTMB = R6::R6Class(
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state.
     #' 
     setInitialState = function(initial.state) {
-      
-      if (is.null(private$sys.eqs)) {
-        stop("Please specify system equations first")
-      }
-      
-      if (!is.list(initial.state) || length(initial.state)!=2) {
-        stop("Please provide a list of length 2!")
-      }
-      
-      # unpack list items
-      x0 = initial.state[[1]]
-      p0 = initial.state[[2]]
-      
-      if (!is.numeric(x0)) {
-        stop("The mean vector is not a numeric")
-      }
-      
-      if (any(is.na(x0))) {
-        stop("The mean vector contains NAs.")
-      }
-      
-      if (length(x0)!=length(private$sys.eqs)) {
-        stop("The initial state vector should have length ",length(private$sys.eqs))
-      }
-      
-      if (!all(dim(p0)==c(length(private$sys.eqs),length(private$sys.eqs)))) {
-        stop("The covariance matrix should be square with dimension ", length(private$sys.eqs))
-      }
-      
-      # convert scalar to matrix
-      if(!is.matrix(p0) & is.numeric(p0) & length(p0)==1){
-        p0 = p0 * diag(1)
-      }
-      
-      if (!is.numeric(p0)) {
-        stop("The covariance matrix is not a numeric")
-      }
-      
-      if (any(is.na(p0))) {
-        stop("The covariance matrix contains NAs")
-      }
-      
-      if (any(eigen(p0)$values < 0)){
-        stop("The covariance matrix is not positive semi-definite")
-      }
-      
-      if (!isSymmetric.matrix(p0)){
-        stop("The covariance matrix is symmetric")
-      }
-      
-      names(initial.state) <- c("x0","p0")
-      # Store old initial state
-      bool <- identical(initial.state, private$initial.state)
-      if(!bool){
-        private$rebuild.ad <- TRUE
-      }
-      
-      # Store initial state
-      private$initial.state = list(x0=x0, p0=as.matrix(p0))
-      
+
+      private$set_initial_state(initial.state, called.by.setInitialState=TRUE)
       
       return(invisible(self))
     },
@@ -706,6 +707,10 @@ ctsmTMB = R6::R6Class(
       # Store the transformation
       private$lamperti = list(transforms=transforms, states=states)
       
+      # apply algebraics/transformations and create stace space funs
+      apply_algebraics_and_lamperti(self, private)
+      create_state_space_function_strings(self, private)
+      
       # return
       return(invisible(self))
     },
@@ -775,6 +780,30 @@ ctsmTMB = R6::R6Class(
     },
     
     ########################################################################
+    # SET ADVANCED SETTINGS
+    ########################################################################
+    #' @description Enable maximum a posterior (MAP) estimation.
+    #'
+    #' Adds a maximum a posterior contribution to the (negative log) likelihood 
+    #' function by  evaluating the fixed effects parameters in a multivariate Gaussian 
+    #' with \code{mean} and \code{covariance} as provided.
+    #' 
+    #' @param forceAD a boolean indicating whether to use stace space functions that take advtange of the
+    #' RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun by 20%. This breaks
+    #' some functionalities such as REPORT.
+    setAdvancedSettings = function(forceAD = TRUE) {
+      
+      if(private$advanced.settings$forceAD != forceAD){
+        private$rebuild.ad <- TRUE
+      }
+      private$advanced.settings$forceAD = forceAD
+      
+      # Return
+      return(invisible(self))
+    },
+    
+    
+    ########################################################################
     # GET SYSTEMS
     ########################################################################
     #' @description Retrieve system equations.
@@ -831,13 +860,8 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     #' @description Retrieve initially set state and covariance
     getInitialState = function() {
-      
-      
-      # extract algebraic relation formulas
-      initial.state = private$initial.state
-      
       # return
-      return(initial.state)
+      return(private$initial.state.fixed)
     },
     
     ########################################################################
@@ -1033,6 +1057,8 @@ ctsmTMB = R6::R6Class(
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param method character vector specifying the filtering method used for state/likelihood calculations. 
     #' Must be one of either "lkf", "ekf", "laplace".
+    #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
+    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
     #' system contains time-varying inputs, the first element of these is used.
@@ -1063,6 +1089,8 @@ ctsmTMB = R6::R6Class(
                       ode.timestep = diff(data$t),
                       loss = "quadratic",
                       loss_c = NULL,
+                      ukf.hyperpars = c(1, 0, 3),
+                      initial.state = self$getInitialState(),
                       laplace.residuals = FALSE,
                       estimate.initial.state = FALSE,
                       use.cpp = FALSE,
@@ -1073,6 +1101,8 @@ ctsmTMB = R6::R6Class(
       args = list(
         method = method,
         ode.solver = ode.solver,
+        initial.state = initial.state,
+        ukf.hyperpars = ukf.hyperpars,
         ode.timestep = ode.timestep,
         laplace.residuals = laplace.residuals,
         estimate.initial.state = estimate.initial.state,
@@ -1085,6 +1115,8 @@ ctsmTMB = R6::R6Class(
       
       # check and set data
       check_and_set_data(data, self, private)
+      
+      # set loss function (depends on data)
       private$set_loss(loss, loss_c)
       
       # set parameters
@@ -1133,6 +1165,7 @@ ctsmTMB = R6::R6Class(
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param method character vector specifying the filtering method used for state/likelihood calculations. 
     #' Must be one of either "lkf", "ekf", "laplace".
+    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
     #' system contains time-varying inputs, the first element of these is used.
@@ -1162,6 +1195,7 @@ ctsmTMB = R6::R6Class(
                         ode.timestep = diff(data$t),
                         loss = "quadratic",
                         loss_c = NULL,
+                        initial.state = self$getInitialState(),
                         laplace.residuals = FALSE,
                         estimate.initial.state = FALSE,
                         silent = FALSE,
@@ -1172,6 +1206,7 @@ ctsmTMB = R6::R6Class(
         method = method,
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
+        initial.state = initial.state,
         laplace.residuals = laplace.residuals,
         estimate.initial.state = estimate.initial.state,
         silent = silent
@@ -1183,13 +1218,15 @@ ctsmTMB = R6::R6Class(
       
       # check and set data
       check_and_set_data(data, self, private)
+      
+      # set loss function (depends on data)
       private$set_loss(loss, loss_c)
       
       # set parameters
       set_parameters(pars, self, private)
       
       # construct nll AD function if the method is laplace
-      if(any(private$method==c("laplace","laplace2"))){
+      if(any(private$method==c("laplace","laplace.thygesen"))){
         construct_makeADFun(self, private)
       }
       
@@ -1237,6 +1274,7 @@ ctsmTMB = R6::R6Class(
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
     #' without any of the parameter bounds specified during \code{setParameter}.
+    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
     #' system contains time-varying inputs, the first element of these is used.
@@ -1260,7 +1298,8 @@ ctsmTMB = R6::R6Class(
     #' See \code{?stats::nlminb} for more information
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
-    #' @param trace 0 or 1, passed to \code{control} to determine whether to print optimization information at each step.
+    #' @param trace integer passed to \code{control} which determines number of steps between each print-out 
+    #' during optimization (use 0 to disable tracing print-outs).
     #' @param compile boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.
     #' @param ... additional arguments
     estimate = function(data, 
@@ -1270,8 +1309,9 @@ ctsmTMB = R6::R6Class(
                         loss = "quadratic",
                         loss_c = NULL,
                         ukf.hyperpars = c(1, 0, 3),
-                        trace = 1,
-                        control = list(trace=trace,iter.max=1e5,eval.max=1e5),
+                        initial.state = self$getInitialState(),
+                        trace = 10,
+                        control = list(trace=trace, iter.max=1e5, eval.max=1e5),
                         use.hessian = FALSE,
                         laplace.residuals = FALSE,
                         unconstrained.optim = FALSE,
@@ -1290,6 +1330,7 @@ ctsmTMB = R6::R6Class(
         use.hessian = use.hessian,
         laplace.residuals = laplace.residuals,
         unconstrained.optim = unconstrained.optim,
+        initial.state = initial.state,
         estimate.initial.state = estimate.initial.state,
         compile = compile,
         silent = silent
@@ -1302,6 +1343,8 @@ ctsmTMB = R6::R6Class(
       
       # check and set data
       check_and_set_data(data, self, private)
+      
+      # set loss function (depends on data)
       private$set_loss(loss, loss_c)
       
       # construct nll AD function
@@ -1317,7 +1360,7 @@ ctsmTMB = R6::R6Class(
       }
       
       # create return fit
-      create_return_fit(self, private, laplace.residuals)
+      create_estimation_return_fit(self, private, laplace.residuals)
       
       # return
       if(!private$silent) message("Finished!")
@@ -1378,6 +1421,7 @@ ctsmTMB = R6::R6Class(
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid 
     #' approximation respectively) for smooth derivatives.
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
+    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
     #' system contains time-varying inputs, the first element of these is used.
@@ -1392,6 +1436,7 @@ ctsmTMB = R6::R6Class(
                           loss = "quadratic",
                           loss_c = NULL,
                           ukf.hyperpars = c(1, 0, 3),
+                          initial.state = self$getInitialState(),
                           estimate.initial.state = FALSE,
                           silent=FALSE,
                           compile = FALSE,
@@ -1403,6 +1448,7 @@ ctsmTMB = R6::R6Class(
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
         ukf.hyperpars = ukf.hyperpars,
+        initial.state = initial.state,
         estimate.initial.state = estimate.initial.state,
         compile = compile,
         silent = silent
@@ -1414,6 +1460,8 @@ ctsmTMB = R6::R6Class(
       
       # check and set data
       check_and_set_data(data, self, private)
+      
+      # set loss function (depends on data)
       private$set_loss(loss, loss_c)
       
       # construct nll AD function
@@ -1651,37 +1699,34 @@ ctsmTMB = R6::R6Class(
     #' @description Function to print the model object
     print = function() {
       
-      n = length(private$sys.eqs)
-      m = length(private$obs.eqs)
-      p = length(private$inputs)-1
-      ng = max(length(unique(unlist(lapply(private$sys.eqs, function(x) x$diff))))-1,0)
+      n <- private$number.of.states
+      m <- private$number.of.observations
+      p <- private$number.of.inputs
+      ng <- private$number.of.diffusions
       q = length(private$alg.eqs)
-      par = length(private$parameters)
-      fixedpars = length(private$fixed.pars)
-      freepars = length(private$free.pars)
+      par <- private$number.of.pars
+      fixedpars <- private$number.of.fixed.pars
+      freepars = private$number.of.free.pars
       
-      # If the model is empty
-      cat("ctsmTMB model object:")
-      # basic.data = c(private$modelname,n,ng,m,p,par)
-      # row.names = c("Name", "States","Diffusions",
-      #               "Observations","Inputs",
-      #               "Parameters")
+      cat("This ctsmTMB model contains:")
       basic.data = c(n,ng,m,p,par)
-      row.names = c("States","Diffusions",
-                    "Observations","Inputs",
+      row.names = c("States",
+                    "Diffusions",
+                    "Observations",
+                    "Inputs",
                     "Parameters")
       mat=data.frame(basic.data,row.names=row.names,fix.empty.names=F)
       print(mat,quote=FALSE)
       
       # STATE EQUATIONS
       if (n>0) {
-        cat("\nSystem Equations:\n\n")
+        cat("\nSystem Equations:\n")
         lapply(private$sys.eqs,function(x) cat("\t",deparse1(x$form),"\n"))
       }
       
       # OBS EQUATIONS
       if (m>0) {
-        cat("\nObservation Equations:\n\n")
+        cat("\nObservation Equations:\n")
         for (i in 1:length(private$obs.eqs)) {
           bool = private$obs.names[i] %in% private$obsvar.names
           bool2 = !is.null(private$obs.var[[i]])
@@ -1693,14 +1738,6 @@ ctsmTMB = R6::R6Class(
         }
       }
       
-      # ALGEBRAICS
-      if (q>0) {
-        cat("\nAlgebraic Relations:\n\n")
-        for(i in 1:length(private$alg.eqs)){
-          cat("\t",deparse1(private$alg.eqs[[i]]$form),"\n")
-        }
-      }
-      
       # INPUTS
       if (p>1) {
         cat("\nInputs:\n")
@@ -1708,15 +1745,29 @@ ctsmTMB = R6::R6Class(
       }
       
       # PARAMETERS
-      if (freepars>0) {
-        cat("\n\nFree Parameters:\n")
-        cat("\t", paste(names(private$free.pars),collapse=", "))
+      if (par>0) {
+        cat("\n\nParameters:\n")
+        cat("\t", paste(private$parameter.names,collapse=", "))
       }
+      
+      # FREE PARAMETERS
+      # if (freepars>0) {
+      #   cat("\n\nFree Parameters:\n")
+      #   cat("\t", paste(names(private$free.pars),collapse=", "))
+      # }
       
       # FIXED PARAMETERS
       if (fixedpars>0) {
         cat("\n\nFixed Parameters:\n")
         cat("\t", paste(names(private$fixed.pars),collapse=", "))
+      }
+      
+      # ALGEBRAICS
+      if (q>0) {
+        cat("\n\nAlgebraic Relations:\n")
+        for(i in 1:length(private$alg.eqs)){
+          cat("\t",deparse1(private$alg.eqs[[i]]$form),"\n")
+        }
       }
       
       # return
@@ -1752,7 +1803,7 @@ ctsmTMB = R6::R6Class(
     inputs = NULL,
     parameters = NULL,
     initial.state = NULL,
-    pred.initial.state = NULL,
+    initial.state.fixed = NULL,
     tmb.initial.state = NULL,
     iobs = NULL,
     
@@ -1790,6 +1841,7 @@ ctsmTMB = R6::R6Class(
     unconstrained.optim = NULL,
     estimate.initial = NULL,
     initial.variance.scaling = NULL,
+    advanced.settings = NULL,
     
     # rebuild
     rebuild.model = FALSE,
@@ -1808,6 +1860,8 @@ ctsmTMB = R6::R6Class(
     number.of.observations = NULL,
     number.of.diffusions = NULL,
     number.of.pars = NULL,
+    number.of.free.pars = NULL,
+    number.of.fixed.pars = NULL,
     number.of.inputs = NULL,
     
     # differentials
@@ -1838,10 +1892,8 @@ ctsmTMB = R6::R6Class(
     last.pred.index = NULL,
     
     # function strings
-    rtmb.function.strings = NULL,
-    rtmb.function.strings.indexed = NULL,
-    rekf.function.strings = NULL,
-    rtmb.nll.strings = NULL,
+    rtmb.function.strings.indexed2 = NULL,
+    r.function.strings = NULL,
     rcpp.function.strings = NULL,
     
     # rcpp
@@ -1943,9 +1995,9 @@ ctsmTMB = R6::R6Class(
              filter = {private$procedure <- "filter"},
              smoother = {private$procedure <- "smoother"},
              estimation = {private$procedure <- "estimation"},
+             construction = {private$procedure <- "construction"},
              prediction = {private$procedure <- "prediction"},
-             simulation = {private$procedure <- "simulation"},
-             construction = {private$procedure <- "construction"}
+             simulation = {private$procedure <- "simulation"}
       )
       
       # return
@@ -1998,17 +2050,17 @@ ctsmTMB = R6::R6Class(
       }
       
       # check if method is available
-      available_methods = c("lkf", "lkf_cpp", "ekf", "ekf_cpp", "ukf", "ukf_cpp", "laplace", "laplace2")
+      available_methods = c("lkf", "lkf.cpp", "ekf", "ekf.cpp", "ukf", "ukf.cpp", "laplace", "laplace.thygesen")
       if (!(method %in% available_methods)) {
         stop("That method is not available. Please choose one of:
              - 'lkf' - Linear Kalman Filter
-             - 'lkf_cpp' - Linear Kalman Filter (TMB w. C++ Compilation)
+             - 'lkf.cpp' - Linear Kalman Filter (TMB w. C++ Compilation)
              - 'ekf' - Extended Kalman Filter
-             - 'ekf_cpp' - Extended Kalman Filter (TMB w. C++ Compilation)
+             - 'ekf.cpp' - Extended Kalman Filter (TMB w. C++ Compilation)
              - 'ukf' - Unscented Kalman Filter
-             - 'ukf_cpp' - Unscented Kalman Filter (TMB w. C++ Compilation)
+             - 'ukf.cpp' - Unscented Kalman Filter (TMB w. C++ Compilation)
              - 'laplace' - Laplace Approximation using Random Effects Formulation (X),
-             - 'laplace2' - Laplace Approximation using Random Effects Formulation (XdB)"
+             - 'laplace.thygesen' - Stability-Improved Laplace Approximation due to Thygesen (XdB)"
         )
       }
       
@@ -2017,8 +2069,9 @@ ctsmTMB = R6::R6Class(
       
       # set file with method flag
       private$cppfile.path <- file.path(private$cppfile.directory, private$modelname)
-      private$cppfile.path.with.method <- file.path(paste0(private$cppfile.path, sprintf("_%s",private$method)))
-      private$modelname.with.method <- paste0(private$modelname, sprintf("_%s",private$method))
+      method.without.ending <- gsub(".cpp","", method)
+      private$cppfile.path.with.method <- file.path(paste0(private$cppfile.path, sprintf("_%s",method.without.ending)))
+      private$modelname.with.method <- paste0(private$modelname, sprintf("_%s", method.without.ending))
       
       # return
       return(invisible(self))
@@ -2165,12 +2218,12 @@ ctsmTMB = R6::R6Class(
     set_ode_solver = function(ode.solver){
       
       # these meethods dont use ode solvers
-      if(any(private$method == c("lkf","laplace","laplace2"))){
+      if(any(private$method == c("lkf","laplace","laplace.thygesen"))){
         return(invisible(self))
       }
       
       # check input
-      available.ode.solvers <- c("euler","rk4")
+      available.ode.solvers <- c("euler","rk4", "implicit_euler")
       bool = ode.solver %in% available.ode.solvers
       if(!bool){
         stop("You must choose one of the following ode solvers:\n\t",
@@ -2180,80 +2233,50 @@ ctsmTMB = R6::R6Class(
       # set solver
       private$ode.solver <- switch(ode.solver,
                                    euler = 1,
-                                   rk4 = 2)
-      
-      # return
-      return(invisible(self))
-    },
-    ########################################################################
-    # SET INITIAL PREDICTION STATE / COVARIANCE
-    ########################################################################
-    set_pred_initial_state = function(initial.state) {
-      
-      if(is.null(initial.state)){
-        stop("Please provide an initial state for the mean and covariance")
-      }
-      
-      if (is.null(private$sys.eqs)) {
-        stop("Please specify system equations first")
-      }
-      
-      if (!is.list(initial.state)) {
-        stop("Please provide a list of length two!")
-      }
-      
-      if (length(initial.state) != 2) {
-        stop("Please provide a list of length two")
-      }
-      
-      # unpack list items
-      x0 = initial.state[[1]]
-      p0 = initial.state[[2]]
-      
-      if (!is.numeric(x0)) {
-        stop("The mean vector is not a numeric")
-      }
-      
-      if (any(is.na(x0))) {
-        stop("The mean vector contains NAs.")
-      }
-      
-      if (length(x0)!=length(private$sys.eqs)) {
-        stop("The initial state vector should have length ",length(private$sys.eqs))
-      }
-      
-      if (!all(dim(p0)==c(length(private$sys.eqs),length(private$sys.eqs)))) {
-        stop("The covariance matrix should be square with dimension ", length(private$sys.eqs))
-      }
-      
-      # convert scalar to matrix
-      if(!is.matrix(p0) & is.numeric(p0) & length(p0)==1){
-        p0 = p0 * diag(1)
-      }
-      
-      if (!is.numeric(p0)) {
-        stop("The covariance matrix is not a numeric")
-      }
-      
-      if (any(is.na(p0))) {
-        stop("The covariance matrix contains NAs")
-      }
-      
-      if (any(eigen(p0)$values < 0)){
-        stop("The covariance matrix is not positive semi-definite")
-      }
-      
-      if (!isSymmetric.matrix(p0)){
-        stop("The covariance matrix is symmetric")
-      }
-      
-      # set field
-      private$pred.initial.state = list(x0=x0, p0=as.matrix(p0))
+                                   rk4 = 2,
+                                   implicit_euler = 3)
       
       # return
       return(invisible(self))
     },
     
+    ########################################################################
+    # SET INITIAL PREDICTION STATE / COVARIANCE
+    ########################################################################
+    set_initial_state = function(initial.state, called.by.setInitialState=FALSE) {
+      
+      if (!is.list(initial.state) || length(initial.state)!=2) {
+        stop("Please provide a list of length 2!")
+      }
+      
+      x0 <- initial.state[[1]]
+      p0 <- initial.state[[2]]
+      
+      check_initial_state(x0, p0, self, private)
+      
+      # # convert scalar to matrix
+      if(!is.matrix(p0) & is.numeric(p0) & length(p0)==1){
+        p0 <- p0 * diag(1)
+      }
+      
+      # if the call was made from setInitialState then just over-write that field and leave
+      if(called.by.setInitialState){
+        private$initial.state.fixed <- list(x0=x0,p0=p0)
+        return(invisible(self))
+      }
+      
+      # Store old initial state and check for AD rebuild if the state changed
+      names(initial.state) <- c("x0","p0")
+      bool <- identical(initial.state, private$initial.state)
+      if(!bool) private$rebuild.ad <- TRUE
+      
+      # set private field
+      private$initial.state = list(x0=x0, p0=p0)
+      
+      # return
+      return(invisible(self))
+    },
+
     ########################################################################
     # SET LOSS FUNCTION
     ########################################################################
@@ -2275,7 +2298,7 @@ ctsmTMB = R6::R6Class(
       }
       
       if(is.null(loss_c)){
-        loss_c <- qchisq(0.95, df=private$number.of.observations)
+        loss_c <- stats::qchisq(0.95, df=private$number.of.observations)
       }
       
       if(loss_c <= 0){
@@ -2313,6 +2336,11 @@ ctsmTMB = R6::R6Class(
       
       if(!is.logical(bool)){
         stop("The initial state estimation must be TRUE or FALSE.")
+      }
+      
+      if(bool){
+        bool <- !bool
+        message("Estimating the initial condition is currently disabled due to a bug.")
       }
       
       private$estimate.initial = bool

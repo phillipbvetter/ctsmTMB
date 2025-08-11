@@ -224,6 +224,10 @@ plot.ctsmTMB.pred = function(x,
 #' determining what kind of states to plot.
 #' @param against.obs name of an observation to plot state predictions against.
 #' @param ggtheme ggplot2 theme to use for creating the ggplot.
+#' @param ylims limits on the y-axis for residual time-series plot
+#' @param residual.burnin integer N to remove the first N residuals
+#' @param residual.vs.obs.and.inputs the residual plots also include a new window
+#' with time-series plots of residuals, associated observations and inputs
 #' @param ... additional arguments
 #' @examples
 #' library(ctsmTMB)
@@ -249,7 +253,7 @@ plot.ctsmTMB.pred = function(x,
 #' plot(fit)
 #' 
 #' # plot filtered states
-#' plot(fit, type="states", against="y")
+#' plot(fit, type="states")
 #' @returns a (list of) ggplot residual plot(s)
 #' @export
 plot.ctsmTMB.fit = function(x,
@@ -258,6 +262,9 @@ plot.ctsmTMB.fit = function(x,
                             state.type="prior",
                             against.obs=NULL,
                             ggtheme=getggplot2theme(),
+                            ylims = c(NA,NA),
+                            residual.burnin=0L,
+                            residual.vs.obs.and.inputs = FALSE,
                             ...) {
   
   fit <- x
@@ -273,6 +280,8 @@ plot.ctsmTMB.fit = function(x,
     stop("The state.type must be one of 'prior', 'posterior' or 'smoothed'.")
   }
   
+  plots <- plots2 <- list()
+  
   # residual plots
   ########################################
   if(type=="residuals"){
@@ -285,10 +294,17 @@ plot.ctsmTMB.fit = function(x,
     }
     
     mycolor <- "steelblue"
-    plots = list()
-    t = fit$residuals$normalized[["t"]]
+    t <- fit$residuals$residuals[["t"]]
+    if(residual.burnin) t <- tail(t,-residual.burnin)
+    
     for (i in 1:private$number.of.observations) {
+      
       e = fit$residuals$normalized[[private$obs.names[i]]]
+      e0 <- fit$residuals$residuals[[private$obs.names[i]]]
+      if(residual.burnin){
+        e <- tail(e,-residual.burnin)
+        e0 <- tail(e0,-residual.burnin)
+      }
       id = !is.na(e)
       e = e[id]
       t = t[id]
@@ -296,9 +312,12 @@ plot.ctsmTMB.fit = function(x,
       
       # time vs residuals
       plot.res =
-        ggplot2::ggplot(data=data.frame(t,e)) +
-        ggplot2::geom_point(ggplot2::aes(x=t,y=e),color=mycolor) +
+        # ggplot2::ggplot(data=data.frame(t,e)) +
+        # ggplot2::geom_point(ggplot2::aes(x=t,y=e),color=mycolor) +
+        ggplot2::ggplot(data=data.frame(t,e0)) +
+        ggplot2::geom_line(ggplot2::aes(x=t,y=e0),color=mycolor) +
         ggtheme +
+        coord_cartesian(ylim=ylims) + 
         ggplot2::labs(
           title = paste("Time Series of Residuals: "),
           y = "",
@@ -317,8 +336,10 @@ plot.ctsmTMB.fit = function(x,
         )
       # histogram
       plot.hist =
-        ggplot2::ggplot(data=data.frame(e)) +
-        ggplot2::geom_histogram(ggplot2::aes(x=e,y=ggplot2::after_stat(density)),bins=100,color="black",fill=mycolor) +
+        # ggplot2::ggplot(data=data.frame(e)) +
+        # ggplot2::geom_histogram(ggplot2::aes(x=e,y=ggplot2::after_stat(density)),bins=100,color="black",fill=mycolor) +
+        ggplot2::ggplot(data=data.frame(e0)) +
+        ggplot2::geom_histogram(ggplot2::aes(x=e0,y=ggplot2::after_stat(density)),bins=100,color="black",fill=mycolor) +
         ggtheme +
         ggplot2::labs(
           title = paste("Histogram: "),
@@ -371,10 +392,88 @@ plot.ctsmTMB.fit = function(x,
                                          plot.pacf ,
                                          nrow=3) +
         patchwork::plot_annotation(title=paste("Residual Analysis for ", nam),
-                                   theme= ggtheme + ggplot2::theme(text=ggplot2::element_text("Avenir Next Condensed", size=18, face="bold"))
+                                   subtitle=paste("modelname:", private$modelname),
+                                   theme = ggtheme + 
+                                     ggplot2::theme(text=ggplot2::element_text(size=12, face="bold"))
         )
       
+      if(residual.vs.obs.and.inputs){
+        
+        y.obs <- private$data[[nam]]
+        y <- private$data[[private$obs.names[i]]]
+        if(residual.burnin){
+          y.obs <- tail(y.obs, -residual.burnin)
+          y <- tail(y, -residual.burnin)
+        }
+        
+        # time vs observations
+        plot.obs =
+          ggplot2::ggplot(data=data.frame(t,y.obs)) +
+          # ggplot2::geom_point(ggplot2::aes(x=t,y=y,color="Predictions"),size=0.5) +
+          ggplot2::geom_line(ggplot2::aes(x=t,y=y.obs,color="Observations"),size=1.5) +
+          ggplot2::geom_line(ggplot2::aes(x=t,y=y,color="Predictions"),size=0.5) +
+          ggtheme +
+          theme(
+            # legend.position=c(0.9, 0.9),
+            # legend.direction = "vertical",
+            # legend.box.background = element_rect(fill="grey"),
+            # legend.box ="vertical",
+            legend.margin = ggplot2::margin(0,0,0,0),
+            legend.box.margin = ggplot2::margin(0,0,0,0),
+            legend.spacing.y= unit(0,"mm")
+          ) +
+          # theme(legend.position="inside") +
+          scale_color_manual(values=c(mycolor,"tomato")) +
+          ggplot2::labs(
+            title = "Observation",
+            y = nam,
+            x = "",
+            color=""
+          )
+        
+        # time vs input plots
+        # input plots are constant across obs plot index "i"
+        if(i==1){
+          input.plots <- list()
+          input.names <- private$input.names
+          k <- private$number.of.inputs-1
+          for(j in 1:k){
+            y.input <- private$data[[input.names[j+1]]]
+            if(residual.burnin){
+              y.input <- tail(y.input, -residual.burnin)
+            }
+            input.plots[[j]] <- 
+              ggplot2::ggplot(data=data.frame(t,y.input)) +
+              ggplot2::geom_line(ggplot2::aes(x=t,y=y.input),color=mycolor) +
+              ggtheme +
+              ggplot2::labs(
+                y = input.names[j+1],
+                x = ""
+              )
+          }
+          # only the bottom plot x-axis should be titled "Time"
+          input.plots[[k]]$labels$x = "Time"
+          input.plots[[1]]$labels$title = "Inputs"
+          plot.inputs <- patchwork::wrap_plots(input.plots,ncol=1)
+        }
+        
+        plot.res2 <- plot.res
+        plot.res2$labels$x <- ""
+        plot.res2$labels$title <- "Residuals"
+        
+        # save current residual vs input plot
+        plots2[[i]] <- patchwork::wrap_plots(plot.res2,
+                                             plot.obs,
+                                             plot.inputs,
+                                             heights=c(1,1,k)
+        ) +
+          patchwork::plot_annotation(title=paste("Residual vs Inputs for", nam),
+                                     subtitle=paste("modelname:", private$modelname),
+                                     theme = ggtheme + 
+                                       ggplot2::theme(text=ggplot2::element_text(size=12, face="bold")))
+      }
     }
+    
     
   }
   
@@ -383,57 +482,57 @@ plot.ctsmTMB.fit = function(x,
   if(type=="states"){
     
     mycolors <- c("steelblue","tomato")
-    plots = list()
     t <- fit$private$data$t
     
-    # check against obs
-    against.flag <- FALSE
-    if(!is.null(against.obs)){
-      against.flag <- TRUE
-      if(length(against.obs) == 1) c(against.obs, rep(NA, private$number.of.states-1))
-      if(length(against.obs) != private$number.of.states){
-        stop("'against.obs' should have length 1 or ",private$number.of.states)
-      } 
-      
-      x.obs <- fit$private$data[[against.obs]]
-    }
-    
     for (i in 1:private$number.of.states) {
-      nam <- names(fit$states$mean[[state.type]])[i+1]
-      x <- fit$states$mean[[state.type]][[i+1]]
-      sd <- fit$states$sd[[state.type]][[i+1]]
+      nam <- private$state.names[i]
+      y.mean <- fit$states$mean[[state.type]][[nam]]
+      y.sd <- fit$states$sd[[state.type]][[nam]]
+      y.lab <- sprintf("%s (%s)", capitalize_first(state.type), nam)
       
-      state.lab <- sprintf("%s (%s)", capitalize_first(state.type), nam)
-      
+      tempdata <- data.frame(t=t, y=y.mean, sd=y.sd)
       plots[[i]] <- ggplot2::ggplot() +
-        ggplot2::geom_ribbon(ggplot2::aes(x=t,ymin=x-2*sd,ymax=x+2*sd),fill="grey",alpha=0.6) +
-        ggplot2::geom_line(ggplot2::aes(x=t,y=x,color=state.lab)) +
+        ggplot2::geom_ribbon(data=tempdata, ggplot2::aes(x=t, ymin=y-2*sd, ymax=y+2*sd), fill="grey", alpha=0.6) +
+        ggplot2::geom_line(data=tempdata, ggplot2::aes(x=t, y=y, color=nam)) +
         { 
-          if(against.flag){
-            ytemp <- against.obs[i]
-            if(!is.na(ytemp)){
-              obs.lab <- sprintf("Observations (%s)", ytemp)
-              x.obs <- fit$private$data[[ytemp]]
-              ggplot2::geom_point(ggplot2::aes(x=t,y=x.obs,color=obs.lab))
-            }
+          if(i==print.plot && !is.null(against.obs))
+          {
+            y.obs <- fit$private$data[[against.obs]]
+            tempobsdata <- data.frame(t=t, y=y.obs)
+            ggplot2::geom_point(data=tempobsdata, ggplot2::aes(x=t, y=y, color=against.obs), size=0.5)
           }
         } +
         ggplot2::labs(
-          title = "State Estimates",
+          title = y.lab,
           color="",
           x = "Time",
           y = "",
         ) +
-        ggplot2::scale_color_manual(values=mycolors) +
+        {
+          if(i==print.plot && !is.null(against.obs))
+          {
+            ggplot2::scale_color_manual(values=mycolors, labels=c(against.obs, nam))
+          } else {
+            ggplot2::scale_color_manual(values=mycolors, labels=nam)
+          }
+        } +
         getggplot2theme()
       
     }
-    
   }
   
-  # return plot list, and print one of the plots
+  # print the first plot to the console
+  grDevices::dev.new()
   print(plots[[print.plot]])
-  return(invisible(plots))
+  
+  # print second plot if requested
+  if(length(plots2) > 0){
+    grDevices::dev.new()
+    print(plots2[[print.plot]])
+  }
+  
+  # return plot list
+  return(invisible(c(plots,plots2)))
 }
 
 #' #' Performs full multi-dimensional profile likelihood calculations
@@ -509,6 +608,7 @@ profile.ctsmTMB.fit = function(fitted,
     for(i in seq_along(parnames)){
       p = fit$par.fixed[parnames[i]]
       s = fit$sd.fixed[parnames[i]]
+      if(is.na(s)) stop("No std. error available for ",parnames[i], ". Please supply your own grid.")
       parlist[[parnames[i]]] = seq(p-grid.qnt[i]*s, p+grid.qnt[i]*s, length.out=grid.size[i])
     }
   }
@@ -664,9 +764,9 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
     threshold <- exp(-qchisq(0.95, df=1)/2)
     
     p <- ggplot2::ggplot() +
-      ggplot2::geom_hline(yintercept=threshold) +
+      ggplot2::geom_hline(ggplot2::aes(yintercept=threshold, color="Likelihood CI"), lty="dashed") +
       ggplot2::geom_line(ggplot2::aes(x=df[[par.names[1]]],y=df$likelihood)) +
-      {if(include.opt) ggplot2::geom_vline(ggplot2::aes(xintercept=opt,color="Full Likelihood Optimum"))} +
+      {if(include.opt) ggplot2::geom_vline(ggplot2::aes(xintercept=opt,color="Full Likelihood Optimum"),lty="dashed")} +
       ggplot2::labs(color="",
                     title="Profile Likelihood",
                     y = "Negative Log-Likelihood",
@@ -681,14 +781,14 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
       y <- (1-x)*100
       y <- paste0(y,"%")
     }
-  
+    
     p <- ggplot2::ggplot() +
       geomtextpath::geom_textcontour(
         data = df, 
         aes(x=.data[[par.names[1]]], y=.data[[par.names[2]]], z=.data$likelihood, 
             label=labelfun(after_stat(level)),
             color=after_stat(level)
-            ),
+        ),
         breaks = chisquared_contours,
         linewidth = 1
       ) +
