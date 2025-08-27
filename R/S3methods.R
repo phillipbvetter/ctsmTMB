@@ -250,10 +250,10 @@ plot.ctsmTMB.pred = function(x,
 #' fit <- model$estimate(Ornstein)
 #' 
 #' # plot residuals
-#' plot(fit)
+#' \dontrun{plot(fit)}
 #' 
 #' # plot filtered states
-#' plot(fit, type="states")
+#' \dontrun{plot(fit, type="states")}
 #' @returns a (list of) ggplot residual plot(s)
 #' @export
 plot.ctsmTMB.fit = function(x,

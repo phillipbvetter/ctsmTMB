@@ -69,8 +69,8 @@ model$setInitialState(list(1,1e-1))
 fit <- model$estimate(Ornstein)
 
 # plot residuals
-plot(fit)
+\dontrun{plot(fit)}
 
 # plot filtered states
-plot(fit, type="states")
+\dontrun{plot(fit, type="states")}
 }

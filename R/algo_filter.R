@@ -353,7 +353,7 @@ ukf_filter_r = function(parVec, self, private)
   pPrior[[1]] <- covMat
   # Compute sigma points for data update
   covMat <- covMat + eps.chol * diag(n.states)
-  chol.covMat <- t(base::chol(covMat))
+  chol.covMat <- t(Matrix::chol(covMat))
   X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
   
   ######## (PRE) DATA UPDATE ########
@@ -374,7 +374,7 @@ ukf_filter_r = function(parVec, self, private)
     
     # Compute cholesky factorization
     covMat <- covMat + eps.chol * diag(n.states)
-    chol.covMat <- t(base::chol(covMat))
+    chol.covMat <- t(Matrix::chol(covMat))
     X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
     
     # Inputs

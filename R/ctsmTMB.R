@@ -243,7 +243,7 @@ ctsmTMB = R6::R6Class(
       private$diff.processes = unique(unlist(lapply(private$sys.eqs, function(x) x$diff)))
       private$number.of.diffusions =  length(private$diff.processes) - 1 # minus 1 to remove 'dt'
       
-      # apply algebraics/transformations and create stace space funs
+      # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
       create_state_space_function_strings(self, private)
       
@@ -314,7 +314,7 @@ ctsmTMB = R6::R6Class(
       # update system size
       private$number.of.observations = length(private$obs.eqs)
       
-      # apply algebraics/transformations and create stace space funs
+      # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
       create_state_space_function_strings(self, private)
       
@@ -360,7 +360,7 @@ ctsmTMB = R6::R6Class(
         check_for_bad_algebraics(result$name, self, private)
       })
       
-      # apply algebraics/transformations and create stace space funs
+      # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
       create_state_space_function_strings(self, private)
       
@@ -404,7 +404,7 @@ ctsmTMB = R6::R6Class(
       # update system size
       private$number.of.inputs = length(private$inputs)
       
-      # apply algebraics/transformations and create stace space funs
+      # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
       create_state_space_function_strings(self, private)
       
@@ -541,7 +541,7 @@ ctsmTMB = R6::R6Class(
         
       }
       
-      # create stace space funs
+      # create state space funs
       create_state_space_function_strings(self, private)
       
       # return
@@ -707,7 +707,7 @@ ctsmTMB = R6::R6Class(
       # Store the transformation
       private$lamperti = list(transforms=transforms, states=states)
       
-      # apply algebraics/transformations and create stace space funs
+      # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
       create_state_space_function_strings(self, private)
       
@@ -788,7 +788,7 @@ ctsmTMB = R6::R6Class(
     #' function by  evaluating the fixed effects parameters in a multivariate Gaussian 
     #' with \code{mean} and \code{covariance} as provided.
     #' 
-    #' @param forceAD a boolean indicating whether to use stace space functions that take advtange of the
+    #' @param forceAD a boolean indicating whether to use state space functions that take advantage of the
     #' RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun by 20%. This breaks
     #' some functionalities such as REPORT.
     setAdvancedSettings = function(forceAD = TRUE) {

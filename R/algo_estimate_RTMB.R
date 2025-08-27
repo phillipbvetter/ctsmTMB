@@ -392,7 +392,7 @@ makeADFun_ukf_rtmb = function(self, private)
     }
     # Compute sigma points for data update
     covMat <- covMat + I0cov
-    chol.covMat <- t(base::chol(covMat))
+    chol.covMat <- t(Matrix::chol(covMat))
     
     # chol.covMat <- covMat
     X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
@@ -411,7 +411,7 @@ makeADFun_ukf_rtmb = function(self, private)
     for(i in 1:(nrow(obsMat)-1)){
       # Compute sigma points
       covMat <- covMat + I0cov
-      chol.covMat <- t(base::chol(covMat))
+      chol.covMat <- t(Matrix::chol(covMat))
       X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
       
       # Inputs

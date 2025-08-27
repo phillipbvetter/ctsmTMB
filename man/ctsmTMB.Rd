@@ -414,7 +414,7 @@ with \code{mean} and \code{covariance} as provided.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{forceAD}}{a boolean indicating whether to use stace space functions that take advtange of the
+\item{\code{forceAD}}{a boolean indicating whether to use state space functions that take advantage of the
 RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun by 20\%. This breaks
 some functionalities such as REPORT.}
 }

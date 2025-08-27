@@ -3,7 +3,7 @@ create.state.space.functions.for.estimation <- function(forceAD, .envir=parent.f
   
   list2env(as.list(.envir), envir = environment())
   
-  # This "hack" where zero-matrices/vectors and initialized and not created inside the stace space functions
+  # This "hack" where zero-matrices/vectors and initialized and not created inside the state space functions
   # reduces MakeADFun compilation time by roughly 20%, but requires this unintended use of forcing AD which is
   # a bit unstable (but works!) and breaks for instance REPORT
   if(forceAD) {
@@ -129,7 +129,7 @@ create.function.from.string.body <- function(fun.name, return.name, body.string,
   return(NULL)
 }
 
-create.stace.space.function.strings = function(self, private)
+create.state.space.function.strings = function(self, private)
 {
   
   obsList = lapply(seq_along(private$obs.names), function(id) substitute(obsVec[[i]],list(i=as.numeric(id))))
@@ -373,7 +373,7 @@ create.stace.space.function.strings = function(self, private)
 ##########################################################
 ##########################################################
 
-create.rcpp.stace.space.function.strings = function(self, private){
+create.rcpp.state.space.function.strings = function(self, private){
   
   # Create substitution translation list
   obsList = lapply(seq_along(private$obs.names), function(id) substitute(obsVec(i),list(i=as.numeric(id-1))))

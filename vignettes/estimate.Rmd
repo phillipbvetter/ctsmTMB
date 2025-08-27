@@ -78,7 +78,6 @@ $$
 \dfrac{d\mathrm{V}\left[x_t\right]}{dt} = \dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\mathrm{V}\left[x_t\right] + \mathrm{V}\left[x_t\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\right]^{T} + g(\mathrm{E}\left[x_t\right])g(\mathrm{E}\left[x_t\right])^{T}
 $$
 The **ctsmTMB** package implements the Explicit Forward-Euler *euler* and the Explicit 4th Order Runge-Kutta *rk4* methods. 
-<!-- In addition all of the methods available for **deSolve::ode** are also available through the use of the **RTMBode** package, but they are *significantly* slower than other two solvers, and they are primarily there to add the possibility for implicit and adaptive solvers. -->
 
 ## Argument: `ode.timestep`
 

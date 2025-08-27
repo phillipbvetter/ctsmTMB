@@ -10,8 +10,8 @@ apply_algebraics_and_lamperti <- function(self, private){
 }
 
 create_state_space_function_strings <- function(self, private){
-  create.stace.space.function.strings(self, private)
-  create.rcpp.stace.space.function.strings(self, private)
+  create.state.space.function.strings(self, private)
+  create.rcpp.state.space.function.strings(self, private)
 }
 
 #######################################################
