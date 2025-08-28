@@ -73,33 +73,9 @@ A particular advantage of the Laplace smoother is:
 1. The possibility for unimodal non-Gaussian observation densities to accommodate the need for e.g. heavier distribution tails. *Not yet implemented*.
 
 <!-- Installation -->
-# Installation
+# Installation (Compilers)
 
-The package can be installed from CRAN:
-```{r}
-install.packages("ctsmTMB")
-```
-
-The development version is available on GitHub
-```{r}
-remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
-```
-
-You may experience an issue with a PAT token in which case you can try r-universe instead
-```{r}
-install.packages('ctsmTMB', repos = c('https://phillipbvetter.r-universe.dev'), type="source")
-```
-
-If you encounter problems with a locked folder `00LOCK-ctsmTMB` due to a previously failed installation remove it with the command below before installating
-```{r}
-# Edit the path to match yours!!
-enter.your.own.path <- "/Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/00LOCK-ctsmTMB"
-unlink(enter.your.own.path, recursive = TRUE)
-```
-
-
-It is important to note that users must have working C++ compilers to install and use **ctsmTMB**.
-
+**NOTE: YOU NEED TO MAKE SURE YOU HAVE A WORKING C++ COMPILER IN R TO INSTALL THE PACKAGE!!**
 
 ## Windows
 
@@ -116,7 +92,29 @@ Mac users should install *Command Line Tools*. Run the following command in the 
 xcode-select --install
 ```
 
-## Test the Installation
+# Installation (Package)
+
+The package can be installed from source from CRAN:
+```{r}
+install.packages("ctsmTMB", type="source")
+```
+
+The development version is available on GitHub and R-universe:
+```{r}
+remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
+```
+```{r}
+install.packages('ctsmTMB', repos = c('https://phillipbvetter.r-universe.dev'), type="source")
+```
+
+If you encounter problems with a locked folder `00LOCK-ctsmTMB` due to a previously failed installation remove it before reinstalling
+```{r}
+# Enter the path on your system
+enter.your.path <- "/Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/00LOCK-ctsmTMB"
+unlink(enter.your.path, recursive = TRUE)
+```
+
+## Test Installation
 
 Once you have installed the package is it a good idea to test whether **TMB** and C++ compilation works. You should be able to run all examples without compilation errors:
 
