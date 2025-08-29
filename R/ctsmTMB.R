@@ -204,6 +204,16 @@ ctsmTMB = R6::R6Class(
     },
     
     ########################################################################
+    # GET OBJECT PRIVATE FIELDS
+    ########################################################################
+    #' @description 
+    #' Extract the private fields of a ctsmTMB model object. 
+    #' Primarily used for debugging.
+    getPrivate = function(){
+      return(invisible(private))
+    },
+    
+    ########################################################################
     # ADD SYSTEMS
     ########################################################################
     #' @description 
@@ -1085,7 +1095,7 @@ ctsmTMB = R6::R6Class(
     filter = function(data,
                       pars = NULL,
                       method = "ekf",
-                      ode.solver = "euler",
+                      ode.solver = "rk4",
                       ode.timestep = diff(data$t),
                       loss = "quadratic",
                       loss_c = NULL,
@@ -1304,7 +1314,7 @@ ctsmTMB = R6::R6Class(
     #' @param ... additional arguments
     estimate = function(data, 
                         method = "ekf",
-                        ode.solver = "euler",
+                        ode.solver = "rk4",
                         ode.timestep = diff(data$t),
                         loss = "quadratic",
                         loss_c = NULL,
@@ -1431,7 +1441,7 @@ ctsmTMB = R6::R6Class(
     #' @param ... additional arguments
     likelihood = function(data,
                           method = "ekf",
-                          ode.solver = "euler",
+                          ode.solver = "rk4",
                           ode.timestep = diff(data$t),
                           loss = "quadratic",
                           loss_c = NULL,
@@ -1522,7 +1532,7 @@ ctsmTMB = R6::R6Class(
     predict = function(data,
                        pars = NULL,
                        method = "ekf",
-                       ode.solver = "euler",
+                       ode.solver = "rk4",
                        ode.timestep = diff(data$t),
                        k.ahead = nrow(data)-1,
                        return.k.ahead = 0:k.ahead,

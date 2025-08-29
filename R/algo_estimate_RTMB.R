@@ -577,7 +577,8 @@ makeADFun_laplace_rtmb = function(self, private)
         # Get corresponding input, state and observation
         inputVec = inputMat[k,]
         stateVec = stateMat[ode_cumsum_timesteps[k]+1,]
-        obsScalar = obsMat[[k,i]]
+        # obsScalar = obsMat[[k,i]]
+        obsScalar = obsMat[k,i]
         
         # Observation equation and variance
         h_x = h__(stateVec, parVec, inputVec)[[i]]
@@ -736,7 +737,8 @@ makeADFun_laplace2_rtmb = function(self, private)
         # Get corresponding input, state and observation
         inputVec = inputMat[k,]
         stateVec = stateMat[ode_cumsum_timesteps[k]+1,]
-        obsScalar = obsMat[[k,i]]
+        # obsScalar = obsMat[[k,i]]
+        obsScalar = obsMat[k,i]
         
         # Observation equation and variance
         h_x = h__(stateVec, parVec, inputVec)[[i]]

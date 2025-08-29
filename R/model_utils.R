@@ -5,16 +5,32 @@
 # Changes powers in expressions from R-style (e.g. x^2) to pow(x,2) which is interpretable by C++
 # from https://stackoverflow.com/questions/40606723/substitute-the-power-symbol-with-cs-pow-syntax-in-mathematical-expression
 
-hat2pow <- function(e) {
-  #check if you are at the end of the tree's branch
-  if (is.name(e) || is.atomic(e)) {
-    #replace ^
-    if (e == quote(`^`)) return(quote(pow))
-    return(e)
+# hat2pow <- function(e) {
+#   #check if you are at the end of the tree's branch
+#   if (is.name(e) || is.atomic(e)) {
+#     #replace ^
+#     if (e == quote(`^`)) return(quote(pow))
+#     return(e)
+#   }
+#   #follow the tree with recursion
+#   for (i in seq_along(e)) e[[i]] <- hat2pow(e[[i]])
+#   return(e)
+# }
+
+hat2pow <- function(x) {
+  
+  if(is.call(x)) {
+    # Check if the operator is "^" and replace with "pow"
+    if(identical(x[[1L]], as.name("^"))) {
+      x[[1L]] <- as.name("pow")
+    }
+    # Recursively travel through the expression
+    if(length(x) > 1L) {
+      x[2L:length(x)] <- lapply(x[2L:length(x)], hat2pow)
+    }
   }
-  #follow the tree with recursion
-  for (i in seq_along(e)) e[[i]] <- hat2pow(e[[i]])
-  return(e)
+  
+  return(x)
 }
 
 ###########################################################
@@ -71,3 +87,13 @@ getggplot2theme = function() {
 #   ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
 #   return(ggcolors)
 # }
+
+###########################################################
+# Shortcut for model creation
+###########################################################
+#' Create a ctsmTMB model faster avoiding $...
+#' @returns Print of ctsmTMB model object
+#' @export
+new.model <- function(){
+  ctsmTMB$new()
+}

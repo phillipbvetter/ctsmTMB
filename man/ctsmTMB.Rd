@@ -62,6 +62,7 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
 \item \href{#method-ctsmTMB-new}{\code{ctsmTMB$new()}}
 \item \href{#method-ctsmTMB-.private}{\code{ctsmTMB$.private()}}
 \item \href{#method-ctsmTMB-getPrivateFields}{\code{ctsmTMB$getPrivateFields()}}
+\item \href{#method-ctsmTMB-getPrivate}{\code{ctsmTMB$getPrivate()}}
 \item \href{#method-ctsmTMB-addSystem}{\code{ctsmTMB$addSystem()}}
 \item \href{#method-ctsmTMB-addObs}{\code{ctsmTMB$addObs()}}
 \item \href{#method-ctsmTMB-setVariance}{\code{ctsmTMB$setVariance()}}
@@ -124,6 +125,17 @@ Extract the private fields of a ctsmTMB model object.
 Primarily used for debugging.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getPrivateFields()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-getPrivate"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-getPrivate}{}}}
+\subsection{Method \code{getPrivate()}}{
+Extract the private fields of a ctsmTMB model object.
+Primarily used for debugging.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getPrivate()}\if{html}{\out{</div>}}
 }
 
 }
@@ -550,7 +562,7 @@ Perform state filtering (or smoothing for the 'laplace' method)
   data,
   pars = NULL,
   method = "ekf",
-  ode.solver = "euler",
+  ode.solver = "rk4",
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = NULL,
@@ -731,7 +743,7 @@ Estimate the fixed effects parameters in the specified model.
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$estimate(
   data,
   method = "ekf",
-  ode.solver = "euler",
+  ode.solver = "rk4",
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = NULL,
@@ -844,7 +856,7 @@ have more control of the optimization workflow.
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$likelihood(
   data,
   method = "ekf",
-  ode.solver = "euler",
+  ode.solver = "rk4",
   ode.timestep = diff(data$t),
   loss = "quadratic",
   loss_c = NULL,
@@ -943,7 +955,7 @@ state estimate as the initial condition.
   data,
   pars = NULL,
   method = "ekf",
-  ode.solver = "euler",
+  ode.solver = "rk4",
   ode.timestep = diff(data$t),
   k.ahead = nrow(data) - 1,
   return.k.ahead = 0:k.ahead,

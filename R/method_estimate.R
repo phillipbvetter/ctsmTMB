@@ -68,24 +68,26 @@ create_estimation_return_fit = function(self, private, laplace.residuals){
   
   if(!private$silent) message("Returning results...")
   
-  if(private$method %in% c("lkf","lkf.cpp")){
-    calculate_fit_statistics_lkf(self, private)
-  }
+  report_return_fit(self, private, laplace.residuals)
   
-  if(private$method %in% c("ekf","ekf.cpp")){
-    calculate_fit_statistics_ekf(self, private)
-  }
-  
-  if(private$method %in% c("ukf","ukf.cpp")){
-    calculate_fit_statistics_ukf(self, private)
-  }
-  
-  if(private$method=="laplace"){
-    calculate_fit_statistics_laplace(self, private, laplace.residuals)
-  }
-  if(private$method=="laplace.thygesen"){
-    calculate_fit_statistics_laplace2(self, private, laplace.residuals)
-  }
+  # if(private$method %in% c("lkf","lkf.cpp")){
+  #   calculate_fit_statistics_lkf(self, private)
+  # }
+  # 
+  # if(private$method %in% c("ekf","ekf.cpp")){
+  #   calculate_fit_statistics_ekf(self, private)
+  # }
+  # 
+  # if(private$method %in% c("ukf","ukf.cpp")){
+  #   calculate_fit_statistics_ukf(self, private)
+  # }
+  # 
+  # if(private$method=="laplace"){
+  #   calculate_fit_statistics_laplace(self, private, laplace.residuals)
+  # }
+  # if(private$method=="laplace.thygesen"){
+  #   calculate_fit_statistics_laplace2(self, private, laplace.residuals)
+  # }
   
   return(invisible(self))
 }
@@ -201,17 +203,8 @@ perform_estimation = function(self, private) {
     if(!private$silent) message("Calculating standard deviations...")
     # NOTE: The state covariances can be retrived by inverting sdr$jointPrecision
     # but this takes very long time. Should it be an option?
-    private$sdr <- TMB::sdreport(private$nll, getJointPrecision=T)
+    private$sdr <- TMB::sdreport(private$nll, getJointPrecision=FALSE)
   }
-  
-  # The use of MakeTape for implicit euler method does not allow for calculating
-  # fixed effects hessian, so std. dev must be obtained from sdreport
-  # if(any(private$method==c("ekf","ekf_cpp","ukf","ukf_cpp"))){
-  #   if (private$ode.solver == 3) {
-  #     if(!private$silent) message("Calculating standard deviations...")
-  #     private$sdr <- TMB::sdreport(private$nll)
-  #   }
-  # }
   
   # return
   return(invisible(self))
