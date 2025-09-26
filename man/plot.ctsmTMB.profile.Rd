@@ -40,7 +40,8 @@ model$setInitialState(list(1,1e-1))
 fit <- model$estimate(Ornstein)
 
 # calculate profile likelihood
-out <- profile(fit,parlist=list(theta=NULL))
+# out <- profile(fit,parlist=list(theta=NULL))
+out <- profile(fit,parlist=list(theta=NULL, mu=NULL))
 
 # plot profile
 plot(out)

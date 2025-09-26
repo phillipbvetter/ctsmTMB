@@ -12,64 +12,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// ekf_filter_cpp
-List ekf_filter_cpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, int n, int m, int ode_solver);
-RcppExport SEXP _ctsmTMB_ekf_filter_cpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP nSEXP, SEXP mSEXP, SEXP ode_solverSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timesteps(ode_timestepsSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< int >::type m(mSEXP);
-    Rcpp::traits::input_parameter< int >::type ode_solver(ode_solverSEXP);
-    rcpp_result_gen = Rcpp::wrap(ekf_filter_cpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, n, m, ode_solver));
-    return rcpp_result_gen;
-END_RCPP
-}
-// execute_ekf_prediction2
-List execute_ekf_prediction2(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, int n, int m, int last_pred_id, int k_step_ahead, int ode_solver);
-RcppExport SEXP _ctsmTMB_execute_ekf_prediction2(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP nSEXP, SEXP mSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timesteps(ode_timestepsSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< int >::type m(mSEXP);
-    Rcpp::traits::input_parameter< int >::type last_pred_id(last_pred_idSEXP);
-    Rcpp::traits::input_parameter< int >::type k_step_ahead(k_step_aheadSEXP);
-    Rcpp::traits::input_parameter< int >::type ode_solver(ode_solverSEXP);
-    rcpp_result_gen = Rcpp::wrap(execute_ekf_prediction2(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, n, m, last_pred_id, k_step_ahead, ode_solver));
-    return rcpp_result_gen;
-END_RCPP
-}
 // ziggsetseed
 void ziggsetseed(double s);
 RcppExport SEXP _ctsmTMB_ziggsetseed(SEXP sSEXP) {
@@ -80,9 +22,63 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// execute_ekf_simulation2
-List execute_ekf_simulation2(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, int n, int m, int ng, int last_pred_id, int k_step_ahead, int ode_solver, int nsims);
-RcppExport SEXP _ctsmTMB_execute_ekf_simulation2(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP simulation_timestep_sizeSEXP, SEXP simulation_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP nSEXP, SEXP mSEXP, SEXP ngSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP, SEXP nsimsSEXP) {
+// ekf_filter_rcpp
+List ekf_filter_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, int ode_solver);
+RcppExport SEXP _ctsmTMB_ekf_filter_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ode_solverSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timesteps(ode_timestepsSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
+    Rcpp::traits::input_parameter< int >::type ode_solver(ode_solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(ekf_filter_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ode_solver));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ekf_predict_rcpp
+List ekf_predict_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, int last_pred_id, int k_step_ahead, int ode_solver);
+RcppExport SEXP _ctsmTMB_ekf_predict_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timesteps(ode_timestepsSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
+    Rcpp::traits::input_parameter< int >::type last_pred_id(last_pred_idSEXP);
+    Rcpp::traits::input_parameter< int >::type k_step_ahead(k_step_aheadSEXP);
+    Rcpp::traits::input_parameter< int >::type ode_solver(ode_solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(ekf_predict_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, last_pred_id, k_step_ahead, ode_solver));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ekf_simulate_rcpp
+List ekf_simulate_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, int ng, int last_pred_id, int k_step_ahead, int ode_solver, int nsims);
+RcppExport SEXP _ctsmTMB_ekf_simulate_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP simulation_timestep_sizeSEXP, SEXP simulation_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ngSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP, SEXP nsimsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -103,23 +99,199 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type simulation_timesteps(simulation_timestepsSEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< int >::type m(mSEXP);
     Rcpp::traits::input_parameter< int >::type ng(ngSEXP);
     Rcpp::traits::input_parameter< int >::type last_pred_id(last_pred_idSEXP);
     Rcpp::traits::input_parameter< int >::type k_step_ahead(k_step_aheadSEXP);
     Rcpp::traits::input_parameter< int >::type ode_solver(ode_solverSEXP);
     Rcpp::traits::input_parameter< int >::type nsims(nsimsSEXP);
-    rcpp_result_gen = Rcpp::wrap(execute_ekf_simulation2(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, bool_is_not_na_obsMat, number_of_available_obs, n, m, ng, last_pred_id, k_step_ahead, ode_solver, nsims));
+    rcpp_result_gen = Rcpp::wrap(ekf_simulate_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ng, last_pred_id, k_step_ahead, ode_solver, nsims));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lkf_filter_rcpp
+List lkf_filter_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, SEXP dfdu__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs);
+RcppExport SEXP _ctsmTMB_lkf_filter_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP dfdu__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdu__R(dfdu__RSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
+    rcpp_result_gen = Rcpp::wrap(lkf_filter_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, dfdu__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, bool_is_not_na_obsMat, number_of_available_obs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lkf_predict_rcpp
+List lkf_predict_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, SEXP dfdu__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, const int last_pred_id, const int k_step_ahead);
+RcppExport SEXP _ctsmTMB_lkf_predict_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP dfdu__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdu__R(dfdu__RSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
+    Rcpp::traits::input_parameter< const int >::type last_pred_id(last_pred_idSEXP);
+    Rcpp::traits::input_parameter< const int >::type k_step_ahead(k_step_aheadSEXP);
+    rcpp_result_gen = Rcpp::wrap(lkf_predict_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, dfdu__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, bool_is_not_na_obsMat, number_of_available_obs, last_pred_id, k_step_ahead));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lkf_simulate_rcpp
+List lkf_simulate_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, SEXP dfdu__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, int ng, int last_pred_id, int k_step_ahead, int nsims);
+RcppExport SEXP _ctsmTMB_lkf_simulate_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP dfdu__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP simulation_timestep_sizeSEXP, SEXP simulation_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ngSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP nsimsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdu__R(dfdu__RSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type simulation_timestep_size(simulation_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type simulation_timesteps(simulation_timestepsSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
+    Rcpp::traits::input_parameter< int >::type ng(ngSEXP);
+    Rcpp::traits::input_parameter< int >::type last_pred_id(last_pred_idSEXP);
+    Rcpp::traits::input_parameter< int >::type k_step_ahead(k_step_aheadSEXP);
+    Rcpp::traits::input_parameter< int >::type nsims(nsimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(lkf_simulate_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, dfdu__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, simulation_timestep_size, simulation_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ng, last_pred_id, k_step_ahead, nsims));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ukf_filter_rcpp
+List ukf_filter_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, int ode_solver);
+RcppExport SEXP _ctsmTMB_ukf_filter_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ukf_parsSEXP, SEXP ode_solverSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timesteps(ode_timestepsSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ukf_pars(ukf_parsSEXP);
+    Rcpp::traits::input_parameter< int >::type ode_solver(ode_solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(ukf_filter_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, ode_solver));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ukf_predict_rcpp
+List ukf_predict_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, const int last_pred_id, const int k_step_ahead, const int ode_solver);
+RcppExport SEXP _ctsmTMB_ukf_predict_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ukf_parsSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timesteps(ode_timestepsSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ukf_pars(ukf_parsSEXP);
+    Rcpp::traits::input_parameter< const int >::type last_pred_id(last_pred_idSEXP);
+    Rcpp::traits::input_parameter< const int >::type k_step_ahead(k_step_aheadSEXP);
+    Rcpp::traits::input_parameter< const int >::type ode_solver(ode_solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(ukf_predict_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, last_pred_id, k_step_ahead, ode_solver));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ukf_simulate_rcpp
+List ukf_simulate_rcpp(SEXP f__R, SEXP g__R, SEXP dfdx__R, SEXP h__R, SEXP dhdx__R, SEXP hvar__R, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, const int ng, const int last_pred_id, const int k_step_ahead, const int ode_solver, const int nsims);
+RcppExport SEXP _ctsmTMB_ukf_simulate_rcpp(SEXP f__RSEXP, SEXP g__RSEXP, SEXP dfdx__RSEXP, SEXP h__RSEXP, SEXP dhdx__RSEXP, SEXP hvar__RSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP simulation_timestep_sizeSEXP, SEXP simulation_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ukf_parsSEXP, SEXP ngSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP, SEXP nsimsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type f__R(f__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type g__R(g__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dfdx__R(dfdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type h__R(h__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type dhdx__R(dhdx__RSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type hvar__R(hvar__RSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timesteps(ode_timestepsSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type simulation_timestep_size(simulation_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type simulation_timesteps(simulation_timestepsSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ukf_pars(ukf_parsSEXP);
+    Rcpp::traits::input_parameter< const int >::type ng(ngSEXP);
+    Rcpp::traits::input_parameter< const int >::type last_pred_id(last_pred_idSEXP);
+    Rcpp::traits::input_parameter< const int >::type k_step_ahead(k_step_aheadSEXP);
+    Rcpp::traits::input_parameter< const int >::type ode_solver(ode_solverSEXP);
+    Rcpp::traits::input_parameter< const int >::type nsims(nsimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(ukf_simulate_rcpp(f__R, g__R, dfdx__R, h__R, dhdx__R, hvar__R, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, ng, last_pred_id, k_step_ahead, ode_solver, nsims));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_ctsmTMB_ekf_filter_cpp", (DL_FUNC) &_ctsmTMB_ekf_filter_cpp, 18},
-    {"_ctsmTMB_execute_ekf_prediction2", (DL_FUNC) &_ctsmTMB_execute_ekf_prediction2, 20},
     {"_ctsmTMB_ziggsetseed", (DL_FUNC) &_ctsmTMB_ziggsetseed, 1},
-    {"_ctsmTMB_execute_ekf_simulation2", (DL_FUNC) &_ctsmTMB_execute_ekf_simulation2, 24},
+    {"_ctsmTMB_ekf_filter_rcpp", (DL_FUNC) &_ctsmTMB_ekf_filter_rcpp, 16},
+    {"_ctsmTMB_ekf_predict_rcpp", (DL_FUNC) &_ctsmTMB_ekf_predict_rcpp, 18},
+    {"_ctsmTMB_ekf_simulate_rcpp", (DL_FUNC) &_ctsmTMB_ekf_simulate_rcpp, 22},
+    {"_ctsmTMB_lkf_filter_rcpp", (DL_FUNC) &_ctsmTMB_lkf_filter_rcpp, 15},
+    {"_ctsmTMB_lkf_predict_rcpp", (DL_FUNC) &_ctsmTMB_lkf_predict_rcpp, 17},
+    {"_ctsmTMB_lkf_simulate_rcpp", (DL_FUNC) &_ctsmTMB_lkf_simulate_rcpp, 21},
+    {"_ctsmTMB_ukf_filter_rcpp", (DL_FUNC) &_ctsmTMB_ukf_filter_rcpp, 17},
+    {"_ctsmTMB_ukf_predict_rcpp", (DL_FUNC) &_ctsmTMB_ukf_predict_rcpp, 19},
+    {"_ctsmTMB_ukf_simulate_rcpp", (DL_FUNC) &_ctsmTMB_ukf_simulate_rcpp, 23},
     {NULL, NULL, 0}
 };
 

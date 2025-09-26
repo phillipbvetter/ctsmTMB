@@ -20,14 +20,7 @@ ekf_filter_r = function(parVec, self, private)
   covMat = private$initial.state$p0
   
   create.state.space.functions.for.filtering()
-  
-  # create.function.from.string.body("f__", "ans", private$r.function.strings$f)
-  # create.function.from.string.body("dfdx__", "ans", private$r.function.strings$dfdx)
-  # create.function.from.string.body("g__",  "ans", private$r.function.strings$g)
-  # create.function.from.string.body("h__", "ans", private$r.function.strings$h)
-  # create.function.from.string.body("dhdx__", "ans", private$r.function.strings$dhdx)
-  # create.function.from.string.body("hvar__matrix", "ans", private$r.function.strings$hvar__matrix)
-  
+
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
   getOdeSolvers()
@@ -54,11 +47,9 @@ ekf_filter_r = function(parVec, self, private)
   
   ####### INITIAL STATE / COVARIANCE #######
   inputVec = inputMat[1,]
-  ####### Stationary Solution #######
-  inputVec = inputMat[1,]
   if(estimate.initial){
     stateVec <- f.initial.state.newton(c(parVec, inputVec))
-    covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+    # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
   }
   xPrior[[1]] <- stateVec
   pPrior[[1]] <- covMat
@@ -145,15 +136,7 @@ lkf_filter_r = function(parVec, self, private)
   covMat = private$initial.state$p0
   
   create.state.space.functions.for.filtering()
-  
-  # create.function.from.string.body("f__", "ans", private$r.function.strings$f)
-  # create.function.from.string.body("dfdx__", "ans", private$r.function.strings$dfdx)
-  # create.function.from.string.body("g__",  "ans", private$r.function.strings$g)
-  # create.function.from.string.body("h__", "ans", private$r.function.strings$h)
-  # create.function.from.string.body("dhdx__", "ans", private$r.function.strings$dhdx)
-  # create.function.from.string.body("hvar__matrix", "ans", private$r.function.strings$hvar__matrix)
-  # create.function.from.string.body("dfdu__", "ans", private$r.function.strings$hvar__matrix)
-  
+
   if(estimate.initial) {
     getInitialStateEstimator()
   }
@@ -299,27 +282,14 @@ ukf_filter_r = function(parVec, self, private)
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
   
-  # inputs
+  # inputs and observations
   inputMat = as.matrix(private$data[private$input.names])
-  # observations
   obsMat = as.matrix(private$data[private$obs.names])
   
   create.state.space.functions.for.filtering()
-  
   # Fsigma <- array(list(),c(1,n.sigmapoints))
   # Hsigma <- array(list(),c(1,n.sigmapoints))
-  # 
-  # create.function.from.string.body("f__", "ans", private$r.function.strings$f)
-  # create.function.from.string.body("dfdx__", "ans", private$r.function.strings$dfdx)
-  # create.function.from.string.body("g__",  "ans", private$r.function.strings$g)
-  # create.function.from.string.body("h__", "ans", private$r.function.strings$h)
-  # create.function.from.string.body("dhdx__", "ans", private$r.function.strings$dhdx)
-  # create.function.from.string.body("hvar__matrix", "ans", private$r.function.strings$hvar__matrix)
-  # create.function.from.string.body("dfdu__", "ans", private$r.function.strings$hvar__matrix)
-  
-  # Weights
   getUkfSigmaWeights()
-  
   getUkfOdeSolvers()
   if(private$estimate.initial) {
     getInitialStateEstimator()
@@ -336,9 +306,6 @@ ukf_filter_r = function(parVec, self, private)
   ####### Neg. LogLikelihood #######
   nll <- 0
   
-  # we need this to stabilize cholesky factor
-  eps.chol <- 1e-10
-  
   ####### Pre-Allocated Object #######
   I0 <- diag(n.states)
   E0 <- diag(n.obs)
@@ -352,7 +319,6 @@ ukf_filter_r = function(parVec, self, private)
   xPrior[[1]] <- stateVec
   pPrior[[1]] <- covMat
   # Compute sigma points for data update
-  covMat <- covMat + eps.chol * diag(n.states)
   chol.covMat <- t(Matrix::chol(covMat))
   X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
   
@@ -373,7 +339,6 @@ ukf_filter_r = function(parVec, self, private)
   for(i in 1:(nrow(obsMat)-1)){
     
     # Compute cholesky factorization
-    covMat <- covMat + eps.chol * diag(n.states)
     chol.covMat <- t(Matrix::chol(covMat))
     X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
     

@@ -4,8 +4,6 @@
 
 perform_filtering = function(self, private, use.cpp){
   
-  if(!private$silent) message("Filtering...")
-  
   if(private$method == c("laplace")){
     stop("The Laplace method is a smoothing method. Use 'smooth' method instead.")
   }
@@ -14,44 +12,45 @@ perform_filtering = function(self, private, use.cpp){
     stop("The Laplace method is a smoothing method. Use 'smooth' method instead.")
   }
   
+  # time prediction
+  comptime <- system.time(
+    {
+      
+      if(use.cpp){
+        
+        if(!private$silent) message("Filtering with C++...")
+        
+        lkf_ekf_ukf_filter_rcpp(private$pars, self, private)
+        
+      } else {
+        
+        if(!private$silent) message("Filtering with R...")
+        
+        lkf_ekf_ukf_filter_r(private$pars, self, private)
+        
+      }
+      
+    }, gcFirst = FALSE)
   
-  # Linear Kalman Filter
-  if(private$method == "lkf"){
-    if(use.cpp) {
-      stop("C++ filtering is not available for the LKF method")
-    } else {
-      filt <- lkf_filter_r(private$pars, self, private)
-    }
-  }
-  
-  # Extended Kalman Filter
-  if(private$method == "ekf"){
-    if(use.cpp) {
-      filt <- ekf_filter_rcpp(self, private)
-    } else {
-      filt <- ekf_filter_r(private$pars, self, private)
-    }
-  }
-  
-  # Unscented Kalman Filter
-  if(private$method == "ukf"){
-    if(use.cpp) {
-      stop("C++ filtering is not available for the UKF method")
-    } else {
-      filt <- ukf_filter_r(private$pars, self, private)
-    }
-  }
-  
-  private$filt <- filt
+  private$timer_filtration <- comptime
   
   return(invisible(self))
 }
 
-ekf_filter_rcpp = function(self, private){
+lkf_ekf_ukf_filter_r <- function(pars, self, private){
   
-  if(!any(private$ode.solver==c(1,2))){
-    stop("Filtering using C++ currently only support 'euler' or 'rk4' ODE solvers.") 
-  }
+  filt <- switch(private$method,
+                 lkf = lkf_filter_r(pars, self, private),
+                 ekf = ekf_filter_r(pars, self, private),
+                 ukf = ukf_filter_r(pars, self, private),
+  )
+  
+  private$filtration <- filt
+  
+  return(invisible(self))
+}
+
+lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
   
   # observation/input matrix
   obsMat = as.matrix(private$data[private$obs.names])
@@ -64,30 +63,66 @@ ekf_filter_rcpp = function(self, private){
   # number of non-na observations
   number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
   
-  # predict using c++ function
-  mylist <- ekf_filter_cpp(private$rcpp_function_ptr$f,
-                           private$rcpp_function_ptr$g,
-                           private$rcpp_function_ptr$dfdx,
-                           private$rcpp_function_ptr$h,
-                           private$rcpp_function_ptr$dhdx,
-                           private$rcpp_function_ptr$hvar,
-                           obsMat,
-                           inputMat,
-                           private$pars,
-                           private$initial.state$p0,
-                           private$initial.state$x0,
-                           private$ode.timestep.size,
-                           private$ode.timesteps,
-                           numeric_is_not_na_obsMat,
-                           number_of_available_obs,
-                           private$number.of.states,
-                           private$number.of.observations,
-                           private$ode.solver)
+  output.list <- list()
+  if(private$method == "lkf"){
+    output.list <- lkf_filter_rcpp(private$rcpp_function_ptr$f,
+                                   private$rcpp_function_ptr$g,
+                                   private$rcpp_function_ptr$dfdx,
+                                   private$rcpp_function_ptr$h,
+                                   private$rcpp_function_ptr$dhdx,
+                                   private$rcpp_function_ptr$hvar,
+                                   private$rcpp_function_ptr$dfdu,
+                                   obsMat,
+                                   inputMat,
+                                   pars,
+                                   private$initial.state$p0,
+                                   private$initial.state$x0,
+                                   private$ode.timestep.size,
+                                   numeric_is_not_na_obsMat,
+                                   number_of_available_obs)
+  }
+  if(private$method=="ekf"){
+    output.list <- ekf_filter_rcpp(private$rcpp_function_ptr$f,
+                                   private$rcpp_function_ptr$g,
+                                   private$rcpp_function_ptr$dfdx,
+                                   private$rcpp_function_ptr$h,
+                                   private$rcpp_function_ptr$dhdx,
+                                   private$rcpp_function_ptr$hvar,
+                                   obsMat,
+                                   inputMat,
+                                   pars,
+                                   private$initial.state$p0,
+                                   private$initial.state$x0,
+                                   private$ode.timestep.size,
+                                   private$ode.timesteps,
+                                   numeric_is_not_na_obsMat,
+                                   number_of_available_obs,
+                                   private$ode.solver)
+  }
+  if(private$method == "ukf"){
+    output.list <- ukf_filter_rcpp(private$rcpp_function_ptr$f,
+                                   private$rcpp_function_ptr$g,
+                                   private$rcpp_function_ptr$dfdx,
+                                   private$rcpp_function_ptr$h,
+                                   private$rcpp_function_ptr$dhdx,
+                                   private$rcpp_function_ptr$hvar,
+                                   obsMat,
+                                   inputMat,
+                                   pars,
+                                   private$initial.state$p0,
+                                   private$initial.state$x0,
+                                   private$ode.timestep.size,
+                                   private$ode.timesteps,
+                                   numeric_is_not_na_obsMat,
+                                   number_of_available_obs,
+                                   private$ukf_hyperpars,
+                                   private$ode.solver)
+  }
   
-  ####### RETURN #######
-  return(invisible(mylist))
+  private$filtration <- output.list
+  
+  return(invisible(self))
 }
-
 
 create_filter_results <- function(self, private, laplace.residuals){
   
@@ -98,7 +133,7 @@ create_filter_results <- function(self, private, laplace.residuals){
   if(any(private$method == c("lkf","ekf","ukf"))){
     
     # extract results from previous
-    rep <- private$filt
+    rep <- private$filtration
     
     # States -----------------------------------
     
@@ -164,7 +199,7 @@ create_filter_results <- function(self, private, laplace.residuals){
     
   }
   
-  private$filt <- filt
+  private$filtration <- filt
   
   return(invisible(self))
 }

@@ -116,6 +116,9 @@ ctsmTMB = R6::R6Class(
       private$estimate.initial = FALSE
       private$initial.variance.scaling = 1
       private$advanced.settings = list(forceAD = TRUE)
+      private$train.against.full.prediction = FALSE
+      private$rtmb.tapeconfig = NULL
+      private$tmb.tapeconfig = NULL
       
       # rebuild
       private$rebuild.model = TRUE
@@ -158,14 +161,16 @@ ctsmTMB = R6::R6Class(
       private$fit = NULL
       private$prediction = NULL
       private$simulation = NULL
-      private$filt = NULL
+      private$filtration = NULL
       private$smooth = NULL
       
       # timers
       private$timer_construct_adfun = NA
-      private$timer_estimation = NA
       private$timer_cppbuild = NA
+      private$timer_estimation = NA
       private$timer_prediction = NA
+      private$timer_filtration = NA
+      private$timer_simulation = NA
       
       # predict
       private$n.ahead = 0
@@ -211,6 +216,24 @@ ctsmTMB = R6::R6Class(
     #' Primarily used for debugging.
     getPrivate = function(){
       return(invisible(private))
+    },
+    
+    ########################################################################
+    # GET OBJECT PRIVATE FIELDS
+    ########################################################################
+    #' @description 
+    #' Set training method 
+    #' @param full.prediction boolean whether or not to train against a full prediction
+    #' over the data, rather than 1-step predictions
+    setTrainingMethod = function(full.prediction){
+      
+      if(private$train.against.full.prediction != full.prediction){
+        private$rebuild.ad = TRUE
+      }
+      
+      private$train.against.full.prediction <- full.prediction
+      
+      return(invisible(self))
     },
     
     ########################################################################
@@ -470,10 +493,19 @@ ctsmTMB = R6::R6Class(
           
           # begin if-statement to seperate fix and free parameters
           if (all(is.na(par.entry[c("lower","upper")]))){
+            # FIXED PARAMETER
             
-            # if the entry is new, then recompile the ad graph
+            # if this is a new fixed parameter than recompile ad
             if(is.null(private$fixed.pars[[par.name]])){
               private$rebuild.ad <- TRUE
+            } else {
+              # if this is an existing fixed parameter but its value changed then also recompile ad
+              prev.value <- private$fixed.pars[[par.name]]$initial
+              new.value <- par.entry[["initial"]]
+              bool <- identical(prev.value, new.value)
+              if(!bool){
+                private$rebuild.ad <- TRUE
+              }
             }
             
             # set the parameter values
@@ -482,7 +514,9 @@ ctsmTMB = R6::R6Class(
             
             # remove the parameter from the free list (in case it was there previously)
             private$free.pars[[par.name]] = NULL
+            
           } else {
+            # FREE PARAMETER
             
             # if the entry is new, then recompile the ad graph
             if(is.null(private$free.pars[[par.name]])){
@@ -798,15 +832,33 @@ ctsmTMB = R6::R6Class(
     #' function by  evaluating the fixed effects parameters in a multivariate Gaussian 
     #' with \code{mean} and \code{covariance} as provided.
     #' 
-    #' @param forceAD a boolean indicating whether to use state space functions that take advantage of the
+    #' @param force.ad a boolean indicating whether to use state space functions that take advantage of the
     #' RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun by 20%. This breaks
     #' some functionalities such as REPORT.
-    setAdvancedSettings = function(forceAD = TRUE) {
+    #' @param rtmb.tapeconfig options to be passed to \link[RTMB]{TapeConfig}.
+    #' @param tmb.tapeconfig options to be passed to \link[TMB]{config}.
+    setAdvancedSettings = function(force.ad = TRUE, rtmb.tapeconfig = NULL, tmb.tapeconfig = NULL) {
       
-      if(private$advanced.settings$forceAD != forceAD){
+      # force AD mechanism
+      if(!identical(private$advanced.settings$forceAD, force.ad)){
         private$rebuild.ad <- TRUE
       }
-      private$advanced.settings$forceAD = forceAD
+      private$advanced.settings$forceAD <- force.ad
+      
+      # TapeConfig for RTMB models
+      if(!identical(private$advanced.settings$rtmb.tapeconfig, rtmb.tapeconfig)){
+        private$rebuild.ad <- TRUE
+      }
+      private$rtmb.tapeconfig <- rtmb.tapeconfig
+      
+      # TapeConfig for RTMB models
+      if(!identical(private$advanced.settings$tmb.tapeconfig, tmb.tapeconfig)){
+        private$rebuild.ad <- TRUE
+      }
+      private$tmb.tapeconfig <- tmb.tapeconfig
+      
+      
+      
       
       # Return
       return(invisible(self))
@@ -956,13 +1008,17 @@ ctsmTMB = R6::R6Class(
         private$timer_cppbuild,
         private$timer_construct_adfun,
         private$timer_estimation,
-        private$timer_prediction
+        private$timer_filtration,
+        private$timer_prediction,
+        private$timer_simulation
       )
       rownames(x) <- c(
         "C++ Compilation",
         "Constructing AD Fun",
         "Estimation",
-        "Prediction"
+        "Filtration",
+        "Prediction",
+        "Simulation"
         )
       
       
@@ -1118,7 +1174,7 @@ ctsmTMB = R6::R6Class(
         estimate.initial.state = estimate.initial.state,
         silent = silent
       )
-      set_flags("filter", args, self, private)
+      set_flags("filtration", args, self, private)
       
       # build model
       build_model(self, private)
@@ -1145,7 +1201,7 @@ ctsmTMB = R6::R6Class(
       
       # return
       if(!private$silent) message("Finished!")
-      return(invisible(private$filt))
+      return(invisible(private$filtration))
     },
     
     ########################################################################
@@ -1301,6 +1357,7 @@ ctsmTMB = R6::R6Class(
     #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff 
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid 
     #' approximation respectively) for smooth derivatives.
+    #' @param report boolean - whether or not to report filtered states, observations and residuals.
     #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
     #' using the method of \link[TMB]{oneStepPredict}.
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
@@ -1323,6 +1380,7 @@ ctsmTMB = R6::R6Class(
                         trace = 10,
                         control = list(trace=trace, iter.max=1e5, eval.max=1e5),
                         use.hessian = FALSE,
+                        report = TRUE,
                         laplace.residuals = FALSE,
                         unconstrained.optim = FALSE,
                         estimate.initial.state = FALSE,
@@ -1370,7 +1428,7 @@ ctsmTMB = R6::R6Class(
       }
       
       # create return fit
-      create_estimation_return_fit(self, private, laplace.residuals)
+      create_estimation_return_fit(self, private, report, laplace.residuals)
       
       # return
       if(!private$silent) message("Finished!")
@@ -1479,7 +1537,7 @@ ctsmTMB = R6::R6Class(
       construct_makeADFun(self, private)
       
       # return
-      if(!silent) message("Succesfully returned function handlers")
+      if(!silent) message("Finished!")
       return(invisible(private$nll))
     },
     
@@ -1506,6 +1564,7 @@ ctsmTMB = R6::R6Class(
     #' should be returned.
     #' @param return.covariance boolean value to indicate whether the covariance (instead of the correlation) 
     #' should be returned.
+    #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param estimate.initial.state bool - stationary estimation of initial mean and covariance
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param ode.timestep numeric value. Sets the time step-size in numerical filtering schemes. 
@@ -1537,6 +1596,7 @@ ctsmTMB = R6::R6Class(
                        k.ahead = nrow(data)-1,
                        return.k.ahead = 0:k.ahead,
                        return.covariance = TRUE,
+                       ukf.hyperpars = c(1, 0, 3),
                        initial.state = self$getInitialState(),
                        estimate.initial.state = private$estimate.initial,
                        use.cpp = FALSE,
@@ -1548,6 +1608,7 @@ ctsmTMB = R6::R6Class(
         method = method,
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
+        ukf.hyperpars = ukf.hyperpars,
         initial.state = initial.state,
         estimate.initial.state = estimate.initial.state,
         silent = silent
@@ -1603,6 +1664,7 @@ ctsmTMB = R6::R6Class(
     #' should be returned.
     #' @param return.covariance boolean value to indicate whether the covariance (instead of the correlation) 
     #' should be returned.
+    #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param ode.timestep numeric value. Sets the time step-size in numerical filtering schemes. 
     #' The defined step-size is used to calculate the number of steps between observation time-points as 
@@ -1657,12 +1719,11 @@ ctsmTMB = R6::R6Class(
                         k.ahead = nrow(data)-1,
                         return.k.ahead = 0:k.ahead,
                         n.sims = 100,
+                        ukf.hyperpars = c(1, 0, 3),
                         initial.state = self$getInitialState(),
                         estimate.initial.state = private$estimate.initial,
                         silent = FALSE,
                         ...){
-      
-      if(method!="ekf"){ stop("The simulate function is currently only implemented for method = 'ekf'.") }
       
       # set flags
       args = list(
@@ -1670,6 +1731,7 @@ ctsmTMB = R6::R6Class(
         ode.solver = ode.solver,
         ode.timestep = ode.timestep,
         simulation.timestep = simulation.timestep,
+        ukf.hyperpars = ukf.hyperpars,
         initial.state = initial.state,
         estimate.initial.state = estimate.initial.state,
         silent = silent,
@@ -1852,6 +1914,9 @@ ctsmTMB = R6::R6Class(
     estimate.initial = NULL,
     initial.variance.scaling = NULL,
     advanced.settings = NULL,
+    train.against.full.prediction = NULL,
+    rtmb.tapeconfig = NULL,
+    tmb.tapeconfig = NULL,
     
     # rebuild
     rebuild.model = FALSE,
@@ -1888,14 +1953,16 @@ ctsmTMB = R6::R6Class(
     fit = NULL,
     prediction = NULL,
     simulation = NULL,
-    filt = NULL,
+    filtration = NULL,
     smooth = NULL,
     
     # timers
     timer_construct_adfun = NULL,
-    timer_estimation = NULL,
     timer_cppbuild = NULL,
+    timer_estimation = NULL,
     timer_prediction = NULL,
+    timer_filtration = NULL,
+    timer_simulation = NULL,
     
     # predict
     n.ahead = NULL,
@@ -2002,7 +2069,7 @@ ctsmTMB = R6::R6Class(
       
       # set flag
       switch(str,
-             filter = {private$procedure <- "filter"},
+             filtration = {private$procedure <- "filtration"},
              smoother = {private$procedure <- "smoother"},
              estimation = {private$procedure <- "estimation"},
              construction = {private$procedure <- "construction"},
@@ -2348,10 +2415,10 @@ ctsmTMB = R6::R6Class(
         stop("The initial state estimation must be TRUE or FALSE.")
       }
       
-      if(bool){
-        bool <- !bool
-        message("Estimating the initial condition is currently disabled due to a bug.")
-      }
+      # if(bool){
+      #   bool <- !bool
+      #   message("Estimating the initial condition is currently disabled due to a bug.")
+      # }
       
       private$estimate.initial = bool
       return(invisible(NULL))

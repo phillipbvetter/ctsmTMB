@@ -48,16 +48,17 @@ The `predict` method accepts the following arguments
 ```{r, eval=FALSE}
 model$predict(data,
               pars = NULL,
-              use.cpp = FALSE,
               method = "ekf",
-              ode.solver = "euler",
+              ode.solver = "rk4",
               ode.timestep = diff(data$t),
-              k.ahead = Inf,
-              return.k.ahead = NULL,
+              k.ahead = nrow(data)-1,
+              return.k.ahead = 0:k.ahead,
               return.covariance = TRUE,
               initial.state = self$getInitialState(),
               estimate.initial.state = private$estimate.initial,
-              silent = FALSE
+              use.cpp = FALSE,
+              silent = FALSE,
+              ...
 )
 ```
 
@@ -173,6 +174,7 @@ u.sim <- cumsum(rnorm(length(t.sim),sd=0.1))
 df.sim <- data.frame(t=t.sim, y=NA, u=u.sim)
 
 # Perform simulation
+set.seed(1)
 sim <- model$simulate(data=df.sim, 
                       pars=true.pars, 
                       n.sims=1,
@@ -243,8 +245,6 @@ ggplot() +
   geom_line(aes(x=t, y=pred1$states$x, color="label2")) +
   geom_line(aes(x=t, y=pred2$states$x, color="label3")) +
   geom_line(aes(x=t, y=pred3$states$x, color="label4")) +
-  # geom_line(aes(x=t, y=pred4$states$x, color="label5")) +
-  # geom_line(aes(x=t, y=pred5$states$x, color="label6")) +
   geom_point(aes(x=t.obs, y=y, color="y(t)")) +
   scale_color_discrete(labels=latex.str) +
   ctsmTMB:::getggplot2theme() + 
@@ -285,20 +285,18 @@ ggplot() +
 
 Lastly lets calculate the mean prediction accuracy using an RMSE-score:
 ```{r}
-rmse = c()
-k.ahead = 1:pred.horizon
-for(i in k.ahead){
-  xy = data.frame(
-    x = pred$states[pred$states$k.ahead==i,"x"],
-    y = pred$observations[pred$observations$k.ahead==i,"y.data"]
-  )
-  rmse[i] = sqrt(mean((xy[["x"]] - xy[["y"]])^2))
-}
+pdf <- cbind(pred$states, y.data = pred$observations$y.data)
+rmse <- data.frame(
+  k.ahead = 0:pred.horizon,
+  rmse = sapply(split(pdf, pdf$k.ahead), function(df) {
+    sqrt(mean((df$x - df$y.data)^2, na.rm = TRUE))
+  })
+)
 ```
 
 
 ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
-ggplot() +
+ggplot(data=rmse) +
   geom_line(aes(k.ahead, rmse), color="steelblue") + 
   geom_point(aes(k.ahead, rmse), color="red") +
   labs(

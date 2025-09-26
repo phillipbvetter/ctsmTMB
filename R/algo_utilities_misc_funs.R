@@ -1,3 +1,62 @@
+ConfigureTape <- function(context, self, private){
+  
+  if(context=="RTMB"){
+    if(is.null(private$rtmb.tapeconfig)){
+      # Default settings
+      # atomic: disabling yields 7x optimization speed
+      x <- list(atomic="disable", comparison="NA", vectorize="NA")
+      do.call(RTMB::TapeConfig, x)
+    } else {
+      # User-provided settings
+      x <- as.list(private$rtmb.tapeconfig)
+      nams <- names(formals(RTMB::TapeConfig))
+      arg.names <- nams[nams %in% names(x)]
+      x <- x[arg.names]
+      do.call(RTMB::TapeConfig, x)
+    }
+  }
+  
+  if(context=="TMB"){
+    tmb.config.names <- c("trace.atomic",
+                          "trace.optimize",
+                          "nthreads",
+                          "trace.parallel",
+                          "tmbad.atomic_sparse_log_determinant",
+                          "tmbad_deterministic_hash",
+                          "tape.parallel",
+                          "optimize.parallel",
+                          "autopar",
+                          "optimize.instantly",
+                          "debug.getListElement",
+                          "tmbad.sparse_hessian_compress")
+    if(is.null(private$tmb.tapeconfig)){
+      # Default settings
+      x <- list(
+        trace.atomic = 1,
+        trace.optimize = 1,
+        nthreads = 1,
+        trace.parallel = 1,
+        tmbad.atomic_sparse_log_determinant = 1,
+        tmbad_deterministic_hash = 1,
+        tape.parallel = 1,
+        optimize.parallel = 0,
+        autopar = 0,
+        optimize.instantly = 1,
+        debug.getListElement = 0,
+        tmbad.sparse_hessian_compress = 0
+      )
+      do.call(TMB::config, c(x, list(DLL=private$modelname.with.method)))
+    } else {
+      # User-provided settings
+      x <- as.list(private$tmb.tapeconfig)
+      arg.names <- tmb.config.names[tmb.config.names %in% names(x)]
+      x <- x[arg.names]
+      do.call(TMB::config, c(x, list(DLL=private$modelname.with.method)))
+    }
+  }
+  
+  return(invisible(self))
+}
 getSystemDimensions <- function(private, .envir=parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
@@ -324,7 +383,7 @@ getInitialStateEstimator <- function(.envir=parent.frame()){
   
   ######## Function 2
   ######## Covariance Stationary Solve
-    # TODO: Can we implement Bartels–Stewart algorithm with eigen?
+  # TODO: Can we implement Bartels–Stewart algorithm with eigen?
   f.initial.covar.solve <- function(stateVec, parVec, inputVec){
     A <- dfdx__(stateVec, parVec, inputVec)
     G <- g__(stateVec, parVec, inputVec)

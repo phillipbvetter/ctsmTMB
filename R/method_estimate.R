@@ -33,6 +33,7 @@ construct_makeADFun = function(self, private){
     }
     
     if(private$method == "ukf"){
+      message("Note: The Unscented Kalman Filter in RTMB is unstable and may cause R to crash. If you experience issues try 'ukf.cpp' instead.")
       makeADFun_ukf_rtmb(self, private)
     }
     
@@ -64,31 +65,48 @@ construct_makeADFun = function(self, private){
 # MAIN RETURN FIT FUNCTION THAT CALL OTHERS
 #######################################################
 
-create_estimation_return_fit = function(self, private, laplace.residuals){
+create_estimation_return_fit = function(self, private, report, laplace.residuals){
   
   if(!private$silent) message("Returning results...")
   
-  report_return_fit(self, private, laplace.residuals)
+  # Initialization and Clearing -----------------------------------
+  if (is.null(private$opt)) {
+    return(NULL)
+  }
   
-  # if(private$method %in% c("lkf","lkf.cpp")){
-  #   calculate_fit_statistics_lkf(self, private)
-  # }
-  # 
-  # if(private$method %in% c("ekf","ekf.cpp")){
-  #   calculate_fit_statistics_ekf(self, private)
-  # }
-  # 
-  # if(private$method %in% c("ukf","ukf.cpp")){
-  #   calculate_fit_statistics_ukf(self, private)
-  # }
-  # 
-  # if(private$method=="laplace"){
-  #   calculate_fit_statistics_laplace(self, private, laplace.residuals)
-  # }
-  # if(private$method=="laplace.thygesen"){
-  #   calculate_fit_statistics_laplace2(self, private, laplace.residuals)
-  # }
+  # clear fit
+  private$fit = NULL
   
+  # get convergence
+  private$fit$convergence = private$opt$convergence
+  
+  # Fit Info -----------------------------------
+  compute_mle_gradient_and_hessian(self, private)
+  
+  # Parameters and Uncertainties -----------------------------------
+  compute_mle_parameters_and_std_errors(self, private)
+  
+  if(report){
+    # Get Report -----------------------------------
+    rep <- get_state_report(self, private)
+    
+    # States -----------------------------------
+    compute_return_states(rep, self, private)
+    
+    # Residuals -----------------------------------
+    report_residuals(rep, laplace.residuals, self, private)
+    
+    # Observations -----------------------------------
+    report_observations(self, private)
+  }
+  
+  # clone private into fit -----------------------------------
+  private$fit$private <- self$clone()$.__enclos_env__$private
+  
+  # set s3 class -----------------------------------
+  class(private$fit) = "ctsmTMB.fit"
+  
+  # return -----------------------------------
   return(invisible(self))
 }
 
@@ -113,10 +131,6 @@ perform_estimation = function(self, private) {
       
       # IF METHOD IS KALMAN FILTER
       if ( any(private$method == c("lkf","lkf.cpp","ekf","ekf.cpp","ukf","ukf.cpp")) ) {
-        
-        if(private$method=="ukf"){
-          message("Note: The Unscented Kalman Filter in RTMB is often unstable and causes R to crash - you can try 'ukf_cpp' instead.")
-        }
         
         # use function, gradient and hessian
         if (private$use.hessian) {

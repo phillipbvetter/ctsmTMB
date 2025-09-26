@@ -50,8 +50,32 @@ getKalmanFunctions <- function(.envir = parent.frame()){
     return(list(stateVec, covMat, nll))
   }
   
+  kalman.no.update.with.nll <- function(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
+    # Remove NA's from obsVec
+    y = obsVec[obsVec_bool]
+    # Create permutation matrix
+    E = E0[obsVec_bool,, drop=FALSE]
+    # Obs Jacobian
+    C = E %*% dhdx__(stateVec, parVec, inputVec)
+    # Innovation
+    e = y - E %*% h__(stateVec, parVec, inputVec)
+    # Observation variance
+    V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
+    # Innovation variance
+    # R = C %*% covMat %*% t(C) + V
+    R <- V
+    # Posterior State and Covariance
+    stateVec = stateVec
+    covMat = covMat
+    # Likelihood
+    nll <- loss.function(e,R)
+    # Return
+    return(list(stateVec, covMat, nll))
+  }
+  
   assign("kalman.data.update", kalman.data.update, envir = .envir)
   assign("kalman.data.update.with.nll", kalman.data.update.with.nll, envir = .envir)
+  assign("kalman.no.update.with.nll", kalman.no.update.with.nll, envir = .envir)
   
   return(NULL)
 }
@@ -116,8 +140,31 @@ getUkfKalmanFunctions <- function(.envir = parent.frame()){
     return(list(stateVec, covMat, nll))
   }
   
+  kalman.no.update.with.nll <- function(X.sigma, stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
+    # observations
+    y = obsVec[obsVec_bool]
+    # permutation matrix
+    E = E0[obsVec_bool,, drop=FALSE]
+    # H of sigma points
+    H <- h.sigma(X.sigma, parVec, inputVec)
+    # Innovation
+    e <- y - E %*% (H %*% W.m)
+    # Observation variance
+    V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
+    # Measurement variance
+    # R <- E %*% H %*% W %*% t(H) %*% t(E) + V
+    R <- V
+    stateVec <- stateVec
+    covMat <- covMat
+    # Likelihood
+    nll <- loss.function(e,R)
+    # Return
+    return(list(stateVec, covMat, nll))
+  }
+  
   assign("kalman.data.update", kalman.data.update, envir = .envir)
   assign("kalman.data.update.with.nll", kalman.data.update.with.nll, envir = .envir)
+  assign("kalman.no.update.with.nll", kalman.no.update.with.nll, envir = .envir)
   
   return(NULL)
 }

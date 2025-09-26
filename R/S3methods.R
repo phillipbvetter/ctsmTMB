@@ -375,14 +375,24 @@ plot.ctsmTMB.fit = function(x,
           x = "Lag"
         )
       # cpgram
-      plot.cpgram =
-        ggfortify::ggcpgram(e,colour=mycolor) +
-        ggtheme +
-        ggplot2::labs(
-          title = paste("Cumulative Periodogram: "),
-          y = "",
-          x = "Lag"
-        )
+      if (requireNamespace("ggfortify", quietly = TRUE)) {
+        plot.cpgram =
+          ggfortify::ggcpgram(e,colour=mycolor) +
+          ggtheme +
+          ggplot2::labs(
+            title = paste("Cumulative Periodogram: "),
+            y = "",
+            x = "Lag"
+          )
+      } else {
+        plot.cpgram = ggplot2::ggplot() + 
+          ggplot2::geom_text(
+            aes(x=0.5,
+                y=0.5,
+                label="Install 'ggfortify' \n for \n Cumulative Periodogram")
+          ) +
+          theme_void()
+      }
       
       plots[[i]] = patchwork::wrap_plots(plot.res,
                                          plot.hist,
@@ -409,9 +419,9 @@ plot.ctsmTMB.fit = function(x,
         # time vs observations
         plot.obs =
           ggplot2::ggplot(data=data.frame(t,y.obs)) +
-          # ggplot2::geom_point(ggplot2::aes(x=t,y=y,color="Predictions"),size=0.5) +
-          ggplot2::geom_line(ggplot2::aes(x=t,y=y.obs,color="Observations"),size=1.5) +
-          ggplot2::geom_line(ggplot2::aes(x=t,y=y,color="Predictions"),size=0.5) +
+          # ggplot2::geom_point(ggplot2::aes(x=t,y=y,color="Predictions"),linewidth=0.5) +
+          ggplot2::geom_line(ggplot2::aes(x=t,y=y.obs,color="Observations"),linewidth=1.5) +
+          ggplot2::geom_line(ggplot2::aes(x=t,y=y,color="Predictions"),linewidth=0.5) +
           ggtheme +
           theme(
             # legend.position=c(0.9, 0.9),
@@ -704,9 +714,12 @@ profile.ctsmTMB.fit = function(fitted,
     }
   }
   
-  # return
+  # return -----------------
+  # normalize and convert nll into likelihood
   X[,len+1] <- exp(fit$nll - X[,len+1])
   names(X)[ncol(X)] <- "likelihood"
+  
+  # create return list
   returnlist = list(
     profile.grid.and.likelihood = X,
     parameter.values = parlist,
@@ -714,6 +727,7 @@ profile.ctsmTMB.fit = function(fitted,
     optimiser.results = opt.list,
     full.likelihood.optimum = fit$par.fixed
   )
+  # set class so that S3 methods work
   class(returnlist) <- "ctsmTMB.profile"
   
   return(returnlist)
@@ -746,19 +760,20 @@ profile.ctsmTMB.fit = function(fitted,
 #' fit <- model$estimate(Ornstein)
 #' 
 #' # calculate profile likelihood
-#' out <- profile(fit,parlist=list(theta=NULL))
+#' # out <- profile(fit,parlist=list(theta=NULL))
+#' out <- profile(fit,parlist=list(theta=NULL, mu=NULL))
 #' 
 #' # plot profile
 #' plot(out)
 #' @export
 plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
+  
   list <- x
   l <- length(list$parameter.values)
   df <- list$profile.grid.and.likelihood
   par.names <- head(names(df), l)
   opt <- list$full.likelihood.optimum[par.names]
   
-  # A simple plot is only needed if we are profiling one parameter
   if(l==1L){
     
     threshold <- exp(-qchisq(0.95, df=1)/2)
@@ -769,7 +784,7 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
       {if(include.opt) ggplot2::geom_vline(ggplot2::aes(xintercept=opt,color="Full Likelihood Optimum"),lty="dashed")} +
       ggplot2::labs(color="",
                     title="Profile Likelihood",
-                    y = "Negative Log-Likelihood",
+                    y = "",
                     x = par.names[1]) +
       getggplot2theme()
     
@@ -778,29 +793,59 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
     quants <- c(0.75, 0.90, 0.95, 0.99)
     chisquared_contours <- exp(-qchisq(quants, df=2)/2)
     labelfun <- function(x){
-      y <- (1-x)*100
+      y <- (1-x) * 100
       y <- paste0(y,"%")
     }
     
-    p <- ggplot2::ggplot() +
-      geomtextpath::geom_textcontour(
-        data = df, 
-        aes(x=.data[[par.names[1]]], y=.data[[par.names[2]]], z=.data$likelihood, 
-            label=labelfun(after_stat(level)),
-            color=after_stat(level)
-        ),
-        breaks = chisquared_contours,
-        linewidth = 1
+    if (requireNamespace("geomtextpath", quietly = TRUE)) {
+      # Use geomtextpath if available
+      p <- ggplot2::ggplot() +
+        geomtextpath::geom_textcontour(
+          data = df, 
+          ggplot2::aes(
+            x = .data[[par.names[1]]], 
+            y = .data[[par.names[2]]], 
+            z = .data$likelihood, 
+            label = labelfun(after_stat(level)),
+            color = after_stat(level)
+          ),
+          breaks = chisquared_contours,
+          linewidth = 0.6
+        )
+    } else {
+      # Fallback without labels if geomtextpath is not available
+      message("Please install 'geomtextpath' to get contour labels.")
+      p <- ggplot2::ggplot() +
+        ggplot2::geom_contour(
+          data = df, 
+          ggplot2::aes(
+            x = .data[[par.names[1]]], 
+            y = .data[[par.names[2]]], 
+            z = .data$likelihood,
+            color = after_stat(level)
+          ),
+          breaks = chisquared_contours,
+          linewidth = 0.6
+        )
+    }
+    
+    # add labels
+    p <- p +
+      ggplot2::labs(
+        color="",
+        title="Profile Likelihood",
+        x = par.names[1],
+        y = par.names[2]
       ) +
-      ggplot2::labs(color="",
-                    title="Profile Likelihood",
-                    x = par.names[1],
-                    y = par.names[2]) +
       scale_color_continuous(guide="none") +
       getggplot2theme()
     
-    if(include.opt) {
-      p <- p + ggplot2::geom_point(data=data.frame(x=opt[1],y=opt[2]), ggplot2::aes(x=x, y=y), size=1)
+    if (include.opt) {
+      p <- p + ggplot2::geom_point(
+        data = data.frame(x = opt[1], y = opt[2]), 
+        ggplot2::aes(x = x, y = y), 
+        size = 1
+      )
     }
     
   } else {

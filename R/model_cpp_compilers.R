@@ -25,7 +25,7 @@ compile_rcpp_functions = function(self, private){
                     )
   
   # Add to private fields
-  nams <- c("f","dfdx","g","h","dhdx","hvar")
+  nams <- c("f","dfdx","g","h","dhdx","hvar","dfdu")
   names(outlist) <- nams
   private$rcpp_function_ptr[nams] <- outlist[nams]
   

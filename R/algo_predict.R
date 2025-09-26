@@ -4,41 +4,24 @@
 #######################################################
 #######################################################
 
-ekf_r_prediction = function(parVec, self, private)
+ekf_predict_r = function(parVec, self, private)
 {
   
   # Data ----------------------------------------
-  n.states <- private$number.of.states
-  n.obs <- private$number.of.observations
-  n.pars <- private$number.of.pars
-  n.diffusions <- private$number.of.diffusions
-  n.inputs <- private$number.of.inputs
-  estimate.initial <- private$estimate.initial
-  
-  # initial
-  stateVec <- private$initial.state$x0
-  covMat = private$initial.state$p0
+  getSystemDimensions()
   # inputs
   inputMat = as.matrix(private$data[private$input.names])
-  # observations
-  obsMat = as.matrix(private$data[private$obs.names])
   
+  # Utilities
   create.state.space.functions.for.filtering()
-  
-  # create.function.from.string.body("f__", "ans", private$r.function.strings$f)
-  # create.function.from.string.body("dfdx__", "ans", private$r.function.strings$dfdx)
-  # create.function.from.string.body("g__",  "ans", private$r.function.strings$g)
-  # create.function.from.string.body("h__", "ans", private$r.function.strings$h)
-  # create.function.from.string.body("dhdx__", "ans", private$r.function.strings$dhdx)
-  # create.function.from.string.body("hvar__matrix", "ans", private$r.function.strings$hvar__matrix)
-  
-  # various utility functions for likelihood calculations ---------------------
-  # Note - order can be important here
   getOdeSolvers()
-  if(estimate.initial) {
-    getInitialStateEstimator()
-  }
-  getKalmanFunctions()
+  
+  # Get filtered states
+  filt <- ekf_filter_r(parVec, self, private)
+  xPost <- filt$xPost
+  pPost <- filt$pPost
+  stateVec <- xPost[[1]]
+  covMat <- matrix(pPost[[1]],nrow=n.states)
   
   # time-steps
   ode_timestep_size = private$ode.timestep.size
@@ -49,36 +32,15 @@ ekf_r_prediction = function(parVec, self, private)
   last.pred.index <- private$last.pred.index
   
   ####### STORAGE #######
-  predMats <- lapply(1:last.pred.index, function(x) matrix(NA,nrow=k.ahead+1,ncol=n.states+n.states^2))
+  predMats <- lapply(1:last.pred.index, function(x) matrix(NA, nrow=k.ahead+1, ncol=n.states+n.states^2))
   
-  ####### Pre-Allocated Object #######
-  I0 <- diag(n.states)
-  E0 <- diag(n.obs)
-  
-  ####### INITIAL STATE / COVARIANCE #######
-  inputVec = inputMat[1,]
-  if(estimate.initial){
-    stateVec <- f.initial.state.newton(c(parVec, inputVec))
-    covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
-  }
-  
-  ######## (PRE) DATA UPDATE ########
-  obsVec = obsMat[1,]
-  obsVec_bool = !is.na(obsVec)
-  if(any(obsVec_bool)){
-    data.update <- kalman.data.update(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0)
-    stateVec <- data.update[[1]]
-    covMat <- data.update[[2]]
-  }
-  
-  for(i in 1:last.pred.index){ ###### TIME LOOP ####### 
-    
+  for(i in 1:last.pred.index){ 
+    stateVec <- xPost[[i]]
+    covMat <- pPost[[i]]
     predMats[[i]][1,] <- c(stateVec, covMat)
-    
-    for(k in 1:k.ahead){ ###### K-STEP AHEAD LOOP ####### 
+    for(k in 1:k.ahead){
       inputVec = inputMat[i+k-1,]
       dinputVec = (inputMat[i+k,] - inputVec)/ode_timesteps[i+k-1]
-      
       # Solve moment ODEs
       for(j in 1:ode_timesteps[i+k-1]){
         sol = ode.integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size[i+k-1])
@@ -87,149 +49,174 @@ ekf_r_prediction = function(parVec, self, private)
         inputVec = inputVec + dinputVec
       }
       predMats[[i]][k+1,] <- c(stateVec, covMat)
-      
     }
-    stateVec <- head(predMats[[i]][2,], n.states)
-    covMat <- matrix(tail(predMats[[i]][2,], n.states^2), nrow=n.states)
-    
-    ######## DATA UPDATE ########
-    inputVec = inputMat[i+1,]
-    obsVec = obsMat[i+1,]
-    obsVec_bool = !is.na(obsVec)
-    if(any(obsVec_bool)){
-      data.update <- kalman.data.update(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0)
-      stateVec <- data.update[[1]]
-      covMat <- data.update[[2]]
-    }
-    
-  } ###### MAIN LOOP END #######
-  
-  ####### STORE PREDICTION #######
-  private$prediction = list(predMats=predMats)
+  } 
   
   ####### RETURN #######
-  return(invisible(self))
+  return(invisible(predMats))
 }
 
 #######################################################
 #######################################################
-# PREDICTION EKF C++ IMPLEMENTATION
+# PREDICTION LKF R IMPLEMENTATION
 #######################################################
 #######################################################
 
-ekf_rcpp_prediction = function(parVec, self, private){
+lkf_predict_r = function(parVec, self, private)
+{
   
-  # observation/input matrix
-  obsMat = as.matrix(private$data[private$obs.names])
+  # Data ----------------------------------------
+  getSystemDimensions()
+  
+  # Timesteps, Observations, Inputs and Parameters ----------------------------
+  ode_timestep_size = private$ode.timestep.size
   inputMat = as.matrix(private$data[private$input.names])
+  obsMat = as.matrix(private$data[private$obs.names])
   
-  # non-na observation matrix
-  numeric_is_not_na_obsMat = t(apply(obsMat, 1, FUN=function(x) as.numeric(!is.na(x))))
-  if(nrow(numeric_is_not_na_obsMat)==1) numeric_is_not_na_obsMat = t(numeric_is_not_na_obsMat)
+  # prediction settings
+  k.ahead <- private$n.ahead
+  last.pred.index <- private$last.pred.index
   
-  # number of non-na observations
-  number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
+  create.state.space.functions.for.filtering()
   
-  # predict using c++ function
-  mylist <- execute_ekf_prediction2(private$rcpp_function_ptr$f,
-                                    private$rcpp_function_ptr$g,
-                                    private$rcpp_function_ptr$dfdx,
-                                    private$rcpp_function_ptr$h,
-                                    private$rcpp_function_ptr$dhdx,
-                                    private$rcpp_function_ptr$hvar,
-                                    obsMat,
-                                    inputMat,
-                                    parVec,
-                                    private$initial.state$p0,
-                                    private$initial.state$x0,
-                                    private$ode.timestep.size,
-                                    private$ode.timesteps,
-                                    numeric_is_not_na_obsMat,
-                                    number_of_available_obs,
-                                    private$number.of.states,
-                                    private$number.of.observations,
-                                    private$last.pred.index,
-                                    private$n.ahead,
-                                    private$ode.solver)
+  # Get filtered states
+  filt <- lkf_filter_r(parVec, self, private)
+  xPost <- filt$xPost
+  pPost <- filt$pPost
+  stateVec <- xPost[[1]]
+  covMat <- matrix(pPost[[1]],nrow=n.states)
   
-  ####### STORE PREDICTION #######
-  private$prediction = mylist
+  ####### STORAGE #######
+  predMats <- lapply(1:last.pred.index, function(x) matrix(NA,nrow=k.ahead+1,ncol=n.states+n.states^2))
+  
+  ####### Compute Matrix Exponentials for 1-Step Mean and Variance #######
+  constant.time.diff <- FALSE
+  if(var(diff(ode_timestep_size)) < 1e-15){
+    constant.time.diff <- TRUE
+    fixed.timestep.size <- ode_timestep_size[1]
+  }
+  # dX = A*X + B*U + G*dB
+  inputVec <- inputMat[1,]
+  A <- dfdx__(stateVec, parVec, inputVec) #states
+  B <- dfdu__(stateVec, parVec, inputVec) #inputs
+  G <- g__(stateVec, parVec, inputVec) #diffusions
+  # [A B \\ 0 0]
+  Phi1 <- 0.0 * diag(n.states+n.inputs+1)
+  Phi1[1:n.states,1:n.states] <- A
+  Phi1[1:n.states,(n.states+1):ncol(Phi1)] <- B
+  # [-A GG^T \\ 0 A^t]
+  Phi2 <- rbind(cbind(-A, G %*% t(G)),cbind(0*A,t(A)))
+  ePhi1 <- Matrix::expm(Phi1 * fixed.timestep.size)
+  ePhi2 <- Matrix::expm(Phi2 * fixed.timestep.size)
+  
+  # A and B (for mean calculations)
+  Ahat <- ePhi1[1:n.states,1:n.states]
+  Ahat_T <- t(Ahat)
+  Bhat <- ePhi1[1:n.states, (n.states+1):ncol(ePhi1)]
+  # V (for variance)
+  Q22 <- ePhi2[(n.states+1):ncol(ePhi2), (n.states+1):ncol(ePhi2)]
+  Q12 <- ePhi2[1:n.states, (n.states+1):ncol(ePhi2)]
+  Vhat <- t(Q22) %*% Q12
+  
+  for(i in 1:last.pred.index){
+    stateVec <- xPost[[i]]
+    covMat <- matrix(pPost[[i]],nrow=n.states)
+    predMats[[i]][1,] <- c(stateVec, covMat)
+    ###### K-STEP AHEAD LOOP ####### 
+    for(k in 1:k.ahead){
+      # augment input vector to account for constant terms in B
+      inputVec = c(1,inputMat[i+k-1,])
+      # Perform one-step prediction of mean and covariance
+      stateVec <- Ahat %*% stateVec + Bhat %*% inputVec
+      covMat <- Ahat %*% covMat %*% Ahat_T + Vhat
+      predMats[[i]][k+1,] <- c(stateVec, covMat)
+    }
+  }
   
   ####### RETURN #######
-  return(invisible(self))
+  return(invisible(predMats))
 }
 
-create_ekf_predict_return = function(return.covariance, return.k.ahead, self, private){
+ukf_predict_r = function(parVec, self, private)
+{
   
-  # Simlify variable names
-  n = private$number.of.states
-  n.ahead = private$n.ahead
-  state.names = private$state.names
-  last.pred.index = private$last.pred.index
+  # Data ----------------------------------------
+  getSystemDimensions()
   
-  # Create return data.frame
-  df.out = data.frame(matrix(nrow=last.pred.index*(n.ahead+1), ncol=5+n+n^2))
-  disp_names = sprintf(rep("cor.%s.%s",n^2),rep(state.names, each=n),rep(state.names,n))
-  disp_names[seq.int(1,n^2,by=n+1)] = sprintf(rep("var.%s",n),state.names)
-  if(return.covariance){
-    disp_names = sprintf(rep("cov.%s.%s",n^2),rep(state.names,each=n),rep(state.names,n))
-    disp_names[seq.int(1,n^2,by=n+1)] = sprintf(rep("var.%s",n),state.names)
+  # Timesteps, Observations, Inputs and Parameters ----------------------------
+  ode_timestep_size = private$ode.timestep.size
+  ode_timesteps = private$ode.timesteps
+  inputMat = as.matrix(private$data[private$input.names])
+  obsMat = as.matrix(private$data[private$obs.names])
+  
+  # prediction settings
+  k.ahead <- private$n.ahead
+  last.pred.index <- private$last.pred.index
+  
+  create.state.space.functions.for.filtering()
+  getUkfSigmaWeights()
+  getUkfOdeSolvers()
+  getUkfKalmanFunctions()
+  
+  # Get filtered states
+  filt <- ukf_filter_r(parVec, self, private)
+  xPost <- filt$xPost
+  pPost <- filt$pPost
+  stateVec <- xPost[[1]]
+  covMat <- matrix(pPost[[1]],nrow=n.states)
+  
+  ####### STORAGE #######
+  predMats <- lapply(1:last.pred.index, function(x) matrix(NA,nrow=k.ahead+1,ncol=n.states+n.states^2))
+  
+  # we need this to stabilize cholesky factor
+  eps.chol <- 1e-10
+  
+  ###### TIME LOOP #######
+  for(i in 1:last.pred.index){
+    
+    # Initial storage
+    predMats[[i]][1,] <- c(stateVec, covMat)
+    
+    # Compute cholesky factorization
+    covMat <- covMat + eps.chol * diag(n.states)
+    chol.covMat <- t(Matrix::chol(covMat))
+    X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
+    
+    for(k in 1:k.ahead){ ###### K-STEP AHEAD LOOP ####### 
+      inputVec = inputMat[i+k-1,]
+      dinputVec = (inputMat[i+k,] - inputVec)/ode_timesteps[i+k-1]
+      
+      # Solve moment ODEs
+      for(j in 1:ode_timesteps[i+k-1]){
+        X.sigma <- ode.integrator(X.sigma, chol.covMat, parVec, inputVec, dinputVec, ode_timestep_size[i+k-1])
+        chol.covMat <- sigma2chol(X.sigma)
+        inputVec = inputVec + dinputVec
+      }
+      stateVec <- X.sigma[,1]
+      covMat <- chol.covMat %*% t(chol.covMat)
+      predMats[[i]][k+1,] <- c(stateVec, covMat)
+    }
   }
-  names(df.out) = c("i.","j.","t.i","t.j","k.ahead",state.names,disp_names)
   
-  # Fill out data.frame
-  ran = 0:(last.pred.index-1)
-  df.out["i."] = rep(ran,each=n.ahead+1)
-  df.out["j."] = df.out["i."] + rep(0:n.ahead,last.pred.index)
-  df.out["t.i"] = rep(private$data$t[ran+1],each=n.ahead+1)
-  df.out["t.j"] = private$data$t[df.out[,"i."]+1+rep(0:n.ahead,last.pred.index)]
-  df.out["k.ahead"] = rep(0:n.ahead,last.pred.index)
-  df.obs = df.out[c("i.","j.","t.i","t.j","k.ahead")]
+  ####### RETURN #######
+  return(invisible(predMats))
+}
+
+#######################################################
+#######################################################
+# FULL PREDICTION LAPLACE
+#######################################################
+#######################################################
+
+laplace_prediction  <- function(self, private) {
   
-  df.out[, c(state.names, disp_names)] <- do.call(rbind, private$prediction$predMats)
-  if(!return.covariance){
-    diag.ids <- seq(from=1,to=n^2,by=n+1)
-    .seq <- seq(from=1,to=n^2,by=1)
-    non.diag.ids <- .seq[!(.seq %in% diag.ids)]
-    df.out[,disp_names[non.diag.ids]] <- t(apply(df.out, 1, function(x) as.vector(stats::cov2cor(matrix(tail(x, n^2), nrow=n)))))[,non.diag.ids]
-  }
+  # We can perform a laplace prediction by not providing data to the likelihood function.
+  # So we can reconstruct the AD graph with NA-data.
+  # Is there a better way to re-use the existing data?
   
-  ##### OBSERVATION PREDICTIONS #####
-  # calculate observations at every time-step in predict
-  inputs.df = private$data[df.out[,"j."]+1,private$input.names]
+  # nll <- private$nll
   
-  named.pars.list = as.list(private$pars)
-  names(named.pars.list) = private$parameter.names
-  # create environment
-  env.list = c(
-    # states
-    as.list(df.out[state.names]),
-    # inputs
-    as.list(inputs.df),
-    # free and fixed parameters
-    named.pars.list
-  )
   
-  # calculate observations
-  obs.df.predict = as.data.frame(
-    lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = env.list)})
-  )
-  names(obs.df.predict) = paste(private$obs.names)
+  return(invisible(self))
   
-  # add data observation to output data.frame 
-  obs.df.data = private$data[df.out[,"j."]+1, private$obs.names, drop=F]
-  names(obs.df.data) = paste(private$obs.names,".data",sep="")
-  
-  df.obs = cbind(df.obs, obs.df.predict, obs.df.data)
-  
-  # return only specific n.ahead
-  df.out = df.out[df.out[,"k.ahead"] %in% return.k.ahead,]
-  df.obs = df.obs[df.obs[,"k.ahead"] %in% return.k.ahead,]
-  
-  list.out = list(states = df.out, observations = df.obs)
-  class(list.out) = c(class(list.out), "ctsmTMB.pred")
-  
-  private$prediction = list.out
-  
-  return(list.out)
 }

@@ -21,7 +21,7 @@ compute_mle_gradient_and_hessian <- function(self, private){
   }
   
   # MLE Hessian
-  if(private$method %in% c("ekf","ekf_cpp","lkf","lkf_cpp","ukf","ukf_cpp")){
+  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")){
     private$fit$nll.hessian = try_withWarningRecovery(
       {
         nll.hess = private$nll$he(private$opt$par)
@@ -59,7 +59,7 @@ compute_mle_parameters_and_std_errors <- function(self, private){
   }
   
   ############ KALMAN ############
-  if(private$method %in% c("ekf","ekf_cpp","lkf","lkf_cpp","ukf","ukf_cpp")){
+  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")){
     calculate_covariance_from_hessian(self, private)
   }
   
@@ -67,7 +67,10 @@ compute_mle_parameters_and_std_errors <- function(self, private){
   private$fit$tvalue = private$fit$par.fixed / private$fit$sd.fixed
   # The degrees of fredom are number of (non NA) observations minus number of (free) parameters
   freedom.degrees <- sum(!is.na(private$data[private$obs.names])) - private$number.of.free.pars
-  private$fit$Pr.tvalue = 2 * pt(q=abs(private$fit$tvalue), df=freedom.degrees, lower.tail=FALSE)
+  private$fit$Pr.tvalue <- rep(NA, length(private$fit$par.fixed))
+  if(freedom.degrees > 0.1){
+    private$fit$Pr.tvalue = 2 * pt(q=abs(private$fit$tvalue), df=freedom.degrees, lower.tail=FALSE)
+  }
   
   # return
   return(invisible(self))
@@ -201,11 +204,11 @@ get_state_report <- function(self, private){
   switch(private$method,
          # kalman filters
          ekf = {rep <- ekf_filter_r(estimated.pars, self, private)},
-         ekf_cpp = {rep <- ekf_filter_r(estimated.pars, self, private)},
+         ekf.cpp = {rep <- private$nll$report(estimated.pars)},
          lkf = {rep <- lkf_filter_r(estimated.pars, self, private)},
-         lkf_cpp = {rep <- lkf_filter_r(estimated.pars, self, private)},
+         lkf.cpp = {rep <- private$nll$report(estimated.pars)},
          ukf = {rep <- ukf_filter_r(estimated.pars, self, private)},
-         ukf_cpp = {rep <- ukf_filter_r(estimated.pars, self, private)},
+         ukf.cpp = {rep <- private$nll$report(estimated.pars)},
          # laplace methods
          laplace = {rep <- NULL},
          laplace.thygesen = {rep <- NULL}
@@ -226,11 +229,11 @@ compute_return_states <- function(rep, self, private){
   n.diff <- private$number.of.diffusions
   
   ############# KALMAN ############
-  if(private$method %in% c("ekf","ekf_cpp","lkf","lkf_cpp","ukf","ukf_cpp")) {
+  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
     
     # Prior States
-    temp.states = data.frame(private$data$t, t(do.call(cbind,rep$xPrior)))
-    temp.sd = data.frame(private$data$t, sqrt(do.call(rbind,lapply(rep$pPrior,diag))))
+    temp.states = try_withWarningRecovery(data.frame(private$data$t, t(do.call(cbind,rep$xPrior))))
+    temp.sd = try_withWarningRecovery(data.frame(private$data$t, sqrt(do.call(rbind,lapply(rep$pPrior,diag)))))
     temp.cov <- rep$pPrior
     names(temp.states) = c("t", private$state.names)
     names(temp.sd) = c("t",private$state.names)
@@ -240,8 +243,8 @@ compute_return_states <- function(rep, self, private){
     private$fit$states$cov$prior = temp.cov
     
     # Posterior States
-    temp.states = data.frame(private$data$t, t(do.call(cbind,rep$xPost)))
-    temp.sd = data.frame(private$data$t, sqrt(do.call(rbind,lapply(rep$pPost,diag))))
+    temp.states = try_withWarningRecovery(data.frame(private$data$t, t(do.call(cbind,rep$xPost))))
+    temp.sd = try_withWarningRecovery(data.frame(private$data$t, sqrt(do.call(rbind,lapply(rep$pPost,diag)))))
     temp.cov <- rep$pPost
     names(temp.states) = c("t",private$state.names)
     names(temp.sd) = c("t",private$state.names)
@@ -266,7 +269,6 @@ compute_return_states <- function(rep, self, private){
       names(temp.sd) = c("t", private$state.names)
       private$fit$states$mean$smoothed = temp.states
       private$fit$states$sd$smoothed = temp.sd
-      n 
     }
     
     if(private$method %in% c("laplace.thygesen")){
@@ -281,7 +283,6 @@ compute_return_states <- function(rep, self, private){
       names(temp.sd) = c("t", private$state.names)
       private$fit$states$mean$smoothed = temp.states
       private$fit$states$sd$smoothed = temp.sd
-      
     }
     
   }
@@ -298,7 +299,7 @@ compute_return_states <- function(rep, self, private){
 report_residuals <- function(rep, laplace.residuals, self , private) {
   
   ############ KALMAN ############
-  if(private$method %in% c("ekf","ekf_cpp","lkf","lkf_cpp","ukf","ukf_cpp")) {
+  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
     rowNAs = as.matrix(!is.na(private$data[private$obs.names]))
     sumrowNAs = rowSums(rowNAs)
     
@@ -353,6 +354,7 @@ report_residuals <- function(rep, laplace.residuals, self , private) {
       private$fit$residuals$residuals <- temp.res
       private$fit$residuals$sd <- temp.sd
       private$fit$residuals$normalized <- temp.res
+      # The first column is the time column why it is removed
       private$fit$residuals$normalized[,-1] <- temp.res[,-1]/temp.sd[,-1]
       
     }
@@ -371,30 +373,20 @@ report_residuals <- function(rep, laplace.residuals, self , private) {
 report_observations <- function(self , private) {
   
   ############ KALMAN ############
-  if(private$method %in% c("ekf","ekf_cpp","lkf","lkf_cpp","ukf","ukf_cpp")) {
+  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
     
     # Observations -----------------------------------
-    # We need all states, inputs and parameter values to evaluate the observation
-    # put them in a list
+    free.and.fixed.parameters <- self$getParameters()[,"estimate"]
+    names(free.and.fixed.parameters) <- private$parameter.names
+    
     listofvariables.prior = c(
-      # states
       as.list(private$fit$states$mean$prior[-1]),
-      # estimated free parameters
-      as.list(private$fit$par.fixed),
-      # fixed parameters
-      lapply(private$fixed.pars, function(x) x$initial),
-      # inputs
+      as.list(free.and.fixed.parameters),
       as.list(private$data)
     )
-    
     listofvariables.posterior = c(
-      # states
       as.list(private$fit$states$mean$posterior[-1]),
-      # estimated free parameters
-      as.list(private$fit$par.fixed),
-      # fixed parameters
-      lapply(private$fixed.pars, function(x) x$initial),
-      # inputs
+      as.list(free.and.fixed.parameters),
       as.list(private$data)
     )
     obs.df.prior = as.data.frame(

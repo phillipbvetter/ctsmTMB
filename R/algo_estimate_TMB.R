@@ -6,6 +6,9 @@
 
 makeADFun_ekf_tmb = function(self, private){
   
+  # Tape Configration ----------------------
+  ConfigureTape("TMB", self, private)
+  
   # Data ----------------------------------------
   
   # add mandatory entries to data
@@ -90,6 +93,9 @@ makeADFun_ekf_tmb = function(self, private){
 
 makeADFun_lkf_tmb = function(self, private){
   
+  # Tape Configration ----------------------
+  ConfigureTape("TMB", self, private)
+  
   # Data ----------------------------------------
   
   # add mandatory entries to data
@@ -168,6 +174,9 @@ makeADFun_lkf_tmb = function(self, private){
 #######################################################
 
 makeADFun_ukf_tmb = function(self, private){
+  
+  # Tape Configration ----------------------
+  ConfigureTape("TMB", self, private)
   
   # Data ----------------------------------------
   

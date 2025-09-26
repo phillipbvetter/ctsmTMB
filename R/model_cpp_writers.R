@@ -260,179 +260,41 @@ write_h_var = function(self, private){
   return(newtxt)
 }
 
-write_cppfile <- function(self, private){
-  
-  if(private$method == "lkf.cpp") write_lkf_cppfile(self, private)
-  if(private$method == "ekf.cpp") write_ekf_cppfile(self, private)
-  if(private$method == "ukf.cpp") write_ukf_cppfile(self, private)
-  
-}
-
-write_lkf_cppfile <- function(self, private){
-  
-  # Get template
-  txt <- readLines(system.file("include/template_lkf.h", package="ctsmTMB"))
-  
-  # Embed system info
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_STATES")] <- sprintf("// STATES:%s", private$number.of.states)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_OBS")] <- sprintf("// OBS:%s", private$number.of.observations)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_INPUTS")] <- sprintf("// INPUTS:%s", private$number.of.inputs)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_PARS")] <- sprintf("// PARS:%s", private$number.of.pars)
-  
-  # Insert user functions
-  txt[which(txt %in% "// INSERT F")] <- write_f(self, private)
-  txt[which(txt %in% "// INSERT DFDX")] <- write_jac_f(self, private)
-  txt[which(txt %in% "// INSERT G")] <- write_g(self, private)
-  txt[which(txt %in% "// INSERT H")] <- write_h(self, private)
-  txt[which(txt %in% "// INSERT HVAR")] <- write_h_var(self, private)
-  txt[which(txt %in% "// INSERT DHDX")] <- write_jac_h(self, private)
-  txt[which(txt %in% "// INSERT DFDU")] <- write_jac_f_wrt_u(self, private)
-  
-  # Open, write and close new file
-  fileconn = file(paste0(private$cppfile.path.with.method,".cpp"))
-  writeLines(txt, fileconn)
-  close(fileconn)
-  
-}
-
-write_ekf_cppfile <- function(self, private){
-  
-  # Get template
-  txt <- readLines(system.file("include/template_ekf.h", package="ctsmTMB"))
-  
-  # Embed system info
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_STATES")] <- sprintf("// STATES:%s", private$number.of.states)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_OBS")] <- sprintf("// OBS:%s", private$number.of.observations)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_INPUTS")] <- sprintf("// INPUTS:%s", private$number.of.inputs)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_PARS")] <- sprintf("// PARS:%s", private$number.of.pars)
-  
-  # Insert user functions
-  txt[which(txt %in% "// INSERT F")] <- write_f(self, private)
-  txt[which(txt %in% "// INSERT DFDX")] <- write_jac_f(self, private)
-  txt[which(txt %in% "// INSERT G")] <- write_g(self, private)
-  txt[which(txt %in% "// INSERT H")] <- write_h(self, private)
-  txt[which(txt %in% "// INSERT DHDX")] <- write_jac_h(self, private)
-  txt[which(txt %in% "// INSERT HVAR")] <- write_h_var(self, private)
-  
-  # Open, write and close new file
-  fileconn = file(paste0(private$cppfile.path.with.method,".cpp"))
-  writeLines(txt, fileconn)
-  close(fileconn)
-  
-}
-
-write_ukf_cppfile <- function(self, private){
-  
-  # Get template
-  txt <- readLines(system.file("include/template_ukf.h", package="ctsmTMB"))
-  
-  # Embed system info
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_STATES")] <- sprintf("// STATES:%s", private$number.of.states)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_OBS")] <- sprintf("// OBS:%s", private$number.of.observations)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_INPUTS")] <- sprintf("// INPUTS:%s", private$number.of.inputs)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_PARS")] <- sprintf("// PARS:%s", private$number.of.pars)
-  
-  # Insert user functions
-  txt[which(txt %in% "// INSERT F")] <- write_f(self, private)
-  txt[which(txt %in% "// INSERT DFDX")] <- write_jac_f(self, private)
-  txt[which(txt %in% "// INSERT G")] <- write_g(self, private)
-  txt[which(txt %in% "// INSERT H")] <- write_h(self, private)
-  txt[which(txt %in% "// INSERT DHDX")] <- write_jac_h(self, private)
-  txt[which(txt %in% "// INSERT HVAR")] <- write_h_var(self, private)
-  
-  # Open, write and close new file
-  fileconn = file(paste0(private$cppfile.path.with.method,".cpp"))
-  writeLines(txt, fileconn)
-  close(fileconn)
-  
-}
-
 #######################################################
 # MAIN WRITER FUNCTION FOR WRITING C++ FILE
 #######################################################
 # This is the main writer function for creating the likelihood C++ file
 write_cppfile = function(self, private) {
   
-  if(private$method == "ekf.cpp"){
-    write_ekf_cppfile(self, private)
+  if(private$method=="lkf.cpp"){
+    stop("LKF not supported yet.")
   }
   
-  if(private$method == "lkf.cpp"){
-    stop("lkf.cpp is not implemented yet.")
-    write_lkf_cppfile(self, private)
-  }
+  # Get template
+  method <- stringr::str_replace(private$method, ".cpp", "")
+  filepath <- sprintf("include/template_%s.h",method)
+  txt <- readLines(system.file(filepath, package="ctsmTMB"))
   
-  if(private$method == "ukf.cpp"){
-    write_ukf_cppfile(self, private)
-  }
+  # Embed system info
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_STATES")] <- sprintf("// STATES:%s", private$number.of.states)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_OBS")] <- sprintf("// OBS:%s", private$number.of.observations)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_INPUTS")] <- sprintf("// INPUTS:%s", private$number.of.inputs)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_PARS")] <- sprintf("// PARS:%s", private$number.of.pars)
   
+  # Insert user functions
+  txt[which(txt %in% "// INSERT F")] <- write_f(self, private)
+  txt[which(txt %in% "// INSERT DFDX")] <- write_jac_f(self, private)
+  txt[which(txt %in% "// INSERT G")] <- write_g(self, private)
+  txt[which(txt %in% "// INSERT H")] <- write_h(self, private)
+  txt[which(txt %in% "// INSERT DHDX")] <- write_jac_h(self, private)
+  txt[which(txt %in% "// INSERT HVAR")] <- write_h_var(self, private)
+  txt[which(txt %in% "// INSERT DFDU")] <- write_jac_f_wrt_u(self, private)
+  
+  # Open, write and close new file
+  fileconn = file(paste0(private$cppfile.path.with.method,".cpp"))
+  writeLines(txt, fileconn)
+  close(fileconn)
+ 
   # Return
   return(invisible(self))
 }
-
-
-# #######################################################
-# # MAIN WRITER FUNCTION FOR WRITING C++ FILE
-# #######################################################
-# # This is the main writer function for creating the likelihood C++ file
-# write_cppfile = function(self, private) {
-#   
-#   #Initialize C++ file
-#   fileconn = file(paste0(private$cppfile.path.with.method,".cpp"))
-#   
-#   # Header etc...
-#   txt = c(
-#     "#include <TMB.hpp>",
-#     "using namespace density;"
-#   )
-#   
-#   # Define constants
-#   newtxt = "const double pi = M_PI;"
-#   txt = c(txt, newtxt)
-#   
-#   # Custom extra functions
-#   newtxt = write_custom_cppfunctions()
-#   txt = c(txt, newtxt)
-#   
-#   # Various helper functions
-#   if(any(private$method == c("ekf_cpp","ukf_cpp"))){
-#     newtxt = write_helper_cppfunctions()
-#     txt = c(txt, newtxt)
-#   }
-#   
-#   # Specific method functions
-#   if(private$method=="ekf_cpp"){
-#     newtxt = write_ekf_cppfunctions(self, private)
-#     txt = c(txt, newtxt)
-#   }
-#   if(private$method=="ukf_cpp"){
-#     newtxt = write_ukf_cppfunctions(self,private)
-#     txt = c(txt,newtxt)
-#   }
-#   
-#   # Initialize TMB Objective Function
-#   
-#   txt = c(txt,"template<class Type>\nType objective_function<Type>::operator() ()\n{")
-#   txt = c(txt, "Type nll__ = 0;")
-#   
-#   # Specific estimation method
-#   if(private$method=="ekf_cpp"){
-#     newtxt = write_ekf_cpp_likelihood(self, private)
-#     txt = c(txt, newtxt)
-#   }
-#   if(private$method=="ukf_cpp"){
-#     newtxt = write_ukf_cpp_likelihood(self, private)
-#     txt = c(txt, newtxt)
-#   }
-#   
-#   # Return statement
-#   txt = c(txt, "return nll__;")
-#   txt = c(txt, "}")
-#   
-#   # Write cpp function and close file connection
-#   writeLines(txt,fileconn)
-#   close(fileconn)
-#   
-#   # Return
-#   return(invisible(self))
-# }

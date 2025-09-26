@@ -332,7 +332,8 @@ create.state.space.function.strings = function(self, private)
   }
   
   f.elements <- c()
-  f.elements2 <- matrix(0, private$number.of.states, private$number.of.inputs+1)
+  # f.elements2 <- matrix(0, private$number.of.states, private$number.of.inputs+1)
+  f.elements2 <- matrix("RTMB::AD(0)", private$number.of.states, private$number.of.inputs+1)
   # 2. Now we find input-terms by differentiation
   for(i in seq_along(private$state.names)){
     #its inputs + 1 below because the first element is for constants
@@ -508,6 +509,46 @@ create.rcpp.state.space.function.strings = function(self, private){
                  }", private$number.of.observations, private$number.of.observations, paste(hvar,collapse=""))
   
   private$rcpp.function.strings$hvar = code
+  
+  ##################################################
+  # derivative w.r.t inputs (for linear kalman filter)
+  ##################################################
+  
+  # We first find constant terms
+  # this corresponds to an input that is always 1 (first element of U)
+  zero.list <- as.list(numeric(private$number.of.inputs + private$number.of.states))
+  names(zero.list) <-c(private$input.names, private$state.names)
+  constant.terms <- sapply(private$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list))))
+  if(inherits(constant.terms, "try-error")){
+    constant.terms <- rep(0, private$number.of.states)
+  }
+  
+  jac.f.wrt.u = c()
+  # 2. Now we find input-terms by differentiation
+  for(i in seq_along(private$state.names)){
+    #its inputs + 1 below because the first element is for constants
+    for(j in 1:(private$number.of.inputs+1)){
+      if(j==1){
+        term <- constant.terms[[i]]
+      } else {
+        term <- ctsmTMB.Deriv(f=private$sys.eqs.trans[[i]]$diff.dt, x=private$input.names[j-1])
+      }
+      # skip if zero
+      if(term=="0") next
+      term = hat2pow(term)
+      new.term = do.call(substitute, list(term, subsList))
+      jac.f.wrt.u = c(jac.f.wrt.u, sprintf("ans(%s, %s) = %s;", i-1, j-1, deparse1(new.term)))
+    }
+  }
+  
+  code = sprintf("Eigen::MatrixXd dfdu(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
+                 Eigen::MatrixXd ans(%s,%s);
+                 ans.setZero();
+                 %s
+                 return ans;
+                 }", private$number.of.states, private$number.of.inputs+1, paste(jac.f.wrt.u, collapse=""))
+  
+  private$rcpp.function.strings$dfdu = code
   
   
 }

@@ -63,6 +63,7 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
 \item \href{#method-ctsmTMB-.private}{\code{ctsmTMB$.private()}}
 \item \href{#method-ctsmTMB-getPrivateFields}{\code{ctsmTMB$getPrivateFields()}}
 \item \href{#method-ctsmTMB-getPrivate}{\code{ctsmTMB$getPrivate()}}
+\item \href{#method-ctsmTMB-setTrainingMethod}{\code{ctsmTMB$setTrainingMethod()}}
 \item \href{#method-ctsmTMB-addSystem}{\code{ctsmTMB$addSystem()}}
 \item \href{#method-ctsmTMB-addObs}{\code{ctsmTMB$addObs()}}
 \item \href{#method-ctsmTMB-setVariance}{\code{ctsmTMB$setVariance()}}
@@ -138,6 +139,24 @@ Primarily used for debugging.
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getPrivate()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ctsmTMB-setTrainingMethod"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-setTrainingMethod}{}}}
+\subsection{Method \code{setTrainingMethod()}}{
+Set training method
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setTrainingMethod(full.prediction)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{full.prediction}}{boolean whether or not to train against a full prediction
+over the data, rather than 1-step predictions}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-addSystem"></a>}}
@@ -420,15 +439,23 @@ Adds a maximum a posterior contribution to the (negative log) likelihood
 function by  evaluating the fixed effects parameters in a multivariate Gaussian
 with \code{mean} and \code{covariance} as provided.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setAdvancedSettings(forceAD = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setAdvancedSettings(
+  force.ad = TRUE,
+  rtmb.tapeconfig = NULL,
+  tmb.tapeconfig = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{forceAD}}{a boolean indicating whether to use state space functions that take advantage of the
+\item{\code{force.ad}}{a boolean indicating whether to use state space functions that take advantage of the
 RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun by 20\%. This breaks
 some functionalities such as REPORT.}
+
+\item{\code{rtmb.tapeconfig}}{options to be passed to \link[RTMB]{TapeConfig}.}
+
+\item{\code{tmb.tapeconfig}}{options to be passed to \link[TMB]{config}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -752,6 +779,7 @@ Estimate the fixed effects parameters in the specified model.
   trace = 10,
   control = list(trace = trace, iter.max = 1e+05, eval.max = 1e+05),
   use.hessian = FALSE,
+  report = TRUE,
   laplace.residuals = FALSE,
   unconstrained.optim = FALSE,
   estimate.initial.state = FALSE,
@@ -821,6 +849,8 @@ See \code{?stats::nlminb} for more information}
 \code{stats::nlminb} to use the fixed effects hessian of the (negative log) likelihood when
 performing the optimization. This feature is only available for the kalman filter methods
 without any random effects.}
+
+\item{\code{report}}{boolean - whether or not to report filtered states, observations and residuals.}
 
 \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
@@ -960,6 +990,7 @@ state estimate as the initial condition.
   k.ahead = nrow(data) - 1,
   return.k.ahead = 0:k.ahead,
   return.covariance = TRUE,
+  ukf.hyperpars = c(1, 0, 3),
   initial.state = self$getInitialState(),
   estimate.initial.state = private$estimate.initial,
   use.cpp = FALSE,
@@ -1010,6 +1041,8 @@ should be returned.}
 \item{\code{return.covariance}}{boolean value to indicate whether the covariance (instead of the correlation)
 should be returned.}
 
+\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
 
 \item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
@@ -1049,6 +1082,7 @@ state estimate as the initial condition.
   k.ahead = nrow(data) - 1,
   return.k.ahead = 0:k.ahead,
   n.sims = 100,
+  ukf.hyperpars = c(1, 0, 3),
   initial.state = self$getInitialState(),
   estimate.initial.state = private$estimate.initial,
   silent = FALSE,
@@ -1120,6 +1154,8 @@ data updates).}
 should be returned.}
 
 \item{\code{n.sims}}{number of simulations}
+
+\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
 
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
 

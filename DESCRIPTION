@@ -32,11 +32,7 @@ Depends:
     R (>= 4.0.0)
 Imports:
     Deriv,
-    geomtextpath,
-    ggfortify,
     ggplot2,
-    graphics,
-    grDevices,
     Matrix,
     patchwork,
     R6,
@@ -49,6 +45,8 @@ Imports:
 Suggests:
     knitr,
     rmarkdown,
+    geomtextpath,
+    ggfortify,
     testthat (>= 3.0.0)
 LinkingTo:
     Rcpp,

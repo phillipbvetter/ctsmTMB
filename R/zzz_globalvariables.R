@@ -35,6 +35,7 @@ utils::globalVariables(
     "f.initial.covar.solve",
     "kalman.data.update",
     "kalman.data.update.with.nll",
+    "kalman.no.update.with.nll",
     "ode.integrator",
     "euler.maruyama.simulation",
     "kron.left",
