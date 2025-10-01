@@ -2,7 +2,7 @@
 % Please edit documentation in R/S3methods.R
 \name{plot.ctsmTMB.profile}
 \alias{plot.ctsmTMB.profile}
-\title{#' Plot a profile likelihood ctsmTMB object}
+\title{Plot a profile likelihood ctsmTMB object}
 \usage{
 \method{plot}{ctsmTMB.profile}(x, y, include.opt = TRUE, ...)
 }
@@ -17,7 +17,7 @@ total likelihood optimizer in the plot.}
 \item{...}{additional arguments}
 }
 \description{
-#' Plot a profile likelihood ctsmTMB object
+Plot a profile likelihood ctsmTMB object
 }
 \examples{
 library(ctsmTMB)

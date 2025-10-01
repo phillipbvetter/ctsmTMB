@@ -204,16 +204,6 @@ y = x[iobs] + true.pars["sigma_y"] * rnorm(length(iobs))
 )
 ```
 
-<!-- The data is plotted below: -->
-<!-- ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'} -->
-<!-- ggplot() +  -->
-<!--   geom_point(aes(x=t.obs, y=y, color="y(t)")) + -->
-<!--   geom_line(aes(x=t.obs, y=u.obs, color="u(t)")) + -->
-<!--   ctsmTMB:::getggplot2theme() +  -->
-<!--   theme(legend.text = ggplot2::element_text(size=15)) + -->
-<!--   labs(color="",x="Time",y="") -->
-<!-- ``` -->
-
 We can simulate many trajectories using:
 ```{r}
 sim <- model$simulate(data=.data, 
@@ -226,7 +216,7 @@ with parameters $\theta = 20, \sigma_{x} = 1, \sigma_{y} = 0.05$.
 **Note:** The value of $\sigma_{y}$ has no impact when doing "full" simulations (i.e. choosing maximum `k.ahead`) since no data updates occur.
 
 The simulations can be plotted quickly using `matplot`:
-```{r, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
+```{r, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 100 simulated trajectories.'}
 # Get the first (and only in this case) k-step simulation data.frame
 X <- sim$states$x$i0
 
@@ -248,7 +238,7 @@ sim <- model$simulate(data=.data,
                       silent=T)
 ```
 
-```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
+```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 100 simulated trajectories for a different value of the process diffusion parameter sigma_x.'}
 # Get the first (and only in this case) k-step simulation data.frame
 X <- sim$states$x$i0
 
@@ -270,7 +260,7 @@ sim <- model$simulate(data=.data,
                       silent=T)
 ```
 
-```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
+```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 100 simulated trajectories for a different value of the theta parameter.'}
 # Get the first (and only in this case) k-step simulation data.frame
 X <- sim$states$x$i0
 

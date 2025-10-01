@@ -38,15 +38,12 @@ Imports:
     R6,
     RcppXPtrUtils,
     RTMB (>= 1.7),
-    stats,
     stringr,
-    TMB,
-    utils
+    TMB
 Suggests:
     knitr,
     rmarkdown,
     geomtextpath,
-    ggfortify,
     testthat (>= 3.0.0)
 LinkingTo:
     Rcpp,

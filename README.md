@@ -200,7 +200,7 @@ homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 ``` r
 library(ggplot2)
 library(patchwork)
-library(dplyr)
+# library(dplyr)
 library(reshape2)
 library(ctsmTMB)
 

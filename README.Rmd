@@ -241,9 +241,9 @@ pred.list = model$predict(data=.data,
                           method="ekf",
 )
 
-# Create plot all 10-step predictions against data
+# Create plot of all 10-step predictions against data
 pred = pred.list$states
-pred10step = pred %>% dplyr::filter(k.ahead==10)
+pred10step <- pred[pred$k.ahead == 10, ]
 plot2 = ggplot() +
   geom_ribbon(aes(x=pred10step$t.j, 
                   ymin=pred10step$x-2*sqrt(pred10step$var.x),
@@ -253,10 +253,10 @@ plot2 = ggplot() +
   labs(title="10 Step Predictions vs Observations", x="Time", y="") +
   theme_minimal()
 
-# Perform prediction ignoring all data
+# Perform a full prediction i.e. without updating to data along the way
 pred.list = model$predict(data=.data,method="ekf")
 
-# Perform simulation ignoring all data
+# Perform full simulations - 10 sample trajectories
 sim.list = model$simulate(data=.data, method="ekf", n.sims=10)
 
 # Collapse simulation data for easy use with ggplot 

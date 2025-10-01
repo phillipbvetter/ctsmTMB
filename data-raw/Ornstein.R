@@ -1,11 +1,5 @@
 ## code to prepare `Ornstein` dataset goes here:
 
-library(ggplot2)
-library(patchwork)
-library(dplyr)
-library(reshape2)
-library(ctsmTMB)
-
 ############################################################
 # Data simulation
 ############################################################
@@ -47,4 +41,5 @@ Ornstein = data.frame(
 
 # plot(Ornstein$t,Ornstein$y,type="l")
 
-usethis::use_data(Ornstein, overwrite = TRUE)
+# uncomment below to update
+# usethis::use_data(Ornstein, overwrite = TRUE)

@@ -200,7 +200,7 @@ $$
 $$
 
 The data is plotted below:
-```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
+```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows observations and input signal.'}
 ggplot() + 
   geom_point(aes(x=t.obs, y=y, color="y(t)")) +
   geom_line(aes(x=t.obs, y=u.obs, color="u(t)")) +
@@ -234,7 +234,7 @@ head(pred$observations)
 
 When we plot these predictions against data we can perhaps identify that $\theta \in \left[10,50\right]$ (with $\theta=20$ being the truth here).
 
-```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
+```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows a series of full predictions for different values of the theta parameter, against the observations.'}
 t <- pred$states$t.j
 latex.str <- lapply(
   c(sprintf("theta[%s]", c(1,10,50,100)),"y[t[k]]"),
@@ -274,7 +274,7 @@ pred.H = pred$states[pred$states$k.ahead==pred.horizon,]
 ```
 
 
-```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
+```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 25-step predictions with associated 95% prediction interval in grey, against the observations.'}
 ggplot() +
   geom_line(aes(x=pred.H$t.j, y=pred.H$x,color="25-Step Predictions")) +
   geom_ribbon(aes(x=pred.H$t.j,ymin=pred.H$x-2*sqrt(pred.H$var.x),ymax=pred.H$x+2*sqrt(pred.H$var.x)),fill="grey",alpha=0.5) +
@@ -295,7 +295,7 @@ rmse <- data.frame(
 ```
 
 
-```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
+```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows the Root Mean Square Error score for prediction horizons from 0 to 25.'}
 ggplot(data=rmse) +
   geom_line(aes(k.ahead, rmse), color="steelblue") + 
   geom_point(aes(k.ahead, rmse), color="red") +

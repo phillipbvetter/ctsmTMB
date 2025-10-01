@@ -149,7 +149,7 @@ $$
 $$
 
 The code below performs the simulation and prepares data for likelihood estimation:
-```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center'}
+```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center', fig.alt='The plot shows a simulated trajectory and associated observations sampled from it.'}
 library(ggplot2)
 
 # Set simulation settings
@@ -293,7 +293,7 @@ The optimal state distributions associated with the estimated parameters can be 
 
 In this example we used the Extended Kalman filter (this is the default filtering algorithm specified by the argument `method="ekf"` to `estimate`). This method produces  *prior* and *posterior* state estimates. The prior estimates are one-step-ahead predictions, while the posterior estimated are these priors but updated against the current-time available observations. The user is referred to the [Kalman Filter vignette](https://phillipbvetter.github.io/ctsmTMB/articles/extended_kalman_filter.html) for more information on the theoretical details.
 
-```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center', eval=F,include=F}
+```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center', fig.alt='The plot shows prior and posterior state estimates against data.',eval=F,include=F}
 # Extract time, and prior/posterior mean and standard deviation estimates
 t         = fit$states$mean$posterior$t
 xprior    = fit$states$mean$prior$x
@@ -321,10 +321,10 @@ ggplot() +
 
 The states can easily be plotted using the provided **S3** plot.ctsmTMB.fit method. Here we plot both prior and posterior states against the observations:
 
-```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center'}
+```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center', fig.alt='The plot shows the prior states against the observations'}
 plot(fit, type="states",state.type="prior",against="y")
 ```
-```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center'}
+```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center', fig.alt='The plot shows a plot of the posterior states against the observations'}
 plot(fit, type="states",state.type="posterior",against="y")
 ```
 
@@ -360,7 +360,7 @@ plot(fit)
 We can perform likelihood profiling with the `profile` S3 method on the `fit` object, and further plot the result by calling the `plot` S3 method on that.
 
 For an example we can inspect the profile likelihood of $\theta$ as follows:
-```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center'}
+```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center', fig.alt='The plot shows a profile likelihood of the theta parameter.'}
 a <- fit$par.fixed["theta"] - 3*fit$sd.fixed["theta"]
 b <- fit$par.fixed["theta"] + 3*fit$sd.fixed["theta"]
 prof <- profile(fit, list("theta"=seq(a,b,length.out=50)), silent=TRUE)

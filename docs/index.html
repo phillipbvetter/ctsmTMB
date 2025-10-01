@@ -5,7 +5,6 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="description" content="Perform state and parameter inference, and forecasting, in stochastic state-space systems using the ctsmTMB class. This class, built with the R6 package, provides a user-friendly interface for defining and handling state-space models. Inference is based on maximum likelihood estimation, with derivatives efficiently computed through automatic differentiation enabled by the TMB/RTMB packages (Kristensen et al., 2016) &lt;doi:10.18637/jss.v070.i05&gt;. The available inference methods include Kalman filters, in addition to a Laplace approximation-based smoothing method. For further details of these methods refer to the documentation of the CTSMR package &lt;https://ctsm.info/ctsmr-reference.pdf&gt; and Thygesen (2025) &lt;arXiv:2503.21358&gt;. Forecasting capabilities include moment predictions and stochastic path simulations, both implemented in C++ using Rcpp (Eddelbuettel et al., 2018) &lt;doi:10.1080/00031305.2017.1375990&gt; for computational efficiency.">
 <title>Continuous Time Stochastic Modelling using Template Model Builder • ctsmTMB</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -13,80 +12,73 @@
 <link rel="apple-touch-icon" type="image/png" sizes="120x120" href="apple-touch-icon-120x120.png">
 <link rel="apple-touch-icon" type="image/png" sizes="76x76" href="apple-touch-icon-76x76.png">
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="apple-touch-icon-60x60.png">
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="lightswitch.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/Mukta-0.4.9/font.css" rel="stylesheet">
-<link href="deps/Source_Code_Pro-0.4.9/font.css" rel="stylesheet">
-<!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js" integrity="sha512-7O5pXpc0oCRrxk8RUfDYFgn0nO1t+jLuIOQdOMRp4APB7uZ4vSjspzp5y6YDtDs4VzUSTbWzBFZ/LKJhnyFOKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Continuous Time Stochastic Modelling using Template Model Builder">
-<meta property="og:description" content="Perform state and parameter inference, and forecasting, in stochastic state-space systems using the ctsmTMB class. This class, built with the R6 package, provides a user-friendly interface for defining and handling state-space models. Inference is based on maximum likelihood estimation, with derivatives efficiently computed through automatic differentiation enabled by the TMB/RTMB packages (Kristensen et al., 2016) &lt;doi:10.18637/jss.v070.i05&gt;. The available inference methods include Kalman filters, in addition to a Laplace approximation-based smoothing method. For further details of these methods refer to the documentation of the CTSMR package &lt;https://ctsm.info/ctsmr-reference.pdf&gt; and Thygesen (2025) &lt;arXiv:2503.21358&gt;. Forecasting capabilities include moment predictions and stochastic path simulations, both implemented in C++ using Rcpp (Eddelbuettel et al., 2018) &lt;doi:10.1080/00031305.2017.1375990&gt; for computational efficiency.">
-<meta property="og:image" content="/logo.png">
-<!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
-<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-<![endif]-->
+<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/Mukta-0.4.10/font.css" rel="stylesheet">
+<link href="deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><script src="deps/MathJax-3.2.2/tex-chtml.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Continuous Time Stochastic Modelling using Template Model Builder">
+<meta name="description" content="Perform state and parameter inference, and forecasting, in stochastic state-space systems using the ctsmTMB class. This class, built with the R6 package, provides a user-friendly interface for defining and handling state-space models. Inference is based on maximum likelihood estimation, with derivatives efficiently computed through automatic differentiation enabled by the TMB/RTMB packages (Kristensen et al., 2016) &lt;doi:10.18637/jss.v070.i05&gt;. The available inference methods include Kalman filters, in addition to a Laplace approximation-based smoothing method. For further details of these methods refer to the documentation of the CTSMR package &lt;https://ctsm.info/ctsmr-reference.pdf&gt; and Thygesen (2025) &lt;doi:10.48550/arXiv.2503.21358&gt;. Forecasting capabilities include moment predictions and stochastic path simulations, both implemented in C++ using Rcpp (Eddelbuettel et al., 2018) &lt;doi:10.1080/00031305.2017.1375990&gt; for computational efficiency.">
+<meta property="og:description" content="Perform state and parameter inference, and forecasting, in stochastic state-space systems using the ctsmTMB class. This class, built with the R6 package, provides a user-friendly interface for defining and handling state-space models. Inference is based on maximum likelihood estimation, with derivatives efficiently computed through automatic differentiation enabled by the TMB/RTMB packages (Kristensen et al., 2016) &lt;doi:10.18637/jss.v070.i05&gt;. The available inference methods include Kalman filters, in addition to a Laplace approximation-based smoothing method. For further details of these methods refer to the documentation of the CTSMR package &lt;https://ctsm.info/ctsmr-reference.pdf&gt; and Thygesen (2025) &lt;doi:10.48550/arXiv.2503.21358&gt;. Forecasting capabilities include moment predictions and stochastic path simulations, both implemented in C++ using Rcpp (Eddelbuettel et al., 2018) &lt;doi:10.1080/00031305.2017.1375990&gt; for computational efficiency.">
+<meta property="og:image" content="https://github.com/phillipbvetter/ctsmTMB/logo.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
-    
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light" data-bs-theme="light"><div class="container">
-    
+
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
+
     <a class="navbar-brand me-2" href="index.html">ctsmTMB</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
-    
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item">
-  <a class="nav-link" href="articles/ctsmTMB.html">Getting Started</a>
+<li class="nav-item"><a class="nav-link" href="articles/ctsmTMB.html">Getting Started</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
+<li><a class="dropdown-item" href="articles/estimate.html">Estimation</a></li>
+    <li><a class="dropdown-item" href="articles/predict.html">Prediction</a></li>
+    <li><a class="dropdown-item" href="articles/simulate.html">Simulation</a></li>
+    <li><a class="dropdown-item" href="articles/using_another_optimizer.html">Likelihood (Extracting Function Handlers)</a></li>
+  </ul>
 </li>
 <li class="nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-vignettes">Vignettes</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-vignettes">
-    <a class="dropdown-item" href="articles/estimate.html">Estimation</a>
-    <a class="dropdown-item" href="articles/predict.html">Prediction</a>
-    <a class="dropdown-item" href="articles/simulate.html">Simulation</a>
-    <a class="dropdown-item" href="articles/using_another_optimizer.html">Likelihood (Extracting Function Handlers)</a>
-  </div>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-math-details" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Math Details</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-math-details">
+<li><a class="dropdown-item" href="articles/linear_kalman_filter.html">Linear Kalman Filter</a></li>
+    <li><a class="dropdown-item" href="articles/extended_kalman_filter.html">Extended Kalman Filter</a></li>
+    <li><a class="dropdown-item" href="articles/unscented_kalman_filter.html">Unscented Kalman Filter</a></li>
+    <li><a class="dropdown-item" href="articles/laplace_approx.html">Laplace "Filter"</a></li>
+  </ul>
 </li>
-<li class="nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-math-details">Math Details</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-math-details">
-    <a class="dropdown-item" href="articles/linear_kalman_filter.html">Linear Kalman Filter</a>
-    <a class="dropdown-item" href="articles/extended_kalman_filter.html">Extended Kalman Filter</a>
-    <a class="dropdown-item" href="articles/unscented_kalman_filter.html">Unscented Kalman Filter</a>
-    <a class="dropdown-item" href="articles/laplace_approx.html">Laplace "Filter"</a>
-  </div>
-</li>
-<li class="nav-item">
-  <a class="nav-link" href="reference/index.html">Reference</a>
-</li>
-<li class="nav-item">
-  <a class="nav-link" href="news/index.html">Changelog</a>
-</li>
+<li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
-<form class="form-inline my-2 my-lg-0" role="search">
-        <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="search.json" id="search-input" placeholder="Search for" autocomplete="off">
-</form>
-
-      <ul class="navbar-nav">
-<li class="nav-item">
-  <a class="external-link nav-link" href="https://github.com/phillipbvetter/ctsmTMB/" aria-label="github">
-    <span class="fab fa fab fa-github fa-lg"></span>
-     
-  </a>
+<ul class="navbar-nav">
+<li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
+</form></li>
+<li class="nav-item"><a class="nav-link" href="https://github.com/phillipbvetter/ctsmTMB/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
 </li>
       </ul>
 </div>
 
-    
+
   </div>
 </nav><div class="container template-home">
 <div class="row">
@@ -96,21 +88,18 @@
 </h1>
 </div>
 <!-- Badges -->
-<!-- [![CRAN status](https://www.r-pkg.org/badges/version/geomtextpath)](https://CRAN.R-project.org/package=geomtextpath) -->
-<p><a href="https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <!-- [![metacran downloads](https://cranlogs.r-pkg.org/badges/geomtextpath)](https://cran.r-project.org/package=geomtextpath) --> <!-- Package Description --></p>
+<p><a href="https://CRAN.R-project.org/package=ctsmTMB" class="external-link"><img src="https://www.r-pkg.org/badges/version/ctsmTMB" alt="CRAN status"></a> <a href="https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml"><img src="https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <!-- Package Description --></p>
 </div>
 <div class="section level1">
 <h1 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h1>
 <p>Welcome to this GitHub repository which hosts <strong>ctsmTMB</strong> <a href="https://phillipbvetter.github.io/ctsmTMB/index.html" class="external-link">(Continuous Time Stochastic Modelling using Template Model Builder)</a>, the intended successor of, and heavily inspired by, the <strong>CTSM</strong> package <a href="https://ctsm.info" class="external-link">(Continuous Time Stochastic Modelling)</a>. The purpose of the package is to facilitate a user-friendly tool for (state and parameter) inference, and forecasting, in (multi-dimensional) continuous-discrete stochastic state space systems, i.e. systems on the form</p>
-<!-- $$ -->
-<!-- \begin{align} -->
-<!-- dx_{t} & = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t} \\ -->
-<!-- y_{t_k} & = h(t, x_t, u_t, \theta) -->
-<!-- \end{align} -->
-<!-- $$ -->
-<p><span class="math display"><em>d</em><em>x</em><sub><em>t</em></sub> = <em>f</em>(<em>t</em>, <em>x</em><sub><em>t</em></sub>, <em>u</em><sub><em>t</em></sub>, <em>θ</em>) <em>d</em><em>t</em> + <em>g</em>(<em>t</em>, <em>x</em><sub><em>t</em></sub>, <em>u</em><sub><em>t</em></sub>, <em>θ</em>) <em>d</em><em>B</em><sub><em>t</em></sub></span> <span class="math display"><em>y</em><sub><em>t</em><sub><em>k</em></sub></sub> = <em>h</em>(<em>t</em><sub><em>k</em></sub>, <em>x</em><sub><em>t</em><sub><em>k</em></sub></sub>, <em>u</em><sub><em>t</em><sub><em>k</em></sub></sub>, <em>θ</em>)</span></p>
-<p>Here the latent state <span class="math inline"><em>x</em><sub><em>t</em></sub></span> evolves continuously in time, governed by a set of stochastic differential equations, and information about the system is available at discrete times through the observations <span class="math inline"><em>y</em><sub><em>t</em><sub><em>k</em></sub></sub></span>.</p>
+<p><span class="math display">\[
+dx_{t} = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t}
+\]</span> <span class="math display">\[
+y_{t_k} = h(t_k, x_{t_k}, u_{t_k}, \theta)
+\]</span></p>
+<p>Here the latent state <span class="math inline">\(x_t\)</span> evolves continuously in time, governed by a set of stochastic differential equations, and information about the system is available at discrete times through the observations <span class="math inline">\(y_{t_k}\)</span>.</p>
 <p>The <strong>ctsmTMB</strong> package is essentially wrapper around the <strong>TMB/RTMB</strong> packages <a href="https://github.com/kaskr/adcomp" class="external-link">(Template Model Builder)</a> that provide automatic differentiation of the likelihood function, and access to other computational tools such as the Laplace approximation. The likelihood function is constructed based on the (symbolic) user-provided state space equations, which may be specified using the implemented OOP-style <strong>R6</strong> <code>ctsmTMB</code> class, with methods such as <code>addSystem</code> (for defining system equations), and <code>addObs</code> (for defining observation equations).</p>
 <p>The primary work-horse of <strong>ctsmTMB</strong> is the <code>estimate</code> method, which carries out inference by minimizing the (negative log) likelihood using the <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code> quasi-Newton optimizer. The resulting object contains the maximum likelihood parameter and state estimates, and associated marginal uncertainties. The available inference methods are the Linear and Extended Kalman filters in addition to filtration (actually smoothing) using a Laplace approximation approach. <!-- The user can extract the likelihood function handles (function, gradient and hessian) with the `likelihood` method if e.g. they want to use another optimizer. --></p>
 <p>The package facilities forecasting through the <code>predict</code> (moment forecasts) and <code>simulate</code> (stochastic path simulations) methods. The calculations for these may be carried out in either <strong>R</strong> (default) or for additional speed in <strong>C++</strong> using <code>Rcpp</code>. <!-- in particular using the `RcppXPtrUtils` package for sending **C++** pointers of the model-specific functions (drift, diffusion, observation and jacobians) rather than sending (slow to evaluate) **R** functions. --></p>
@@ -121,41 +110,37 @@
 </h1>
 <p>The following state reconstruction algorithms are currently available:</p>
 <ol style="list-style-type: decimal">
-<li><p>The (Continuous-Discrete) Linear Kalman Filter, <code>lkf</code>.</p></li>
-<li><p>The (Continuous-Discrete) Extended Kalman Filter, <code>ekf</code>.</p></li>
-<li><p>The (Continuous-Discrete) Laplace “Filter” <code>laplace</code>.</p></li>
+<li><p>The Linear Kalman Filter, <code>lkf</code>.</p></li>
+<li><p>The Extended Kalman Filter, <code>ekf</code>.</p></li>
+<li><p>The Unscented Kalman Filter, <code>ukf</code>.</p></li>
+<li><p>The Laplace Smoothers <code>laplace</code> and <code>laplace.thygesen</code>.</p></li>
 </ol>
 <div class="section level2">
 <h2 id="kalman-filters">Kalman Filters<a class="anchor" aria-label="anchor" href="#kalman-filters"></a>
 </h2>
 <p>The package is currently mostly tailored towards the Kalman Filter. The advantages of the methods are:</p>
 <ol style="list-style-type: decimal">
-<li><p>The hessian of the likelihood function (w.r.t parameters) is available.</p></li>
+<li><p>The hessian of the likelihood function (w.r.t the fixed parameters) is available.</p></li>
 <li><p>The model residuals are easier to compute for e.g. model validation.</p></li>
 <li><p>Multi-step predictions / simulations with state updates are easier to compute.</p></li>
 </ol>
-<p>In these cases <strong>TMB</strong> simply provides the automatic differentiation.</p>
-<!-- The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. Särkkä, 2007](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4303242). -->
+<p>The Unscented Kalman Filter implementation is based on <em>Algorithm 4.7</em> in <a href="https://ieeexplore.ieee.org/document/4303242" class="external-link">S. Särkkä, 2007</a>.</p>
 </div>
 <div class="section level2">
-<h2 id="laplace-filter">Laplace “Filter”<a class="anchor" aria-label="anchor" href="#laplace-filter"></a>
+<h2 id="laplace-smoother">Laplace Smoother<a class="anchor" aria-label="anchor" href="#laplace-smoother"></a>
 </h2>
-<p>The state-reconstructions based on the <code>laplace</code> (approximation) method are <em>smoothed</em> estimates, meaning that all states are optimized jointly, given all observations in the data. The Laplace Approximation is natively built-into and completely handled by <strong>TMB</strong>. The package implements the stability-improved method due to <a href="https://arxiv.org/abs/2503.21358" class="external-link">Thygesen, 2025</a>.</p>
-<p>A particular advantage of Laplace filter is:</p>
+<p>The state-reconstructions based on the <code>laplace</code> (approximation) method are <em>smoothed</em> estimates, meaning that states are optimized jointly conditioned on all observations. The Laplace approximation is natively built-into and completely handled by <strong>TMB</strong>. The additional method <code>laplace.thygesen</code> is an implementation of the the stability-improved laplace method for systems with state-dependent diffusion and is due to <a href="https://arxiv.org/abs/2503.21358" class="external-link">Thygesen, 2025</a>.</p>
+<p>A particular advantage of the Laplace smoother is:</p>
 <ol style="list-style-type: decimal">
 <li>The possibility for unimodal non-Gaussian observation densities to accommodate the need for e.g. heavier distribution tails. <em>Not yet implemented</em>.</li>
 </ol>
-<p>The method is typically not useful for model-training with the goal of forecasting because the likelihood contributions are based on smoothed estimates, rather than the one-step predictions of Kalman filters.</p>
 <!-- Installation -->
 </div>
 </div>
 <div class="section level1">
-<h1 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+<h1 id="installation-compilers">Installation (Compilers)<a class="anchor" aria-label="anchor" href="#installation-compilers"></a>
 </h1>
-<p>You can install the package by copying the command below into <code>R</code>.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span>repo<span class="op">=</span><span class="st">"phillipbvetter/ctsmTMB"</span>, dependencies<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>It is important to note that users must have working C++ compilers to install and use <strong>ctsmTMB</strong>.</p>
+<p><strong>NOTE: YOU NEED TO MAKE SURE YOU HAVE A WORKING C++ COMPILER IN R TO INSTALL THE PACKAGE!!</strong></p>
 <div class="section level2">
 <h2 id="windows">Windows<a class="anchor" aria-label="anchor" href="#windows"></a>
 </h2>
@@ -169,20 +154,30 @@
 <h2 id="mac--unix">Mac / Unix<a class="anchor" aria-label="anchor" href="#mac--unix"></a>
 </h2>
 <p>Mac users should install <em>Command Line Tools</em>. Run the following command in the Terminal</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">xcode-select</span> <span class="at">--install</span></span></code></pre></div>
-<!---
-Linux also need to make sure that GSL is installed for `RcppZiggurat` which is necessary for the `simulate` method. You can try the following command, or google yourself.
-&#10;
-``` bash
-sudo apt-get install libgsl-dev
-```
---->
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="ex">xcode-select</span> <span class="at">--install</span></span></code></pre></div>
 </div>
+</div>
+<div class="section level1">
+<h1 id="installation-package">Installation (Package)<a class="anchor" aria-label="anchor" href="#installation-package"></a>
+</h1>
+<p>The package can be installed from source from CRAN:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ctsmTMB"</span>, type<span class="op">=</span><span class="st">"source"</span><span class="op">)</span></span></code></pre></div>
+<p>The development version is available on GitHub and R-universe:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span>repo<span class="op">=</span><span class="st">"phillipbvetter/ctsmTMB"</span>, dependencies<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">'ctsmTMB'</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'https://phillipbvetter.r-universe.dev'</span><span class="op">)</span>, type<span class="op">=</span><span class="st">"source"</span><span class="op">)</span></span></code></pre></div>
+<p>If you encounter problems with a locked folder <code>00LOCK-ctsmTMB</code> due to a previously failed installation remove it before reinstalling</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Enter the path on your system</span></span>
+<span><span class="va">enter.your.path</span> <span class="op">&lt;-</span> <span class="st">"/Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/00LOCK-ctsmTMB"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">enter.your.path</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="test-the-installation">Test the Installation<a class="anchor" aria-label="anchor" href="#test-the-installation"></a>
+<h2 id="test-installation">Test Installation<a class="anchor" aria-label="anchor" href="#test-installation"></a>
 </h2>
 <p>Once you have installed the package is it a good idea to test whether <strong>TMB</strong> and C++ compilation works. You should be able to run all examples without compilation errors:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/kaskr/adcomp/wiki" class="external-link">TMB</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/TMB/man/runExample.html" class="external-link">runExample</a></span><span class="op">(</span>all<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>For further information see the <a href="https://github.com/kaskr/adcomp" class="external-link">TMB GitHub</a> and its associated <a href="https://github.com/kaskr/adcomp/wiki/Download" class="external-link">installation instructions</a>.</p>
@@ -196,19 +191,19 @@ sudo apt-get install libgsl-dev
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
 <p>You can access the documentation for all methods with</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">ctsmTMB</span></span></code></pre></div>
 <p>The methods documentation is also available on the <a href="https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html" class="external-link">package homepage</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="code-example---inference-in-1d-ornstein-uhlenbeck-process">Code Example - Inference in 1D Ornstein-Uhlenbeck Process<a class="anchor" aria-label="anchor" href="#code-example---inference-in-1d-ornstein-uhlenbeck-process"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/hadley/reshape" class="external-link">reshape2</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/phillipbvetter/ctsmTMB" class="external-link">ctsmTMB</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/phillipbvetter/ctsmTMB">ctsmTMB</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">############################################################</span></span>
 <span><span class="co"># Data simulation</span></span>
@@ -347,7 +342,8 @@ sudo apt-get install libgsl-dev
 <h2 id="bibliography">Bibliography<a class="anchor" aria-label="anchor" href="#bibliography"></a>
 </h2>
 <ul>
-<li>U. H. Thygesen and K. Kristensen (2025), <em>“Inference in stochastic differential equations using the Laplace approximation: Demonstration and examples”</em>. In: <a href="https://arxiv.org/abs/2503.21358" class="external-link">arXiv:2503.21358v2</a>.</li>
+<li><p>U. H. Thygesen and K. Kristensen (2025), <em>“Inference in stochastic differential equations using the Laplace approximation: Demonstration and examples”</em>. In: <a href="https://arxiv.org/abs/2503.21358" class="external-link">arXiv:2503.21358v2</a>.</p></li>
+<li><p>S. Särkkä, <em>“On Unscented Kalman Filtering for State Estimation of Continuous-Time Nonlinear Systems”</em>. In: <a href="https://ieeexplore.ieee.org/document/4303242" class="external-link">IEEE Transactions on Automatic Control, 52(9), 1631-1641</a>.</p></li>
 </ul>
 </div>
 </div>
@@ -355,8 +351,9 @@ sudo apt-get install libgsl-dev
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/phillipbvetter/ctsmTMB/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/phillipbvetter/ctsmTMB/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://cloud.r-project.org/package=ctsmTMB" class="external-link">View on CRAN</a></li>
+<li><a href="https://github.com/phillipbvetter/ctsmTMB/">Browse source code</a></li>
+<li><a href="https://github.com/phillipbvetter/ctsmTMB/issues">Report a bug</a></li>
 </ul>
 </div>
 
@@ -394,15 +391,15 @@ sudo apt-get install libgsl-dev
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
     </footer>
 </div>
 
-  
 
-  
+
+
 
   </body>
 </html>

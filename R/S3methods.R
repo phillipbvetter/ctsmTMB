@@ -375,24 +375,24 @@ plot.ctsmTMB.fit = function(x,
           x = "Lag"
         )
       # cpgram
-      if (requireNamespace("ggfortify", quietly = TRUE)) {
-        plot.cpgram =
-          ggfortify::ggcpgram(e,colour=mycolor) +
-          ggtheme +
-          ggplot2::labs(
-            title = paste("Cumulative Periodogram: "),
-            y = "",
-            x = "Lag"
-          )
-      } else {
-        plot.cpgram = ggplot2::ggplot() + 
-          ggplot2::geom_text(
-            aes(x=0.5,
-                y=0.5,
-                label="Install 'ggfortify' \n for \n Cumulative Periodogram")
-          ) +
-          theme_void()
-      }
+      # if (requireNamespace("ggfortify", quietly = TRUE)) {
+      plot.cpgram =
+        ggfortify_ggcpgram(e,colour=mycolor) +
+        ggtheme +
+        ggplot2::labs(
+          title = paste("Cumulative Periodogram: "),
+          y = "",
+          x = "Lag"
+        )
+      # } else {
+      #   plot.cpgram = ggplot2::ggplot() + 
+      #     ggplot2::geom_text(
+      #       aes(x=0.5,
+      #           y=0.5,
+      #           label="Install 'ggfortify' \n for \n Cumulative Periodogram")
+      #     ) +
+      #     theme_void()
+      # }
       
       plots[[i]] = patchwork::wrap_plots(plot.res,
                                          plot.hist,
@@ -545,7 +545,7 @@ plot.ctsmTMB.fit = function(x,
   return(invisible(c(plots,plots2)))
 }
 
-#' #' Performs full multi-dimensional profile likelihood calculations
+#' Performs full multi-dimensional profile likelihood calculations
 #' @param fitted a ctmsTMB fit object
 #' @param ... various arguments (not in use)
 #' @param parlist a named-list of parameters to profile over. The user can either
@@ -664,9 +664,9 @@ profile.ctsmTMB.fit = function(fitted,
     
     # optimize
     if(hessian) {
-      opt <- nlminb(x0, f, gr, he, control=control)
+      opt <- stats::nlminb(x0, f, gr, he, control=control)
     } else {
-      opt <- nlminb(x0, f, gr, control=control)
+      opt <- stats::nlminb(x0, f, gr, control=control)
     }
     return(opt)
   }
@@ -733,7 +733,7 @@ profile.ctsmTMB.fit = function(fitted,
   return(returnlist)
 }
 
-#' #' Plot a profile likelihood ctsmTMB object
+#' Plot a profile likelihood ctsmTMB object
 #' @param x a profile.ctsmTMB object
 #' @param y not in use
 #' @param include.opt boolean which indicates whether or not to include the
@@ -817,10 +817,10 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
       message("Please install 'geomtextpath' to get contour labels.")
       p <- ggplot2::ggplot() +
         ggplot2::geom_contour(
-          data = df, 
+          data = df,
           ggplot2::aes(
-            x = .data[[par.names[1]]], 
-            y = .data[[par.names[2]]], 
+            x = .data[[par.names[1]]],
+            y = .data[[par.names[2]]],
             z = .data$likelihood,
             color = after_stat(level)
           ),

@@ -2,7 +2,7 @@
 % Please edit documentation in R/S3methods.R
 \name{profile.ctsmTMB.fit}
 \alias{profile.ctsmTMB.fit}
-\title{#' Performs full multi-dimensional profile likelihood calculations}
+\title{Performs full multi-dimensional profile likelihood calculations}
 \usage{
 \method{profile}{ctsmTMB.fit}(
   fitted,
@@ -41,7 +41,7 @@ the \code{control} argument.}
 \item{...}{various arguments (not in use)}
 }
 \description{
-#' Performs full multi-dimensional profile likelihood calculations
+Performs full multi-dimensional profile likelihood calculations
 }
 \note{
 The implementation was modified from that of
