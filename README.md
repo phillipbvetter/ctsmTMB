@@ -25,7 +25,7 @@ continuous-discrete stochastic state space systems, i.e. systems on the
 form
 
 $$
-dx_{t} = f\left( t, x_t, u_t, p \right) \, dt + g\left( t, x_t, u_t, p \right) \, dB_{t}
+dx_{t} = f\left( t, x_t, u_t, p \right) dt + g\left( t, x_t, u_t, p \right) dB_{t}
 $$ $$
 y_{k} = h\left( t_k, x_{t_k}, u_{t_k}, p \right)
 $$
@@ -201,7 +201,7 @@ We consider estimating the parameters of the modified Ornstein-Uhlenbeck
 process
 
 $$
-dx_{t} = \theta \left( \mu + u_t - x_t \right) \, dt + \sigma_x \, dB_{t}
+dx_{t} = \theta \left( \mu + u_t - x_t \right) dt + \sigma_x dB_{t}
 $$
 
 where the stationary mean $\mu$ has been augmented with the addition of
