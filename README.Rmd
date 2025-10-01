@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 Welcome to this GitHub repository which hosts **ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html), the intended successor of, and heavily inspired by, the **CTSM** package [(Continuous Time Stochastic Modelling)](https://ctsm.info). The purpose of the package is to facilitate a user-friendly tool for (state and parameter) inference, and forecasting, in (multi-dimensional) continuous-discrete stochastic state space systems, i.e. systems on the form
 
 $$
-dx_{t} = f\left( t, x_t, u_t, p \right) \, dt + g\left( t, x_t, u_t, p \right) \, dB_{t}
+dx_{t} = f\left( t, x_t, u_t, p \right) dt + g\left( t, x_t, u_t, p \right) dB_{t}
 $$
 $$
 y_{k} = h\left( t_k, x_{t_k}, u_{t_k}, p \right)
@@ -144,7 +144,7 @@ The methods documentation is also available on the [package homepage](https://ph
 We consider estimating the parameters of the modified Ornstein-Uhlenbeck process
 
 $$
-dx_{t} = \theta \left( \mu + u_t - x_t \right) \, dt + \sigma_x \, dB_{t}
+dx_{t} = \theta \left( \mu + u_t - x_t \right) dt + \sigma_x dB_{t}
 $$
 
 where the stationary mean $\mu$ has been augmented with the addition of a time-varying input $u_{t}$. The observations remain linear and Gaussian:
