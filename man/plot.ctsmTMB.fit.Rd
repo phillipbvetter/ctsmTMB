@@ -21,7 +21,8 @@
 \item{x}{A R6 ctsmTMB fit object}
 
 \item{print.plot}{a single integer determining which element out of all
-states/observations (depending on the argument to \code{type}).}
+states/observations (depending on the argument to \code{type}).
+A value of 0 means not to plot anything.}
 
 \item{type}{a character vector either 'residuals' or 'states' determining what
 to plot.}
@@ -70,6 +71,7 @@ fit <- model$estimate(Ornstein)
 
 # plot residuals
 \dontrun{plot(fit)}
+plot(fit)
 
 # plot filtered states
 \dontrun{plot(fit, type="states")}

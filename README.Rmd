@@ -24,13 +24,13 @@ knitr::opts_chunk$set(
 Welcome to this GitHub repository which hosts **ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html), the intended successor of, and heavily inspired by, the **CTSM** package [(Continuous Time Stochastic Modelling)](https://ctsm.info). The purpose of the package is to facilitate a user-friendly tool for (state and parameter) inference, and forecasting, in (multi-dimensional) continuous-discrete stochastic state space systems, i.e. systems on the form
 
 $$
-dx_{t} = f(t, x_t, u_t, \theta) \, dt + g(t, x_t, u_t, \theta) \, dB_{t}
+dx_{t} = f\left( t, x_t, u_t, p \right) \, dt + g\left( t, x_t, u_t, p \right) \, dB_{t}
 $$
 $$
-y_{t_k} = h(t_k, x_{t_k}, u_{t_k}, \theta)
+y_{k} = h\left( t_k, x_{t_k}, u_{t_k}, p \right)
 $$
 
-Here the latent state $x_t$ evolves continuously in time, governed by a set of stochastic differential equations, and information about the system is available at discrete times through the observations $y_{t_k}$.
+Here the latent state $x_t$ evolves continuously in time, governed by a set of stochastic differential equations, and information about the system is available at discrete times $t_{k}$ by the observations $y_{k}$.
 
 The **ctsmTMB** package is essentially wrapper around the **TMB/RTMB** packages [(Template Model Builder)](https://github.com/kaskr/adcomp) that provide automatic differentiation of the likelihood function, and access to other computational tools such as the Laplace approximation. The likelihood function is constructed based on the (symbolic) user-provided state space equations, which may be specified using the implemented OOP-style **R6** `ctsmTMB` class, with methods such as `addSystem` (for defining system equations), and `addObs` (for defining observation equations).
 
@@ -141,6 +141,15 @@ The methods documentation is also available on the [package homepage](https://ph
 
 ## Code Example - Inference in 1D Ornstein-Uhlenbeck Process
 
+We consider estimating the parameters of the modified Ornstein-Uhlenbeck process
+$$
+dx_{t} = \theta \left( \mu + u_t - x_t \right) \, dt + \sigma_x \, dB_{t}
+$$
+where the stationary mean $\mu$ has been augmented with the addition of a time-varying input $u_{t}$. The observations remain linear and Gaussian:
+$$
+y_{k} = x_{t_k} + \varepsilon_{t} \qquad \varepsilon_{t} \sim \mathcal{N}\left(0, \sigma_{y}^2 \right)
+$$
+The code chunk below simulates data from this process using an Euler-Maruyama scheme, generates an appropriate `ctsmTMB` model object, performs parameter estimation using an Extended Kalman Filter (the Linear Kalman Filter `method='lkf'` could also be used) and inspects the resulting residuals, moment predictions and stochastic simulations.
 ```{r, eval=FALSE}
 library(ggplot2)
 library(patchwork)
@@ -154,34 +163,30 @@ library(ctsmTMB)
 
 # Simulate data using Euler Maruyama
 set.seed(20)
-pars = c(theta=10, mu=1, sigma_x=1, sigma_y=0.1)
+true.pars = c(theta=10, mu=1, sigma_x=1, sigma_y=0.1)
 # 
 dt.sim = 1e-3
 t.sim = seq(0,5,by=dt.sim)
 dw = rnorm(length(t.sim)-1,sd=sqrt(dt.sim))
 u.sim = cumsum(rnorm(length(t.sim),sd=0.05))
-x = 3
+x.sim = 3
 for(i in 1:(length(t.sim)-1)) {
-  x[i+1] = x[i] + pars[1]*(pars[2]-x[i]+u.sim[i])*dt.sim + pars[3]*dw[i]
+  x.sim[i+1] = x.sim[i] + true.pars["theta"]*(true.pars["mu"]-x.sim[i]+u.sim[i])*dt.sim + true.pars["sigma_x"]*dw[i]
 }
-
-# Extract observations and add noise
-dt.obs = 1e-2
-ids = seq(1,length(t.sim),by=round(dt.obs / dt.sim))
-t.obs = t.sim[ids]
-y = x[ids] + pars[4] * rnorm(length(t.obs))
-# forcing input
-u = u.sim[ids]
-
-# Create data
-.data = data.frame(
-  t = t.obs,
-  y = y,
-  u = u
+df.sim <- data.frame(
+  t = t.sim,
+  u = u.sim,
+  x = x.sim
 )
 
+# Extract simulation at observations time points, and create observations by adding noise
+dt.obs = 1e-2
+ids = seq(1,length(t.sim),by=round(dt.obs / dt.sim))
+df.obs <- df.sim[ids,]
+df.obs$y = df.obs$x + true.pars["sigma_y"] * rnorm(nrow(df.obs))
+
 ############################################################
-# Model creation and estimation
+# Model creation
 ############################################################
 
 # Create model object
@@ -214,72 +219,69 @@ model$setParameter(
 )
 
 # Set initial state mean and covariance
-model$setInitialState(list(x[1], 1e-1*diag(1)))
+model$setInitialState(list(x.sim[1], 1e-1*diag(1)))
+
+
+############################################################
+# Model estimation
+############################################################
 
 # Carry out estimation with default settings (extended kalman filter)
-fit <- model$estimate(data=.data, method="ekf")
+fit <- model$estimate(df.obs, method="ekf")
 
 # Check parameter estimates against truth
-p0 = fit$par.fixed
-cbind(p0,pars)
+fitted.pars <- fit$par.fixed
+cbind(true.pars, fitted.pars, difference=true.pars - fitted.pars)
 
-# Create plot of one-step predictions, simulated states and observations
-t.est = fit$states$mean$prior$t
-x.mean = fit$states$mean$prior$x
-x.sd = fit$states$sd$prior$x
+# Plot prior predictions (1-step predictions) against simulation (truth) and observations (data)
+df.est <- cbind(fit$states$mean$prior, sd=fit$states$sd$prior$x)
 plot1 = ggplot() +
-  geom_ribbon(aes(x=t.est, ymin=x.mean-2*x.sd, ymax=x.mean+2*x.sd),fill="grey", alpha=0.9) +
-  geom_line(aes(x=t.est, x.mean),col="steelblue",lwd=1) +
-  geom_line(aes(x=t.sim,y=x)) + 
-  geom_point(aes(x=t.obs,y=y),col="tomato",size=0.5) +
+  geom_ribbon(data=df.est, aes(x=t, ymin=x-2*sd, ymax=x+2*sd),fill="grey", alpha=0.9) +
+  geom_line(data=df.est, aes(x=t, x),col="steelblue",lwd=1) +
+  geom_line(data=df.sim, aes(x=t, y=x)) + 
+  geom_point(data=df.obs, aes(x=t,y=y),col="tomato",size=0.5) +
   labs(title="1-Step State Estimates vs Observations", x="Time", y="") +
   theme_minimal()
 
 # Predict to obtain k-step-ahead predictions to see model forecasting ability
-pred.list = model$predict(data=.data, 
-                          k.ahead=10, 
-                          method="ekf",
-)
+pred.10step <- model$predict(df.obs, k.ahead=10, method="ekf", return.k.ahead = 10)
 
-# Create plot of all 10-step predictions against data
-pred = pred.list$states
-pred10step <- pred[pred$k.ahead == 10, ]
+# Plot 10 step predictions vs data
+df.pred10 <- pred.10step$states
 plot2 = ggplot() +
-  geom_ribbon(aes(x=pred10step$t.j, 
-                  ymin=pred10step$x-2*sqrt(pred10step$var.x),
-                  ymax=pred10step$x+2*sqrt(pred10step$var.x)),fill="grey", alpha=0.9) +
-  geom_line(aes(x=pred10step$t.j,pred10step$x),color="steelblue",lwd=1) +
-  geom_point(aes(x=t.obs,y=y),color="tomato",size=0.5) +
+  geom_ribbon(data=df.pred10, aes(x = t.j, ymin = x-2*sqrt(var.x), ymax = x+2*sqrt(var.x)), fill="grey", alpha=0.9) +
+  geom_line(data=df.pred10, aes(x = t.j, y = x), color="steelblue",lwd=1) +
+  geom_point(data=df.obs, aes(x=t,y=y),color="tomato",size=0.5) +
   labs(title="10 Step Predictions vs Observations", x="Time", y="") +
   theme_minimal()
 
 # Perform a full prediction i.e. without updating to data along the way
-pred.list = model$predict(data=.data,method="ekf")
+pred.full = model$predict(df.obs, method="ekf")$states
 
 # Perform full simulations - 10 sample trajectories
-sim.list = model$simulate(data=.data, method="ekf", n.sims=10)
+sim.full = model$simulate(df.obs, method="ekf", n.sims=10)
 
 # Collapse simulation data for easy use with ggplot 
-sim.df = sim.list$states$x$i0 %>%
+sim.df = sim.full$states$x$i0 %>%
   select(!c("i","j","t.i","k.ahead")) %>%
   reshape2::melt(., id.var="t.j")
 
 # Plot all simulations and the prediction against observations
 plot3 = ggplot() +
   geom_line(data=sim.df, aes(x=t.j, y=value, group=variable),color="grey") +
-  geom_line(aes(x=pred.list$states$t.j,y=pred.list$states$x),color="steelblue") +
-  geom_point(aes(x=t.obs,y=y),color="tomato",size=0.5) +
+  geom_line(data=pred.full, aes(x=t.j,y=x),color="steelblue") +
+  geom_point(data=df.obs, aes(x=t,y=y),color="tomato",size=0.5) +
   labs(title="No Update Prediction and Simulations vs Observations", x="Time", y="") +
   theme_minimal() + theme(legend.position = "none")
 
 # Create plot
 p1 <- patchwork::wrap_plots(plot1, plot2, plot3, ncol=1)
 
-# Create one-step-ahead residual analysis plot
-p2 <- plot(fit)
+# Create (but don't plot yet!) residual analysis
+p2 <- plot(fit, print.plot = 0)
 
-# Wrap both plots
-patchwork::wrap_plots(p1,p2[[1]], ncol=2)
+# Plot p1 and p2 together
+patchwork::wrap_plots(p1, p2[[1]], ncol=2)
 ```
 
 ## Bibliography

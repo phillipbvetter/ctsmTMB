@@ -44,5 +44,6 @@ fit <- model$estimate(Ornstein)
 out <- profile(fit,parlist=list(theta=NULL, mu=NULL))
 
 # plot profile
+grDevices::dev.new()
 plot(out)
 }

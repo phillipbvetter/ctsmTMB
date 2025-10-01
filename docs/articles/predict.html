@@ -14,11 +14,11 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Mukta-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="../deps/MathJax-3.2.2/tex-chtml.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Moment Predictions">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Moment Predictions">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -53,7 +53,7 @@
 <li><a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a></li>
-    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a></li>
+    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Smoother</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -106,28 +106,36 @@ instead (see the relevant <a href="https://phillipbvetter.github.io/ctsmTMB/arti
 <h2 id="notation">Notation<a class="anchor" aria-label="anchor" href="#notation"></a>
 </h2>
 <hr>
-<p>Let the set of observations from the initial time <span class="math inline">\(t_0\)</span> until the current time <span class="math inline">\(t_{i}\)</span> be noted by <span class="math display">\[
+<p>Let the set of observations from the initial time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mn>0</mn></msub><annotation encoding="application/x-tex">t_0</annotation></semantics></math>
+until the current time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>i</mi></msub><annotation encoding="application/x-tex">t_{i}</annotation></semantics></math>
+be noted by
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝒴</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><msub><mi>y</mi><mi>i</mi></msub><mo>,</mo><msub><mi>y</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>y</mi><mn>1</mn></msub><mo>,</mo><msub><mi>y</mi><mn>0</mn></msub><mo stretchy="true" form="postfix">}</mo></mrow></mrow><annotation encoding="application/x-tex">
 \mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0}\right\}
-\]</span> A <em>k</em>-step <strong>prediction</strong> is a
-<em>prior</em> estimate of the state mean and covariance <em>k</em>
-time-steps into the “future” (without updating to any observations along
-the way) i.e.: <span class="math display">\[
+</annotation></semantics></math> A <em>k</em>-step
+<strong>prediction</strong> is a <em>prior</em> estimate of the state
+mean and covariance <em>k</em> time-steps into the “future” (without
+updating to any observations along the way) i.e.: <span class="math display">$$
 \hat{x}_{i+k|i} = \mathrm{E}\left[ x_{t_{i+k}} | y_{t_{i}} \right] \\
 \hat{P}_{i+k|i} = \mathrm{V}\left[ x_{t_{i+k}} | y_{t_{i}} \right]
-\]</span></p>
+$$</span></p>
 <p>We obtain predictions by integrating the moment differential
-equations (for linear <span class="math inline">\(f\)</span>) forward in
-time i.e: <span class="math display">\[
+equations (for linear
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>)
+forward in time i.e: <span class="math display">$$
 \hat{x}_{i+k|i} = \hat{x}_{i|i} + \int_{t_{i}}^{t_{i+k}}
 f(\hat{x}_{i}(\tau)) \, d\tau \\
 \hat{P}_{i+k|i} = \hat{P}_{i|i} + \int_{t_{i}}^{t_{i+k}}
 A(\hat{x}_{i}(\tau)) \hat{P}_{i}(\tau) + \hat{P}_{i}(\tau)
 A^{T}(\hat{x}_{i}(\tau)) + G(\hat{x}_{i}(\tau)) G^{T}(\hat{x}_{i}(\tau))
 \, d\tau
-\]</span> where <span class="math inline">\(\hat{x}_{i}(\tau) =
-\mathrm{E}\left[ x_{\tau} | y_{t_{i}} \right]\)</span> and <span class="math inline">\(\hat{P}_{i}(\tau) = \mathrm{V}\left[ x_{\tau} |
-y_{t_{i}} \right]\)</span>, and <span class="math inline">\(A =
-\dfrac{df}{dx}\)</span></p>
+$$</span> where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>τ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>τ</mi></msub><mo stretchy="false" form="prefix">|</mo><msub><mi>y</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\hat{x}_{i}(\tau) = \mathrm{E}\left[ x_{\tau} | y_{t_{i}} \right]</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>P</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>τ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>τ</mi></msub><mo stretchy="false" form="prefix">|</mo><msub><mi>y</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\hat{P}_{i}(\tau) = \mathrm{V}\left[ x_{\tau} | y_{t_{i}} \right]</annotation></semantics></math>,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mo>=</mo><mfrac displaystyle="true"><mrow><mi>d</mi><mi>f</mi></mrow><mrow><mi>d</mi><mi>x</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">A = \dfrac{df}{dx}</annotation></semantics></math></p>
 </div>
 <div class="section level2">
 <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
@@ -255,12 +263,15 @@ vignette</a>.</p>
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <p>We consider a modified Ornstein Uhlenbeck process:</p>
-<p><span class="math display">\[
+<p><span class="math display">$$
 \mathrm{d}x_{t} = \theta (a_t - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \,
 \mathrm{d}b_{t} \\
 y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
-\]</span> where the mean is some complex time-varying input <span class="math inline">\(a_t = tu_{t}^{2}-\cos(tu_{t})\)</span>, and <span class="math inline">\(u_{t}\)</span> is a given time-varying input
-signal.</p>
+$$</span> where the mean is some complex time-varying input
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>t</mi></msub><mo>=</mo><mi>t</mi><msubsup><mi>u</mi><mi>t</mi><mn>2</mn></msubsup><mo>−</mo><mo>cos</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><msub><mi>u</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">a_t = tu_{t}^{2}-\cos(tu_{t})</annotation></semantics></math>,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>u</mi><mi>t</mi></msub><annotation encoding="application/x-tex">u_{t}</annotation></semantics></math>
+is a given time-varying input signal.</p>
 <p>We create the model and simulate the data as follows:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
@@ -303,9 +314,10 @@ signal.</p>
 <span>  u <span class="op">=</span> <span class="va">u.obs</span>,</span>
 <span>  y <span class="op">=</span> <span class="va">y</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>with the true parameters <span class="math display">\[
+<p>with the true parameters
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>20</mn><mspace width="2.0em"></mspace><msub><mi>σ</mi><mi>x</mi></msub><mo>=</mo><mn>1.00</mn><mspace width="2.0em"></mspace><msub><mi>σ</mi><mi>y</mi></msub><mo>=</mo><mn>0.05</mn></mrow><annotation encoding="application/x-tex">
 \theta = 20 \qquad \sigma_{x} = 1.00 \qquad \sigma_{y}=0.05
-\]</span></p>
+</annotation></semantics></math></p>
 <p>The data is plotted below:
 <img src="predict_files/figure-html/unnamed-chunk-5-1.png" alt="The plot shows observations and input signal." width="100%" style="display: block; margin: auto;"></p>
 <p>A good starting point for using predictions, is to check for
@@ -344,8 +356,10 @@ predictions, and associated covariances.</p>
 <span><span class="co">## 6  0  5   0 0.05       5 0.7708617 0.049788211</span></span></code></pre>
 <p>The <em>observations</em> <code>data.frame</code> currently only
 contain mean estimates, which are obtained by passing the mean state
-estimates through the observation function, which is this case is <span class="math inline">\(y = h(x) = x\)</span>. The actual observed data is
-also provided with the suffix <em>.data</em>.</p>
+estimates through the observation function, which is this case is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>x</mi></mrow><annotation encoding="application/x-tex">y = h(x) = x</annotation></semantics></math>.
+The actual observed data is also provided with the suffix
+<em>.data</em>.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred</span><span class="op">$</span><span class="va">observations</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##   i. j. t.i  t.j k.ahead         y      y.data</span></span>
@@ -356,9 +370,11 @@ also provided with the suffix <em>.data</em>.</p>
 <span><span class="co">## 5  0  4   0 0.04       4 0.7884036 -0.20059967</span></span>
 <span><span class="co">## 6  0  5   0 0.05       5 0.7708617 -0.17367966</span></span></code></pre>
 <p>When we plot these predictions against data we can perhaps identify
-that <span class="math inline">\(\theta \in \left[10,50\right]\)</span>
-(with <span class="math inline">\(\theta=20\)</span> being the truth
-here).</p>
+that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">[</mo><mn>10</mn><mo>,</mo><mn>50</mn><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\theta \in \left[10,50\right]</annotation></semantics></math>
+(with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>20</mn></mrow><annotation encoding="application/x-tex">\theta=20</annotation></semantics></math>
+being the truth here).</p>
 <p><img src="predict_files/figure-html/unnamed-chunk-9-1.png" alt="The plot shows a series of full predictions for different values of the theta parameter, against the observations." width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">

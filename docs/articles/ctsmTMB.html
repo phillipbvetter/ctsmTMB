@@ -14,11 +14,11 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Mukta-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="../deps/MathJax-3.2.2/tex-chtml.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting Started">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting Started">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -53,7 +53,7 @@
 <li><a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a></li>
-    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a></li>
+    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Smoother</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -97,32 +97,46 @@
 <p>Welcome to this guide on how to work with <code>ctsmTMB</code> for
 modelling time-series data.</p>
 <p>In this example we consider a simple 1D mean-reverting stochastic
-differential equation model, the Ornstein-Uhlenbeck process: <span class="math display">\[
-\mathrm{d}x_{t} = \theta (\mu - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \,
-\mathrm{d}b_{t}
-\]</span> Here <span class="math inline">\(\theta\)</span>, <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma_x\)</span> are (fixed effects) parameters
-to be estimated.</p>
+differential equation model, the Ornstein-Uhlenbeck process:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">d</mi><msub><mi>x</mi><mi>t</mi></msub><mo>=</mo><mi>θ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo>−</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><mi>t</mi><mspace width="0.167em"></mspace><mo>+</mo><msub><mi>σ</mi><mi>x</mi></msub><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><msub><mi>b</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex"> 
+\mathrm{d}x_{t} = \theta (\mu - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} 
+</annotation></semantics></math> Here
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>x</mi></msub><annotation encoding="application/x-tex">\sigma_x</annotation></semantics></math>
+are (fixed effects) parameters to be estimated.</p>
 <p>We assume that we have <strong>direct</strong> observations of the
-state <span class="math inline">\(x_{t}\)</span>, at discrete times
-<span class="math inline">\(t_k\)</span> for <span class="math inline">\(k=0,1,2,...,N\)</span> i.e. the observation
-equation is <span class="math display">\[
+state
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mi>t</mi></msub><annotation encoding="application/x-tex">x_{t}</annotation></semantics></math>,
+at discrete times
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>k</mi></msub><annotation encoding="application/x-tex">t_k</annotation></semantics></math>
+for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>=</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mn>2</mn><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><mi>N</mi></mrow><annotation encoding="application/x-tex">k=0,1,2,...,N</annotation></semantics></math>
+i.e. the observation equation is
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>=</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>+</mo><msub><mi>ε</mi><msub><mi>t</mi><mi>k</mi></msub></msub></mrow><annotation encoding="application/x-tex">
 y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
-\]</span></p>
+</annotation></semantics></math></p>
 <p>The residuals are assumed to be Gaussian, and we choose the variance
-as <span class="math display">\[
+as
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>y</mi><mn>2</mn></msubsup><mo>⋅</mo><msub><mi>u</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \varepsilon_{t_{k}} \sim N(0,\sigma_{y}^{2} \cdot u_{t_{k}})
-\]</span></p>
-<p>Here <span class="math inline">\(\sigma_{y}\)</span> is a fixed
-effect parameter (also to be estimated), and <span class="math inline">\(u_{t}\)</span> is a known time-dependent input.
-The input is added here for sake of introduction, just to demonstrate
-how time-dependent inputs are specified. We could for example imagine
-the input to be given by <span class="math display">\[
+</annotation></semantics></math></p>
+<p>Here
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\sigma_{y}</annotation></semantics></math>
+is a fixed effect parameter (also to be estimated), and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>u</mi><mi>t</mi></msub><annotation encoding="application/x-tex">u_{t}</annotation></semantics></math>
+is a known time-dependent input. The input is added here for sake of
+introduction, just to demonstrate how time-dependent inputs are
+specified. We could for example imagine the input to be given by
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>u</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mn>1</mn><mo>,</mo><mn>4</mn><mo>,</mo><mn>1</mn><mo>,</mo><mn>4</mn><mo>,</mo><mn>1</mn><mo>,</mo><mn>4</mn><mi>⋯</mi><mo stretchy="true" form="postfix">}</mo></mrow></mrow><annotation encoding="application/x-tex">
 u_{t_{k}} = \left\{ 1, 4, 1, 4, 1, 4 \cdots \right\}
-\]</span> such that certain observations have twice the standard
-deviation of others, and thus carry less weight (information) about the
-latent state <span class="math inline">\(x\)</span>. In the remainder of
-this vignette however, we simply set <span class="math inline">\(u_{t} =
-1\)</span>.</p>
+</annotation></semantics></math> such that certain observations have
+twice the standard deviation of others, and thus carry less weight
+(information) about the latent state
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>.
+In the remainder of this vignette however, we simply set
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>u</mi><mi>t</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">u_{t} = 1</annotation></semantics></math>.</p>
 <div class="section level2">
 <h2 id="initialising">Initialising<a class="anchor" aria-label="anchor" href="#initialising"></a>
 </h2>
@@ -146,9 +160,10 @@ information about it:</p>
 </h2>
 <hr>
 <p>First we specify the stochastic differential equation governing our
-latent state <span class="math inline">\(x_t\)</span>. This is
-straight-forward using <strong>R</strong> formulas, choosing appropriate
-character names for the parameters.</p>
+latent state
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mi>t</mi></msub><annotation encoding="application/x-tex">x_t</annotation></semantics></math>.
+This is straight-forward using <strong>R</strong> formulas, choosing
+appropriate character names for the parameters.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">-</span> <span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span> <span class="op">*</span> <span class="va">dw</span><span class="op">)</span></span></code></pre></div>
 <p>We emphasize that drift terms must be multiplied by a <code>dt</code>
@@ -207,7 +222,8 @@ their initial/lower/upper values for the estimation.</p>
 instance typically useful to fix observation noise parameters because
 simultaneous identification of observation and process noise is
 difficult in practice, and some knowledge about observation noise may be
-known. Thus, let us fix <span class="math inline">\(\sigma_{y}\)</span>
+known. Thus, let us fix
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\sigma_{y}</annotation></semantics></math>
 to a somewhat arbitrary but reasonable value:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
@@ -266,10 +282,10 @@ differential equation, and adding some observation noise to it.</p>
 model object, which perform stochastic simulations based on the <a href="https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method" class="external-link">Euler-Maruyama
 scheme</a>. The user is referred to the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html" class="external-link">simulation
 vignette</a> for further details.</p>
-<p>We choose the true parameters to be <span class="math display">\[
-\theta = 10.0 \qquad \mu=1.00 \qquad \sigma_{x} = 1.00 \qquad
-\sigma_{y}=0.05
-\]</span></p>
+<p>We choose the true parameters to be
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>10.0</mn><mspace width="2.0em"></mspace><mi>μ</mi><mo>=</mo><mn>1.00</mn><mspace width="2.0em"></mspace><msub><mi>σ</mi><mi>x</mi></msub><mo>=</mo><mn>1.00</mn><mspace width="2.0em"></mspace><msub><mi>σ</mi><mi>y</mi></msub><mo>=</mo><mn>0.05</mn></mrow><annotation encoding="application/x-tex">
+\theta = 10.0 \qquad \mu=1.00 \qquad \sigma_{x} = 1.00 \qquad \sigma_{y}=0.05
+</annotation></semantics></math></p>
 <p>The code below performs the simulation and prepares data for
 likelihood estimation:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -403,14 +419,15 @@ matrix for the parameter estimates.</p>
 <span><span class="co">## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span></code></pre>
 <p>We can see the parameter estimate and the associated standard error
 together with a one-dimensional t-test statistic and associated P-value
-for the common hypothesis test <span class="math display">\[
+for the common hypothesis test <span class="math display">$$
 H_{0}: p = 0 \\
 H_{1}: p \neq 0
-\]</span></p>
-<p><em><strong>Note</strong> The large uncertainty in <span class="math inline">\(\theta\)</span> here is primarily caused by a
-relatively short time-series (2 seconds), relative to the characteristic
-time of the process <span class="math inline">\(\tau = 1/\theta = 0.1 \,
-\text{sec}\)</span>.</em></p>
+$$</span></p>
+<p><em><strong>Note</strong> The large uncertainty in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+here is primarily caused by a relatively short time-series (2 seconds),
+relative to the characteristic time of the process
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><mn>1</mn><mi>/</mi><mi>θ</mi><mo>=</mo><mn>0.1</mn><mspace width="0.167em"></mspace><mtext mathvariant="normal">sec</mtext></mrow><annotation encoding="application/x-tex">\tau = 1/\theta = 0.1 \, \text{sec}</annotation></semantics></math>.</em></p>
 <p>The parameter-related information can be extracted from the fit
 object. The estimated (fixed) parameters:</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
@@ -485,14 +502,6 @@ time-series of the residuals, a histogram, a quantile-quantile plot,
 auto/partial-correlations and a cumulative periodogram:</p>
 <div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: `aes_string()` was deprecated in ggplot2 3.0.0.</span></span>
-<span><span class="co">## <span style="color: #00BBBB;">ℹ</span> Please use tidy evaluation idioms with `aes()`.</span></span>
-<span><span class="co">## <span style="color: #00BBBB;">ℹ</span> See also `vignette("ggplot2-in-packages")` for more information.</span></span>
-<span><span class="co">## <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">ggfortify</span> package.</span></span>
-<span><span class="co">##   Please report the issue at <span style="color: #0000BB; font-style: italic;">&lt;https://github.com/sinhrks/ggfortify/issues&gt;</span>.</span></span>
-<span><span class="co">## <span style="color: #555555;">This warning is displayed once every 8 hours.</span></span></span>
-<span><span class="co">## <span style="color: #555555;">Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span></span>
-<span><span class="co">## <span style="color: #555555;">generated.</span></span></span></code></pre>
 </div>
 </div>
 <div class="section level2">
@@ -502,19 +511,21 @@ auto/partial-correlations and a cumulative periodogram:</p>
 <p>We can perform likelihood profiling with the <code>profile</code> S3
 method on the <code>fit</code> object, and further plot the result by
 calling the <code>plot</code> S3 method on that.</p>
-<p>For an example we can inspect the profile likelihood of <span class="math inline">\(\theta\)</span> as follows:</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<p>For an example we can inspect the profile likelihood of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+as follows:</p>
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">[</span><span class="st">"theta"</span><span class="op">]</span> <span class="op">-</span> <span class="fl">3</span><span class="op">*</span><span class="va">fit</span><span class="op">$</span><span class="va">sd.fixed</span><span class="op">[</span><span class="st">"theta"</span><span class="op">]</span></span>
 <span><span class="va">b</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">[</span><span class="st">"theta"</span><span class="op">]</span> <span class="op">+</span> <span class="fl">3</span><span class="op">*</span><span class="va">fit</span><span class="op">$</span><span class="va">sd.fixed</span><span class="op">[</span><span class="st">"theta"</span><span class="op">]</span></span>
 <span><span class="va">prof</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/profile.html" class="external-link">profile</a></span><span class="op">(</span><span class="va">fit</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"theta"</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="va">a</span>,<span class="va">b</span>,length.out<span class="op">=</span><span class="fl">50</span><span class="op">)</span><span class="op">)</span>, silent<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">prof</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ctsmTMB_files/figure-html/unnamed-chunk-32-1.png" alt="The plot shows a profile likelihood of the theta parameter." width="100%" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a &lt;- fit$par.fixed["mu"] - 8*fit$sd.fixed["mu"]</span></span>
 <span><span class="co"># b &lt;- fit$par.fixed["mu"] + 8*fit$sd.fixed["mu"]</span></span>
 <span><span class="co"># prof &lt;- profile(fit, list("mu"=seq(a,b,length.out=50)), silent=TRUE)</span></span>
 <span><span class="co"># plot(prof)</span></span></code></pre></div>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a &lt;- fit$par.fixed["theta"] - 5*fit$sd.fixed["theta"]</span></span>
 <span><span class="co"># b &lt;- fit$par.fixed["theta"] + 5*fit$sd.fixed["theta"]</span></span>
 <span><span class="co"># c &lt;- fit$par.fixed["mu"] - 10*fit$sd.fixed["mu"]</span></span>
@@ -532,18 +543,19 @@ calling the <code>plot</code> S3 method on that.</p>
 expressions which replace variables in the defined equations. A typical
 scenario where algebraic equations can be used is to rename parameters
 which must be strictly positive.</p>
-<p><strong>Example</strong> In this model <span class="math inline">\(\theta\)</span> should be a strictly positive
-parameter <span class="math inline">\(\hat{\theta} =
-\exp(\log\theta)\)</span>. This can be achieved by setting the following
-algebraic expression:</p>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
+<p><strong>Example</strong> In this model
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+should be a strictly positive parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\hat{\theta} = \exp(\log\theta)</annotation></semantics></math>.
+This can be achieved by setting the following algebraic expression:</p>
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>The effect of this is to replace all occurrences of
 <code>theta</code> in the model equations with
 <code>exp(logtheta)</code>. The final thing to do is to add a new
 parameter entry to the model object which describes values for
 <code>logtheta</code></p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span>logtheta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial<span class="op">=</span><span class="fl">5</span>, lower<span class="op">=</span><span class="fl">0</span>, upper<span class="op">=</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

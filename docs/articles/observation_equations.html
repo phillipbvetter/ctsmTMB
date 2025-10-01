@@ -14,11 +14,11 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Mukta-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="../deps/MathJax-3.2.2/tex-chtml.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="AddObs - Details">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="AddObs - Details">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -53,7 +53,7 @@
 <li><a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a></li>
-    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a></li>
+    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Smoother</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -108,13 +108,17 @@ of an observation equation.</p>
 <h2 id="adding-observation-equations">Adding observation equations<a class="anchor" aria-label="anchor" href="#adding-observation-equations"></a>
 </h2>
 <hr>
-<p>Let’s assume that our observations <span class="math inline">\(y_{t}\)</span> are log-normally distributed
-conditioned on <span class="math inline">\(x_{t}\)</span> i.e. <span class="math display">\[
+<p>Let’s assume that our observations
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">y_{t}</annotation></semantics></math>
+are log-normally distributed conditioned on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mi>t</mi></msub><annotation encoding="application/x-tex">x_{t}</annotation></semantics></math>
+i.e.
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><msub><mi>y</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo>,</mo><msubsup><mi>σ</mi><mi>y</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \log y_{t_{i}} \sim N(x_{t_{i}},\sigma_{y}^{2})
-\]</span> It is sufficient for the user to provide the data column
-<code>y</code> in the provided <code>data.frame</code> to
-e.g. <code>estimate</code> or <code>predict</code> by adding the
-following observation equation</p>
+</annotation></semantics></math> It is sufficient for the user to
+provide the data column <code>y</code> in the provided
+<code>data.frame</code> to e.g. <code>estimate</code> or
+<code>predict</code> by adding the following observation equation</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span> <span class="op">~</span> <span class="va">x</span>, obsnames <span class="op">=</span> <span class="st">"log_y"</span></span>

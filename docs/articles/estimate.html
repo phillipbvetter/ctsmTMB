@@ -14,11 +14,11 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Mukta-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="../deps/MathJax-3.2.2/tex-chtml.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating Parameters">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating Parameters">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -53,7 +53,7 @@
 <li><a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a></li>
-    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a></li>
+    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Smoother</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -133,21 +133,30 @@ thus what information the filters produce:</p>
 <ol style="list-style-type: decimal">
 <li>The Kalman filters produce <em>prior</em> and <em>posterior</em>
 state estimates. The <em>prior</em> estimates are conditioned on
-observations from the starting time <span class="math inline">\(t_0\)</span> up til the previous time-point <span class="math inline">\(t_{k-1}\)</span>. The <em>posterior</em> estimates
-are conditioned also on the observations available at the “current”
-time-point <span class="math inline">\(t_{k}\)</span>. These are denoted
-respectively by <span class="math display">\[
-\text{Prior:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{t_{k-1}},
-y_{t_{k-2}},...,y_{t_0} \right]
-\]</span> <span class="math display">\[
-\text{Posterior:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{t_{k}},
-y_{t_{k-1}},...,y_{t_0} \right]
-\]</span> The Laplace filter produces <em>smoothed</em> state estimates.
-This is a state estimate based observations at all time-points <span class="math inline">\(t_{0}\)</span> to <span class="math inline">\(t_{N}\)</span> where <span class="math inline">\(N\)</span> is the last index in the time-series.
-These are denoted by <span class="math display">\[
-\text{Smoothed:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{N},
-y_{N-1},...,y_{t_{k}},...,y_{t_1}, y_{t_0} \right]
-\]</span>
+observations from the starting time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mn>0</mn></msub><annotation encoding="application/x-tex">t_0</annotation></semantics></math>
+up til the previous time-point
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">t_{k-1}</annotation></semantics></math>.
+The <em>posterior</em> estimates are conditioned also on the
+observations available at the “current” time-point
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>k</mi></msub><annotation encoding="application/x-tex">t_{k}</annotation></semantics></math>.
+These are denoted respectively by
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Prior:</mtext><mspace width="1.0em"></mspace><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∣</mo><msub><mi>y</mi><msub><mi>t</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></msub><mo>,</mo><msub><mi>y</mi><msub><mi>t</mi><mrow><mi>k</mi><mo>−</mo><mn>2</mn></mrow></msub></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>y</mi><msub><mi>t</mi><mn>0</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
+\text{Prior:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{t_{k-1}}, y_{t_{k-2}},...,y_{t_0} \right] 
+</annotation></semantics></math><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Posterior:</mtext><mspace width="1.0em"></mspace><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∣</mo><msub><mi>y</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>,</mo><msub><mi>y</mi><msub><mi>t</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>y</mi><msub><mi>t</mi><mn>0</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
+\text{Posterior:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{t_{k}}, y_{t_{k-1}},...,y_{t_0} \right]
+</annotation></semantics></math> The Laplace filter produces
+<em>smoothed</em> state estimates. This is a state estimate based
+observations at all time-points
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mn>0</mn></msub><annotation encoding="application/x-tex">t_{0}</annotation></semantics></math>
+to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>N</mi></msub><annotation encoding="application/x-tex">t_{N}</annotation></semantics></math>
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+is the last index in the time-series. These are denoted by
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Smoothed:</mtext><mspace width="1.0em"></mspace><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∣</mo><msub><mi>y</mi><mi>N</mi></msub><mo>,</mo><msub><mi>y</mi><mrow><mi>N</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>y</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>y</mi><msub><mi>t</mi><mn>1</mn></msub></msub><mo>,</mo><msub><mi>y</mi><msub><mi>t</mi><mn>0</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
+\text{Smoothed:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{N}, y_{N-1},...,y_{t_{k}},...,y_{t_1}, y_{t_0} \right]
+</annotation></semantics></math>
 </li>
 <li>The likelihood contributions from the Kalman filters are based on
 the <em>prior</em> estimates, which are one-step-ahead predictions. This
@@ -167,17 +176,14 @@ information.</li>
 <hr>
 <p>This argument is used for the Kalman filtering methods only to
 determine the ODE integrator used to solving the moment differential
-equations i.e. <span class="math display">\[
+equations i.e.
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac displaystyle="true"><mrow><mi>d</mi><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \dfrac{d\mathrm{E}\left[x_t\right]}{dt} = f(\mathrm{E}\left[x_t\right])
-\]</span> <span class="math display">\[
-\dfrac{d\mathrm{V}\left[x_t\right]}{dt} =
-\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\mathrm{V}\left[x_t\right]
-+
-\mathrm{V}\left[x_t\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\right]^{T}
-+ g(\mathrm{E}\left[x_t\right])g(\mathrm{E}\left[x_t\right])^{T}
-\]</span> The <strong>ctsmTMB</strong> package implements the Explicit
-Forward-Euler <em>euler</em> and the Explicit 4th Order Runge-Kutta
-<em>rk4</em> methods.</p>
+</annotation></semantics></math><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac displaystyle="true"><mrow><mi>d</mi><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mfrac displaystyle="true"><mrow><mi>d</mi><mi>f</mi></mrow><mrow><mi>d</mi><mi>x</mi></mrow></mfrac><msub><mo minsize="2.4" maxsize="2.4" stretchy="false" form="postfix">|</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></msub><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>+</mo><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">[</mo><mfrac displaystyle="true"><mrow><mi>d</mi><mi>f</mi></mrow><mrow><mi>d</mi><mi>x</mi></mrow></mfrac><msub><mo minsize="2.4" maxsize="2.4" stretchy="false" form="postfix">|</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>T</mi></msup><mo>+</mo><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>g</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup></mrow><annotation encoding="application/x-tex">
+\dfrac{d\mathrm{V}\left[x_t\right]}{dt} = \dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\mathrm{V}\left[x_t\right] + \mathrm{V}\left[x_t\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\right]^{T} + g(\mathrm{E}\left[x_t\right])g(\mathrm{E}\left[x_t\right])^{T}
+</annotation></semantics></math> The <strong>ctsmTMB</strong> package
+implements the Explicit Forward-Euler <em>euler</em> and the Explicit
+4th Order Runge-Kutta <em>rk4</em> methods.</p>
 </div>
 <div class="section level3">
 <h3 id="argument-ode-timestep">Argument: <code>ode.timestep</code><a class="anchor" aria-label="anchor" href="#argument-ode-timestep"></a>
@@ -198,24 +204,30 @@ controls the number of added intermediate time-points between
 observations each of which represents an additional state (random
 effect) at that particular time-point.</p></li>
 </ol>
-<p>If a provided time-step <span class="math inline">\(\Delta
-t_{i}\)</span> does not divide the correspond time-difference <span class="math inline">\(t_{i+1}-t_{i}\)</span> in the data then it is
-rounded down such that it does. Consider the following example where the
-time-difference between two observations in the data is 3 seconds, but a
-time-step of 0.7. This produces a non-integer number of steps i.e.:
-<span class="math display">\[
+<p>If a provided time-step
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><msub><mi>t</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\Delta t_{i}</annotation></semantics></math>
+does not divide the correspond time-difference
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>−</mo><msub><mi>t</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">t_{i+1}-t_{i}</annotation></semantics></math>
+in the data then it is rounded down such that it does. Consider the
+following example where the time-difference between two observations in
+the data is 3 seconds, but a time-step of 0.7. This produces a
+non-integer number of steps i.e.:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mi>i</mi></msub><mo>=</mo><mfrac displaystyle="true"><mrow><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>−</mo><msub><mi>t</mi><mi>i</mi></msub></mrow><mrow><mi>Δ</mi><msub><mi>t</mi><mi>i</mi></msub></mrow></mfrac><mo>=</mo><mfrac displaystyle="true"><mn>3</mn><mn>0.7</mn></mfrac><mo>=</mo><mn>4.28</mn><mi>.</mi><mi>.</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 N_{i} = \dfrac{t_{i+1}-t_{i}}{\Delta t_i} = \dfrac{3}{0.7} = 4.28...
-\]</span> Thus the number of steps taken is rounded up to <span class="math inline">\(N^{*}_i = \left\lceil N_i \right\rceil =
-\left\lceil 4.28... \right\rceil = 5\)</span> and the corrected
-time-step then becomes <span class="math display">\[
+</annotation></semantics></math> Thus the number of steps taken is
+rounded up to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>N</mi><mi>i</mi><mo>*</mo></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">⌈</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">⌉</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">⌈</mo><mn>4.28</mn><mi>.</mi><mi>.</mi><mi>.</mi><mo stretchy="true" form="postfix">⌉</mo></mrow><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">N^{*}_i = \left\lceil N_i \right\rceil = \left\lceil 4.28... \right\rceil = 5</annotation></semantics></math>
+and the corrected time-step then becomes
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><msubsup><mi>t</mi><mi>i</mi><mo>*</mo></msubsup><mo>=</mo><mfrac displaystyle="true"><mn>3</mn><msubsup><mi>N</mi><mi>i</mi><mo>*</mo></msubsup></mfrac><mo>=</mo><mfrac displaystyle="true"><mn>3</mn><mn>5</mn></mfrac><mo>=</mo><mn>0.6</mn></mrow><annotation encoding="application/x-tex">
 \Delta t^{*}_{i} = \dfrac{3}{N^{*}_{i}} = \dfrac{3}{5} = 0.6
-\]</span></p>
+</annotation></semantics></math></p>
 <p><strong>Note:</strong> The exception to this rule is when the
-remainder is less than <span class="math inline">\(\epsilon =
-10^{-3}\)</span> i.e. if for instance <span class="math inline">\(N_i =
-4.0001\)</span> then the time-step is accepted, and the number of steps
-rounded down to <span class="math inline">\(N^{*}_{i}= \left\lfloor N_i
-\right\rfloor = 4\)</span>.</p>
+remainder is less than
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϵ</mi><mo>=</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>3</mn></mrow></msup></mrow><annotation encoding="application/x-tex">\epsilon = 10^{-3}</annotation></semantics></math>
+i.e. if for instance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mi>i</mi></msub><mo>=</mo><mn>4.0001</mn></mrow><annotation encoding="application/x-tex">N_i = 4.0001</annotation></semantics></math>
+then the time-step is accepted, and the number of steps rounded down to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>N</mi><mi>i</mi><mo>*</mo></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">⌊</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">⌋</mo></mrow><mo>=</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">N^{*}_{i}= \left\lfloor N_i \right\rfloor = 4</annotation></semantics></math>.</p>
 </div>
 <div class="section level3">
 <h3 id="argument-loss-and-loss_c">Argument: <code>loss</code> and <code>loss_c</code><a class="anchor" aria-label="anchor" href="#argument-loss-and-loss_c"></a>
@@ -230,77 +242,110 @@ rounded down to <span class="math inline">\(N^{*}_{i}= \left\lfloor N_i
 <p>This argument only affects the Kalman filtering methods, and is used
 to regularize the likelihood contributions, removing the influence of
 large outliers.</p>
-<p>The i<sup>th</sup> likelihood contributions is given by: <span class="math display">\[
+<p>The i<sup>th</sup> likelihood contributions is given by:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mo>log</mo><msub><mi>L</mi><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>∝</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>r</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 -\log L_{i}(\theta) \propto f(r_i)
-\]</span> where <span class="math inline">\(r_i = \sqrt{e_{i}^{T}
-\Sigma_{i}^{-1} e_{i}}\)</span> is a normalized residual, and where
-<span class="math inline">\(e_{i}\)</span> is the i<sup>th</sup>
-residual vector, and <span class="math inline">\(\Sigma_{i}^{-1}\)</span> the i<sup>th</sup>
-residual precision matrix.</p>
-<p>The <code>loss</code> argument changes the function <span class="math inline">\(f\)</span> as follows:</p>
+</annotation></semantics></math> where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>=</mo><msqrt><mrow><msubsup><mi>e</mi><mi>i</mi><mi>T</mi></msubsup><msubsup><mi>Σ</mi><mi>i</mi><mrow><mi>−</mi><mn>1</mn></mrow></msubsup><msub><mi>e</mi><mi>i</mi></msub></mrow></msqrt></mrow><annotation encoding="application/x-tex">r_i = \sqrt{e_{i}^{T} \Sigma_{i}^{-1} e_{i}}</annotation></semantics></math>
+is a normalized residual, and where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>e</mi><mi>i</mi></msub><annotation encoding="application/x-tex">e_{i}</annotation></semantics></math>
+is the i<sup>th</sup> residual vector, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>Σ</mi><mi>i</mi><mrow><mi>−</mi><mn>1</mn></mrow></msubsup><annotation encoding="application/x-tex">\Sigma_{i}^{-1}</annotation></semantics></math>
+the i<sup>th</sup> residual precision matrix.</p>
+<p>The <code>loss</code> argument changes the function
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+as follows:</p>
 <ol style="list-style-type: decimal">
-<li><p>If <code>loss='quadratic'</code> then <span class="math inline">\(f\)</span> is quadratic in the residuals i.e.
-<span class="math display">\[
+<li><p>If <code>loss='quadratic'</code> then
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+is quadratic in the residuals i.e.
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>r</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">
 f(r) = r^2
-\]</span> and the likelihood contributions are exactly those from a
-Gaussian.</p></li>
-<li><p>If <code>loss='huber'</code> then <span class="math inline">\(f\)</span> is the Huber’s <span class="math inline">\(\psi\)</span> function given by <span class="math display">\[
-\psi_{c}(r) = \left\{ \begin{array}{l} r^2 &amp; \text{for} \,\, r \leq
-c \\ c(2r-c) &amp; \text{otherwise} \end{array} \right\}
-\]</span> which is quadratic/linear in the residuals below/above the
-threshold determined by <span class="math inline">\(c\)</span>.</p></li>
-<li><p>If <code>loss='tukey'</code> then <span class="math inline">\(f\)</span> is Tukey’s byweight function given by
-<span class="math display">\[
-l_{c}(r) = \left\{ \begin{array}{l}
+</annotation></semantics></math> and the likelihood contributions are
+exactly those from a Gaussian.</p></li>
+<li><p>If <code>loss='huber'</code> then
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+is the Huber’s
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ψ</mi><annotation encoding="application/x-tex">\psi</annotation></semantics></math>
+function given by
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ψ</mi><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msup><mi>r</mi><mn>2</mn></msup></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">for</mtext><mspace width="0.167em"></mspace><mspace width="0.167em"></mspace><mi>r</mi><mo>≤</mo><mi>c</mi></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mi>r</mi><mo>−</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">otherwise</mtext></mtd></mtr></mtable><mo stretchy="true" form="postfix">}</mo></mrow></mrow><annotation encoding="application/x-tex">
+\psi_{c}(r) = \left\{ \begin{array}{l} r^2 &amp; \text{for} \,\, r \leq c \\ c(2r-c) &amp; \text{otherwise} \end{array} \right\}
+</annotation></semantics></math> which is quadratic/linear in the
+residuals below/above the threshold determined by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>.</p></li>
+<li><p>If <code>loss='tukey'</code> then
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+is Tukey’s byweight function given by
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>l</mi><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msup><mi>r</mi><mn>2</mn></msup></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">for</mtext><mspace width="0.167em"></mspace><mspace width="0.167em"></mspace><mi>r</mi><mo>≤</mo><mi>c</mi></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msup><mi>c</mi><mn>2</mn></msup></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">otherwise</mtext></mtd></mtr></mtable><mo stretchy="true" form="postfix">}</mo></mrow></mrow><annotation encoding="application/x-tex">
+l_{c}(r) = \left\{ \begin{array}{l} 
 r^2
-&amp; \text{for} \,\, r \leq c
+&amp; \text{for} \,\, r \leq c 
 \\
 c^2
 &amp; \text{otherwise}
 \end{array} \right\}
-\]</span> which is quadratic/constant in the residuals below/above the
-threshold determined by <span class="math inline">\(c\)</span>.</p></li>
+</annotation></semantics></math> which is quadratic/constant in the
+residuals below/above the threshold determined by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>.</p></li>
 </ol>
 <p>In practice a smooth approximation to both Huber and Tukey are
-implemented in practice using the construction <span class="math display">\[
+implemented in practice using the construction
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>ψ</mi><mo accent="true">̃</mo></mover><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>r</mi><mn>2</mn></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>σ</mi><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msup><mi>c</mi><mn>2</mn></msup><msub><mi>σ</mi><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \tilde{\psi}_{c}(r) = r^2 (1-\sigma_{c}(r)) + c^2 \sigma_{c}(r)
-\]</span> <span class="math display">\[
+</annotation></semantics></math><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>l</mi><mo accent="true">̃</mo></mover><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>r</mi><mn>2</mn></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>σ</mi><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mi>r</mi><mo>−</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>σ</mi><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \tilde{l}_{c}(r) = r^2 (1-\sigma_{c}(r)) + c(2r-c) \sigma_{c}(r)
-\]</span> where <span class="math inline">\(\sigma(r)\)</span> is the
-sigmoid function <span class="math display">\[
+</annotation></semantics></math> where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\sigma(r)</annotation></semantics></math>
+is the sigmoid function
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>c</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac displaystyle="true"><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mn>5</mn><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">
 \sigma_{c}(r) = \dfrac{1}{1+\exp(-5(r-c))}
-\]</span> The plot below shows the actual and implemented loss functions
-(almost indistinguishable) for <span class="math inline">\(c=5\)</span>.
-The threshold value is marked by with dashed line for the line <span class="math inline">\(x = c\)</span>.</p>
+</annotation></semantics></math> The plot below shows the actual and
+implemented loss functions (almost indistinguishable) for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">c=5</annotation></semantics></math>.
+The threshold value is marked by with dashed line for the line
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>=</mo><mi>c</mi></mrow><annotation encoding="application/x-tex">x = c</annotation></semantics></math>.</p>
 <div class="figure" style="text-align: center">
 <img src="estimate_files/figure-html/unnamed-chunk-3-1.png" alt="Loss Functions" width="100%"><p class="caption">
 Loss Functions
 </p>
 </div>
 <p>The <code>loss_c</code> argument is used to determine the value of
-<span class="math inline">\(c\)</span>. The default values are chosen
-based on the fact that under the assumed (multivariate) normal
-distribution of the residuals, the squared (normalized) residuals
-follows a <span class="math inline">\(\chi^{2}_{m}\)</span> distribution
-with degrees of freedom equal to the number of elements of <span class="math inline">\(e_{i}\)</span> i.e: <span class="math display">\[
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>.
+The default values are chosen based on the fact that under the assumed
+(multivariate) normal distribution of the residuals, the squared
+(normalized) residuals follows a
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mi>m</mi><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^{2}_{m}</annotation></semantics></math>
+distribution with degrees of freedom equal to the number of elements of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>e</mi><mi>i</mi></msub><annotation encoding="application/x-tex">e_{i}</annotation></semantics></math>
+i.e:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>r</mi><mi>i</mi><mn>2</mn></msubsup><mo>=</mo><msubsup><mi>e</mi><mi>i</mi><mi>T</mi></msubsup><msubsup><mi>Σ</mi><mi>i</mi><mrow><mi>−</mi><mn>1</mn></mrow></msubsup><msub><mi>e</mi><mi>i</mi></msub><mo>∼</mo><msubsup><mi>χ</mi><mi>m</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">
 r_{i}^2 = e_{i}^{T} \Sigma_{i}^{-1} e_{i} \sim \chi^{2}_{m}
-\]</span> It is therefore reasonable to choose the threshold level
-(value of <span class="math inline">\(c\)</span>) which determines
-whether or not <span class="math inline">\(r_{i}\)</span> is an outlier,
-as the level at which the null-hypothesis <span class="math display">\[
+</annotation></semantics></math> It is therefore reasonable to choose
+the threshold level (value of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>)
+which determines whether or not
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mi>i</mi></msub><annotation encoding="application/x-tex">r_{i}</annotation></semantics></math>
+is an outlier, as the level at which the null-hypothesis
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>0</mn></msub><mo>:</mo><msubsup><mi>r</mi><mi>i</mi><mn>2</mn></msubsup><mo>∼</mo><msubsup><mi>χ</mi><mi>m</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">
 H_{0}: r_{i}^2 \sim \chi^{2}_{m}
-\]</span> is rejected for some critical value <span class="math inline">\(1 - \alpha\)</span>. Choosing the significance
-level <span class="math inline">\(\alpha = 0.05\)</span> the appropriate
-<span class="math inline">\(c\)</span> threshold value becomes</p>
+</annotation></semantics></math> is rejected for some critical value
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>α</mi></mrow><annotation encoding="application/x-tex">1 - \alpha</annotation></semantics></math>.
+Choosing the significance level
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.05</mn></mrow><annotation encoding="application/x-tex">\alpha = 0.05</annotation></semantics></math>
+the appropriate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
+threshold value becomes</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/Chisquare.html" class="external-link">qchisq</a></span><span class="op">(</span><span class="fl">0.95</span>,df<span class="op">=</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] 3.841459</span></span></code></pre>
-<p>where <span class="math inline">\(m\)</span> is the number of
-observation equations.</p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
+is the number of observation equations.</p>
 <p><strong>Note:</strong> The significance level will be higher than the
-chosen if there are missing observations in some indices of <span class="math inline">\(i\)</span> for systems with multiple observation
-equations.</p>
+chosen if there are missing observations in some indices of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
+for systems with multiple observation equations.</p>
 </div>
 <div class="section level3">
 <h3 id="argument-use_hessian">Argument: <code>use_hessian</code><a class="anchor" aria-label="anchor" href="#argument-use_hessian"></a>
@@ -349,20 +394,17 @@ estimated but simply taken as the values provided by
 <code>estimate.initial.state=TRUE</code> the mean and covariance are
 estimated as the stationary solution of the moment differential
 equations using the input values are the initial time-point.</p>
-<p>The stationary solution is obtained first by solving <span class="math display">\[
-\dfrac{d\mathrm{E}\left[x_{\infty}\right]}{dt} =
-f(\mathrm{E}\left[x_\infty\right]) = 0
-\]</span> for <span class="math inline">\(\mathrm{E}\left[x_\infty\right]\)</span> using
-Newton’s method. This stationary mean is then used to solve <span class="math display">\[
-\dfrac{d\mathrm{V}\left[x_\infty\right]}{dt} =
-\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\mathrm{V}\left[x_\infty\right]
-+
-\mathrm{V}\left[x_\infty\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\right]^{T}
-+
-g(\mathrm{E}\left[x_\infty\right])g(\mathrm{E}\left[x_\infty\right])^{T}
-= 0
-\]</span> for the stationary covariance <span class="math inline">\(\mathrm{V}\left[x_\infty\right]\)</span> by
-calling a linear solver on the vectorized system of equations (using
+<p>The stationary solution is obtained first by solving
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac displaystyle="true"><mrow><mi>d</mi><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">
+\dfrac{d\mathrm{E}\left[x_{\infty}\right]}{dt} = f(\mathrm{E}\left[x_\infty\right]) = 0
+</annotation></semantics></math> for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\mathrm{E}\left[x_\infty\right]</annotation></semantics></math>
+using Newton’s method. This stationary mean is then used to solve
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac displaystyle="true"><mrow><mi>d</mi><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mfrac displaystyle="true"><mrow><mi>d</mi><mi>f</mi></mrow><mrow><mi>d</mi><mi>x</mi></mrow></mfrac><msub><mo minsize="2.4" maxsize="2.4" stretchy="false" form="postfix">|</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></msub><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>+</mo><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">[</mo><mfrac displaystyle="true"><mrow><mi>d</mi><mi>f</mi></mrow><mrow><mi>d</mi><mi>x</mi></mrow></mfrac><msub><mo minsize="2.4" maxsize="2.4" stretchy="false" form="postfix">|</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>T</mi></msup><mo>+</mo><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>g</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">
+\dfrac{d\mathrm{V}\left[x_\infty\right]}{dt} = \dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\mathrm{V}\left[x_\infty\right] + \mathrm{V}\left[x_\infty\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\right]^{T} + g(\mathrm{E}\left[x_\infty\right])g(\mathrm{E}\left[x_\infty\right])^{T} = 0
+</annotation></semantics></math> for the stationary covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\mathrm{V}\left[x_\infty\right]</annotation></semantics></math>
+by calling a linear solver on the vectorized system of equations (using
 kronecker products).</p>
 </div>
 <div class="section level3">

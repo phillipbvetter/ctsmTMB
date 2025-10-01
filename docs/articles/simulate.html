@@ -14,11 +14,11 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Mukta-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="../deps/MathJax-3.2.2/tex-chtml.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Stochastic Simulations">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Stochastic Simulations">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -53,7 +53,7 @@
 <li><a class="dropdown-item" href="../articles/linear_kalman_filter.html">Linear Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/extended_kalman_filter.html">Extended Kalman Filter</a></li>
     <li><a class="dropdown-item" href="../articles/unscented_kalman_filter.html">Unscented Kalman Filter</a></li>
-    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace "Filter"</a></li>
+    <li><a class="dropdown-item" href="../articles/laplace_approx.html">Laplace Smoother</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -101,25 +101,33 @@ simulations.</p>
 <h2 id="notation">Notation<a class="anchor" aria-label="anchor" href="#notation"></a>
 </h2>
 <hr>
-<p>Let the set of observations from the initial time <span class="math inline">\(t_0\)</span> until the current time <span class="math inline">\(t_{i}\)</span> be noted by <span class="math display">\[
+<p>Let the set of observations from the initial time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mn>0</mn></msub><annotation encoding="application/x-tex">t_0</annotation></semantics></math>
+until the current time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>i</mi></msub><annotation encoding="application/x-tex">t_{i}</annotation></semantics></math>
+be noted by
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝒴</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><msub><mi>y</mi><mi>i</mi></msub><mo>,</mo><msub><mi>y</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>y</mi><mn>1</mn></msub><mo>,</mo><msub><mi>y</mi><mn>0</mn></msub><mo stretchy="true" form="postfix">}</mo></mrow></mrow><annotation encoding="application/x-tex">
 \mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0}\right\}
-\]</span></p>
+</annotation></semantics></math></p>
 <p>A <em>k</em>-step <strong>simulation</strong> is a sample of the
 stochastic path of the model stochastic differential equation <em>k</em>
 time-steps into the future, conditioned on the current state estimate
-with mean and covariance <span class="math display">\[
+with mean and covariance <span class="math display">$$
 \hat{x}_{i|i} = \mathrm{E}\left[ x_{t_{i}} | y_{t_{i}} \right] \\
 P_{i|i} = \mathrm{V}\left[ x_{t_{i}} | y_{t_{i}} \right]
-\]</span> A single stochastic simulation can be obtained using the
-Euler-Maruyama scheme by <span class="math display">\[
-X_{t_{j+1}} = X_{t_{j}} + f(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta t_{j} +
-G(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta B_{j}
-\]</span> for <span class="math inline">\(j=i,...,i+k\)</span>, where
-the initial point follows <span class="math display">\[
+$$</span> A single stochastic simulation can be obtained using the
+Euler-Maruyama scheme by
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><msub><mi>t</mi><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msub></msub><mo>=</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>+</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>u</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>Δ</mi><msub><mi>t</mi><mi>j</mi></msub><mo>+</mo><mi>G</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>u</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>Δ</mi><msub><mi>B</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">
+X_{t_{j+1}} = X_{t_{j}} + f(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta t_{j} + G(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta B_{j}
+</annotation></semantics></math> for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi><mo>=</mo><mi>i</mi><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><mi>i</mi><mo>+</mo><mi>k</mi></mrow><annotation encoding="application/x-tex">j=i,...,i+k</annotation></semantics></math>,
+where the initial point follows
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mo stretchy="false" form="prefix">|</mo><mi>i</mi></mrow></msub><mo>,</mo><msub><mi>P</mi><mrow><mi>i</mi><mo stretchy="false" form="prefix">|</mo><mi>i</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 X_{t_{i}} \sim N(\hat{x}_{i|i}, P_{i|i} )
-\]</span> and <span class="math display">\[
+</annotation></semantics></math> and
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><msub><mi>B</mi><mi>j</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mi>Δ</mi><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \Delta B_{j} \sim N(0,\Delta t_{j})
-\]</span></p>
+</annotation></semantics></math></p>
 </div>
 <div class="section level2">
 <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
@@ -234,12 +242,15 @@ vignette</a>.</p>
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <p>We consider a modified Ornstein Uhlenbeck process:</p>
-<p><span class="math display">\[
+<p><span class="math display">$$
 \mathrm{d}x_{t} = \theta (a_t - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \,
 \mathrm{d}b_{t} \\
 y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
-\]</span> where the mean is some complex time-varying input <span class="math inline">\(a_t = tu_{t}^{2}-\cos(tu_{t})\)</span>, and <span class="math inline">\(u_{t}\)</span> is a given time-varying input
-signal.</p>
+$$</span> where the mean is some complex time-varying input
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>t</mi></msub><mo>=</mo><mi>t</mi><msubsup><mi>u</mi><mi>t</mi><mn>2</mn></msubsup><mo>−</mo><mo>cos</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><msub><mi>u</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">a_t = tu_{t}^{2}-\cos(tu_{t})</annotation></semantics></math>,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>u</mi><mi>t</mi></msub><annotation encoding="application/x-tex">u_{t}</annotation></semantics></math>
+is a given time-varying input signal.</p>
 <p>We create the model and simulate the data as follows:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
@@ -289,11 +300,12 @@ signal.</p>
 <span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>,<span class="fl">1</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>
 <span>                      n.sims<span class="op">=</span><span class="fl">100</span>,</span>
 <span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
-<p>with parameters <span class="math inline">\(\theta = 20, \sigma_{x} =
-1, \sigma_{y} = 0.05\)</span>.</p>
-<p><strong>Note:</strong> The value of <span class="math inline">\(\sigma_{y}\)</span> has no impact when doing
-“full” simulations (i.e. choosing maximum <code>k.ahead</code>) since no
-data updates occur.</p>
+<p>with parameters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>20</mn><mo>,</mo><msub><mi>σ</mi><mi>x</mi></msub><mo>=</mo><mn>1</mn><mo>,</mo><msub><mi>σ</mi><mi>y</mi></msub><mo>=</mo><mn>0.05</mn></mrow><annotation encoding="application/x-tex">\theta = 20, \sigma_{x} = 1, \sigma_{y} = 0.05</annotation></semantics></math>.</p>
+<p><strong>Note:</strong> The value of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\sigma_{y}</annotation></semantics></math>
+has no impact when doing “full” simulations (i.e. choosing maximum
+<code>k.ahead</code>) since no data updates occur.</p>
 <p>The simulations can be plotted quickly using
 <code>matplot</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
@@ -309,16 +321,16 @@ data updates occur.</p>
 <span><span class="co"># Plot</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/matplot.html" class="external-link">matplot</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">Y</span>,type<span class="op">=</span><span class="st">"l"</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="simulate_files/figure-html/unnamed-chunk-6-1.png" alt="The plot shows 100 simulated trajectories." width="100%" style="display: block; margin: auto;"></p>
-<p>Lets see the effect of setting <span class="math inline">\(\sigma_{x}
-= 3\)</span>:</p>
+<p>Lets see the effect of setting
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>x</mi></msub><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">\sigma_{x} = 3</annotation></semantics></math>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>, </span>
 <span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>,<span class="fl">3</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>
 <span>                      n.sims<span class="op">=</span><span class="fl">100</span>,</span>
 <span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
 <p><img src="simulate_files/figure-html/unnamed-chunk-8-1.png" alt="The plot shows 100 simulated trajectories for a different value of the process diffusion parameter sigma_x." width="100%" style="display: block; margin: auto;"></p>
-<p>Lets see the effect of setting <span class="math inline">\(\theta =
-50\)</span>:</p>
+<p>Lets see the effect of setting
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>50</mn></mrow><annotation encoding="application/x-tex">\theta = 50</annotation></semantics></math>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>, </span>
 <span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>,<span class="fl">1</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>

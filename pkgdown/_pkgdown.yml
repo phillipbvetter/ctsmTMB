@@ -1,0 +1,69 @@
+title: ctsmTMB
+
+url: https://github.com/phillipbvetter/ctsmTMB
+
+template:
+  # package: rbitemplate
+  bootstrap: 5
+  # math-rendering: katex
+  # math-rendering: mathjax
+  math-rendering: mathml
+  light-switch: true
+
+  bslib:
+    base_font: {google: "Source Sans Pro"}
+    # code_font: {google: "Source Code Pro"}
+    # base_font: {google: "Google Sans Code"}
+    code_font: {google: "Google Sans Code"}
+
+  #   pkgdown-nav-height: 125px
+  #   bg: '#FFFFFF'
+  #   fg: '#424242'
+  #   primary: '#0075FD'
+  #   includes:
+  #     in_header: |
+  #     <link rel="stylesheet" href="extra.css">
+
+
+navbar:
+  bg: light
+  ### Components Start
+  components:
+    intro:
+      text: Getting Started
+      href: articles/ctsmTMB.html
+    # Vignettes Start
+    vignettes:
+      text: Vignettes
+      menu:
+      - text: Estimation
+        href: articles/estimate.html
+      - text: Prediction
+        href: articles/predict.html
+      - text: Simulation
+        href: articles/simulate.html
+      - text: Likelihood (Extracting Function Handlers)
+        href: articles/using_another_optimizer.html
+    # Vignettes End
+    # Math Start
+    mathematics:
+      text: Math Details
+      menu:
+      - text: Linear Kalman Filter
+        href: articles/linear_kalman_filter.html
+      - text: Extended Kalman Filter
+        href: articles/extended_kalman_filter.html
+      - text: Unscented Kalman Filter
+        href: articles/unscented_kalman_filter.html
+      - text: Laplace Smoother
+        href: articles/laplace_approx.html
+    # Math End
+  ### Components End
+  structure:
+    left: [intro, vignettes, mathematics, reference, news]
+    right: [search, github, lightswitch]
+
+
+
+
+

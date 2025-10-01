@@ -175,6 +175,7 @@ summary.ctsmTMB.fit = function(object,
 #' 
 #' # plot filtered states
 #' plot(fit, type="states", against="y")
+#' 
 #' @returns A plot of predicted states
 #' @export
 plot.ctsmTMB.pred = function(x, 
@@ -203,6 +204,7 @@ plot.ctsmTMB.pred = function(x,
   bool = states$k.ahead %in% k.ahead
   x = states[bool, "t.j"]
   y = states[bool, state.name]
+  grDevices::dev.new()
   plot(x=x, y=y, type="l",...)
   
   if(!is.null(against)){
@@ -217,7 +219,8 @@ plot.ctsmTMB.pred = function(x,
 #' This function creates residual plots for an estimated ctsmTMB object
 #' @param x A R6 ctsmTMB fit object
 #' @param print.plot a single integer determining which element out of all
-#' states/observations (depending on the argument to \code{type}).
+#' states/observations (depending on the argument to \code{type}). 
+#' A value of 0 means not to plot anything.
 #' @param type a character vector either 'residuals' or 'states' determining what
 #' to plot.
 #' @param state.type a character vector either 'prior', 'posterior' or 'smoothed'
@@ -251,6 +254,7 @@ plot.ctsmTMB.pred = function(x,
 #' 
 #' # plot residuals
 #' \dontrun{plot(fit)}
+#' plot(fit)
 #' 
 #' # plot filtered states
 #' \dontrun{plot(fit, type="states")}
@@ -375,7 +379,6 @@ plot.ctsmTMB.fit = function(x,
           x = "Lag"
         )
       # cpgram
-      # if (requireNamespace("ggfortify", quietly = TRUE)) {
       plot.cpgram =
         ggfortify_ggcpgram(e,colour=mycolor) +
         ggtheme +
@@ -384,15 +387,6 @@ plot.ctsmTMB.fit = function(x,
           y = "",
           x = "Lag"
         )
-      # } else {
-      #   plot.cpgram = ggplot2::ggplot() + 
-      #     ggplot2::geom_text(
-      #       aes(x=0.5,
-      #           y=0.5,
-      #           label="Install 'ggfortify' \n for \n Cumulative Periodogram")
-      #     ) +
-      #     theme_void()
-      # }
       
       plots[[i]] = patchwork::wrap_plots(plot.res,
                                          plot.hist,
@@ -532,8 +526,10 @@ plot.ctsmTMB.fit = function(x,
   }
   
   # print the first plot to the console
-  grDevices::dev.new()
-  print(plots[[print.plot]])
+  if(print.plot != 0){
+    grDevices::dev.new()
+    print(plots[[print.plot]])
+  }
   
   # print second plot if requested
   if(length(plots2) > 0){
@@ -542,7 +538,7 @@ plot.ctsmTMB.fit = function(x,
   }
   
   # return plot list
-  return(invisible(c(plots,plots2)))
+  return(invisible(c(plots, plots2)))
 }
 
 #' Performs full multi-dimensional profile likelihood calculations
@@ -764,6 +760,7 @@ profile.ctsmTMB.fit = function(fitted,
 #' out <- profile(fit,parlist=list(theta=NULL, mu=NULL))
 #' 
 #' # plot profile
+#' grDevices::dev.new()
 #' plot(out)
 #' @export
 plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){

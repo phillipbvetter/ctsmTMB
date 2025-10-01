@@ -36,8 +36,11 @@ ggfortify_ggcpgram <- function (ts, taper = 0.1, colour = "#000000", linetype = 
   crit <- 1.358/(sqrt(mp) + 0.12 + 0.11/sqrt(mp))
   d <- data.frame(x = x, y = cumsum(y)/sum(y), upper = 1/xm * 
                     x + crit, lower = 1/xm * x - crit)
-  p <- ggplot2::ggplot(data = d, mapping = ggplot2::aes_string(x = "x", 
-                                                               y = "y")) + geom_line(colour = colour, linetype = linetype) + 
+  p <- ggplot2::ggplot(data = d,
+                       # mapping = ggplot2::aes_string(x = "x", y = "y")
+                       mapping = ggplot2::aes(x=x, y=y)
+                       ) + 
+    geom_line(colour = colour, linetype = linetype) + 
     ggplot2::scale_x_continuous(name = "", limits = c(0, 
                                                       xm)) + ggplot2::scale_y_continuous(name = "", limits = c(0, 
                                                                                                                1))
@@ -106,6 +109,35 @@ plot_confint <- function (p, data = NULL, lower = "lower", upper = "upper", conf
 ################################################
 # HELPER FUNCTION
 ################################################
+# geom_factory <- function (geomfunc, data = NULL, position = NULL, ...) 
+# {
+#   mapping <- list()
+#   option <- list()
+#   columns <- colnames(data)
+#   for (key in names(list(...))) {
+#     value <- list(...)[[key]]
+#     if (is.null(value)) {
+#     }
+#     else if (!(is.vector(value) && length(value) > 1L) && 
+#              value %in% columns) {
+#       mapping[[key]] <- value
+#     }
+#     else {
+#       option[[key]] <- value
+#     }
+#   }
+#   if (!is.null(data)) {
+#     option[["data"]] <- data
+#   }
+#   if (!is.null(position)) {
+#     option[["position"]] <- position
+#   }
+#   option[["mapping"]] <- do.call(ggplot2::aes_string, mapping)
+#   print(option[["mapping"]])
+#   return(do.call(geomfunc, option))
+# }
+
+# re-write using rlang::sym to avoid depreciated aes_string
 geom_factory <- function (geomfunc, data = NULL, position = NULL, ...) 
 {
   mapping <- list()
@@ -114,12 +146,11 @@ geom_factory <- function (geomfunc, data = NULL, position = NULL, ...)
   for (key in names(list(...))) {
     value <- list(...)[[key]]
     if (is.null(value)) {
-    }
-    else if (!(is.vector(value) && length(value) > 1L) && 
-             value %in% columns) {
-      mapping[[key]] <- value
-    }
-    else {
+      # skip
+    } else if (!(is.vector(value) && length(value) > 1L) && value %in% columns) {
+      # capture column references properly with rlang::sym
+      mapping[[key]] <- rlang::sym(value)
+    } else {
       option[[key]] <- value
     }
   }
@@ -129,6 +160,6 @@ geom_factory <- function (geomfunc, data = NULL, position = NULL, ...)
   if (!is.null(position)) {
     option[["position"]] <- position
   }
-  option[["mapping"]] <- do.call(ggplot2::aes_string, mapping)
+  option[["mapping"]] <- do.call(ggplot2::aes, mapping)   # use aes() not aes_string()
   return(do.call(geomfunc, option))
 }
