@@ -198,13 +198,21 @@ homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 ## Code Example - Inference in 1D Ornstein-Uhlenbeck Process
 
 We consider estimating the parameters of the modified Ornstein-Uhlenbeck
-process $$
+process
+
+$$
 dx_{t} = \theta \left( \mu + u_t - x_t \right) \, dt + \sigma_x \, dB_{t}
-$$ where the stationary mean $\mu$ has been augmented with the addition
-of a time-varying input $u_{t}$. The observations remain linear and
-Gaussian: $$
+$$
+
+where the stationary mean $\mu$ has been augmented with the addition of
+a time-varying input $u_{t}$. The observations remain linear and
+Gaussian:
+
+$$
 y_{k} = x_{t_k} + \varepsilon_{t} \qquad \varepsilon_{t} \sim \mathcal{N}\left(0, \sigma_{y}^2 \right)
-$$ The code chunk below simulates data from this process using an
+$$
+
+The code chunk below simulates data from this process using an
 Euler-Maruyama scheme, generates an appropriate `ctsmTMB` model object,
 performs parameter estimation using an Extended Kalman Filter (the
 Linear Kalman Filter `method='lkf'` could also be used) and inspects the
