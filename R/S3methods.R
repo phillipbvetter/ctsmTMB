@@ -396,7 +396,7 @@ plot.ctsmTMB.fit = function(x,
                                          plot.pacf ,
                                          nrow=3) +
         patchwork::plot_annotation(title=paste("Residual Analysis for ", nam),
-                                   subtitle=paste("modelname:", private$modelname),
+                                   # subtitle=paste("modelname:", private$modelname),
                                    theme = ggtheme + 
                                      ggplot2::theme(text=ggplot2::element_text(size=12, face="bold"))
         )

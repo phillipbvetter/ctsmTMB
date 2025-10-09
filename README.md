@@ -219,10 +219,6 @@ Linear Kalman Filter `method='lkf'` could also be used) and inspects the
 resulting residuals, moment predictions and stochastic simulations.
 
 ``` r
-library(ggplot2)
-library(patchwork)
-library(dplyr)
-library(reshape2)
 library(ctsmTMB)
 
 ############################################################
@@ -301,55 +297,38 @@ fit <- model$estimate(df.obs, method="ekf")
 fitted.pars <- fit$par.fixed
 cbind(true.pars, fitted.pars, difference=true.pars - fitted.pars)
 
+par(mfrow=c(3,1))
 # Plot prior predictions (1-step predictions) against simulation (truth) and observations (data)
 df.est <- cbind(fit$states$mean$prior, sd=fit$states$sd$prior$x)
-plot1 = ggplot() +
-  geom_ribbon(data=df.est, aes(x=t, ymin=x-2*sd, ymax=x+2*sd),fill="grey", alpha=0.9) +
-  geom_line(data=df.est, aes(x=t, x),col="steelblue",lwd=1) +
-  geom_line(data=df.sim, aes(x=t, y=x)) + 
-  geom_point(data=df.obs, aes(x=t,y=y),col="tomato",size=0.5) +
-  labs(title="1-Step State Estimates vs Observations", x="Time", y="") +
-  theme_minimal()
+plot(x=df.est$t, y=df.est$x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(-3,3))
+polygon(c(df.est$t, rev(df.est$t)), c(df.est$x+1.96*df.est$sd, rev(df.est$x-1.96*df.est$sd)), col="grey70", border=NA)
+lines(df.est$t, df.est$x, col="steelblue", lwd=2)
+points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
 # Predict to obtain k-step-ahead predictions to see model forecasting ability
 pred.10step <- model$predict(df.obs, k.ahead=10, method="ekf", return.k.ahead = 10)
 
 # Plot 10 step predictions vs data
-df.pred10 <- pred.10step$states
-plot2 = ggplot() +
-  geom_ribbon(data=df.pred10, aes(x = t.j, ymin = x-2*sqrt(var.x), ymax = x+2*sqrt(var.x)), fill="grey", alpha=0.9) +
-  geom_line(data=df.pred10, aes(x = t.j, y = x), color="steelblue",lwd=1) +
-  geom_point(data=df.obs, aes(x=t,y=y),color="tomato",size=0.5) +
-  labs(title="10 Step Predictions vs Observations", x="Time", y="") +
-  theme_minimal()
+dfp <- pred.10step$states[c("t.j","x","var.x")]
+dfp[,4] <- sqrt(dfp["var.x"])
+names(dfp) <- c("t","x","var","sd")
+plot(x=dfp$t, y=dfp$x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(-3,3))
+polygon(c(dfp$t, rev(dfp$t)), c(dfp$x+1.96*dfp$sd, rev(dfp$x-1.96*dfp$sd)), col="grey70", border=NA)
+lines(dfp$t, dfp$x, col="steelblue", lwd=2)
+points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
 # Perform a full prediction i.e. without updating to data along the way
-pred.full = model$predict(df.obs, method="ekf")$states
+dfp <- model$predict(df.obs, method="ekf")$states
 
 # Perform full simulations - 10 sample trajectories
-sim.full = model$simulate(df.obs, method="ekf", n.sims=10)
+sdf <- model$simulate(df.obs, method="ekf", n.sims=10)$states$x$i0
+sdf.sim <- sdf[,6:ncol(sdf)]
+matplot(sdf$t.j, sdf.sim, type="l", lty="solid", col="grey70", main="No Update Prediction and Simulations vs Observations", xlab="Time")
+lines(dfp$t.j, dfp$x, col="steelblue", lwd=2)
+points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
-# Collapse simulation data for easy use with ggplot 
-sim.df = sim.full$states$x$i0 %>%
-  select(!c("i","j","t.i","k.ahead")) %>%
-  reshape2::melt(., id.var="t.j")
-
-# Plot all simulations and the prediction against observations
-plot3 = ggplot() +
-  geom_line(data=sim.df, aes(x=t.j, y=value, group=variable),color="grey") +
-  geom_line(data=pred.full, aes(x=t.j,y=x),color="steelblue") +
-  geom_point(data=df.obs, aes(x=t,y=y),color="tomato",size=0.5) +
-  labs(title="No Update Prediction and Simulations vs Observations", x="Time", y="") +
-  theme_minimal() + theme(legend.position = "none")
-
-# Create plot
-p1 <- patchwork::wrap_plots(plot1, plot2, plot3, ncol=1)
-
-# Create (but don't plot yet!) residual analysis
-p2 <- plot(fit, print.plot = 0)
-
-# Plot p1 and p2 together
-patchwork::wrap_plots(p1, p2[[1]], ncol=2)
+# Perform residual analysis
+p2 <- plot(fit)
 ```
 
 ## Bibliography
