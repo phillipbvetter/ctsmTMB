@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
 <!-- Badges -->
 [![CRAN status](https://www.r-pkg.org/badges/version/ctsmTMB)](https://CRAN.R-project.org/package=ctsmTMB)
 [![R-CMD-check](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml)
+[![](https://cranlogs.r-pkg.org/badges/ctsmTMB?color=brightgreen)](https://cran.rstudio.com/web/packages/ctsmTMB/index.html)
 <!-- Package Description -->
 
 # Overview
