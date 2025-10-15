@@ -1032,7 +1032,7 @@ ctsmTMB = R6::R6Class(
     getEstimate = function() {
       
       
-      # extract algebraic relation formulas
+      # extract fit
       if(is.null(private$fit)){
         message("There are no estimation results to be exctracted - run 'estimate'.")
         return(invisible(NULL))
