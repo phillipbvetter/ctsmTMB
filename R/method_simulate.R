@@ -72,8 +72,8 @@ create_return_simulation <- function(return.k.ahead, n.sims, self, private){
                                       k.ahead = 0:private$n.ahead,
                                       list.out[[i]][[j]]
       )
-      nams = paste0(private$state.names,1:n.sims)
-      names(list.out[[i]][[j]]) = c("i","j","t.i","t.j","k.ahead",nams)
+      nams = paste0(private$state.names[i], 1:n.sims)
+      names(list.out[[i]][[j]]) = c("i","j","t.i","t.j","k.ahead", nams)
     }
   }
   
