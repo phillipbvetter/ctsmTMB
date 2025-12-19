@@ -298,3 +298,5 @@ write_cppfile = function(self, private) {
   # Return
   return(invisible(self))
 }
+
+

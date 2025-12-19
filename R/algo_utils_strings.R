@@ -3,9 +3,9 @@ create.state.space.functions.for.estimation <- function(forceAD, .envir=parent.f
   
   list2env(as.list(.envir), envir = environment())
   
-  # This "hack" where zero-matrices/vectors and initialized and not created inside the state space functions
-  # reduces MakeADFun compilation time by roughly 20%, but requires this unintended use of forcing AD which is
-  # a bit unstable (but works!) and breaks for instance REPORT
+  # This "hack" where zero-matrices/vectors are created globally rather than inside the state space functions
+  # reduces MakeADFun compilation time by roughly 20%. We must use force=TRUE to force the variables into ad 
+  # context. This works for the estimation, but breaks the report functionality.
   if(forceAD) {
     
     if(private$method == "ekf"){
@@ -141,6 +141,7 @@ create.state.space.function.strings = function(self, private)
   names(stateList) = private$state.names
   names(inputList) = private$input.names
   subsList = c(obsList, parList, stateList, inputList)
+  # subsList <- get_substitution_list(self, private)
   
   ##################################################
   # drift
@@ -369,7 +370,7 @@ create.state.space.function.strings = function(self, private)
 ##########################################################
 ##########################################################
 ##########################################################
-# USER-FUNCTION CONSTRUCTION FOR RCPP EKF
+# Construct system functions for Rcpp implementations
 ##########################################################
 ##########################################################
 ##########################################################
@@ -386,9 +387,10 @@ create.rcpp.state.space.function.strings = function(self, private){
   names(stateList) = private$state.names
   names(inputList) = private$input.names
   subsList = c(obsList, parList, stateList, inputList)
+  # subsList <- get_substitution_list(self, private)
   
   
-  ##################################################
+  #################################################
   # drift
   ##################################################
   

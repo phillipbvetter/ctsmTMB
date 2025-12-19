@@ -12,24 +12,18 @@ perform_filtering = function(self, private, use.cpp){
     stop("The Laplace method is a smoothing method. Use 'smooth' method instead.")
   }
   
-  # time prediction
-  comptime <- system.time(
-    {
-      
+  comptime <- system.time({
       if(use.cpp){
         
         if(!private$silent) message("Filtering with C++...")
-        
         lkf_ekf_ukf_filter_rcpp(private$pars, self, private)
         
       } else {
         
         if(!private$silent) message("Filtering with R...")
-        
         lkf_ekf_ukf_filter_r(private$pars, self, private)
         
       }
-      
     }, gcFirst = FALSE)
   
   private$timer_filtration <- comptime

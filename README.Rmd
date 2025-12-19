@@ -1,15 +1,19 @@
 ---
 output: github_document
+# output: html_document
 ---
+
+<!-- text justification -->
+<style>
+body {
+text-align: justify}
+</style>
 
 <!-- README.md is generated from README.Rmd. -->
 
 ```{r, include=FALSE}
-knitr::opts_chunk$set(
-  eval=FALSE
-)
+knitr::opts_chunk$set(eval=FALSE, echo=TRUE)
 ```
-
 
 <!-- Logo -->
 # ctsmTMB <img src='man/figures/logo.png' align="right" height="150" />
@@ -18,28 +22,54 @@ knitr::opts_chunk$set(
 [![CRAN status](https://www.r-pkg.org/badges/version/ctsmTMB)](https://CRAN.R-project.org/package=ctsmTMB)
 [![R-CMD-check](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml)
 [![](https://cranlogs.r-pkg.org/badges/ctsmTMB?color=brightgreen)](https://cran.rstudio.com/web/packages/ctsmTMB/index.html)
-<!-- Package Description -->
 
+<!-- add white space -->
+$~$
+
+<!-- Begin Document -->
 # Overview
 
-Welcome to this GitHub repository which hosts **ctsmTMB** [(Continuous Time Stochastic Modelling using Template Model Builder)](https://phillipbvetter.github.io/ctsmTMB/index.html), the intended successor of, and heavily inspired by, the **CTSM** package [(Continuous Time Stochastic Modelling)](https://ctsm.info). The purpose of the package is to facilitate a user-friendly tool for (state and parameter) inference, and forecasting, in (multi-dimensional) continuous-discrete stochastic state space systems, i.e. systems on the form
+Welcome to this GitHub repository which hosts the R package *[ctsmTMB](https://phillipbvetter.github.io/ctsmTMB/index.html) (Continuous Time Stochastic Modelling using Template Model Builder)*, the intended successor of (and heavily inspired by) the *[CTSM](https://ctsm.info) (Continuous Time Stochastic Modelling)* package. 
+
+*ctsmTMB* offers a user-friendly tool for inference and forecasting in linear and mildly non-linear (multi-dimensional) continuous-discrete stochastic state space systems, i.e. systems on the form
 
 $$
 dx_{t} = f\left( t, x_t, u_t, p \right) dt + g\left( t, x_t, u_t, p \right) dB_{t}
 $$
 $$
-y_{k} = h\left( t_k, x_{t_k}, u_{t_k}, p \right)
+y_{t_k} = h\left( t_k, x_{t_k}, u_{t_k}, p \right) + \varepsilon_{t}
 $$
 
-Here the latent state $x_t$ evolves continuously in time, governed by a set of stochastic differential equations, and information about the system is available at discrete times $t_{k}$ by the observations $y_{k}$.
 
-The **ctsmTMB** package is essentially wrapper around the **TMB/RTMB** packages [(Template Model Builder)](https://github.com/kaskr/adcomp) that provide automatic differentiation of the likelihood function, and access to other computational tools such as the Laplace approximation. The likelihood function is constructed based on the (symbolic) user-provided state space equations, which may be specified using the implemented OOP-style **R6** `ctsmTMB` class, with methods such as `addSystem` (for defining system equations), and `addObs` (for defining observation equations).
+That is, the latent state $x_t$ is a continuous-time process whose evolution is governed by an (It√¥) stochastic differential equation with drift $f$, and diffusion $g$. We may estimate the latent state distribution and the fixed effects parameters $p$ of the system through likelihood inference using the discrete-time measurements $\mathcal{Y}_{k} = \{y_{t_0}, y_{t_1},...,y_{t_k}\}$. These measurements are related to the latent state through the link function $h$ , but they are also contaminated by zero-mean Gaussian measurement noise $\varepsilon_{t} \sim \mathcal{N}\left(0, \Sigma(t_k, x_{t_k}, u_{t_k}, p) \right)$.
 
-The primary work-horse of **ctsmTMB** is the `estimate` method, which carries out inference by minimizing the (negative log) likelihood using the `stats::nlminb` quasi-Newton optimizer. The resulting object contains the maximum likelihood parameter and state estimates, and associated marginal uncertainties. The available inference methods are the Linear and Extended Kalman filters in addition to filtration (actually smoothing) using a Laplace approximation approach. 
-<!-- The user can extract the likelihood function handles (function, gradient and hessian) with the `likelihood` method if e.g. they want to use another optimizer. -->
+Users interact with the *ctsmTMB* package via the available methods of the exported *[R6](https://cran.r-project.org/web/packages/R6/index.html)* `ctsmTMB` class. The most important of these are `addSystem` and `addObs`/`setVariance` used to specify the functions $f$, $g$, and $h$, $\Sigma$ respectively. The functions are specified indirectly by writing symbolic equation expressions, making it relatively easy to do, but limiting the allowed operations to compositions of simple mathematical functions on scalars.
 
-The package facilities forecasting through the `predict` (moment forecasts) and `simulate` (stochastic path simulations) methods. The calculations for these may be carried out in either **R** (default) or for additional speed in **C++** using `Rcpp`.
-<!-- in particular using the `RcppXPtrUtils` package for sending **C++** pointers of the model-specific functions (drift, diffusion, observation and jacobians) rather than sending (slow to evaluate) **R** functions. -->
+State and parameter inference and forecasting is carried out using the following available methods:
+
+1. `likelihood`:
+
+    This method is used to extract the likelihood function handles for the function value, its gradient and hessian, direcly passed back from `RTMB::MakeADFun`. The is useful for e.g. using other optimizers, modifying the likelihood calculations, or adding together derivatives from several data series.
+
+2. `estimate`: 
+
+    This is the primary work-horse method, which carries out inference by minimizing the (negative log) likelihood using the `stats::nlminb` quasi-Newton optimizer. The resulting object contains the maximum likelihood parameter and state estimates, and associated marginal uncertainties. See the following section for a list of available inference methods.
+
+3. `filter`:
+
+    Performs state filtration (only availabel for Kalman filters).
+
+4. `smoother`:
+
+    Performs state smoothing (only available for the Laplace approximation methods).
+
+5. `predict`:
+
+    Performs k-step forecasting of the system mean and variance. The calculations for these may be carried out in either **R** or in **C++** using `Rcpp` for additional speed.
+
+6. `simulate`:
+
+    Performs k-step forecasting of the entire distribution through stochastic path simulations. The calculations for these may be carried out in either **R** or in **C++** using `Rcpp` for additional speed.
 
 <!-- Estimation Methods -->
 # Estimation Methods
@@ -67,16 +97,14 @@ The Unscented Kalman Filter implementation is based on *Algorithm 4.7* in [S. S√
 
 ## Laplace Smoother
 
-The state-reconstructions based on the `laplace` (approximation) method are *smoothed* estimates, meaning that states are optimized jointly conditioned on all observations. The Laplace approximation is natively built-into and completely handled by **TMB**. The additional method `laplace.thygesen` is an implementation of the the stability-improved laplace method for systems with state-dependent diffusion and is due to [Thygesen, 2025](https://arxiv.org/abs/2503.21358).
+The state-reconstructions based on the `laplace` method are *smoothed* estimates, meaning that states are optimized jointly conditioned on all observations. The Laplace approximation is natively built-into and completely handled by **TMB**. The additional method `laplace.thygesen` is an implementation of the the stability-improved Laplace approximation for state-dependent diffusion due to [Thygesen, 2025](https://arxiv.org/abs/2503.21358).
 
-A particular advantage of the Laplace smoother is:
-
-1. The possibility for unimodal non-Gaussian observation densities to accommodate the need for e.g. heavier distribution tails. *Not yet implemented*.
+A distrinct advantage of the laplace methods over the Kalman filters is the possibility for unimodal non-Gaussian observation densities to accommodate the need for e.g. heavier distribution tails (not yet supported in the package though).
 
 <!-- Installation -->
-# Installation (Compilers)
+# Compiler Installation
 
-**NOTE: YOU NEED TO MAKE SURE YOU HAVE A WORKING C++ COMPILER IN R TO INSTALL THE PACKAGE!!**
+**NOTE: YOU NEED TO MAKE SURE YOU HAVE A WORKING C++ COMPILER AVAILABLE IN R TO INSTALL THE PACKAGE!!**
 
 ## Windows
 
@@ -93,7 +121,7 @@ Mac users should install *Command Line Tools*. Run the following command in the 
 xcode-select --install
 ```
 
-# Installation (Package)
+# Package Installation
 
 The package can be installed from source from CRAN:
 ```{r}
@@ -115,22 +143,6 @@ enter.your.path <- "/Library/Frameworks/R.framework/Versions/4.5-arm64/Resources
 unlink(enter.your.path, recursive = TRUE)
 ```
 
-## Test Installation
-
-Once you have installed the package is it a good idea to test whether **TMB** and C++ compilation works. You should be able to run all examples without compilation errors:
-
-```{r, eval=FALSE}
-library(TMB)
-runExample(all=TRUE)
-```
-
-For further information see the [TMB GitHub](https://github.com/kaskr/adcomp) and its associated [installation instructions](https://github.com/kaskr/adcomp/wiki/Download).
-
-
-# Getting Started
-
-You can visit the package [webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and browse the vignettes for example uses, in particular see [Getting Started](https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html).
-
 ## Documentation
 
 You can access the documentation for all methods with
@@ -138,9 +150,15 @@ You can access the documentation for all methods with
 ?ctsmTMB
 ```
 
+# Getting Started
+
+We provide an introductory code example below.
+
+You can also visit the package [webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and browse the vignettes for further details, see in particular [Getting Started](https://phillipbvetter.github.io/ctsmTMB/articles/ctsmTMB.html).
+
 The methods documentation is also available on the [package homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 
-## Code Example - Inference in 1D Ornstein-Uhlenbeck Process
+### Code Example - Inference in 1D Ornstein-Uhlenbeck Process
 
 We consider estimating the parameters of the modified Ornstein-Uhlenbeck process
 

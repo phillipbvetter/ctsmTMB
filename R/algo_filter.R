@@ -200,7 +200,7 @@ lkf_filter_r = function(parVec, self, private)
   inputVec = inputMat[1,]
   if(estimate.initial){
     stateVec <- f.initial.state.newton(c(parVec, inputVec))
-    covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+    # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
   }
   xPrior[[1]] <- stateVec
   pPrior[[1]] <- covMat
@@ -314,7 +314,7 @@ ukf_filter_r = function(parVec, self, private)
   inputVec = inputMat[1,]
   if(private$estimate.initial){
     stateVec <- f.initial.state.newton(c(parVec, inputVec))
-    covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+    # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
   }
   xPrior[[1]] <- stateVec
   pPrior[[1]] <- covMat

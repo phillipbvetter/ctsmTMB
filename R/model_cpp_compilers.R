@@ -5,30 +5,56 @@ compile_rcpp_functions = function(self, private){
   
   if(!private$silent) message("Compiling C++ function pointers...")
   
-  # Settings
-  .depends <- c("Rcpp", "RcppEigen", "ctsmTMB")
+  # # Settings
+  # .depends <- c("Rcpp", "RcppEigen", "ctsmTMB")
+  # 
+  # # COMMENT:
+  # # These .includes should in principle be added via the .depends = 'ctsmTMB'.
+  # # This automatically fetches the code in inst/include/ctsmTMB.h
+  # # This does not work however when using devtools::load_all.
+  # .includes <- c(
+  #   "double invlogit(double x){return 1/(1 + exp(-x));}",
+  #   "const double pi = 3.14159265358979323846;"
+  # )
+  # 
+  # # Create XPtr's
+  # print(system.time(
+  #   outlist <- lapply(private$rcpp.function.strings, 
+  #                     function(s) RcppXPtrUtils::cppXPtr(s, 
+  #                                                        depends=.depends, 
+  #                                                        includes = .includes)
+  #   )
+  # ))
+  # 
+  # # Add to private fields
+  # nams <- c("f","dfdx","g","h","dhdx","hvar","dfdu")
+  # names(outlist) <- nams
+  # private$rcpp_function_ptr[nams] <- outlist[nams]
   
-  # COMMENT:
-  # These .includes should in principle be added via the .depends = 'ctsmTMB'.
-  # This automatically fetches the code in inst/include/ctsmTMB.h
-  # This does not work however when using devtools::load_all.
-  .includes <- c(
-    "double invlogit(double x){return 1/(1 + exp(-x));}",
-    "const double pi = 3.14159265358979323846;"
-  )
+  # Read lines from inst/include template
+  txt <- readLines(system.file("include/template_user_functions.h", package="ctsmTMB"))
+  # Insert our created system function strings
+  txt[which(txt %in% "// INSERT F")] <- private$rcpp.function.strings$f
+  txt[which(txt %in% "// INSERT DFDX")] <- private$rcpp.function.strings$dfdx
+  txt[which(txt %in% "// INSERT G")] <- private$rcpp.function.strings$g
+  txt[which(txt %in% "// INSERT H")] <- private$rcpp.function.strings$h
+  txt[which(txt %in% "// INSERT DHDX")] <- private$rcpp.function.strings$dhdx
+  txt[which(txt %in% "// INSERT HVAR")] <- private$rcpp.function.strings$hvar
+  txt[which(txt %in% "// INSERT DFDU")] <- private$rcpp.function.strings$dfdu
   
-  # Create XPtr's
-  outlist <- lapply(private$rcpp.function.strings, 
-                    function(s) RcppXPtrUtils::cppXPtr(s, 
-                                                       depends=.depends, 
-                                                       includes = .includes)
-                    )
+  # We compile using 'code' over 'file' in sourceCpp. 
+  # This is better for several reasons:
+    # 1. The caching is automatically handled, so second time is faster
+    # 2. Rstudio does not enter the "Source Cpp" tab automatically (annoying for users)
+    # 3. This solution is faster than using RcppXptrUtils
+  Rcpp::sourceCpp(
+    code=paste(txt, collapse=" \n "), 
+    verbose=FALSE, 
+    showOutput = FALSE
+    )
+  private$rcpp_function_ptr <- get_sysfun_cpp_function_ptrs()
   
-  # Add to private fields
-  nams <- c("f","dfdx","g","h","dhdx","hvar","dfdu")
-  names(outlist) <- nams
-  private$rcpp_function_ptr[nams] <- outlist[nams]
-  
+  # return
   return(invisible(self))
   
 }

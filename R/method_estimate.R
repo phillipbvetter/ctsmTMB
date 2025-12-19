@@ -33,7 +33,7 @@ construct_makeADFun = function(self, private){
     }
     
     if(private$method == "ukf"){
-      message("Note: The Unscented Kalman Filter in RTMB is unstable and may cause R to crash. If you experience issues try 'ukf.cpp' instead.")
+      message("Note: The Unscented Kalman Filter in RTMB is less robust than the corresponding TMB version - try 'ukf.cpp' method if you experience issues.")
       makeADFun_ukf_rtmb(self, private)
     }
     
@@ -62,55 +62,6 @@ construct_makeADFun = function(self, private){
 }
 
 #######################################################
-# MAIN RETURN FIT FUNCTION THAT CALL OTHERS
-#######################################################
-
-create_estimation_return_fit = function(self, private, report, laplace.residuals){
-  
-  if(!private$silent) message("Returning results...")
-  
-  # Initialization and Clearing -----------------------------------
-  if (is.null(private$opt)) {
-    return(NULL)
-  }
-  
-  # clear fit
-  private$fit = NULL
-  
-  # get convergence
-  private$fit$convergence = private$opt$convergence
-  
-  # Fit Info -----------------------------------
-  compute_mle_gradient_and_hessian(self, private)
-  
-  # Parameters and Uncertainties -----------------------------------
-  compute_mle_parameters_and_std_errors(self, private)
-  
-  if(report){
-    # Get Report -----------------------------------
-    rep <- get_state_report(self, private)
-    
-    # States -----------------------------------
-    compute_return_states(rep, self, private)
-    
-    # Residuals -----------------------------------
-    report_residuals(rep, laplace.residuals, self, private)
-    
-    # Observations -----------------------------------
-    report_observations(self, private)
-  }
-  
-  # clone private into fit -----------------------------------
-  private$fit$private <- self$clone()$.__enclos_env__$private
-  
-  # set s3 class -----------------------------------
-  class(private$fit) = "ctsmTMB.fit"
-  
-  # return -----------------------------------
-  return(invisible(self))
-}
-
-#######################################################
 # OPTIMISE AD FUN
 #######################################################
 
@@ -119,8 +70,12 @@ perform_estimation = function(self, private) {
   if(!private$silent) message("Minimizing the negative log-likelihood...")
   
   # Parameter Bounds
-  lower.parameter.bound = sapply(private$free.pars, function(par) par$lower)
-  upper.parameter.bound = sapply(private$free.pars, function(par) par$upper)
+  initial.parameters <- sapply(private$parameters[names(private$free.pars)], 
+                               function(par) par$initial)
+  lower.parameter.bound <- sapply(private$free.pars, function(par) par$lower)
+  upper.parameter.bound <- sapply(private$free.pars, function(par) par$upper)
+  
+  # unconstrained optimization?
   if(private$unconstrained.optim){
     lower.parameter.bound = -Inf
     upper.parameter.bound = Inf
@@ -134,7 +89,7 @@ perform_estimation = function(self, private) {
         
         # use function, gradient and hessian
         if (private$use.hessian) {
-          opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+          opt <- try_withWarningRecovery(stats::nlminb(start = initial.parameters,
                                                        objective = private$nll$fn,
                                                        gradient = private$nll$gr,
                                                        hessian = private$nll$he,
@@ -143,7 +98,7 @@ perform_estimation = function(self, private) {
                                                        control=private$control.nlminb))
           # or just function and gradient
         } else {
-          opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+          opt <- try_withWarningRecovery(stats::nlminb(start = initial.parameters,
                                                        objective = private$nll$fn,
                                                        gradient = private$nll$gr,
                                                        lower = lower.parameter.bound,
@@ -154,7 +109,7 @@ perform_estimation = function(self, private) {
       
       # IF METHOD IS LAPLACE
       if ( any(private$method == c("laplace","laplace.thygesen")) ) {
-        opt <- try_withWarningRecovery(stats::nlminb(start = private$nll$par,
+        opt <- try_withWarningRecovery(stats::nlminb(start = initial.parameters,
                                                      objective = private$nll$fn,
                                                      gradient = private$nll$gr,
                                                      lower = lower.parameter.bound,
@@ -224,3 +179,51 @@ perform_estimation = function(self, private) {
   return(invisible(self))
 }
 
+#######################################################
+# MAIN RETURN FIT FUNCTION THAT CALL OTHERS
+#######################################################
+
+create_estimation_return_fit = function(self, private, report, laplace.residuals){
+  
+  if(!private$silent) message("Returning results...")
+  
+  # Initialization and Clearing -----------------------------------
+  if (is.null(private$opt)) {
+    return(NULL)
+  }
+  
+  # clear fit
+  private$fit = NULL
+  
+  # get convergence
+  private$fit$convergence = private$opt$convergence
+  
+  # Fit Info -----------------------------------
+  compute_mle_gradient_and_hessian(self, private)
+  
+  # Parameters and Uncertainties -----------------------------------
+  compute_mle_parameters_and_std_errors(self, private)
+  
+  if(report){
+    # Get Report -----------------------------------
+    rep <- get_state_report(self, private)
+    
+    # States -----------------------------------
+    compute_return_states(rep, self, private)
+    
+    # Residuals -----------------------------------
+    report_residuals(rep, laplace.residuals, self, private)
+    
+    # Observations -----------------------------------
+    report_observations(self, private)
+  }
+  
+  # clone private into fit -----------------------------------
+  private$fit$private <- self$clone()$.__enclos_env__$private
+  
+  # set s3 class -----------------------------------
+  class(private$fit) = "ctsmTMB.fit"
+  
+  # return -----------------------------------
+  return(invisible(self))
+}

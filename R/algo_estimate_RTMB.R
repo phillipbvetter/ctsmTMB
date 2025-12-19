@@ -62,7 +62,6 @@ makeADFun_ekf_rtmb = function(self, private)
     ####### Stationary Solution #######
     inputVec = inputMat[1,]
     if(private$estimate.initial){
-      # stateVec <- p[[n.pars+1]]
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
@@ -102,6 +101,7 @@ makeADFun_ekf_rtmb = function(self, private)
         stateVec <- data.update[[1]]
         covMat <- data.update[[2]]
         nll <- nll + data.update[[3]]
+        # print(nll)
       }
       # end of main loop
     }
@@ -260,7 +260,7 @@ makeADFun_lkf_rtmb = function(self, private)
     inputVec = inputMat[1,]
     if(private$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
-      covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+      # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
     
     ######## (PRE) DATA UPDATE ########
@@ -395,7 +395,7 @@ makeADFun_ukf_rtmb = function(self, private)
       inputVec = inputMat[1,]
       if(private$estimate.initial){
         stateVec <- f.initial.state.newton(c(parVec, inputVec))
-        covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+        # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
       }
       # Compute sigma points for data update
       chol.covMat <- t(Matrix::chol(covMat))
@@ -630,7 +630,7 @@ makeADFun_laplace_rtmb = function(self, private)
     inputVec = inputMat[1,]
     if(private$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
-      covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+      # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
     
     # extract state random effects and fix initial condition
@@ -783,7 +783,7 @@ makeADFun_laplace2_rtmb = function(self, private)
     inputVec = inputMat[1,]
     if(private$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
-      covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+      # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
     
     # extract state random effects and fix initial condition

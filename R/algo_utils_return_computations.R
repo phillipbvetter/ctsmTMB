@@ -204,6 +204,7 @@ get_state_report <- function(self, private){
   switch(private$method,
          # kalman filters
          ekf = {rep <- ekf_filter_r(estimated.pars, self, private)},
+         # ekf = {rep <- lkf_ekf_ukf_filter_rcpp(estimated.pars, self, private)},
          ekf.cpp = {rep <- private$nll$report(estimated.pars)},
          lkf = {rep <- lkf_filter_r(estimated.pars, self, private)},
          lkf.cpp = {rep <- private$nll$report(estimated.pars)},
@@ -274,7 +275,8 @@ compute_return_states <- function(rep, self, private){
     if(private$method %in% c("laplace.thygesen")){
       
       # Smoothed States -----------------------------------
-      # Fill with 0'zeros to complete perfect columns (dB's have 1 missing elements compared to random effect states)
+      # Fill with zeros to complete perfect columns (dB's have 1 missing elements compared to random effect states)
+      # for easier column extraction
       par.random <- c(private$sdr$par.random, numeric(n.diff))
       sd.random <- c(sqrt(private$sdr$diag.cov.random), numeric(n.diff))
       temp.states <- data.frame(private$data$t, matrix(par.random, ncol=n.states+n.diff)[random.ids, 1:n.states])

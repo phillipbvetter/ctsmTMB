@@ -36,7 +36,6 @@ Imports:
     Matrix,
     patchwork,
     R6,
-    RcppXPtrUtils,
     RTMB (>= 1.7),
     stringr,
     TMB
