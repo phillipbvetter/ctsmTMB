@@ -3,12 +3,6 @@ output: github_document
 # output: html_document
 ---
 
-<!-- text justification -->
-<style>
-body {
-text-align: justify}
-</style>
-
 <!-- README.md is generated from README.Rmd. -->
 
 ```{r, include=FALSE}
