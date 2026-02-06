@@ -165,8 +165,7 @@ $$
 The code chunk below simulates data from this process using an Euler-Maruyama scheme, generates an appropriate
 `ctsmTMB` model object, performs parameter estimation using an Extended Kalman Filter (the Linear Kalman Filter `method='lkf'` could also be used) and inspects the resulting residuals, moment predictions and stochastic simulations.
 ```{r, eval=FALSE}
-# library(ctsmTMB)
-devtools::load_all("~/github/ctsmTMB/")
+library(ctsmTMB)
 
 ############################################################
 # Model creation
