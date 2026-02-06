@@ -2116,7 +2116,7 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # SET ODE TIME-STEP
     ########################################################################
-    set_timestep = function(dt) {
+    set_ode_timestep = function(dt) {
       
       # must be numeric
       if (!is.numeric(dt)) {
@@ -2134,7 +2134,6 @@ ctsmTMB = R6::R6Class(
       if (!is.numeric(dt)) {
         stop("The timestep should be a numeric value.")
       }
-      
       private$simulation.timestep = dt
     },
     

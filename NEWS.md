@@ -7,6 +7,8 @@
   * The report functionality is now carried out in C++ (rather than pure R code), and is faster.
   * The three methods now also return forecasted observations, and associated dispersion.
 * The reporting for the 'estimate' method is now faster, due to reporting improvements (see above)
+* Previously the package returned data.frames as outputs in most cases. This has now been changed to matrices since these 
+are usually faster to work with internally. Users must therefore use e.g. [,"t"] instead of $t when accessing columns.
 
 
 # ctsmTMB 1.0.2 (2025-11-01)

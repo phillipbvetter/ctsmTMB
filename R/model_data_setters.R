@@ -288,7 +288,6 @@ set_simulation_timestep = function(data, self, private){
   # so we round up the number of steps there i.e. ode.N = [1 , 1 , 3]. The last entry is the important one. 
   # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333 
   # down from the set ode.timestep = 1
-  
   simulation.timestep <- private$simulation.timestep
   
   # check that simulation.timestep has length 1 or at least nrow(data)-1.
