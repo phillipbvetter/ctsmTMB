@@ -235,8 +235,7 @@ Linear Kalman Filter `method='lkf'` could also be used) and inspects the
 resulting residuals, moment predictions and stochastic simulations.
 
 ``` r
-# library(ctsmTMB)
-devtools::load_all("~/github/ctsmTMB/")
+library(ctsmTMB)
 
 ############################################################
 # Model creation
