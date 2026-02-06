@@ -30,6 +30,8 @@ compile_rcpp_functions = function(self, private){
   # nams <- c("f","dfdx","g","h","dhdx","hvar","dfdu")
   # names(outlist) <- nams
   # private$rcpp_function_ptr[nams] <- outlist[nams]
+  #   
+  
   
   # Read lines from inst/include template
   txt <- readLines(system.file("include/template_user_functions.h", package="ctsmTMB"))
