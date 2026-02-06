@@ -180,19 +180,19 @@ summary.ctsmTMB.fit = function(object,
 #' @export
 plot.ctsmTMB.pred = function(x, 
                              y,
-                             k.ahead = unique(x[["states"]][["k.ahead"]]),
+                             k.ahead = unique(x$states[,"k.ahead"]),
                              state.name = NULL,
                              type="states",
                              against=NULL,
                              ...) {
   
   # method consistency
-  states <- x[["states"]]
-  obs <- x[["observations"]]
+  states <- x$states
+  obs <- x$observations
   
-  # check n.ahead
-  if(!any(k.ahead %in% unique(states$k.ahead))){
-    stop("n.ahead not found in the prediction data frame")
+  # check k.ahead
+  if(!any(k.ahead %in% unique(states[,"k.ahead"]))){
+    stop("k.ahead not found in the prediction data frame")
   }
   
   # set state name to plot
@@ -201,7 +201,7 @@ plot.ctsmTMB.pred = function(x,
   }
   
   # filter and plot
-  bool = states$k.ahead %in% k.ahead
+  bool = states[,"k.ahead"] %in% k.ahead
   x = states[bool, "t.j"]
   y = states[bool, state.name]
   grDevices::dev.new()
@@ -298,13 +298,13 @@ plot.ctsmTMB.fit = function(x,
     }
     
     mycolor <- "steelblue"
-    t <- fit$residuals$residuals[["t"]]
+    t <- fit$residuals$residuals[,"t"]
     if(residual.burnin) t <- tail(t,-residual.burnin)
     
     for (i in 1:private$number.of.observations) {
       
-      e = fit$residuals$normalized[[private$obs.names[i]]]
-      e0 <- fit$residuals$residuals[[private$obs.names[i]]]
+      e = fit$residuals$normalized[, private$obs.names[i]]
+      e0 <- fit$residuals$residuals[, private$obs.names[i]]
       if(residual.burnin){
         e <- tail(e,-residual.burnin)
         e0 <- tail(e0,-residual.burnin)
@@ -316,8 +316,6 @@ plot.ctsmTMB.fit = function(x,
       
       # time vs residuals
       plot.res =
-        # ggplot2::ggplot(data=data.frame(t,e)) +
-        # ggplot2::geom_point(ggplot2::aes(x=t,y=e),color=mycolor) +
         ggplot2::ggplot(data=data.frame(t,e0)) +
         ggplot2::geom_line(ggplot2::aes(x=t,y=e0),color=mycolor) +
         ggtheme +
@@ -340,8 +338,6 @@ plot.ctsmTMB.fit = function(x,
         )
       # histogram
       plot.hist =
-        # ggplot2::ggplot(data=data.frame(e)) +
-        # ggplot2::geom_histogram(ggplot2::aes(x=e,y=ggplot2::after_stat(density)),bins=100,color="black",fill=mycolor) +
         ggplot2::ggplot(data=data.frame(e0)) +
         ggplot2::geom_histogram(ggplot2::aes(x=e0,y=ggplot2::after_stat(density)),bins=100,color="black",fill=mycolor) +
         ggtheme +
@@ -490,8 +486,8 @@ plot.ctsmTMB.fit = function(x,
     
     for (i in 1:private$number.of.states) {
       nam <- private$state.names[i]
-      y.mean <- fit$states$mean[[state.type]][[nam]]
-      y.sd <- fit$states$sd[[state.type]][[nam]]
+      y.mean <- fit$states$mean[[state.type]][,nam]
+      y.sd <- fit$states$sd[[state.type]][,nam]
       y.lab <- sprintf("%s (%s)", capitalize_first(state.type), nam)
       
       tempdata <- data.frame(t=t, y=y.mean, sd=y.sd)
@@ -528,13 +524,15 @@ plot.ctsmTMB.fit = function(x,
   # print the first plot to the console
   if(print.plot != 0){
     grDevices::dev.new()
-    print(plots[[print.plot]])
+    temp.plot <- plots[[print.plot]]
+    print(temp.plot)
   }
   
   # print second plot if requested
   if(length(plots2) > 0){
     grDevices::dev.new()
-    print(plots2[[print.plot]])
+    temp.plot <- plots2[[print.plot]]
+    print(temp.plot)
   }
   
   # return plot list
@@ -669,7 +667,7 @@ profile.ctsmTMB.fit = function(fitted,
   
   # Robustify f.optim to handle NA cases
   f <- function(x0){
-    y <- try_withWarningRecovery(f.optim(x0), silent=TRUE)
+    y <- try_with_warning_recovery(f.optim(x0), silent=TRUE)
     if(inherits(y,"try-error")) y <- NA
     return(y)
   }
@@ -794,24 +792,24 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
       y <- paste0(y,"%")
     }
     
-    if (requireNamespace("geomtextpath", quietly = TRUE)) {
-      # Use geomtextpath if available
-      p <- ggplot2::ggplot() +
-        geomtextpath::geom_textcontour(
-          data = df, 
-          ggplot2::aes(
-            x = .data[[par.names[1]]], 
-            y = .data[[par.names[2]]], 
-            z = .data$likelihood, 
-            label = labelfun(after_stat(level)),
-            color = after_stat(level)
-          ),
-          breaks = chisquared_contours,
-          linewidth = 0.6
-        )
-    } else {
+    # if (requireNamespace("geomtextpath", quietly = TRUE)) {
+    #   # Use geomtextpath if available
+    #   p <- ggplot2::ggplot() +
+    #     geomtextpath::geom_textcontour(
+    #       data = df, 
+    #       ggplot2::aes(
+    #         x = .data[[par.names[1]]], 
+    #         y = .data[[par.names[2]]], 
+    #         z = .data$likelihood, 
+    #         label = labelfun(after_stat(level)),
+    #         color = after_stat(level)
+    #       ),
+    #       breaks = chisquared_contours,
+    #       linewidth = 0.6
+    #     )
+    # } else {
       # Fallback without labels if geomtextpath is not available
-      message("Please install 'geomtextpath' to get contour labels.")
+      # message("Please install 'geomtextpath' to get contour labels.")
       p <- ggplot2::ggplot() +
         ggplot2::geom_contour(
           data = df,
@@ -824,7 +822,7 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
           breaks = chisquared_contours,
           linewidth = 0.6
         )
-    }
+  # }
     
     # add labels
     p <- p +

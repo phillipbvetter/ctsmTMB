@@ -1,164 +1,96 @@
 ---
 title: "Stochastic Simulations"
-author: ""
-date: ""
-output: rmarkdown::html_vignette
+author: "Phillip Vetter"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Stochastic Simulations}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
-  
+
+```{r, eval=FALSE, include=FALSE}
+render.rmd("rmd")
+```
+
 ```{r, include=FALSE}
 library(ctsmTMB)
 library(ggplot2)
 ```
 
-This vignette demonstrates how to use the `simulate` method for calculating *k*-step (state and observation) simulations.
+This vignette demonstrates how to use the `simulate` method for
+calculating *k-step-ahead* stochastic simulations trajectories.
 
-# Notation
+# Intro
 
----
+------------------------------------------------------------------------
 
-Let the set of observations from the initial time $t_0$ until the current time $t_{i}$ be noted by
-$$
-\mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0}\right\}
+First, let $x(t_i) = x_{t_i}$ and $y(t_i) = y_{i}$. We denote the set of
+observations from the initial time $t_0$ until the current time $t_{i}$
+by $$
+\mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0} \right\}
 $$
 
-A *k*-step **simulation** is a sample of the stochastic path of the model stochastic differential equation *k* time-steps into the future, conditioned on the current state estimate with mean and covariance
+Stochastic simulations are then sample trajectories drawn from the
+conditional joint state distribution (at all sampling times) i.e. a
+sample from the random variable:
+
 $$
-\hat{x}_{i|i} = \mathrm{E}\left[ x_{t_{i}} | y_{t_{i}} \right] \\
-P_{i|i} = \mathrm{V}\left[ x_{t_{i}} | y_{t_{i}} \right]
+\mathcal{X}_{t_{i+k}} = \begin{bmatrix} x_{t_i} \\ x_{t_{i+1}} \\ \vdots \\ x_{t_{i+k-1}} \\ x_{t_{i+k} } \end{bmatrix} \bigg\vert \, p(x_{t_i})
 $$
-A single stochastic simulation can be obtained using the Euler-Maruyama scheme by
+
+That is, conditioned on knowing the initial $x_{t_i}$ state
+distribution. This distribution is approximated as a Gaussian with mean
+and covariance given by the posterior state estimate from a Kalman
+filter i.e.
+
 $$
-X_{t_{j+1}} = X_{t_{j}} + f(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta t_{j} + G(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta B_{j}
+x_{t_{i}} \sim N(\hat{x}_{i|i}, P_{i|i} )
 $$
-for $j=i,...,i+k$, where the initial point follows
+
+with
+
 $$
-X_{t_{i}} \sim N(\hat{x}_{i|i}, P_{i|i} )
+\hat{x}_{i|i} = \mathrm{E}\left[ x_{t_{i}} | \mathcal{Y}_{t_{i}} \right] \\
+P_{i|i} = \mathrm{V}\left[ x_{t_{i}} | \mathcal{Y}_{t_{i}} \right]
 $$
-and
+
+These paths can be sampled by firstly sampling from $p(x_{t_i})$ to
+generate $X_{t_{i}}$ and then proceed using e.g. the Euler-Maruyama
+scheme:
+
+$$
+X_{t_{j+1}} = X_{t_{j}} + f(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta t_{j} + G(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta B_{j} \qquad \text{for} \quad j = i, ... , i+k-1
+$$
+
+where the Brownian increments follow
+
 $$
 \Delta B_{j} \sim N(0,\Delta t_{j})
 $$
 
-
-# Arguments
-
----
-
-The `simulate` method accepts the following arguments
-
-```{r, eval=FALSE}
-model$simulate(data,
-               pars = NULL,
-               use.cpp = FALSE,
-               method = "ekf",
-               ode.solver = "rk4",
-               ode.timestep = diff(data$t),
-               simulation.timestep = diff(data$t),
-               k.ahead = nrow(data)-1,
-               return.k.ahead = 0:k.ahead,
-               n.sims = 100,
-               initial.state = self$getInitialState(),
-               estimate.initial.state = private$estimate.initial,
-               silent = FALSE)
-```
-
-
-## Argument: `pars`
-
----
-
-See the description in the [predict vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
-
-## Argument: `use.cpp`
-
----
-
-See the description in the [predict vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
-
-
-## Argument: `method`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-**Note:** The `simulate` method is currently only available using the Extended Kalman filter (`method="ekf`).
-
-## Argument: `ode.solver`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-**Note:** When the argument `use.cpp=TRUE` then the only solvers available are *euler* and *rk4*.
-
-## Argument: `ode.timestep`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-## Argument: `k.ahead`
-
----
-
-See the description in the [predict vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
-
-
-## Argument: `return.k.ahead`
-
----
-
-See the description in the [predict vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
-
-## Argument: `simulation.timestep`
-
----
-
-This argument is the same as `ode.timestep` but determines the time-steps used between data-points when performing the Euler-Maruyama simulation.
-
-## Argument: `n.sims`
-
----
-
-The number of stochastic simulations (trajectories) generated.
-
-
-## Argument: `initial.state`
-
----
-
-See the description in the [predict vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
-
-## Argument: `estimate.initial.state`
-
----
-
-See the description in the [predict vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
-
-## Argument: `silent`
-
----
-
-See the description in the [predict vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
-
 # Example
+
+------------------------------------------------------------------------
 
 We consider a modified Ornstein Uhlenbeck process:
 
-$$ 
+$$
 \mathrm{d}x_{t} = \theta (a_t - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} \\
 y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
-$$
-where the mean is some complex time-varying input $a_t = tu_{t}^{2}-\cos(tu_{t})$, and $u_{t}$ is a given time-varying input signal.
+$$ where the mean is given by (some arbitrary time-varying input)
+$a_t = tu_{t}^{2}-\cos(tu_{t})$, and $u_{t}$ is a known time-varying
+*input* signal.
 
-We create the model and simulate the data as follows:
+First we create the model
+
 ```{r}
-model = ctsmTMB$new()
+model <- newModel()
 model$addSystem(dx ~ theta * (t*u^2-cos(t*u) - x) * dt + sigma_x*dw)
 model$addObs(y ~ x)
 model$setVariance(y ~ sigma_y^2)
@@ -171,105 +103,240 @@ model$setParameter(
 model$setInitialState(list(1, 1e-1*diag(1)))
 ```
 
+Next we create some appropriate data and perform state simulations.
 
-```{r, include=TRUE}
-# Set simulation settings
-set.seed(20)
-true.pars <- c(theta=20, sigma_x=1, sigma_y=5e-2)
+```{r}
+## set true parameters, and create data
+true.pars <- c(theta=20, sigma_x=1, sigma_y=0.05)
 dt.sim <- 1e-3
 t.sim <- seq(0, 1, by=dt.sim)
+
+## seed for input creation
+set.seed(20)
 u.sim <- cumsum(rnorm(length(t.sim),sd=0.1))
 df.sim <- data.frame(t=t.sim, y=NA, u=u.sim)
 
-# Simulate data
+## perform simulation
 sim <- model$simulate(data=df.sim, 
                       pars=true.pars, 
                       n.sims=1,
-                      silent=T)
+                      cpp.seeds = c(1,1))
 
-# Grab first simulation trajectory
-x <- sim$states$x$i0$x1
+```
 
-# Extract observations from simulation and add noise
-iobs <- seq(1,length(t.sim), by=10)
+A few notes for the code above:
+
+-   We use the default value of argument `k.head = nrow(data)-1` to get
+    a prediction across the entire time-vector, as given in the provided
+    data, without updating to the data.
+
+-   If we want full control of the simulation starting point we must
+    remove the first observations i.e. `y[1]=NA`. Otherwise, a posterior
+    update will be performed using the observations.
+
+-   All the other observations than the first are not used here because
+    of the choice of `k.ahead`.
+
+The returned `sim` object is a list of lists of lists.
+
+-   The outer list contains a list for 'states', 'observations' and
+    'times'
+
+-   The 'states' and 'observations' list contain an entry for each state
+    and observation variable.
+
+-   Each state/observation variables is a list of forecast scenarios,
+    labelled with 'i0', 'i1' etc.
+
+-   Each forecast scenario is a k-step-ahead forecast. They differ by
+    the starting point, which moves one index ahead. There are
+    `nrow(data) - k.ahead` forecast scenarios.
+
+-   The 'times' list contains just these 'i0', 'i1' etc.
+
+```{r}
+ls.str(sim)
+```
+
+The same names match between 'times' and 'states' and 'observations'
+i.e.
+
+```{r}
+head(cbind(
+  sim$times$i0,
+  sim$states$x$i0,
+  sim$observations$y$i0
+))
+```
+
+The columns in 'states\$x' and 'observations\$y' corresponds to a single
+stochastic trajectory. So increasing the argument `n.sims` will provide
+more trajectories i.e. more columns.
+
+```{r}
+## Extract observations
+y.sim <- sim$observations$y$i0[,1]
+
+iobs <- seq(1, length(t.sim), by=10)
 t.obs <- t.sim[iobs]
+y.obs <- y.sim[iobs]
 u.obs <- u.sim[iobs]
-y = x[iobs] + true.pars["sigma_y"] * rnorm(length(iobs))
 
 # Create data-frame
 .data <- data.frame(
   t = t.obs,
   u = u.obs,
-  y = y
+  y = y.obs
 )
 ```
 
-We can simulate many trajectories using:
+The `cpp.seeds` argument control the RNG seed for the state and
+observations respectively, i.e. for the brownian increments $db_t$ and
+the observation noise $\varepsilon_t$.
+
+We can simulate many trajectories by changing the $n.sims$ argument:
+
 ```{r}
 sim <- model$simulate(data=.data, 
-                      pars=c(20,1,0.05), 
+                      pars=true.pars,
                       n.sims=100,
                       silent=T)
 ```
-with parameters $\theta = 20, \sigma_{x} = 1, \sigma_{y} = 0.05$. 
-
-**Note:** The value of $\sigma_{y}$ has no impact when doing "full" simulations (i.e. choosing maximum `k.ahead`) since no data updates occur.
 
 The simulations can be plotted quickly using `matplot`:
+
 ```{r, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 100 simulated trajectories.'}
-# Get the first (and only in this case) k-step simulation data.frame
-X <- sim$states$x$i0
-
-# Grab all the simulations (the first five columns are indices, time, etc.)
-Y <- X[,-c(1:5)]
-
-# Grab prediction time column
-t <- X[,"t.j"]
-
-# Plot
-matplot(t,Y,type="l", ylim=c(-4,4))
+x <- sim$states$x$i0
+t <- sim$times$i0
+matplot(t[,"t.j"], x, type="l", lty="solid", ylim=c(-4,4), xlab="Time")
 ```
 
-Lets see the effect of setting $\sigma_{x} = 3$:
+Lets see the effect of increasing the process noise - we choose
+$\sigma_{x} = 3$.
+
 ```{r}
+new.pars <- true.pars
+new.pars["sigma_x"] <- 3
 sim <- model$simulate(data=.data, 
-                      pars=c(20,3,0.05), 
-                      n.sims=100,
-                      silent=T)
+                      pars=new.pars,
+                      silent=TRUE
+)
 ```
+
+Note that we can omit the $n.sims$ argument because the default value is
+100:
 
 ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 100 simulated trajectories for a different value of the process diffusion parameter sigma_x.'}
-# Get the first (and only in this case) k-step simulation data.frame
-X <- sim$states$x$i0
-
-# Grab all the simulations (the first five columns are indices, time, etc.)
-Y <- X[,-c(1:5)]
-
-# Grab prediction time column
-t <- X[,"t.j"]
-
-# Plot
-matplot(t,Y,type="l",ylim=c(-4,4))
+x <- sim$states$x$i0
+t <- sim$times$i0
+matplot(t[,"t.j"], x, type="l", lty="solid", ylim=c(-4,4), xlab="Time")
 ```
 
-Lets see the effect of setting $\theta = 50$:
+We see as expected larger variation in the trajectories.
+
+Lets see the effect of increasing $\theta = 50$:
+
 ```{r}
+new.pars <- true.pars
+new.pars["theta"] <- 50
 sim <- model$simulate(data=.data, 
-                      pars=c(50,1,0.05), 
-                      n.sims=100,
-                      silent=T)
+                      pars=new.pars, 
+                      silent=TRUE)
 ```
 
 ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 100 simulated trajectories for a different value of the theta parameter.'}
-# Get the first (and only in this case) k-step simulation data.frame
-X <- sim$states$x$i0
-
-# Grab all the simulations (the first five columns are indices, time, etc.)
-Y <- X[,-c(1:5)]
-
-# Grab prediction time column
-t <- X[,"t.j"]
-
-# Plot
-matplot(t,Y,type="l", ylim=c(-4,4))
+x <- sim$states$x$i0
+t <- sim$times$i0
+matplot(t[,"t.j"], x, type="l", lty="solid", ylim=c(-4,4), xlab="Time")
 ```
+
+# Arguments
+
+------------------------------------------------------------------------
+
+The `simulate` method accepts the following arguments
+
+```{r, eval=FALSE}
+model$simulate(data,
+               pars = NULL,
+               use.cpp = TRUE,
+               cpp.seeds = NULL,
+               method = "ekf",
+               ode.solver = "rk4",
+               ode.timestep = diff(data$t),
+               simulation.timestep = diff(data$t),
+               k.ahead = nrow(data)-1,
+               return.k.ahead = 0:min(k.ahead, nrow(data)-1),
+               n.sims = 100,
+               ukf.hyperpars = c(1, 0, 3),
+               initial.state = self$getInitialState(),
+               estimate.initial.state = private$estimate.initial,
+               silent = FALSE,
+               ...))
+```
+
+## `pars`
+
+See the description in the [predict
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
+
+## `use.cpp`
+
+See the description in the [predict
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
+
+## `method`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+**Note:** The `simulate` method is currently only available using the
+Extended Kalman filter (`method="ekf`).
+
+## `ode.solver`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+**Note:** When the argument `use.cpp=TRUE` then the only solvers
+available are *euler* and *rk4*.
+
+## `ode.timestep`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+## `k.ahead`
+
+See the description in the [predict
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
+
+## `return.k.ahead`
+
+See the description in the [predict
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
+
+## `simulation.timestep`
+
+This argument is the same as `ode.timestep` but determines the
+time-steps used between data-points when performing the Euler-Maruyama
+simulation.
+
+## `n.sims`
+
+The number of stochastic simulations (trajectories) generated.
+
+## `initial.state`
+
+See the description in the [predict
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
+
+## `estimate.initial.state`
+
+See the description in the [predict
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
+
+## `silent`
+
+See the description in the [predict
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).

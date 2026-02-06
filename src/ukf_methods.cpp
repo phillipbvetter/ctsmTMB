@@ -1,18 +1,21 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
-#include "helper_funs2.h"
+
+#include "function_typedefs.h"
+#include "misc_helpers.h"
+#include "extra_utils.h"
+#include "sde_solvers.h"
 #include "helpers_ukf.h"
+
 using namespace Rcpp;
 using namespace Eigen;
 
-template <typename T1, typename T2>
-List ukf_filter(
-  T1 f__, 
-  T2 g__,
-  T2 dfdx__,
-  T1 h__,
-  T2 dhdx__,
-  T2 hvar__,
+
+// [[Rcpp::depends(RcppEigen)]]
+
+// [[Rcpp::export]]
+List ukf_filter_rcpp (
+  List funPtrs,
   Eigen::MatrixXd obsMat,
   Eigen::MatrixXd inputMat,
   Eigen::VectorXd parVec,
@@ -25,6 +28,11 @@ List ukf_filter(
   Eigen::VectorXd ukf_pars,
   const int ode_solver)
 {
+
+  auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
+  auto h__ = get_funptr<funPtr_vec_const>(funPtrs, "h_const");
+  auto g__ = get_funptr<funPtr_mat_const>(funPtrs, "g_const");
+  auto hvar__ = get_funptr<funPtr_mat_const>(funPtrs, "hvar_const");
 
   // constants  
   const int tsize = inputMat.col(0).size();
@@ -75,8 +83,8 @@ List ukf_filter(
     obsVec_all = obsMat.row(0);
     bool_is_not_na_obsVec = bool_is_not_na_obsMat.row(0);
     // remove potential NA entries in obsVec and construct permutation matrix
-    obsVec = remove_NAs2(obsVec_all, n_available_obs, bool_is_not_na_obsVec);
-    E = construct_permutation_matrix2(n_available_obs, n_obs, bool_is_not_na_obsVec);
+    obsVec = remove_NAs(obsVec_all, n_available_obs, bool_is_not_na_obsVec);
+    E = construct_permutation_matrix(n_available_obs, n_obs, bool_is_not_na_obsVec);
     // Call funs
     H = ukf_h(h__, Xsigmapoints, parVec, inputVec, n_obs, nn);
     Hvar = hvar__(stateVec, parVec, inputVec);
@@ -125,8 +133,8 @@ List ukf_filter(
       obsVec_all = obsMat.row(i+1);
       bool_is_not_na_obsVec = bool_is_not_na_obsMat.row(i+1);
       // remove potential NA entries in obsVec and construct permutation matrix
-      obsVec = remove_NAs2(obsVec_all, n_available_obs, bool_is_not_na_obsVec);
-      E = construct_permutation_matrix2(n_available_obs, n_obs, bool_is_not_na_obsVec);
+      obsVec = remove_NAs(obsVec_all, n_available_obs, bool_is_not_na_obsVec);
+      E = construct_permutation_matrix(n_available_obs, n_obs, bool_is_not_na_obsVec);
       // Call funs
       H = ukf_h(h__, Xsigmapoints, parVec, inputVec, n_obs, nn);
       Hvar = hvar__(stateVec, parVec, inputVec);
@@ -157,68 +165,9 @@ List ukf_filter(
     );
 }
 
-// Function typedefs
-typedef Eigen::VectorXd (*funPtr_vec)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
-typedef Eigen::MatrixXd (*funPtr_mat)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
-
-// Function exported to R that performs (Extended Kalman) filtering
 // [[Rcpp::export]]
-List ukf_filter_rcpp(
-  SEXP f__R, 
-  SEXP g__R,
-  SEXP dfdx__R,
-  SEXP h__R,
-  SEXP dhdx__R,
-  SEXP hvar__R,
-  Eigen::MatrixXd obsMat,
-  Eigen::MatrixXd inputMat,
-  Eigen::VectorXd parVec,
-  Eigen::MatrixXd covMat, 
-  Eigen::VectorXd stateVec,
-  Eigen::VectorXd ode_timestep_size,
-  Eigen::VectorXd ode_timesteps,
-  Eigen::MatrixXi bool_is_not_na_obsMat,
-  Eigen::VectorXi number_of_available_obs,
-  Eigen::VectorXd ukf_pars,
-  int ode_solver)
-{
-
-  funPtr_vec     f__ = *XPtr<funPtr_vec>(f__R);
-  funPtr_mat     g__ = *XPtr<funPtr_mat>(g__R);
-  funPtr_mat  dfdx__ = *XPtr<funPtr_mat>(dfdx__R);
-  funPtr_vec     h__ = *XPtr<funPtr_vec>(h__R);
-  funPtr_mat  dhdx__ = *XPtr<funPtr_mat>(dhdx__R);
-  funPtr_mat  hvar__ = *XPtr<funPtr_mat>(hvar__R);
-
-  return ukf_filter<funPtr_vec, funPtr_mat>(
-    f__, 
-    g__, 
-    dfdx__, 
-    h__, 
-    dhdx__,
-    hvar__,
-    obsMat,
-    inputMat,
-    parVec,
-    covMat, 
-    stateVec,
-    ode_timestep_size,
-    ode_timesteps,
-    bool_is_not_na_obsMat,
-    number_of_available_obs,
-    ukf_pars,
-    ode_solver);
-
-}
-
-template <typename T1, typename T2>
-List ukf_predict(
-  T1 f__, 
-  T2 g__,
-  T2 dfdx__,
-  T1 h__,
-  T2 dhdx__,
-  T2 hvar__,
+List ukf_predict_rcpp(
+  List funPtrs,
   Eigen::MatrixXd obsMat,
   Eigen::MatrixXd inputMat,
   Eigen::VectorXd parVec,
@@ -234,26 +183,25 @@ List ukf_predict(
   const int ode_solver)
 {
 
-  Rcpp::List filt = ukf_filter(f__, 
-                              g__, 
-                              dfdx__, 
-                              h__, 
-                              dhdx__,
-                              hvar__,
-                              obsMat,
-                              inputMat,
-                              parVec,
-                              covMat, 
-                              stateVec,
-                              ode_timestep_size,
-                              ode_timesteps,
-                              bool_is_not_na_obsMat,
-                              number_of_available_obs,
-                              ukf_pars,
-                              ode_solver);
+  List filt = ukf_filter_rcpp(
+    funPtrs,
+    obsMat,
+    inputMat,
+    parVec,
+    covMat, 
+    stateVec,
+    ode_timestep_size,
+    ode_timesteps,
+    bool_is_not_na_obsMat,
+    number_of_available_obs,
+    ukf_pars,
+    ode_solver);
 
-  Rcpp::List xPost = filt["xPost"];
-  Rcpp::List pPost = filt["pPost"];
+  List xPost = filt["xPost"];
+  List pPost = filt["pPost"];
+
+  auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
+  auto g__ = get_funptr<funPtr_mat_const>(funPtrs, "g_const");
 
   // constants  
   const int n_states = stateVec.size();
@@ -266,7 +214,7 @@ List ukf_predict(
   MatrixXd Xsigmapoints, sqrt_covMat;;
   Eigen::MatrixXd predMat(k_step_ahead+1, n_states + n_squared);
   predMat.setZero();
-  Rcpp::List xk(last_pred_id);
+  List xk(last_pred_id);
 
   //////////// create weights ///////////
   double ukf_alpha = ukf_pars(0);
@@ -327,72 +275,9 @@ List ukf_predict(
     );
 }
 
-// Function typedefs
-typedef Eigen::VectorXd (*funPtr_vec)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
-typedef Eigen::MatrixXd (*funPtr_mat)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
-
-// Function exported to R that performs (Extended Kalman) filtering
 // [[Rcpp::export]]
-List ukf_predict_rcpp(
-  SEXP f__R, 
-  SEXP g__R,
-  SEXP dfdx__R,
-  SEXP h__R,
-  SEXP dhdx__R,
-  SEXP hvar__R,
-  Eigen::MatrixXd obsMat,
-  Eigen::MatrixXd inputMat,
-  Eigen::VectorXd parVec,
-  Eigen::MatrixXd covMat, 
-  Eigen::VectorXd stateVec,
-  Eigen::VectorXd ode_timestep_size,
-  Eigen::VectorXd ode_timesteps,
-  Eigen::MatrixXi bool_is_not_na_obsMat,
-  Eigen::VectorXi number_of_available_obs,
-  Eigen::VectorXd ukf_pars,
-  const int last_pred_id,
-  const int k_step_ahead,
-  const int ode_solver)
-{
-
-  funPtr_vec     f__ = *XPtr<funPtr_vec>(f__R);
-  funPtr_mat     g__ = *XPtr<funPtr_mat>(g__R);
-  funPtr_mat  dfdx__ = *XPtr<funPtr_mat>(dfdx__R);
-  funPtr_vec     h__ = *XPtr<funPtr_vec>(h__R);
-  funPtr_mat  dhdx__ = *XPtr<funPtr_mat>(dhdx__R);
-  funPtr_mat  hvar__ = *XPtr<funPtr_mat>(hvar__R);
-
-  return ukf_predict<funPtr_vec, funPtr_mat>(
-    f__, 
-    g__, 
-    dfdx__, 
-    h__, 
-    dhdx__,
-    hvar__,
-    obsMat,
-    inputMat,
-    parVec,
-    covMat, 
-    stateVec,
-    ode_timestep_size,
-    ode_timesteps,
-    bool_is_not_na_obsMat,
-    number_of_available_obs,
-    ukf_pars,
-    last_pred_id,
-    k_step_ahead,
-    ode_solver);
-
-}
-
-template <typename T1, typename T2>
-List ukf_simulate(
-  T1 f__, 
-  T2 g__,
-  T2 dfdx__,
-  T1 h__,
-  T2 dhdx__,
-  T2 hvar__,
+List ukf_simulate_rcpp(
+  List funPtrs,
   Eigen::MatrixXd obsMat,
   Eigen::MatrixXd inputMat,
   Eigen::VectorXd parVec,
@@ -409,143 +294,85 @@ List ukf_simulate(
   const int last_pred_id,
   const int k_step_ahead,
   const int ode_solver,
-  const int nsims)
+  const int nsims,
+  Nullable<int> seed)
 {
 
-  Rcpp::List filt = ukf_filter(f__, 
-                              g__, 
-                              dfdx__, 
-                              h__, 
-                              dhdx__,
-                              hvar__,
-                              obsMat,
-                              inputMat,
-                              parVec,
-                              covMat, 
-                              stateVec,
-                              ode_timestep_size,
-                              ode_timesteps,
-                              bool_is_not_na_obsMat,
-                              number_of_available_obs,
-                              ukf_pars,
-                              ode_solver);
+  // Set simulating seed if seed is not NULL
+  set_simulation_seed(seed, ziggurat_states);
 
-  Rcpp::List xPost = filt["xPost"];
-  Rcpp::List pPost = filt["pPost"];
+  List filt = ukf_filter_rcpp(
+    funPtrs,
+    obsMat,
+    inputMat,
+    parVec,
+    covMat, 
+    stateVec,
+    ode_timestep_size,
+    ode_timesteps,
+    bool_is_not_na_obsMat,
+    number_of_available_obs,
+    ukf_pars,
+    ode_solver);
 
-// misc  
+  List xPost = filt["xPost"];
+  List pPost = filt["pPost"];
+
+  auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
+  auto g__ = get_funptr<funPtr_mat_const>(funPtrs, "g_const");
+
+  // misc  
   const int n = stateVec.size();
   const int ni = inputMat.row(0).size();
   VectorXd inputVec(ni), dinputVec(ni);
   MatrixXd stateMat(nsims, n), randN(n, nsims);
+  VectorXd simulation_timesteps_inv = simulation_timesteps.cwiseInverse();
 
   // storage for predictions
-  List xk_simulate(last_pred_id), xk_simulate_temp(k_step_ahead+1);
-  
+  List outer_simulate_list(last_pred_id);
   //////////// MAIN LOOP OVER TIME POINTS ///////////
   for(int i=0 ; i < last_pred_id ; i++){
 
-    stateVec = xPost[i];
-    covMat = pPost[i];
+    List inner_simulate_list(k_step_ahead + 1);
+    
+    // Extract posteriors as starting points
+    stateVec = xPost(i);
+    covMat = pPost(i);
 
     /* 
-    We draw from a multivariate normal z = u + A*dB
-    where u is the mean (stateVec) and A is cholesky factor of covariance matrix (sqrt(covMat))
-    and dB is i.d.d normal vector
-    We do simultaneously for all #nsims simulations, so dB is here a matrix of #nsims i.d.d vectors
-    and similarly u is repeated with replicate
+    1. We draw from a multivariate normal by z = u + A * dB where A = chol(covMat), dB is i.d.d normal vector
+    2. We do simultaneously for all simulations i.e. dB is matrix of #nsims i.d.d vectors and u is repeated means
     */
     for(int j=0; j < n; j++){
       for(int k=0; k < nsims; k++){
-        // randN(j,k) = zigg.norm();
-        randN(j,k) = ziggurat.rnorm();
+        randN(j,k) = ziggurat_states.rnorm();
       }
     }
-    stateMat = (stateVec.replicate(1, nsims) + covMat.llt().matrixL() * randN).transpose(); 
-    xk_simulate_temp[0] = stateMat;
+    stateMat = (stateVec.replicate(1, nsims) + covMat.llt().matrixL() * randN).transpose();
+    inner_simulate_list(0) = stateMat;
 
+    /* For each prediction horizon k: */
     for(int k=0 ; k < k_step_ahead ; k++){
       inputVec = inputMat.row(i+k);
-      dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k))/simulation_timesteps(i+k);
+      dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * simulation_timesteps_inv(i+k);
 
       for(int j=0 ; j < simulation_timesteps(i+k) ; j++){
-        stateMat = euler_maruyama_simulation2(f__, g__, stateMat, parVec, inputVec, simulation_timestep_size(i+k), nsims, n, ng);
+        euler_maruyama_simulation_inplace(
+          f__, g__, 
+          stateMat,
+          parVec, inputVec, 
+          simulation_timestep_size(i+k), 
+          nsims, n, ng
+          );
         inputVec += dinputVec;
       }
 
-      xk_simulate_temp[k+1] = stateMat;
+      inner_simulate_list(k+1) = stateMat;
     }
 
-    // Save a clone of the temporary list (must use clone)
-    xk_simulate[i] = clone(xk_simulate_temp);
+    outer_simulate_list(i) = inner_simulate_list;
   }
 
   // Return
-  return xk_simulate;
-}
-
-// Function typedefs
-typedef Eigen::VectorXd (*funPtr_vec)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
-typedef Eigen::MatrixXd (*funPtr_mat)(Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd);
-
-// Function exported to R that performs (Extended Kalman) filtering
-// [[Rcpp::export]]
-List ukf_simulate_rcpp(
-  SEXP f__R, 
-  SEXP g__R,
-  SEXP dfdx__R,
-  SEXP h__R,
-  SEXP dhdx__R,
-  SEXP hvar__R,
-  Eigen::MatrixXd obsMat,
-  Eigen::MatrixXd inputMat,
-  Eigen::VectorXd parVec,
-  Eigen::MatrixXd covMat, 
-  Eigen::VectorXd stateVec,
-  Eigen::VectorXd ode_timestep_size,
-  Eigen::VectorXd ode_timesteps,
-  Eigen::VectorXd simulation_timestep_size,
-  Eigen::VectorXd simulation_timesteps,
-  Eigen::MatrixXi bool_is_not_na_obsMat,
-  Eigen::VectorXi number_of_available_obs,
-  Eigen::VectorXd ukf_pars,
-  const int ng,
-  const int last_pred_id,
-  const int k_step_ahead,
-  const int ode_solver,
-  const int nsims)
-{
-
-  funPtr_vec     f__ = *XPtr<funPtr_vec>(f__R);
-  funPtr_mat     g__ = *XPtr<funPtr_mat>(g__R);
-  funPtr_mat  dfdx__ = *XPtr<funPtr_mat>(dfdx__R);
-  funPtr_vec     h__ = *XPtr<funPtr_vec>(h__R);
-  funPtr_mat  dhdx__ = *XPtr<funPtr_mat>(dhdx__R);
-  funPtr_mat  hvar__ = *XPtr<funPtr_mat>(hvar__R);
-
-  return ukf_simulate<funPtr_vec, funPtr_mat>(
-    f__, 
-    g__, 
-    dfdx__, 
-    h__, 
-    dhdx__,
-    hvar__,
-    obsMat,
-    inputMat,
-    parVec,
-    covMat, 
-    stateVec,
-    ode_timestep_size,
-    ode_timesteps,
-    simulation_timestep_size,
-    simulation_timesteps,
-    bool_is_not_na_obsMat,
-    number_of_available_obs,
-    ukf_pars,
-    ng,
-    last_pred_id,
-    k_step_ahead,
-    ode_solver,
-    nsims);
-
+  return outer_simulate_list;
 }

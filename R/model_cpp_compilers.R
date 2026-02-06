@@ -33,25 +33,22 @@ compile_rcpp_functions = function(self, private){
   
   # Read lines from inst/include template
   txt <- readLines(system.file("include/template_user_functions.h", package="ctsmTMB"))
-  # Insert our created system function strings
-  txt[which(txt %in% "// INSERT F")] <- private$rcpp.function.strings$f
-  txt[which(txt %in% "// INSERT DFDX")] <- private$rcpp.function.strings$dfdx
-  txt[which(txt %in% "// INSERT G")] <- private$rcpp.function.strings$g
-  txt[which(txt %in% "// INSERT H")] <- private$rcpp.function.strings$h
-  txt[which(txt %in% "// INSERT DHDX")] <- private$rcpp.function.strings$dhdx
-  txt[which(txt %in% "// INSERT HVAR")] <- private$rcpp.function.strings$hvar
-  txt[which(txt %in% "// INSERT DFDU")] <- private$rcpp.function.strings$dfdu
   
-  # We compile using 'code' over 'file' in sourceCpp. 
-  # This is better for several reasons:
-    # 1. The caching is automatically handled, so second time is faster
-    # 2. Rstudio does not enter the "Source Cpp" tab automatically (annoying for users)
-    # 3. This solution is faster than using RcppXptrUtils
-  Rcpp::sourceCpp(
-    code=paste(txt, collapse=" \n "), 
-    verbose=FALSE, 
-    showOutput = FALSE
-    )
+  # Insert our created system function strings
+  txt[which(txt %in% "// INSERT F_CONST")] <- private$rcpp.function.strings$f_const
+  txt[which(txt %in% "// INSERT DFDX_CONST")] <- private$rcpp.function.strings$dfdx_const
+  txt[which(txt %in% "// INSERT G_CONST")] <- private$rcpp.function.strings$g_const
+  txt[which(txt %in% "// INSERT H_CONST")] <- private$rcpp.function.strings$h_const
+  txt[which(txt %in% "// INSERT DHDX_CONST")] <- private$rcpp.function.strings$dhdx_const
+  txt[which(txt %in% "// INSERT HVAR_CONST")] <- private$rcpp.function.strings$hvar_const
+  txt[which(txt %in% "// INSERT HVAR_ARRAY_CONST")] <- private$rcpp.function.strings$hvar_array_const
+  txt[which(txt %in% "// INSERT DFDU_CONST")] <- private$rcpp.function.strings$dfdu_const
+  
+  # We use sourceCpp now instead of RcppXptrUtils - faster, only one compilation
+  # We compile using 'code' over 'file' in sourceCpp. This is better because:
+  # 1. The caching is automatically handled, so second call is much faster
+  # 2. Prevents Rstudio from entering "Source Cpp" tab automatically (annoying for users)
+  Rcpp::sourceCpp(code=paste(txt, collapse=" \n "))
   private$rcpp_function_ptr <- get_sysfun_cpp_function_ptrs()
   
   # return

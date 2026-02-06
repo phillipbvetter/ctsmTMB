@@ -1,4 +1,4 @@
-ConfigureTape <- function(context, self, private){
+configure_ad_tape <- function(context, self, private){
   
   if(context=="RTMB"){
     if(is.null(private$rtmb.tapeconfig)){
@@ -57,7 +57,7 @@ ConfigureTape <- function(context, self, private){
   
   return(invisible(self))
 }
-getSystemDimensions <- function(private, .envir=parent.frame()){
+get_sys_dims <- function(private, .envir=parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   
@@ -78,7 +78,7 @@ getSystemDimensions <- function(private, .envir=parent.frame()){
   return(invisible(NULL))
 }
 
-getAdjoints <- function(.envir=parent.frame()){
+get_adjoints <- function(.envir=parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   
@@ -141,7 +141,7 @@ getAdjoints <- function(.envir=parent.frame()){
   return(invisible(NULL))
 }
 
-getLossFunction <- function(.envir=parent.frame()){
+get_loss_function <- function(.envir=parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   
@@ -186,7 +186,7 @@ getLossFunction <- function(.envir=parent.frame()){
   return(NULL)
 }
 
-getOdeSolvers <- function(.envir=parent.frame()){
+get_ode_solvers <- function(.envir=parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   
@@ -350,7 +350,7 @@ getOdeSolvers <- function(.envir=parent.frame()){
   return(NULL)
 }
 
-getInitialStateEstimator <- function(.envir=parent.frame()){
+get_initial_state_estimator <- function(.envir=parent.frame()){
   
   # unpack objects from parent
   list2env(as.list(.envir), envir = environment())
@@ -388,8 +388,8 @@ getInitialStateEstimator <- function(.envir=parent.frame()){
     A <- dfdx__(stateVec, parVec, inputVec)
     G <- g__(stateVec, parVec, inputVec)
     Q <- G %*% t(G)
-    # this line below causes hessian to crash because of the RTMB::ADjoints
-    # kron.left and kron.right
+    # this line below causes hessian to NaN because of the RTMB::ADjoints
+    # kron.left and kron.right may be wrongly specified? not sure
     P <- kron.left(A) + kron.right(A)
     X <- -RTMB::solve(P, as.numeric(Q))
     covMat <- RTMB::matrix(X, nrow=n.states)
@@ -402,7 +402,7 @@ getInitialStateEstimator <- function(.envir=parent.frame()){
   return(NULL)
 }
 
-getUkfOdeSolvers <- function(.envir=parent.frame()){
+get_ukf_ode_solvers <- function(.envir=parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   
@@ -596,14 +596,14 @@ getUkfOdeSolvers <- function(.envir=parent.frame()){
   return(NULL)
 }
 
-getUkfSigmaWeights <- function(.envir=parent.frame()){
+get_ukf_weights <- function(.envir=parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   
   # grab hyperparameters
-  ukf.alpha <- private$ukf_hyperpars[1]
-  ukf.beta <- private$ukf_hyperpars[2]
-  ukf.kappa <- private$ukf_hyperpars[3]
+  ukf.alpha <- private$ukf.hyperpars[1]
+  ukf.beta <- private$ukf.hyperpars[2]
+  ukf.kappa <- private$ukf.hyperpars[3]
   
   sqrt_c <- sqrt(ukf.alpha^2*(n.states + ukf.kappa))
   ukf.lambda <- sqrt_c^2 - n.states

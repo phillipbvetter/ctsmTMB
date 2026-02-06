@@ -150,7 +150,7 @@ and
 <span>              ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>              k.ahead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span>,</span>
 <span>              return.k.ahead <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">k.ahead</span>,</span>
-<span>              return.covariance <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>              return.dispersion <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>              initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>              estimate.initial.state <span class="op">=</span> <span class="va">private</span><span class="op">$</span><span class="va">estimate.initial</span>,</span>
 <span>              use.cpp <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -229,11 +229,11 @@ returned. The default behaviour is to return all prediction steps (as
 determined by <code>k.ahead</code>).</p>
 </div>
 <div class="section level3">
-<h3 id="argument-return-covariance">Argument: <code>return.covariance</code><a class="anchor" aria-label="anchor" href="#argument-return-covariance"></a>
+<h3 id="argument-return-covariance">Argument: <code>return.dispersion</code><a class="anchor" aria-label="anchor" href="#argument-return-covariance"></a>
 </h3>
 <hr>
 <p>This boolean argument determines whether the covariance
-(<code>return.covariance=TRUE</code>, default) or the prediction
+(<code>return.dispersion=TRUE</code>, default) or the prediction
 correlations are returned. The returned diagonal elements are always the
 variances, not the trivial 1’s of the correlation matrix.</p>
 </div>

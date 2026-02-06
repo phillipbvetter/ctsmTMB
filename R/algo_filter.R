@@ -19,15 +19,15 @@ ekf_filter_r = function(parVec, self, private)
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
   
-  create.state.space.functions.for.filtering()
+  create_state_space_functions_for_filtering()
 
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
-  getOdeSolvers()
+  get_ode_solvers()
   if(estimate.initial) {
-    getInitialStateEstimator()
+    get_initial_state_estimator()
   }
-  getKalmanFunctions()
+  get.kalman.functions()
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
@@ -135,12 +135,12 @@ lkf_filter_r = function(parVec, self, private)
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
   
-  create.state.space.functions.for.filtering()
+  create_state_space_functions_for_filtering()
 
   if(estimate.initial) {
-    getInitialStateEstimator()
+    get_initial_state_estimator()
   }
-  getKalmanFunctions()
+  get.kalman.functions()
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
@@ -276,7 +276,7 @@ ukf_filter_r = function(parVec, self, private)
   
   # Data ----------------------------------------
   estimate.initial <- private$estimate.initial
-  getSystemDimensions()
+  get_sys_dims()
   
   # initial
   stateVec = private$initial.state$x0
@@ -286,15 +286,15 @@ ukf_filter_r = function(parVec, self, private)
   inputMat = as.matrix(private$data[private$input.names])
   obsMat = as.matrix(private$data[private$obs.names])
   
-  create.state.space.functions.for.filtering()
+  create_state_space_functions_for_filtering()
   # Fsigma <- array(list(),c(1,n.sigmapoints))
   # Hsigma <- array(list(),c(1,n.sigmapoints))
-  getUkfSigmaWeights()
-  getUkfOdeSolvers()
+  get_ukf_weights()
+  get_ukf_ode_solvers()
   if(private$estimate.initial) {
-    getInitialStateEstimator()
+    get_initial_state_estimator()
   }
-  getUkfKalmanFunctions()
+  get.ukf.kalman.functions()
   
   # time-steps
   ode_timestep_size = private$ode.timestep.size

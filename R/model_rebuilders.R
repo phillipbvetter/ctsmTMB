@@ -5,28 +5,24 @@
 
 save_settings_for_check <- function(self, private){
   
-  cloned.self <- self$clone(deep=TRUE)
-  cloned.private <- cloned.self$.private()
-  
-  # settings
-  private$old.data$method = cloned.private$method
-  private$old.data$ode.solver = cloned.private$ode.solver
-  private$old.data$loss = cloned.private$loss
-  private$old.data$estimate.initial = cloned.private$estimate.initial
-  
-  # ukf hyperpars
-  private$old.data$ukf.hyperpars = cloned.private$ukf.hyperpars
-  
-  # Used for predictions
-  private$old.data$ode.timestep = cloned.private$ode.timestep
-  private$old.data$simulation.timestep = cloned.private$simulation.timestep
+  # Extract only necessary entries from the private fields
+  entries.to.extract <- c("method", 
+                          "ode.solver",
+                          "loss",
+                          "estimate.initial",
+                          "ukf.hyperpars",
+                          "ode.timestep",
+                          "simulation.timestep")
+  cloned.private <- self$clone(deep=TRUE)$getPrivateFields()
+  private$old.data[entries.to.extract] <- mget(entries.to.extract, envir = cloned.private)
   
   return(invisible(self))
 }
 
 check_for_data_rebuild <- function(data, self, private){
   
-  # We check if the data needs to reset
+  # Check if the data, or the requested ode/sde time-steps has changed
+  # since the last call
   bool <- c(
     private$rebuild.data,
     !identical(private$old.data$entry.data, data),
@@ -39,7 +35,7 @@ check_for_data_rebuild <- function(data, self, private){
   return(invisible(self))
 }
 
-check_for_ADfun_rebuild <- function(self, private){
+check_for_ad_rebuild <- function(self, private){
   
   # We perform checks against the old data on the entries that would
   # require a new call to RTMB::MakeADFun (i.e. entries that affect the

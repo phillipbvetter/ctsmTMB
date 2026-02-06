@@ -8,18 +8,18 @@ ekf_lkf_ukf_simulate_r = function(parVec, self, private, nsims)
 {
   
   # Data ----------------------------------------
-  getSystemDimensions()
+  get_sys_dims()
   # inputs
   inputMat = as.matrix(private$data[private$input.names])
   # prediction settings
-  k.ahead <- private$n.ahead
+  k.ahead <- private$k.ahead
   last.pred.index <- private$last.pred.index
   # time-steps
   sde_timestep_size <- private$simulation.timestep.size
   sde_timesteps <- private$simulation.timesteps
   
   # various utility functions for likelihood calculations ---------------------
-  create.state.space.functions.for.filtering()
+  create_state_space_functions_for_filtering()
   getSimulationFunctions()
   
   # Get filtered states
@@ -63,106 +63,8 @@ ekf_lkf_ukf_simulate_r = function(parVec, self, private, nsims)
   ###### MAIN LOOP END #######
   
   ####### STORE SIMULATION #######
-  private$simulation = xSim
+  private$simulation.raw = xSim
   
   ####### RETURN #######
   return(invisible(self))
-}
-
-#######################################################
-#######################################################
-# EKF SIMULATION C++
-#######################################################
-#######################################################
-
-lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
-  
-  # observation/input matrix
-  obsMat = as.matrix(private$data[private$obs.names])
-  inputMat = as.matrix(private$data[private$input.names])
-  
-  # non-na observation matrix
-  numeric_is_not_na_obsMat = t(apply(obsMat, 1, FUN=function(x) as.numeric(!is.na(x))))
-  if(nrow(numeric_is_not_na_obsMat)==1) numeric_is_not_na_obsMat = t(numeric_is_not_na_obsMat)
-  
-  # number of non-na observations
-  number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
-  
-  output <- NULL
-  if(private$method=="lkf"){
-    output = lkf_simulate_rcpp(private$rcpp_function_ptr$f,
-                               private$rcpp_function_ptr$g,
-                               private$rcpp_function_ptr$dfdx,
-                               private$rcpp_function_ptr$h,
-                               private$rcpp_function_ptr$dhdx,
-                               private$rcpp_function_ptr$hvar,
-                               private$rcpp_function_ptr$dfdu,
-                               obsMat,
-                               inputMat,
-                               pars,
-                               private$initial.state$p0,
-                               private$initial.state$x0,
-                               private$ode.timestep.size,
-                               private$simulation.timestep.size,
-                               private$simulation.timesteps,
-                               numeric_is_not_na_obsMat,
-                               number_of_available_obs,
-                               private$number.of.diffusions,
-                               private$last.pred.index,
-                               private$n.ahead,
-                               n.sims)
-  } 
-  if(private$method=="ekf"){
-    output = ekf_simulate_rcpp(private$rcpp_function_ptr$f,
-                               private$rcpp_function_ptr$g,
-                               private$rcpp_function_ptr$dfdx,
-                               private$rcpp_function_ptr$h,
-                               private$rcpp_function_ptr$dhdx,
-                               private$rcpp_function_ptr$hvar,
-                               obsMat,
-                               inputMat,
-                               pars,
-                               private$initial.state$p0,
-                               private$initial.state$x0,
-                               private$ode.timestep.size,
-                               private$ode.timesteps,
-                               private$simulation.timestep.size,
-                               private$simulation.timesteps,
-                               numeric_is_not_na_obsMat,
-                               number_of_available_obs,
-                               private$number.of.diffusions,
-                               private$last.pred.index,
-                               private$n.ahead,
-                               private$ode.solver,
-                               n.sims)
-  }
-  if(private$method == "ukf"){
-    output <- ukf_simulate_rcpp(private$rcpp_function_ptr$f,
-                                private$rcpp_function_ptr$g,
-                                private$rcpp_function_ptr$dfdx,
-                                private$rcpp_function_ptr$h,
-                                private$rcpp_function_ptr$dhdx,
-                                private$rcpp_function_ptr$hvar,
-                                obsMat,
-                                inputMat,
-                                pars,
-                                private$initial.state$p0,
-                                private$initial.state$x0,
-                                private$ode.timestep.size,
-                                private$ode.timesteps,
-                                private$simulation.timestep.size,
-                                private$simulation.timesteps,
-                                numeric_is_not_na_obsMat,
-                                number_of_available_obs,
-                                private$ukf_hyperpars,
-                                private$number.of.diffusions,
-                                private$last.pred.index,
-                                private$n.ahead,
-                                private$ode.solver,
-                                n.sims)
-  }
-  
-  private$simulation = output
-  
-  return(invisible(NULL))
 }

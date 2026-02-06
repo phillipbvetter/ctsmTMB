@@ -1,6 +1,17 @@
-# ctsmTMB 1.0.2 (????-??-??)
+# ctsmTMB 1.1.0 (2026-01-02)
 
-* Previously only 'ekf' had support for prediction and simulation. Nowe 'lkf' and 'ukf' are also supported in both R and with Rcpp.
+* System C++ functions are now compiled on the first call to a method, and are only recompiled if the model equation changes.
+* The C++ functionality for 'filter', 'predict' and 'simulate' is now greatly improved:
+  * The compilation time is reduced from 5-10 seconds to 2-3 seconds.
+  * The computations are faster.
+  * The report functionality is now carried out in C++ (rather than pure R code), and is faster.
+  * The three methods now also return forecasted observations, and associated dispersion.
+* The reporting for the 'estimate' method is now faster, due to reporting improvements (see above)
+
+
+# ctsmTMB 1.0.2 (2025-11-01)
+
+* Previously only 'ekf' had support for prediction and simulation. Now 'lkf' and 'ukf' are also supported in both R and with Rcpp.
 * New method 'setAdvancedSettings' for various extra features (force.ad and tape configurations TMB::config and RTMB::TapeConfig)
 * New method 'setTrainingMethod' which enables training the likelihood as an ODE minimizing distance to full prediction - still need support for k-step.
 

@@ -39,108 +39,6 @@ $$
 $$
 where $\hat{x}_{i}(\tau) = \mathrm{E}\left[ x_{\tau} | y_{t_{i}} \right]$ and $\hat{P}_{i}(\tau) = \mathrm{V}\left[ x_{\tau} | y_{t_{i}} \right]$, and $A = \dfrac{df}{dx}$
 
-# Arguments
-
----
-
-The `predict` method accepts the following arguments
-
-```{r, eval=FALSE}
-model$predict(data,
-              pars = NULL,
-              method = "ekf",
-              ode.solver = "rk4",
-              ode.timestep = diff(data$t),
-              k.ahead = nrow(data)-1,
-              return.k.ahead = 0:k.ahead,
-              return.covariance = TRUE,
-              initial.state = self$getInitialState(),
-              estimate.initial.state = private$estimate.initial,
-              use.cpp = FALSE,
-              silent = FALSE,
-              ...
-)
-```
-
-## Argument: `pars`
-
----
-
-This argument is a vector of parameter values, which are used to generate the predictions. The default behaviour is to use the parameters obtained from the latest call to `estimate` (if any) or alternative to use the initial guesses defined in `setParameter`.
-
-## Argument: `use.cpp`
-
----
-
-This argument is a boolean which determines whether a pure **R** (`use.cpp=FALSE`, default) or **C++** (`use.cpp=TRUE`) implementation is used to calculate the predictions. 
-
-The advantage of the **C++** implementation is computational speed but this comes at the cost of 5-10 seconds compilation time (the first time in a session that the **C++** implementation is used, subsequent calls are faster). The number of prediction steps to compute is given by
-```{r, eval=FALSE}
-k.ahead * (nrow(data) - k.ahead)
-```
-which is maximized at `k.ahead = nrow(data)/2`. The **C++** implementation is therefore typically advantageous for some (relatively large) range around this maximum, at least when the data has sufficiently many rows.
-
-
-## Argument: `method`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-**Note:** The `predict` method is currently only available using the Extended Kalman filter (`method="ekf`).
-
-## Argument: `ode.solver`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-**Note:** When the argument `use.cpp=TRUE` then the only solvers available are *euler* and *rk4*.
-
-## Argument: `ode.timestep`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-## Argument: `k.ahead`
-
----
-
-This integer argument determines the number of prediction steps desired.
-
-
-## Argument: `return.k.ahead`
-
----
-
-This vector of integers determines which k-step predictions are returned. The default behaviour is to return all prediction steps (as determined by `k.ahead`).
-
-## Argument: `return.covariance`
-
----
-
-This boolean argument determines whether the covariance (`return.covariance=TRUE`, default) or the prediction correlations are returned. The returned diagonal elements are always the variances, not the trivial 1's of the correlation matrix.
-
-
-## Argument: `initial.state`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-## Argument: `estimate.initial.state`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-## Argument: `silent`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
 # Example
 
 We consider a modified Ornstein Uhlenbeck process:
@@ -165,33 +63,31 @@ model$setParameter(
 )
 model$setInitialState(list(1, 1e-1*diag(1)))
 
-# Set simulation settings
-set.seed(20)
-true.pars <- c(theta=20, sigma_x=1, sigma_y=5e-2)
+true.pars <- c(theta=20, sigma_x=1, sigma_y=0.05)
 dt.sim <- 1e-3
 t.sim <- seq(0, 1, by=dt.sim)
+set.seed(20)
 u.sim <- cumsum(rnorm(length(t.sim),sd=0.1))
 df.sim <- data.frame(t=t.sim, y=NA, u=u.sim)
 
 # Perform simulation
-set.seed(1)
 sim <- model$simulate(data=df.sim, 
                       pars=true.pars, 
                       n.sims=1,
-                      silent=T)
-x <- sim$states$x$i0$x1
+                      silent=T,
+                      cpp.seeds = c(1,1))
+y.sim <- sim$observations$y$i0[,1]
 
-# Extract observations from simulation and add noise
-iobs <- seq(1,length(t.sim), by=10)
+iobs <- seq(1, length(t.sim), by=10)
 t.obs <- t.sim[iobs]
+y.obs <- y.sim[iobs]
 u.obs <- u.sim[iobs]
-y = x[iobs] + true.pars["sigma_y"] * rnorm(length(iobs))
 
 # Create data-frame
 .data <- data.frame(
   t = t.obs,
   u = u.obs,
-  y = y
+  y = y.obs
 )
 ```
 with the true parameters
@@ -202,7 +98,7 @@ $$
 The data is plotted below:
 ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows observations and input signal.'}
 ggplot() + 
-  geom_point(aes(x=t.obs, y=y, color="y(t)")) +
+  geom_point(aes(x=t.obs, y=y.obs, color="y(t)")) +
   geom_line(aes(x=t.obs, y=u.obs, color="u(t)")) +
   ctsmTMB:::getggplot2theme() + 
   theme(legend.text = ggplot2::element_text(size=15)) +
@@ -235,17 +131,17 @@ head(pred$observations)
 When we plot these predictions against data we can perhaps identify that $\theta \in \left[10,50\right]$ (with $\theta=20$ being the truth here).
 
 ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows a series of full predictions for different values of the theta parameter, against the observations.'}
-t <- pred$states$t.j
+t <- pred$states[,"t.j"]
 latex.str <- lapply(
   c(sprintf("theta[%s]", c(1,10,50,100)),"y[t[k]]"),
   str2expression
 )
 ggplot() +
-  geom_line(aes(x=t, y=pred$states$x, color="label1")) +
-  geom_line(aes(x=t, y=pred1$states$x, color="label2")) +
-  geom_line(aes(x=t, y=pred2$states$x, color="label3")) +
-  geom_line(aes(x=t, y=pred3$states$x, color="label4")) +
-  geom_point(aes(x=t.obs, y=y, color="y(t)")) +
+  geom_line(aes(x=t, y=pred$states[,"x"], color="label1")) +
+  geom_line(aes(x=t, y=pred1$states[,"x"], color="label2")) +
+  geom_line(aes(x=t, y=pred2$states[,"x"], color="label3")) +
+  geom_line(aes(x=t, y=pred3$states[,"x"], color="label4")) +
+  geom_point(aes(x=t.obs, y=y.obs, color="y(t)")) +
   scale_color_discrete(labels=latex.str) +
   ctsmTMB:::getggplot2theme() + 
   theme(legend.text = ggplot2::element_text(size=15)) +
@@ -270,27 +166,33 @@ pred = model$predict(.data, k.ahead=pred.horizon)
 
 Let's plot the 10-step predictions against the observations.
 ```{r}
-pred.H = pred$states[pred$states$k.ahead==pred.horizon,]
+pred.obs = pred$states[pred$states[,"k.ahead"]==pred.horizon,]
 ```
 
 
 ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 25-step predictions with associated 95% prediction interval in grey, against the observations.'}
+t.j <- pred.obs[,"t.j"]
+x <- pred.obs[,"x"]
+x.sd <- sqrt(pred.obs[,"var.x"])
+
 ggplot() +
-  geom_line(aes(x=pred.H$t.j, y=pred.H$x,color="25-Step Predictions")) +
-  geom_ribbon(aes(x=pred.H$t.j,ymin=pred.H$x-2*sqrt(pred.H$var.x),ymax=pred.H$x+2*sqrt(pred.H$var.x)),fill="grey",alpha=0.5) +
-  geom_point(aes(x=t.obs,y,color="Observations")) +
+  geom_line(aes(x=t.j, y=x,color="25-Step Predictions")) +
+  geom_ribbon(aes(x=t.j, ymin=x-2*x.sd, ymax=x + 2*x.sd),fill="grey",alpha=0.5) +
+  geom_point(aes(x=t.obs, y.obs,color="Observations")) +
   labs(color="",x="Time",y="") +
   ctsmTMB:::getggplot2theme()
 ```
 
 Lastly lets calculate the mean prediction accuracy using an RMSE-score:
 ```{r}
-pdf <- cbind(pred$states, y.data = pred$observations$y.data)
+pdf <- data.frame(pred$states, y.data = pred$observations[,"y.data"])
 rmse <- data.frame(
   k.ahead = 0:pred.horizon,
-  rmse = sapply(split(pdf, pdf$k.ahead), function(df) {
-    sqrt(mean((df$x - df$y.data)^2, na.rm = TRUE))
-  })
+  rmse = sapply(
+    split(pdf, pdf$k.ahead), 
+    function(df) {
+      sqrt(mean((df$x - df$y.data)^2, na.rm = TRUE))
+    })
 )
 ```
 
@@ -306,3 +208,100 @@ ggplot(data=rmse) +
   ) +
   ctsmTMB:::getggplot2theme()
 ```
+
+# Arguments
+
+---
+
+The `predict` method accepts the following arguments
+
+```{r, eval=FALSE}
+model$predict(data,
+              pars = NULL,
+              method = "ekf",
+              ode.solver = "rk4",
+              ode.timestep = diff(data$t),
+              k.ahead = nrow(data)-1,
+              return.k.ahead = 0:min(k.ahead, nrow(data)-1),
+              return.variance = c("marginal", "none", "covariance", "correlation"),
+              ukf.hyperpars = c(1, 0, 3),
+              initial.state = self$getInitialState(),
+              estimate.initial.state = private$estimate.initial,
+              use.cpp = TRUE,
+              silent = FALSE,
+              ...)
+```
+
+## Argument: `pars`
+
+---
+
+This argument is a vector of parameter values, which are used to generate the predictions. The default behaviour is to use the parameters obtained from the latest call to `estimate` (if any) or alternative to use the initial guesses defined in `setParameter`.
+
+## Argument: `use.cpp`
+
+---
+
+Perform predictions in R-based code (`use.cpp=FALSE`) or C++-based code or **C++** (`use.cpp=TRUE`, default).
+
+## Argument: `method`
+
+---
+
+See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+## Argument: `ode.solver`
+
+---
+
+See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+**Note:** When the argument `use.cpp=TRUE` then the only solvers available are *euler* and *rk4*.
+
+## Argument: `ode.timestep`
+
+---
+
+See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+## Argument: `k.ahead`
+
+---
+
+This integer argument determines the number of prediction steps desired.
+
+
+## Argument: `return.k.ahead`
+
+---
+
+This vector of integers determines which k-step predictions are returned. The default behaviour is to return all prediction steps (as determined by `k.ahead`).
+
+## Argument: `return.variance``
+
+---
+
+The four options are:
+
+  1. 'marginal' - return marginal variances only.
+  2. 'none' - return no dispersion-related quantities.
+  3. 'covariance' - return full covariance matrix.
+  4. 'correlation' - return full correlation matrix.
+
+## Argument: `initial.state`
+
+---
+
+See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+## Argument: `estimate.initial.state`
+
+---
+
+See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+## Argument: `silent`
+
+---
+
+See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).

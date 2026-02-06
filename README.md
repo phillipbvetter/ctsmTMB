@@ -10,7 +10,8 @@
 [![CRAN
 status](https://www.r-pkg.org/badges/version/ctsmTMB)](https://CRAN.R-project.org/package=ctsmTMB)
 [![R-CMD-check](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml)
-[![](https://cranlogs.r-pkg.org/badges/ctsmTMB?color=brightgreen)](https://cran.rstudio.com/web/packages/ctsmTMB/index.html)
+[![](https://cranlogs.r-pkg.org/badges/ctsmTMB?color=brightgreen)](https://CRAN.R-project.org/package=ctsmTMB)
+<!-- [![](https://cranlogs.r-pkg.org/badges/ctsmTMB?color=brightgreen)](https://cran.rstudio.com/web/packages/ctsmTMB/index.html) -->
 
 <!-- add white space -->
 
@@ -48,8 +49,7 @@ are also contaminated by zero-mean Gaussian measurement noise
 $\varepsilon_{t} \sim \mathcal{N}\left(0, \Sigma(t_k, x_{t_k}, u_{t_k}, p) \right)$.
 
 Users interact with the *ctsmTMB* package via the available methods of
-the exported
-*[R6](https://cran.r-project.org/web/packages/R6/index.html)* `ctsmTMB`
+the exported *[R6](https://CRAN.R-project.org/package=R6)* `ctsmTMB`
 class. The most important of these are `addSystem` and
 `addObs`/`setVariance` used to specify the functions $f$, $g$, and $h$,
 $\Sigma$ respectively. The functions are specified indirectly by writing
@@ -63,7 +63,7 @@ following available methods:
 1.  `likelihood`:
 
     This method is used to extract the likelihood function handles for
-    the function value, its gradient and hessian, direcly passed back
+    the function value, its gradient and hessian, directly passed back
     from `RTMB::MakeADFun`. The is useful for e.g. using other
     optimizers, modifying the likelihood calculations, or adding
     together derivatives from several data series.
@@ -79,7 +79,7 @@ following available methods:
 
 3.  `filter`:
 
-    Performs state filtration (only availabel for Kalman filters).
+    Performs state filtration (Kalman filters only).
 
 4.  `smoother`:
 
@@ -88,16 +88,13 @@ following available methods:
 
 5.  `predict`:
 
-    Performs k-step forecasting of the system mean and variance. The
-    calculations for these may be carried out in either **R** or in
-    **C++** using `Rcpp` for additional speed.
+    Performs k-step forecasting of the system mean and variance (Kalman
+    filters only).
 
 6.  `simulate`:
 
-    Performs k-step forecasting of the entire distribution through
-    stochastic path simulations. The calculations for these may be
-    carried out in either **R** or in **C++** using `Rcpp` for
-    additional speed.
+    Performs k-step forecasting through stochastic path simulations
+    (Kalman filters only).
 
 <!-- Estimation Methods -->
 
@@ -183,7 +180,7 @@ install.packages("ctsmTMB", type="source")
 The development version is available on GitHub and R-universe:
 
 ``` r
-remotes::install_github(repo="phillipbvetter/ctsmTMB", dependencies=TRUE)
+remotes::install_github(repo="phillipbvetter/ctsmTMB")
 ```
 
 ``` r
@@ -206,10 +203,6 @@ You can access the documentation for all methods with
 ``` r
 ?ctsmTMB
 ```
-
-# Getting Started
-
-We provide an introductory code example below.
 
 You can also visit the package
 [webpage](https://phillipbvetter.github.io/ctsmTMB/index.html) and
@@ -323,32 +316,37 @@ cbind(true.pars, fitted.pars, difference=true.pars - fitted.pars)
 
 par(mfrow=c(3,1))
 # Plot prior predictions (1-step predictions) against simulation (truth) and observations (data)
-df.est <- cbind(fit$states$mean$prior, sd=fit$states$sd$prior$x)
-plot(x=df.est$t, y=df.est$x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(-3,3))
-polygon(c(df.est$t, rev(df.est$t)), c(df.est$x+1.96*df.est$sd, rev(df.est$x-1.96*df.est$sd)), col="grey70", border=NA)
-lines(df.est$t, df.est$x, col="steelblue", lwd=2)
+df.est <- cbind(fit$states$mean$prior, x.sd=fit$states$sd$prior[,"x"])
+t <- df.est[,"t"]
+x <- df.est[,"x"]
+x.sd <- df.est[,"x.sd"]
+plot(x=t, y=x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(-3,3))
+polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
+lines(t, x, col="steelblue", lwd=2)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
-# Predict to obtain k-step-ahead predictions to see model forecasting ability
+# Predict to obtain 10-step-ahead predictions to see model forecasting ability
 pred.10step <- model$predict(df.obs, k.ahead=10, method="ekf", return.k.ahead = 10)
 
 # Plot 10 step predictions vs data
-dfp <- pred.10step$states[c("t.j","x","var.x")]
-dfp[,4] <- sqrt(dfp["var.x"])
-names(dfp) <- c("t","x","var","sd")
-plot(x=dfp$t, y=dfp$x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(-3,3))
-polygon(c(dfp$t, rev(dfp$t)), c(dfp$x+1.96*dfp$sd, rev(dfp$x-1.96*dfp$sd)), col="grey70", border=NA)
-lines(dfp$t, dfp$x, col="steelblue", lwd=2)
+dfp <- pred.10step$states[,c("t.j","x","var.x")]
+t <- dfp[,"t.j"]
+x <- dfp[,"x"]
+x.sd <- sqrt(dfp[,"var.x"])
+plot(x=t, y=x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(-3,3))
+polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
+lines(t, x, col="steelblue", lwd=2)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
-# Perform a full prediction i.e. without updating to data along the way
-dfp <- model$predict(df.obs, method="ekf")$states
+# Compare full (i.e. without updating to data along the way) prediction and simulation
+dfp <- model$predict(df.obs, method="ekf")
+xpred <- dfp$states[,"x"]
+sdf <- model$simulate(df.obs, method="ekf", n.sims=10)
+t <- sdf$times$i0[,"t.j"]
+xsim <- sdf$states$x$i0
 
-# Perform full simulations - 10 sample trajectories
-sdf <- model$simulate(df.obs, method="ekf", n.sims=10)$states$x$i0
-sdf.sim <- sdf[,6:ncol(sdf)]
-matplot(sdf$t.j, sdf.sim, type="l", lty="solid", col="grey70", main="No Update Prediction and Simulations vs Observations", xlab="Time")
-lines(dfp$t.j, dfp$x, col="steelblue", lwd=2)
+matplot(t, xsim, type="l", lty="solid", col="grey70", main="No Update Prediction and Simulations vs Observations", xlab="Time")
+lines(t, xpred, col="steelblue", lwd=2)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
 # Perform residual analysis

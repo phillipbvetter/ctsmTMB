@@ -8,13 +8,13 @@ ekf_predict_r = function(parVec, self, private)
 {
   
   # Data ----------------------------------------
-  getSystemDimensions()
+  get_sys_dims()
   # inputs
   inputMat = as.matrix(private$data[private$input.names])
   
   # Utilities
-  create.state.space.functions.for.filtering()
-  getOdeSolvers()
+  create_state_space_functions_for_filtering()
+  get_ode_solvers()
   
   # Get filtered states
   filt <- ekf_filter_r(parVec, self, private)
@@ -28,7 +28,7 @@ ekf_predict_r = function(parVec, self, private)
   ode_timesteps = private$ode.timesteps
   
   # prediction settings
-  k.ahead <- private$n.ahead
+  k.ahead <- private$k.ahead
   last.pred.index <- private$last.pred.index
   
   ####### STORAGE #######
@@ -66,7 +66,7 @@ lkf_predict_r = function(parVec, self, private)
 {
   
   # Data ----------------------------------------
-  getSystemDimensions()
+  get_sys_dims()
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
@@ -74,10 +74,10 @@ lkf_predict_r = function(parVec, self, private)
   obsMat = as.matrix(private$data[private$obs.names])
   
   # prediction settings
-  k.ahead <- private$n.ahead
+  k.ahead <- private$k.ahead
   last.pred.index <- private$last.pred.index
   
-  create.state.space.functions.for.filtering()
+  create_state_space_functions_for_filtering()
   
   # Get filtered states
   filt <- lkf_filter_r(parVec, self, private)
@@ -106,8 +106,8 @@ lkf_predict_r = function(parVec, self, private)
   Phi1[1:n.states,(n.states+1):ncol(Phi1)] <- B
   # [-A GG^T \\ 0 A^t]
   Phi2 <- rbind(cbind(-A, G %*% t(G)),cbind(0*A,t(A)))
-  ePhi1 <- Matrix::expm(Phi1 * fixed.timestep.size)
-  ePhi2 <- Matrix::expm(Phi2 * fixed.timestep.size)
+  ePhi1 <- as.matrix(Matrix::expm(Phi1 * fixed.timestep.size))
+  ePhi2 <- as.matrix(Matrix::expm(Phi2 * fixed.timestep.size))
   
   # A and B (for mean calculations)
   Ahat <- ePhi1[1:n.states,1:n.states]
@@ -141,7 +141,7 @@ ukf_predict_r = function(parVec, self, private)
 {
   
   # Data ----------------------------------------
-  getSystemDimensions()
+  get_sys_dims()
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
@@ -150,13 +150,13 @@ ukf_predict_r = function(parVec, self, private)
   obsMat = as.matrix(private$data[private$obs.names])
   
   # prediction settings
-  k.ahead <- private$n.ahead
+  k.ahead <- private$k.ahead
   last.pred.index <- private$last.pred.index
   
-  create.state.space.functions.for.filtering()
-  getUkfSigmaWeights()
-  getUkfOdeSolvers()
-  getUkfKalmanFunctions()
+  create_state_space_functions_for_filtering()
+  get_ukf_weights()
+  get_ukf_ode_solvers()
+  get.ukf.kalman.functions()
   
   # Get filtered states
   filt <- ukf_filter_r(parVec, self, private)

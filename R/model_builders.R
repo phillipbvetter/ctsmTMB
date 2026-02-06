@@ -1,7 +1,8 @@
 
+# This function call all others in this script to check / build a model object
 build_model = function(self, private) {
   
-  # Check if model is already built
+  # Check if model is already built else set flags
   if(!private$rebuild.model) return(invisible(self))
   private$rebuild.model <- FALSE
   private$rebuild.data <- TRUE
@@ -15,6 +16,9 @@ build_model = function(self, private) {
   
   # last check
   final_build_check(self, private)
+  
+  # compile rcpp functions
+  compile_rcpp_functions(self, private)
   
   # return
   return(invisible(self))
@@ -88,14 +92,6 @@ final_build_check = function(self, private) {
     stop("Error: The following variables(s) in the model have not been declared as parameters, inputs or states: \n\t ",
          paste(rhs.vars[!bool],collapse=", "))
   }
-  
-  ##### NOTE::: Do we need to remove this? doesnt really matter right? ####
-  # Verify that all input and parameters are used in the model
-  # given.vars = c( private$parameter.names, private$input.names[-1])
-  # bool = given.vars %in% rhs.vars
-  # if (any(!bool)) {
-  #   stop("The following variables(s) are unused: \n\t ", paste(given.vars[!bool],collapse=", "))
-  # }
   
   # return
   return(invisible(self))

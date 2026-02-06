@@ -206,7 +206,7 @@ write_jac_f_wrt_u <- function(self, private){
       if(j==1){
         term <- constant.terms[[i]]
       } else {
-        term <- ctsmTMB.Deriv(f=private$sys.eqs.trans[[i]]$diff.dt, x=private$input.names[j-1])
+        term <- ctsmTMB_Deriv(f=private$sys.eqs.trans[[i]]$diff.dt, x=private$input.names[j-1])
       }
       # skip if zero
       if(term=="0") next

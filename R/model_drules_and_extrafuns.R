@@ -11,7 +11,7 @@ get_Deriv_environment = function(){
 }
 
 # This functions returns a table of derivatives for symbolic differentiation
-# with Deriv, used in the ctsmTMB.Deriv function.
+# with Deriv, used in the ctsmTMB_Deriv function.
 get_Deriv_drules = function(){
   
   # get standard library
@@ -27,7 +27,7 @@ get_Deriv_drules = function(){
 
 # We create our own Deriv function based on Deriv::Deriv with custom environment and
 # drules to support new functions e.g erf
-ctsmTMB.Deriv = function(
+ctsmTMB_Deriv = function(
     f,
     x = if (is.function(f)) NULL else all.vars(if (is.character(f)) parse(text = f) else
       f),

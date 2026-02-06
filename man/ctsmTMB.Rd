@@ -597,7 +597,7 @@ Perform state filtering (or smoothing for the 'laplace' method)
   initial.state = self$getInitialState(),
   laplace.residuals = FALSE,
   estimate.initial.state = FALSE,
-  use.cpp = FALSE,
+  use.cpp = TRUE,
   silent = FALSE,
   ...
 )}\if{html}{\out{</div>}}
@@ -682,7 +682,7 @@ Perform state filtering (or smoothing for the 'laplace' method)
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$smoother(
   data,
   pars = NULL,
-  method = "ekf",
+  method = "laplace",
   ode.solver = "euler",
   ode.timestep = diff(data$t),
   loss = "quadratic",
@@ -972,13 +972,20 @@ system contains time-varying inputs, the first element of these is used.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+A list with components:
+\describe{
+\item{coefficients}{Named numeric vector of model coefficients}
+\item{residuals}{Numeric vector of residuals}
+}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-predict}{}}}
 \subsection{Method \code{predict()}}{
 Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
-obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior
+obtained by solving the moment equations \code{k.ahead} steps forward in time when using the current step posterior
 state estimate as the initial condition.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$predict(
@@ -988,12 +995,12 @@ state estimate as the initial condition.
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   k.ahead = nrow(data) - 1,
-  return.k.ahead = 0:k.ahead,
-  return.covariance = TRUE,
+  return.k.ahead = 0:min(k.ahead, nrow(data) - 1),
+  return.variance = c("marginal", "none", "covariance", "correlation"),
   ukf.hyperpars = c(1, 0, 3),
   initial.state = self$getInitialState(),
   estimate.initial.state = private$estimate.initial,
-  use.cpp = FALSE,
+  use.cpp = TRUE,
   silent = FALSE,
   ...
 )}\if{html}{\out{</div>}}
@@ -1035,11 +1042,10 @@ which serves to link together the latent (random effects) states.
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
 data updates).}
 
-\item{\code{return.k.ahead}}{numeric vector of integers specifying which n.ahead predictions to that
+\item{\code{return.k.ahead}}{numeric vector of integers specifying which k.ahead predictions to that
 should be returned.}
 
-\item{\code{return.covariance}}{boolean value to indicate whether the covariance (instead of the correlation)
-should be returned.}
+\item{\code{return.variance}}{a string to indicate what kind of dispersions should be reported.}
 
 \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
 
@@ -1058,7 +1064,7 @@ should be returned.}
 }
 \subsection{Returns}{
 A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
-prior state predictions (\code{k = 1,...,n.ahead}). If \code{return.covariance = TRUE} then the state covariance/correlation
+prior state predictions (\code{k = 1,...,k.ahead}). If \code{return.dispersion = TRUE} then the state covariance/correlation
 matrix is returned, otherwise only the marginal variances are returned.
 }
 }
@@ -1067,20 +1073,20 @@ matrix is returned, otherwise only the marginal variances are returned.
 \if{latex}{\out{\hypertarget{method-ctsmTMB-simulate}{}}}
 \subsection{Method \code{simulate()}}{
 Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
-obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior
+obtained by solving the moment equations \code{k.ahead} steps forward in time when using the current step posterior
 state estimate as the initial condition.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$simulate(
   data,
   pars = NULL,
-  use.cpp = FALSE,
-  cpp.seed = NULL,
+  use.cpp = TRUE,
+  cpp.seeds = NULL,
   method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   simulation.timestep = diff(data$t),
   k.ahead = nrow(data) - 1,
-  return.k.ahead = 0:k.ahead,
+  return.k.ahead = 0:min(k.ahead, nrow(data) - 1),
   n.sims = 100,
   ukf.hyperpars = c(1, 0, 3),
   initial.state = self$getInitialState(),
@@ -1102,7 +1108,7 @@ function has been run, then the default values will be those at the found optimu
 
 \item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
 
-\item{\code{cpp.seed}}{an integer seed value to control RNG normal draws on the C++ side.}
+\item{\code{cpp.seeds}}{an integer seed value to control RNG normal draws on the C++ side.}
 
 \item{\code{method}}{\enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects
@@ -1150,7 +1156,7 @@ which serves to link together the latent (random effects) states.
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
 data updates).}
 
-\item{\code{return.k.ahead}}{numeric vector of integers specifying which n.ahead predictions to that
+\item{\code{return.k.ahead}}{numeric vector of integers specifying which k.ahead predictions to that
 should be returned.}
 
 \item{\code{n.sims}}{number of simulations}
@@ -1166,14 +1172,14 @@ should be returned.}
 
 \item{\code{...}}{additional arguments}
 
-\item{\code{return.covariance}}{boolean value to indicate whether the covariance (instead of the correlation)
+\item{\code{return.dispersion}}{boolean value to indicate whether the covariance (instead of the correlation)
 should be returned.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
-prior state predictions (\code{k = 1,...,n.ahead}). If \code{return.covariance = TRUE} then the state covariance/correlation
+prior state predictions (\code{k = 1,...,k.ahead}). If \code{return.dispersion = TRUE} then the state covariance/correlation
 matrix is returned, otherwise only the marginal variances are returned.
 }
 }

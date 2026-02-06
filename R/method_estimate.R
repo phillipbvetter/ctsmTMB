@@ -7,7 +7,7 @@ construct_makeADFun = function(self, private){
   # TMB::openmp(n=1, autopar=TRUE, DLL=private$modelname.with.method)
   
   # Check for AD rebuild
-  check_for_ADfun_rebuild(self, private)
+  check_for_ad_rebuild(self, private)
   if(!private$rebuild.ad) return(invisible(self))
   save_settings_for_check(self, private)
   private$rebuild.ad <- FALSE
@@ -16,43 +16,22 @@ construct_makeADFun = function(self, private){
   
   comptime <- system.time({
     
-    if(private$method == "lkf"){
-      makeADFun_lkf_rtmb(self, private)
-    }
-    
-    if(private$method == "lkf.cpp"){
-      makeADFun_lkf_tmb(self, private)
-    }
-    
-    if(private$method == "ekf"){
-      makeADFun_ekf_rtmb(self, private)
-    }
-    
-    if(private$method == "ekf.cpp"){
-      makeADFun_ekf_tmb(self, private)
-    }
-    
-    if(private$method == "ukf"){
-      message("Note: The Unscented Kalman Filter in RTMB is less robust than the corresponding TMB version - try 'ukf.cpp' method if you experience issues.")
-      makeADFun_ukf_rtmb(self, private)
-    }
-    
-    if(private$method == "ukf.cpp"){
-      makeADFun_ukf_tmb(self, private)
-    }
-    
-    if(private$method=="laplace"){
-      makeADFun_laplace_rtmb(self, private)
-    }
-    
-    if(private$method=="laplace.thygesen"){
-      makeADFun_laplace2_rtmb(self, private)
-    }
-    
-    # experimental
-    # if(private$method == "ekf_rcpp"){
-    #     rcpp_ekf_estimate(self, private)
-    # }
+    switch(private$method,
+           ekf = makeADFun_ekf_rtmb(self, private),
+           ekf.cpp = makeADFun_ekf_tmb(self, private),
+           #
+           lkf = makeADFun_lkf_rtmb(self, private),
+           lkf.cpp = makeADFun_lkf_tmb(self, private),
+           #
+           ukf = {
+             if(!private$silent) message("The RTMB UKF implementation may be unstable. You can try the TMB version instead 'method=ukf.cpp'.")
+             makeADFun_ukf_rtmb(self, private)
+           },
+           ukf.cpp = makeADFun_ukf_tmb(self, private),
+           #
+           laplace = makeADFun_laplace_rtmb(self, private),
+           laplace.thygesen = makeADFun_laplace2_rtmb(self, private)
+    )
     
   }, gcFirst = FALSE)
   
@@ -89,7 +68,7 @@ perform_estimation = function(self, private) {
         
         # use function, gradient and hessian
         if (private$use.hessian) {
-          opt <- try_withWarningRecovery(stats::nlminb(start = initial.parameters,
+          opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                        objective = private$nll$fn,
                                                        gradient = private$nll$gr,
                                                        hessian = private$nll$he,
@@ -98,7 +77,7 @@ perform_estimation = function(self, private) {
                                                        control=private$control.nlminb))
           # or just function and gradient
         } else {
-          opt <- try_withWarningRecovery(stats::nlminb(start = initial.parameters,
+          opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                        objective = private$nll$fn,
                                                        gradient = private$nll$gr,
                                                        lower = lower.parameter.bound,
@@ -109,7 +88,7 @@ perform_estimation = function(self, private) {
       
       # IF METHOD IS LAPLACE
       if ( any(private$method == c("laplace","laplace.thygesen")) ) {
-        opt <- try_withWarningRecovery(stats::nlminb(start = initial.parameters,
+        opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                      objective = private$nll$fn,
                                                      gradient = private$nll$gr,
                                                      lower = lower.parameter.bound,
@@ -205,20 +184,28 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
   compute_mle_parameters_and_std_errors(self, private)
   
   if(report){
-    # Get Report -----------------------------------
-    rep <- get_state_report(self, private)
     
-    # States -----------------------------------
-    compute_return_states(rep, self, private)
+    if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
+      
+      # Call filter with silenced settings
+      silent.setting <- private$silent
+      on.exit(private$silent<-silent.setting, add=TRUE)
+      self$filter(private$data, silent=TRUE)
+      private$fit = c(private$fit, private$filtration)
+      
+    } 
     
-    # Residuals -----------------------------------
-    report_residuals(rep, laplace.residuals, self, private)
+    if(private$method %in% c("laplace","laplace.thygesen")) {
+      
+      laplace_report(self, private, laplace.residuals)
+      
+    }
     
-    # Observations -----------------------------------
-    report_observations(self, private)
   }
   
+  
   # clone private into fit -----------------------------------
+  # no need for deep copy??
   private$fit$private <- self$clone()$.__enclos_env__$private
   
   # set s3 class -----------------------------------

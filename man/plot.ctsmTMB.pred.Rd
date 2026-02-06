@@ -7,7 +7,7 @@
 \method{plot}{ctsmTMB.pred}(
   x,
   y,
-  k.ahead = unique(x[["states"]][["k.ahead"]]),
+  k.ahead = unique(x$states[, "k.ahead"]),
   state.name = NULL,
   type = "states",
   against = NULL,

@@ -1,37 +1,50 @@
+#include <Rcpp.h>
 #include <RcppEigen.h>
-using namespace Rcpp;
 
+using namespace Rcpp;
+using namespace RcppEigen;
 // [[Rcpp::depends(RcppEigen)]]
 
 /* Constants */
-const double pi = M_PI;
+constexpr double pi = 3.14159265358979323846;
 
 /* Custom Functions*/
-double invlogit(double x){return 1.0/(1.0+exp(-x));}
+inline double invlogit(double x){
+   return 1.0/(1.0+exp(-x));
+}
 
-/* --------------------------------------------
-   Typedefs for function pointer signatures
----------------------------------------------*/
-typedef Eigen::VectorXd (*funPtr_vec)(Eigen::VectorXd,Eigen::VectorXd,Eigen::VectorXd);
-typedef Eigen::MatrixXd (*funPtr_mat)(Eigen::VectorXd,Eigen::VectorXd,Eigen::VectorXd);
+typedef Eigen::VectorXd (*funPtr_vec_const)(
+   const Eigen::VectorXd&, 
+   const Eigen::VectorXd&, 
+   const Eigen::VectorXd&);
+typedef Eigen::MatrixXd (*funPtr_mat_const)(
+   const Eigen::VectorXd&, 
+   const Eigen::VectorXd&, 
+   const Eigen::VectorXd&);
+typedef Eigen::ArrayXd (*funPtr_array_const)(
+   const Eigen::VectorXd&, 
+   const Eigen::VectorXd&, 
+   const Eigen::VectorXd&);
 
 /* --------------------------------------------
    User-generated functions
 ---------------------------------------------*/
 
-// INSERT F
+// INSERT F_CONST
 
-// INSERT DFDX
+// INSERT DFDX_CONST
 
-// INSERT G
+// INSERT H_CONST
 
-// INSERT H
+// INSERT G_CONST
 
-// INSERT DHDX
+// INSERT HVAR_CONST
 
-// INSERT HVAR
+// INSERT DHDX_CONST
 
-// INSERT DFDU
+// INSERT HVAR_ARRAY_CONST
+
+// INSERT DFDU_CONST
 
 /* --------------------------------------------
    Dispatcher returning XPtrs
@@ -40,12 +53,13 @@ typedef Eigen::MatrixXd (*funPtr_mat)(Eigen::VectorXd,Eigen::VectorXd,Eigen::Vec
 SEXP get_sysfun_cpp_function_ptrs()
 {
   return List::create(
-    Named("f") = XPtr<funPtr_vec>(new funPtr_vec(&f), false),
-    Named("dfdx") = XPtr<funPtr_mat>(new funPtr_mat(&dfdx), false),
-    Named("g") = XPtr<funPtr_mat>(new funPtr_mat(&g), false),
-    Named("h") = XPtr<funPtr_vec>(new funPtr_vec(&h), false),
-    Named("dhdx") = XPtr<funPtr_mat>(new funPtr_mat(&dhdx), false),
-    Named("hvar") = XPtr<funPtr_mat>(new funPtr_mat(&hvar), false),
-    Named("dfdu") = XPtr<funPtr_mat>(new funPtr_mat(&dfdu), false)
+    Named("f_const") = XPtr<funPtr_vec_const>(new funPtr_vec_const(&f_const), false),
+    Named("h_const") = XPtr<funPtr_vec_const>(new funPtr_vec_const(&h_const), false),
+    Named("dfdx_const") = XPtr<funPtr_mat_const>(new funPtr_mat_const(&dfdx_const), false),
+    Named("dhdx_const") = XPtr<funPtr_mat_const>(new funPtr_mat_const(&dhdx_const), false),
+    Named("g_const") = XPtr<funPtr_mat_const>(new funPtr_mat_const(&g_const), false),
+    Named("hvar_const") = XPtr<funPtr_mat_const>(new funPtr_mat_const(&hvar_const), false),
+    Named("hvar_array_const") = XPtr<funPtr_array_const>(new funPtr_array_const(&hvar_array_const), false),
+    Named("dfdu_const") = XPtr<funPtr_mat_const>(new funPtr_mat_const(&dfdu_const), false)
     );
 }

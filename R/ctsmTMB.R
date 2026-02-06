@@ -159,9 +159,14 @@ ctsmTMB = R6::R6Class(
       private$nll = NULL
       private$opt = NULL
       private$fit = NULL
-      private$prediction = NULL
-      private$simulation = NULL
+      
+      # prediction, simulation, filtering
+      private$filtration.raw = NULL
       private$filtration = NULL
+      private$prediction.raw = NULL
+      private$prediction = NULL
+      private$simulation.raw = NULL
+      private$simulation = NULL
       private$smooth = NULL
       
       # timers
@@ -173,8 +178,9 @@ ctsmTMB = R6::R6Class(
       private$timer_simulation = NA
       
       # predict
-      private$n.ahead = 0
+      private$k.ahead = 0
       private$last.pred.index = 0
+      private$seed = NULL
       
       # function strings
       private$rtmb.function.strings.indexed2 = NULL
@@ -185,7 +191,7 @@ ctsmTMB = R6::R6Class(
       private$rcpp_function_ptr = NULL
       
       # unscented transform
-      private$ukf_hyperpars = list()
+      private$ukf.hyperpars = list()
     },
     
     ########################################################################
@@ -278,7 +284,7 @@ ctsmTMB = R6::R6Class(
       
       # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
-      create_state_space_function_strings(self, private)
+      create_all_state_space_function_strings(self, private)
       
       return(invisible(self))
     },
@@ -349,7 +355,7 @@ ctsmTMB = R6::R6Class(
       
       # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
-      create_state_space_function_strings(self, private)
+      create_all_state_space_function_strings(self, private)
       
       return(invisible(self))
     },
@@ -395,7 +401,7 @@ ctsmTMB = R6::R6Class(
       
       # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
-      create_state_space_function_strings(self, private)
+      create_all_state_space_function_strings(self, private)
       
       return(invisible(self))
     },
@@ -439,7 +445,7 @@ ctsmTMB = R6::R6Class(
       
       # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
-      create_state_space_function_strings(self, private)
+      create_all_state_space_function_strings(self, private)
       
       return(invisible(self))
     },
@@ -574,7 +580,7 @@ ctsmTMB = R6::R6Class(
           ##### ELSE STOP #####  
         } else {
           
-          stop("setParameter only expects vectors or matrices")
+          stop("setParameter expects vectors or matrices")
           
         }
         
@@ -586,7 +592,7 @@ ctsmTMB = R6::R6Class(
       }
       
       # create state space funs
-      create_state_space_function_strings(self, private)
+      create_all_state_space_function_strings(self, private)
       
       # return
       return(invisible(self))
@@ -626,7 +632,7 @@ ctsmTMB = R6::R6Class(
       })
       
       apply_algebraics_and_lamperti(self, private)
-      create_state_space_function_strings(self, private)
+      create_all_state_space_function_strings(self, private)
       
       return(invisible(self))
     },
@@ -753,7 +759,7 @@ ctsmTMB = R6::R6Class(
       
       # apply algebraics/transformations and create state space funs
       apply_algebraics_and_lamperti(self, private)
-      create_state_space_function_strings(self, private)
+      create_all_state_space_function_strings(self, private)
       
       # return
       return(invisible(self))
@@ -1159,21 +1165,12 @@ ctsmTMB = R6::R6Class(
                       initial.state = self$getInitialState(),
                       laplace.residuals = FALSE,
                       estimate.initial.state = FALSE,
-                      use.cpp = FALSE,
+                      use.cpp = TRUE,
                       silent = FALSE,
                       ...){
       
       # set flags
-      args = list(
-        method = method,
-        ode.solver = ode.solver,
-        initial.state = initial.state,
-        ukf.hyperpars = ukf.hyperpars,
-        ode.timestep = ode.timestep,
-        laplace.residuals = laplace.residuals,
-        estimate.initial.state = estimate.initial.state,
-        silent = silent
-      )
+      args <- as.list(environment())[names(formals())]
       set_flags("filtration", args, self, private)
       
       # build model
@@ -1187,11 +1184,6 @@ ctsmTMB = R6::R6Class(
       
       # set parameters
       set_parameters(pars, self, private)
-      
-      # compile cpp functions if using cpp
-      if(use.cpp){
-        compile_rcpp_functions(self, private)
-      }
       
       # filter
       perform_filtering(self, private, use.cpp)
@@ -1256,7 +1248,7 @@ ctsmTMB = R6::R6Class(
     #' @param ... additional arguments
     smoother = function(data,
                         pars = NULL,
-                        method = "ekf",
+                        method = "laplace",
                         ode.solver = "euler",
                         ode.timestep = diff(data$t),
                         loss = "quadratic",
@@ -1267,16 +1259,7 @@ ctsmTMB = R6::R6Class(
                         silent = FALSE,
                         ...){
       
-      # set flags
-      args = list(
-        method = method,
-        ode.solver = ode.solver,
-        ode.timestep = ode.timestep,
-        initial.state = initial.state,
-        laplace.residuals = laplace.residuals,
-        estimate.initial.state = estimate.initial.state,
-        silent = silent
-      )
+      args <- as.list(environment())[names(formals())]
       set_flags("smoother", args, self, private)
       
       # build model
@@ -1388,22 +1371,8 @@ ctsmTMB = R6::R6Class(
                         compile = FALSE,
                         ...){
       
-      # set flags
-      args = list(
-        method = method,
-        ode.solver = ode.solver,
-        ode.timestep = ode.timestep,
-        ukf.hyperpars = ukf.hyperpars,
-        control = control,
-        use.hessian = use.hessian,
-        laplace.residuals = laplace.residuals,
-        unconstrained.optim = unconstrained.optim,
-        initial.state = initial.state,
-        estimate.initial.state = estimate.initial.state,
-        compile = compile,
-        silent = silent
-        
-      )
+      # Grab all argument values into a named list
+      args <- as.list(environment())[names(formals())]
       set_flags("estimation", args, self, private)
       
       # build model
@@ -1497,6 +1466,11 @@ ctsmTMB = R6::R6Class(
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param compile boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.
     #' @param ... additional arguments
+    #' @return A list with components:
+    #' \describe{
+    #'   \item{coefficients}{Named numeric vector of model coefficients}
+    #'   \item{residuals}{Numeric vector of residuals}
+    #' }
     likelihood = function(data,
                           method = "ekf",
                           ode.solver = "rk4",
@@ -1506,21 +1480,12 @@ ctsmTMB = R6::R6Class(
                           ukf.hyperpars = c(1, 0, 3),
                           initial.state = self$getInitialState(),
                           estimate.initial.state = FALSE,
-                          silent=FALSE,
+                          silent = FALSE,
                           compile = FALSE,
                           ...){
       
       # set flags
-      args = list(
-        method = method,
-        ode.solver = ode.solver,
-        ode.timestep = ode.timestep,
-        ukf.hyperpars = ukf.hyperpars,
-        initial.state = initial.state,
-        estimate.initial.state = estimate.initial.state,
-        compile = compile,
-        silent = silent
-      )
+      args <- as.list(environment())[names(formals())]
       set_flags("construction", args, self, private)
       
       # build model
@@ -1545,11 +1510,11 @@ ctsmTMB = R6::R6Class(
     # PREDICT FUNCTION
     ########################################################################
     #' @description Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
-    #' obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior 
+    #' obtained by solving the moment equations \code{k.ahead} steps forward in time when using the current step posterior 
     #' state estimate as the initial condition. 
     #' 
     #' @return A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
-    #' prior state predictions (\code{k = 1,...,n.ahead}). If \code{return.covariance = TRUE} then the state covariance/correlation 
+    #' prior state predictions (\code{k = 1,...,k.ahead}). If \code{return.dispersion = TRUE} then the state covariance/correlation 
     #' matrix is returned, otherwise only the marginal variances are returned.
     #' 
     #' @param data data.frame containing time-vector 't', observations and inputs. The observations
@@ -1560,10 +1525,9 @@ ctsmTMB = R6::R6Class(
     #' @param k.ahead integer specifying the desired number of time-steps (as determined by the provided
     #' data time-vector) for which predictions are made (integrating the moment ODEs forward in time without 
     #' data updates).
-    #' @param return.k.ahead numeric vector of integers specifying which n.ahead predictions to that
+    #' @param return.k.ahead numeric vector of integers specifying which k.ahead predictions to that
     #' should be returned.
-    #' @param return.covariance boolean value to indicate whether the covariance (instead of the correlation) 
-    #' should be returned.
+    #' @param return.variance a string to indicate what kind of dispersions should be reported.
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param estimate.initial.state bool - stationary estimation of initial mean and covariance
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
@@ -1594,25 +1558,17 @@ ctsmTMB = R6::R6Class(
                        ode.solver = "rk4",
                        ode.timestep = diff(data$t),
                        k.ahead = nrow(data)-1,
-                       return.k.ahead = 0:k.ahead,
-                       return.covariance = TRUE,
+                       return.k.ahead = 0:min(k.ahead, nrow(data)-1),
+                       return.variance = c("marginal", "none", "covariance", "correlation"),
                        ukf.hyperpars = c(1, 0, 3),
                        initial.state = self$getInitialState(),
                        estimate.initial.state = private$estimate.initial,
-                       use.cpp = FALSE,
+                       use.cpp = TRUE,
                        silent = FALSE,
                        ...){
       
       # set flags
-      args = list(
-        method = method,
-        ode.solver = ode.solver,
-        ode.timestep = ode.timestep,
-        ukf.hyperpars = ukf.hyperpars,
-        initial.state = initial.state,
-        estimate.initial.state = estimate.initial.state,
-        silent = silent
-      )
+      args <- as.list(environment())[names(formals())]
       set_flags("prediction", args, self, private)
       
       # build model
@@ -1625,16 +1581,12 @@ ctsmTMB = R6::R6Class(
       set_parameters(pars, self, private)
       set_k_ahead(k.ahead, self, private)
       
-      # compile C++ funs
-      if(use.cpp){
-        compile_rcpp_functions(self, private)
-      }
-      
       # estimate
       perform_prediction(self, private, use.cpp)
       
       # return
-      create_return_prediction(return.covariance, return.k.ahead, self, private)
+      reported.dispersion.type <- match.arg(return.variance)
+      create_return_prediction(reported.dispersion.type, return.k.ahead, self, private)
       
       # return
       if(!private$silent) message("Finished!")
@@ -1645,11 +1597,11 @@ ctsmTMB = R6::R6Class(
     # SIMULATE FUNCTION
     ########################################################################
     #' @description Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
-    #' obtained by solving the moment equations \code{n.ahead} steps forward in time when using the current step posterior 
+    #' obtained by solving the moment equations \code{k.ahead} steps forward in time when using the current step posterior 
     #' state estimate as the initial condition. 
     #' 
     #' @return A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
-    #' prior state predictions (\code{k = 1,...,n.ahead}). If \code{return.covariance = TRUE} then the state covariance/correlation 
+    #' prior state predictions (\code{k = 1,...,k.ahead}). If \code{return.dispersion = TRUE} then the state covariance/correlation 
     #' matrix is returned, otherwise only the marginal variances are returned.
     #' 
     #' @param data data.frame containing time-vector 't', observations and inputs. The observations
@@ -1660,9 +1612,9 @@ ctsmTMB = R6::R6Class(
     #' @param k.ahead integer specifying the desired number of time-steps (as determined by the provided
     #' data time-vector) for which predictions are made (integrating the moment ODEs forward in time without 
     #' data updates).
-    #' @param return.k.ahead numeric vector of integers specifying which n.ahead predictions to that
+    #' @param return.k.ahead numeric vector of integers specifying which k.ahead predictions to that
     #' should be returned.
-    #' @param return.covariance boolean value to indicate whether the covariance (instead of the correlation) 
+    #' @param return.dispersion boolean value to indicate whether the covariance (instead of the correlation) 
     #' should be returned.
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
@@ -1706,18 +1658,18 @@ ctsmTMB = R6::R6Class(
     #' @param n.sims number of simulations
     #' @param simulation.timestep timestep used in the euler-maruyama scheme
     #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
-    #' @param cpp.seed an integer seed value to control RNG normal draws on the C++ side.
+    #' @param cpp.seeds an integer seed value to control RNG normal draws on the C++ side.
     #' @param ... additional arguments
     simulate = function(data,
                         pars = NULL,
-                        use.cpp = FALSE,
-                        cpp.seed = NULL,
+                        use.cpp = TRUE,
+                        cpp.seeds = NULL,
                         method = "ekf",
                         ode.solver = "rk4",
                         ode.timestep = diff(data$t),
                         simulation.timestep = diff(data$t),
                         k.ahead = nrow(data)-1,
-                        return.k.ahead = 0:k.ahead,
+                        return.k.ahead = 0:min(k.ahead, nrow(data)-1),
                         n.sims = 100,
                         ukf.hyperpars = c(1, 0, 3),
                         initial.state = self$getInitialState(),
@@ -1726,17 +1678,7 @@ ctsmTMB = R6::R6Class(
                         ...){
       
       # set flags
-      args = list(
-        method = method,
-        ode.solver = ode.solver,
-        ode.timestep = ode.timestep,
-        simulation.timestep = simulation.timestep,
-        ukf.hyperpars = ukf.hyperpars,
-        initial.state = initial.state,
-        estimate.initial.state = estimate.initial.state,
-        silent = silent,
-        cpp.seed = cpp.seed
-      )
+      args <- as.list(environment())[names(formals())]
       set_flags("simulation", args, self, private)
       
       # build model
@@ -1748,11 +1690,6 @@ ctsmTMB = R6::R6Class(
       # set parameters
       set_k_ahead(k.ahead, self, private)
       set_parameters(pars, self, private)
-      
-      # compile C++ funs
-      if(use.cpp){
-        compile_rcpp_functions(self, private)
-      }
       
       # estimate
       perform_simulation(self, private, use.cpp, n.sims)
@@ -1951,9 +1888,14 @@ ctsmTMB = R6::R6Class(
     opt = NULL,
     sdr = NULL,
     fit = NULL,
-    prediction = NULL,
-    simulation = NULL,
+    
+    # filtering, prediction, simulations...
     filtration = NULL,
+    filtration.raw = NULL,
+    prediction = NULL,
+    prediction.raw = NULL,
+    simulation = NULL,
+    simulation.raw = NULL,
     smooth = NULL,
     
     # timers
@@ -1965,8 +1907,9 @@ ctsmTMB = R6::R6Class(
     timer_simulation = NULL,
     
     # predict
-    n.ahead = NULL,
+    k.ahead = NULL,
     last.pred.index = NULL,
+    seed = NULL,
     
     # function strings
     rtmb.function.strings.indexed2 = NULL,
@@ -1977,7 +1920,7 @@ ctsmTMB = R6::R6Class(
     rcpp_function_ptr = NULL,
     
     # unscented transform
-    ukf_hyperpars = NULL,
+    ukf.hyperpars = NULL,
     
     ########################################################################
     # ADD TRANSFORMED SYSTEM EQS
@@ -2001,7 +1944,7 @@ ctsmTMB = R6::R6Class(
         name = name,
         form = form,
         rhs = rhs,
-        diff.dt = ctsmTMB.Deriv(f=rhs, x="dt"),
+        diff.dt = ctsmTMB_Deriv(f=rhs, x="dt"),
         allvars = variables,
         diff = private$sys.eqs[[name]]$diff
       )
@@ -2427,7 +2370,7 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # SET UNSCENTED TRANSFORMATION HYPERPARAMAETERS
     ########################################################################
-    set_ukf_hyperpars = function(par.vector) {
+    set_ukf.hyperpars = function(par.vector) {
       
       if(is.null(names(par.vector))) {
         names(par.vector) <- c("alpha","beta","kappa")
@@ -2445,7 +2388,7 @@ ctsmTMB = R6::R6Class(
       }
       
       # set parameters
-      private$ukf_hyperpars = par.vector
+      private$ukf.hyperpars = par.vector
       
       # return
       return(invisible(self))
@@ -2456,8 +2399,8 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     set_cpp_seed = function(seed) {
       
-      # return if null (unset)
       if(is.null(seed)){
+        private$seed <- list(state.seed = NULL, obs.seed = NULL)
         return(invisible(self))
       }
       
@@ -2466,13 +2409,12 @@ ctsmTMB = R6::R6Class(
         stop("The cpp.seed should be a scalar numeric value")
       }
       
-      # take first entry if longer than 1
-      if(!length(seed) < 1){
-        seed <- seed[[1]]
+      if(length(seed) != 2){
+        seed <- rep(seed[1], 2)
       }
       
       # set the seed with Rcpp function
-      ziggsetseed(seed)
+      private$seed <- list(state.seed = seed[1], obs.seed = seed[2])
       
       # return
       return(invisible(self))

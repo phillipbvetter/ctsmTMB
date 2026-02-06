@@ -13,18 +13,18 @@ perform_filtering = function(self, private, use.cpp){
   }
   
   comptime <- system.time({
-      if(use.cpp){
-        
-        if(!private$silent) message("Filtering with C++...")
-        lkf_ekf_ukf_filter_rcpp(private$pars, self, private)
-        
-      } else {
-        
-        if(!private$silent) message("Filtering with R...")
-        lkf_ekf_ukf_filter_r(private$pars, self, private)
-        
-      }
-    }, gcFirst = FALSE)
+    if(use.cpp){
+      
+      if(!private$silent) message("Filtering with C++...")
+      lkf_ekf_ukf_filter_rcpp(private$pars, self, private)
+      
+    } else {
+      
+      if(!private$silent) message("Filtering with R...")
+      lkf_ekf_ukf_filter_r(private$pars, self, private)
+      
+    }
+  }, gcFirst = FALSE)
   
   private$timer_filtration <- comptime
   
@@ -39,7 +39,7 @@ lkf_ekf_ukf_filter_r <- function(pars, self, private){
                  ukf = ukf_filter_r(pars, self, private),
   )
   
-  private$filtration <- filt
+  private$filtration.raw <- filt
   
   return(invisible(self))
 }
@@ -50,38 +50,29 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
   obsMat = as.matrix(private$data[private$obs.names])
   inputMat = as.matrix(private$data[private$input.names])
   
+  ids <- 1:private$number.of.observations - 1 #minus 1 for 0 indexing
+  non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
+  any_available_obs <- sapply(non_na_ids, function(x) !is.null(x))
+  
   # non-na observation matrix
   numeric_is_not_na_obsMat = t(apply(obsMat, 1, FUN=function(x) as.numeric(!is.na(x))))
   if(nrow(numeric_is_not_na_obsMat)==1) numeric_is_not_na_obsMat = t(numeric_is_not_na_obsMat)
-  
-  # number of non-na observations
   number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
   
   output.list <- list()
   if(private$method == "lkf"){
-    output.list <- lkf_filter_rcpp(private$rcpp_function_ptr$f,
-                                   private$rcpp_function_ptr$g,
-                                   private$rcpp_function_ptr$dfdx,
-                                   private$rcpp_function_ptr$h,
-                                   private$rcpp_function_ptr$dhdx,
-                                   private$rcpp_function_ptr$hvar,
-                                   private$rcpp_function_ptr$dfdu,
+    output.list <- lkf_filter_rcpp(private$rcpp_function_ptr,
                                    obsMat,
                                    inputMat,
                                    pars,
                                    private$initial.state$p0,
                                    private$initial.state$x0,
                                    private$ode.timestep.size,
-                                   numeric_is_not_na_obsMat,
-                                   number_of_available_obs)
+                                   any_available_obs,
+                                   non_na_ids)
   }
   if(private$method=="ekf"){
-    output.list <- ekf_filter_rcpp(private$rcpp_function_ptr$f,
-                                   private$rcpp_function_ptr$g,
-                                   private$rcpp_function_ptr$dfdx,
-                                   private$rcpp_function_ptr$h,
-                                   private$rcpp_function_ptr$dhdx,
-                                   private$rcpp_function_ptr$hvar,
+    output.list <- ekf_filter_rcpp(private$rcpp_function_ptr,
                                    obsMat,
                                    inputMat,
                                    pars,
@@ -89,17 +80,12 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                                    private$initial.state$x0,
                                    private$ode.timestep.size,
                                    private$ode.timesteps,
-                                   numeric_is_not_na_obsMat,
-                                   number_of_available_obs,
+                                   any_available_obs,
+                                   non_na_ids,
                                    private$ode.solver)
   }
   if(private$method == "ukf"){
-    output.list <- ukf_filter_rcpp(private$rcpp_function_ptr$f,
-                                   private$rcpp_function_ptr$g,
-                                   private$rcpp_function_ptr$dfdx,
-                                   private$rcpp_function_ptr$h,
-                                   private$rcpp_function_ptr$dhdx,
-                                   private$rcpp_function_ptr$hvar,
+    output.list <- ukf_filter_rcpp(private$rcpp_function_ptr,
                                    obsMat,
                                    inputMat,
                                    pars,
@@ -109,92 +95,136 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                                    private$ode.timesteps,
                                    numeric_is_not_na_obsMat,
                                    number_of_available_obs,
-                                   private$ukf_hyperpars,
+                                   private$ukf.hyperpars,
                                    private$ode.solver)
   }
   
-  private$filtration <- output.list
+  private$filtration.raw <- output.list
   
   return(invisible(self))
 }
 
-create_filter_results <- function(self, private, laplace.residuals){
+create_filter_results <- function(self, private, laplace.residuals, return.directly=FALSE, silent=private$silent){
   
-  if(!private$silent) message("Returning results...")
+  if(!silent) message("Returning results...")
   
-  filt <- list()
   
   if(any(private$method == c("lkf","ekf","ukf"))){
     
-    # extract results from previous
-    rep <- private$filtration
+    rep <- private$filtration.raw
+    filt <- list()
     
-    # States -----------------------------------
-    
-    # Prior States
-    temp.states = try_withWarningRecovery(cbind(private$data$t, t(do.call(cbind,rep$xPrior))))
-    temp.sd = try_withWarningRecovery(cbind(private$data$t, sqrt(do.call(rbind,lapply(rep$pPrior,diag)))))
-    
-    colnames(temp.states) = c("t", private$state.names)
-    colnames(temp.sd) = c("t",private$state.names)
-    filt$states$mean$prior = as.data.frame(temp.states)
-    filt$states$sd$prior = as.data.frame(temp.sd)
-    # covariance
-    filt$states$cov$prior = as.data.frame(cbind(private$data$t, do.call(rbind,lapply(rep$pPrior, c))))
-    cov.names <- with(
-      expand.grid(private$state.names, private$state.names), 
-      paste0(paste0("cov_",Var1),"_",Var2)
-    )
-    names(filt$states$cov$prior) = c("t",cov.names)
-    
-    # Posterior States
-    temp.states = try_withWarningRecovery(cbind(private$data$t, t(do.call(cbind,rep$xPost))))
-    temp.sd = try_withWarningRecovery(cbind(private$data$t, sqrt(do.call(rbind,lapply(rep$pPost,diag)))))
-    colnames(temp.states) = c("t",private$state.names)
-    colnames(temp.sd) = c("t",private$state.names)
-    filt$states$mean$posterior = as.data.frame(temp.states)
-    filt$states$sd$posterior = as.data.frame(temp.sd)
-    # covariance
-    filt$states$cov$posterior = as.data.frame(cbind(private$data$t, do.call(rbind,lapply(rep$pPost, c))))
-    cov.names <- with(
-      expand.grid(private$state.names, private$state.names), 
-      paste0(paste0("cov_",Var1),"_",Var2)
-    )
-    names(filt$states$cov$posterior) = c("t",cov.names)
-    
-    # Residuals -----------------------------------
-    rowNAs = as.matrix(!is.na(private$data[private$obs.names]))
-    sumrowNAs = rowSums(rowNAs)
-    
-    nr <- nrow(private$data)
-    temp.res = matrix(nrow=length(private$data$t), ncol=private$number.of.observations)
-    temp.var =  matrix(nrow=length(private$data$t), ncol=private$number.of.observations)
-    
-    nr <- nrow(private$data)
-    innovation = rep$Innovation
-    innovation.cov = rep$InnovationCovariance
-    names(innovation.cov) = paste("t = ", private$data$t, sep="")
-    for (i in 1:nr) {
-      if (sumrowNAs[i] > 0) {
-        temp.res[i,rowNAs[i,]] = innovation[[i]]
-        temp.var[i,rowNAs[i,]] = diag(innovation.cov[[i]])
+    ##### helper functions #####
+    rbind_vectors <- function(list, colnames=NULL, extra=TRUE){
+      if(extra){
+        try_with_warning_recovery(
+          set.colnames(
+            cbind(private$data$t, do.call(rbind, list)),
+            colnames
+          )
+        )
+      } else {
+        do.call(rbind, list)
       }
     }
-    temp.res <- data.frame(private$data$t, temp.res)
-    temp.sd = data.frame(private$data$t, try_withWarningRecovery(sqrt(temp.var)))
-    names(temp.res) = c("t", private$obs.names)
-    names(temp.sd) = c("t", private$obs.names)
+    rbind_matrices_flatten <- function(list, colnames=NULL, fn=identity, extra=TRUE){
+      if(extra){
+        try_with_warning_recovery(
+          set.colnames(
+            cbind(private$data$t, fn(do.call(rbind, lapply(list,c)))),
+            colnames
+          )
+        )
+      } else {
+        fn(do.call(rbind, lapply(list,c)))
+      }
+    }
+    rbind_matrices_diag <- function(list, colnames=NULL, fn=identity, extra=TRUE){
+      if(extra){
+        try_with_warning_recovery(
+          set.colnames(
+            cbind(private$data$t, fn(do.call(rbind, lapply(list, diag)))),
+            colnames
+          )
+        )
+      } else {
+        fn(do.call(rbind, lapply(list, diag)))
+      }
+    }
     
-    filt$residuals$residuals = temp.res
-    filt$residuals$sd = temp.sd
-    filt$residuals$normalized = temp.res
-    filt$residuals$normalized[,-1] = temp.res[,-1]/temp.sd[,-1]
-    filt$residuals$cov = innovation.cov
+    # column names
+    .colnames <- c("t", private$state.names)
+    .obs.colnames <- c("t", private$obs.names)
+    .covnames <- c("t",as.vector(outer(private$state.names, private$state.names, function(a, b) paste0(a,b))))
+    .covnames.list <- paste("t = ", private$data$t, sep="")
+    
+    ##### priors
+    filt$states$mean$prior = rbind_vectors(rep$xPrior, .colnames)
+    filt$states$sd$prior = rbind_matrices_diag(rep$pPrior, .colnames, sqrt)
+    filt$states$cov$prior = rep$pPrior
+    names(filt$states$cov$prior) = .covnames.list
+    
+    ##### posteriors
+    filt$states$mean$posterior = rbind_vectors(rep$xPost, .colnames)
+    filt$states$sd$posterior = rbind_matrices_diag(rep$pPost, .colnames, sqrt)
+    filt$states$cov$posterior = rep$pPost
+    names(filt$states$cov$posterior) = .covnames.list
+    
+    ##### residuals
+    obsMat = as.matrix(private$data[private$obs.names])
+    ids <- 1:private$number.of.observations
+    non.na.ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
+    length.non.na.ids <- lapply(non.na.ids, length)
+    
+    
+    # pre-allocate
+    filt$residuals <- lapply(1:3, function(x) set.colnames(cbind(private$data$t, matrix(NA, nrow=nrow(obsMat), ncol=ncol(obsMat))), .obs.colnames))
+    names(filt$residuals) = c("residuals", "sd", "normalized")
+    
+    # Take care rows where all observations are present
+    ids.full.obs <- length.non.na.ids == private$number.of.observations
+    filt$residuals$residuals[ids.full.obs,-1] <- rbind_vectors(rep$Innovation[ids.full.obs], extra=FALSE)
+    filt$residuals$sd[ids.full.obs,-1] <- rbind_matrices_diag(rep$InnovationCovariance[ids.full.obs], fn=sqrt, extra=FALSE)
+    # Take care of all other rows with some missing observations
+    for(i in seq_along(private$obs.names[-1])){
+      ids <- which(length.non.na.ids == i)
+      for(j in ids){
+        filt$residuals$residuals[j, non.na.ids[[j]]+1] <- rep$Innovation[[j]]
+        filt$residuals$sd[j, non.na.ids[[j]]+1] <- sqrt(diag(rep$InnovationCovariance[[j]]))
+      }
+    }
+    filt$residuals$normalized = filt$residuals$residuals
+    filt$residuals$normalized[,-1] <- filt$residuals$normalized[,-1]/filt$residuals$sd[,-1] 
+    filt$residuals$cov <- rep$InnovationCovariance
+    names(filt$residuals$cov) = .covnames.list
+    
+    ##### observations
+    # call c++ function
+    observations <- calculate_filtering_observations(private$filtration.raw,
+                                                     private$rcpp_function_ptr,
+                                                     as.matrix(private$data[private$input.names]),
+                                                     private$pars,
+                                                     private$number.of.observations
+    )
+    colnames(observations$mean$prior) <- .obs.colnames
+    colnames(observations$mean$posterior) <- .obs.colnames
+    colnames(observations$sd$prior) <- .obs.colnames
+    colnames(observations$sd$posterior) <- .obs.colnames
+    names(observations$cov$prior) = .covnames.list
+    names(observations$cov$posterior) = .covnames.list
+    filt$observations <- observations
     
   }
   
+  # When we use for estimate we don't want to store in the filtration
+  if(return.directly){
+    return(filt)
+  }
+  
+  # store
   private$filtration <- filt
   
+  # return
   return(invisible(self))
 }
 

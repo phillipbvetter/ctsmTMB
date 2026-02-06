@@ -9,7 +9,7 @@ compute_mle_gradient_and_hessian <- function(self, private){
   private$fit$nll = private$opt$objective
   
   # MLE gradient
-  private$fit$nll.gradient = try_withWarningRecovery(
+  private$fit$nll.gradient = try_with_warning_recovery(
     {
       nll.grad = as.vector(private$nll$gr(private$opt$par))
       names(nll.grad) = names(private$free.pars)
@@ -22,7 +22,7 @@ compute_mle_gradient_and_hessian <- function(self, private){
   
   # MLE Hessian
   if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")){
-    private$fit$nll.hessian = try_withWarningRecovery(
+    private$fit$nll.hessian = try_with_warning_recovery(
       {
         nll.hess = private$nll$he(private$opt$par)
         rownames(nll.hess) = names(private$free.pars)
@@ -106,7 +106,7 @@ calculate_covariance_from_hessian <- function(self, private){
     private$fit$cov.fixed <- covariance
     colnames(private$fit$cov.fixed) <- names(private$fit$par.fixed)
     rownames(private$fit$cov.fixed) <- names(private$fit$par.fixed)
-    std.dev <- try_withWarningRecovery(sqrt(diag(covariance)))
+    std.dev <- try_with_warning_recovery(sqrt(diag(covariance)))
   }
   
   # write std.dev
@@ -130,8 +130,8 @@ iterative_hessian_inversion <- function(self, private){
   # OPTION 0 -----------------------------------
   # Invert full hessian
   temp.hessian = private$fit$nll.hessian
-  covariance = try_withWarningRecovery(solve(temp.hessian))
-  std.dev = try_withWarningRecovery(sqrt(diag((temp.hessian))))
+  covariance = try_with_warning_recovery(solve(temp.hessian))
+  std.dev = try_with_warning_recovery(sqrt(diag((temp.hessian))))
   
   # OPTION 1 -----------------------------------
   # Remove all row/cols where the diagonal elements are smalller than threshold
@@ -140,8 +140,8 @@ iterative_hessian_inversion <- function(self, private){
   if(inherits(covariance,"try-error") && any(remove.ids)){
     
     # try to invert reduced hessian
-    covariance = try_withWarningRecovery(solve(temp.hessian[-remove.ids, -remove.ids]))
-    std.dev = try_withWarningRecovery(sqrt(diag(covariance)))
+    covariance = try_with_warning_recovery(solve(temp.hessian[-remove.ids, -remove.ids]))
+    std.dev = try_with_warning_recovery(sqrt(diag(covariance)))
     
     if(!inherits(covariance,"try-error")){
       covtemp = array(NA, dim=dim(temp.hessian))
@@ -163,8 +163,8 @@ iterative_hessian_inversion <- function(self, private){
   if(inherits(covariance,"try-error")) {
     while(failed.to.invert.hessian) {
       remove.ids <- id.diag.hess[1:i]
-      covariance <- try_withWarningRecovery(solve(temp.hessian[-remove.ids,-remove.ids]))
-      std.dev = try_withWarningRecovery(sqrt(diag(covariance)))
+      covariance <- try_with_warning_recovery(solve(temp.hessian[-remove.ids,-remove.ids]))
+      std.dev = try_with_warning_recovery(sqrt(diag(covariance)))
       
       # if succesful update results
       if(!inherits(covariance,"try-error")) {
@@ -195,27 +195,72 @@ iterative_hessian_inversion <- function(self, private){
 
 #######################################################
 #######################################################
-# compute filters
+# laplace report
 #######################################################
 #######################################################
-get_state_report <- function(self, private){
+laplace_report <- function(self, private, laplace.residuals){
   
-  estimated.pars <- self$getParameters()[,"estimate"]
-  switch(private$method,
-         # kalman filters
-         ekf = {rep <- ekf_filter_r(estimated.pars, self, private)},
-         # ekf = {rep <- lkf_ekf_ukf_filter_rcpp(estimated.pars, self, private)},
-         ekf.cpp = {rep <- private$nll$report(estimated.pars)},
-         lkf = {rep <- lkf_filter_r(estimated.pars, self, private)},
-         lkf.cpp = {rep <- private$nll$report(estimated.pars)},
-         ukf = {rep <- ukf_filter_r(estimated.pars, self, private)},
-         ukf.cpp = {rep <- private$nll$report(estimated.pars)},
-         # laplace methods
-         laplace = {rep <- NULL},
-         laplace.thygesen = {rep <- NULL}
-  )
+  # lengths
+  n.states <- private$number.of.states
+  n.diff <- private$number.of.diffusions
+  nobs <- private$number.of.observations
+  .colnames <- c("t", private$obs.names)
   
-  return(rep)
+  set.col.names <- function(object, colnames){
+    colnames(object) <- colnames
+    object
+  }
+  cbind_t <- function(object, names){
+    set.col.names(cbind(private$data$t, object), names)
+  }
+  
+  ############ states ############
+  random.ids <- private$ode.timesteps.cumsum+1
+  if(private$method %in% c("laplace")){
+    
+    # Smoothed States -----------------------------------
+    temp.states <- data.frame(private$data$t, matrix(private$sdr$par.random, ncol=n.states)[random.ids, ])
+    temp.sd <- data.frame(private$data$t, matrix(sqrt(private$sdr$diag.cov.random), ncol=n.states)[random.ids, ])
+    names(temp.states) = c("t", private$state.names)
+    names(temp.sd) = c("t", private$state.names)
+    private$fit$states$mean$smoothed = temp.states
+    private$fit$states$sd$smoothed = temp.sd
+  }
+  
+  if(private$method %in% c("laplace.thygesen")){
+    
+    # Smoothed States -----------------------------------
+    # Fill with zeros to complete perfect columns (dB's have 1 missing elements compared to random effect states)
+    # for easier column extraction
+    par.random <- c(private$sdr$par.random, numeric(n.diff))
+    sd.random <- c(sqrt(private$sdr$diag.cov.random), numeric(n.diff))
+    temp.states <- data.frame(private$data$t, matrix(par.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
+    temp.sd <- data.frame(private$data$t, matrix(sd.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
+    names(temp.states) = c("t", private$state.names)
+    names(temp.sd) = c("t", private$state.names)
+    private$fit$states$mean$smoothed = temp.states
+    private$fit$states$sd$smoothed = temp.sd
+  }
+  
+  ############ observations and residuals ############
+  if(private$method %in% c("laplace","laplace.thygesen")) {
+    
+    # compute one-step residuals
+    if(laplace.residuals){
+      
+      message("Calculating one-step ahead residuals...")
+      res <- RTMB::oneStepPredict(private$nll,
+                                  observation.name="obsMat",
+                                  method="oneStepGaussian",
+                                  trace=FALSE,
+                                  parallel=TRUE)
+      private$fit$residuals$residuals = cbind_t(matrix(res[["residual"]], ncol=nobs), .colnames)
+      private$fit$observations$mean$smoothed <- cbind_t(matrix(res[["mean"]], ncol=nobs), .colnames)
+      private$fit$observations$sd$smoothed <- cbind_t(matrix(res[["sd"]], ncol=nobs), .colnames)
+      
+    }
+  }
+  
 }
 
 #######################################################
@@ -223,71 +268,42 @@ get_state_report <- function(self, private){
 # report states
 #######################################################
 #######################################################
-compute_return_states <- function(rep, self, private){
+laplace_states <- function(self, private){
   
   # lengths
   n.states <- private$number.of.states
   n.diff <- private$number.of.diffusions
   
-  ############# KALMAN ############
-  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
+  ############ LAPLACE ############
+  
+  random.ids <- private$ode.timesteps.cumsum+1
+  
+  if(private$method %in% c("laplace")){
     
-    # Prior States
-    temp.states = try_withWarningRecovery(data.frame(private$data$t, t(do.call(cbind,rep$xPrior))))
-    temp.sd = try_withWarningRecovery(data.frame(private$data$t, sqrt(do.call(rbind,lapply(rep$pPrior,diag)))))
-    temp.cov <- rep$pPrior
+    # Smoothed States -----------------------------------
+    temp.states <- data.frame(private$data$t, matrix(private$sdr$par.random, ncol=n.states)[random.ids, ])
+    temp.sd <- data.frame(private$data$t, matrix(sqrt(private$sdr$diag.cov.random), ncol=n.states)[random.ids, ])
     names(temp.states) = c("t", private$state.names)
-    names(temp.sd) = c("t",private$state.names)
-    names(temp.cov) = paste0("t = ", private$data$t)
-    private$fit$states$mean$prior = temp.states
-    private$fit$states$sd$prior = temp.sd
-    private$fit$states$cov$prior = temp.cov
-    
-    # Posterior States
-    temp.states = try_withWarningRecovery(data.frame(private$data$t, t(do.call(cbind,rep$xPost))))
-    temp.sd = try_withWarningRecovery(data.frame(private$data$t, sqrt(do.call(rbind,lapply(rep$pPost,diag)))))
-    temp.cov <- rep$pPost
-    names(temp.states) = c("t",private$state.names)
-    names(temp.sd) = c("t",private$state.names)
-    names(temp.cov) = paste("t = ",private$data$t,sep="")
-    private$fit$states$mean$posterior = temp.states
-    private$fit$states$sd$posterior = temp.sd
-    private$fit$states$cov$posterior = temp.cov
-    
+    names(temp.sd) = c("t", private$state.names)
+    private$fit$states$mean$smoothed = temp.states
+    private$fit$states$sd$smoothed = temp.sd
   }
   
-  ############ LAPLACE ############
-  if(private$method %in% c("laplace","laplace.thygesen")){
+  if(private$method %in% c("laplace.thygesen")){
     
-    random.ids <- private$ode.timesteps.cumsum+1
-    
-    if(private$method %in% c("laplace")){
-      
-      # Smoothed States -----------------------------------
-      temp.states <- data.frame(private$data$t, matrix(private$sdr$par.random, ncol=n.states)[random.ids, ])
-      temp.sd <- data.frame(private$data$t, matrix(sqrt(private$sdr$diag.cov.random), ncol=n.states)[random.ids, ])
-      names(temp.states) = c("t", private$state.names)
-      names(temp.sd) = c("t", private$state.names)
-      private$fit$states$mean$smoothed = temp.states
-      private$fit$states$sd$smoothed = temp.sd
-    }
-    
-    if(private$method %in% c("laplace.thygesen")){
-      
-      # Smoothed States -----------------------------------
-      # Fill with zeros to complete perfect columns (dB's have 1 missing elements compared to random effect states)
-      # for easier column extraction
-      par.random <- c(private$sdr$par.random, numeric(n.diff))
-      sd.random <- c(sqrt(private$sdr$diag.cov.random), numeric(n.diff))
-      temp.states <- data.frame(private$data$t, matrix(par.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
-      temp.sd <- data.frame(private$data$t, matrix(sd.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
-      names(temp.states) = c("t", private$state.names)
-      names(temp.sd) = c("t", private$state.names)
-      private$fit$states$mean$smoothed = temp.states
-      private$fit$states$sd$smoothed = temp.sd
-    }
-    
+    # Smoothed States -----------------------------------
+    # Fill with zeros to complete perfect columns (dB's have 1 missing elements compared to random effect states)
+    # for easier column extraction
+    par.random <- c(private$sdr$par.random, numeric(n.diff))
+    sd.random <- c(sqrt(private$sdr$diag.cov.random), numeric(n.diff))
+    temp.states <- data.frame(private$data$t, matrix(par.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
+    temp.sd <- data.frame(private$data$t, matrix(sd.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
+    names(temp.states) = c("t", private$state.names)
+    names(temp.sd) = c("t", private$state.names)
+    private$fit$states$mean$smoothed = temp.states
+    private$fit$states$sd$smoothed = temp.sd
   }
+  
   
   # return
   return(invisible(self))
@@ -298,39 +314,13 @@ compute_return_states <- function(rep, self, private){
 # report residuals
 #######################################################
 #######################################################
-report_residuals <- function(rep, laplace.residuals, self , private) {
+report_residuals_and_observations <- function(laplace.residuals, self , private) {
   
-  ############ KALMAN ############
-  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
-    rowNAs = as.matrix(!is.na(private$data[private$obs.names]))
-    sumrowNAs = rowSums(rowNAs)
-    
-    temp.res = matrix(nrow=length(private$data$t), ncol=private$number.of.observations)
-    temp.var =  matrix(nrow=length(private$data$t), ncol=private$number.of.observations)
-    
-    innovation = rep$Innovation
-    innovation.cov = rep$InnovationCovariance
-    names(innovation.cov) = paste("t = ", private$data$t, sep="")
-    for (i in 1:nrow(private$data)) {
-      if (sumrowNAs[i] > 0) {
-        temp.res[i,rowNAs[i,]] = innovation[[i]]
-        temp.var[i,rowNAs[i,]] = diag(innovation.cov[[i]])
-      }
-    }
-    temp.res <- data.frame(private$data$t, temp.res)
-    temp.sd = data.frame(private$data$t, try_withWarningRecovery(sqrt(temp.var)))
-    names(temp.res) = c("t", private$obs.names)
-    names(temp.sd) = c("t", private$obs.names)
-    # should we remove the empty matrices?
-    # innovation.cov = innovation.cov[sumrowNAs!=0]
-    
-    private$fit$residuals$residuals = temp.res
-    private$fit$residuals$sd = temp.sd
-    private$fit$residuals$normalized = temp.res
-    # normalize residuals (removing time column [,-1])
-    private$fit$residuals$normalized[,-1] = temp.res[,-1]/temp.sd[,-1]
-    private$fit$residuals$cov = innovation.cov
-    
+  nobs <- private$number.of.observations
+  .colnames <- c("t", private$obs.names)
+  
+  cbind_t <- function(object, names){
+    set.colnames(cbind(private$data$t, object), names)
   }
   
   ############ LAPLACE ############
@@ -339,195 +329,17 @@ report_residuals <- function(rep, laplace.residuals, self , private) {
     # compute one-step residuals
     if(laplace.residuals){
       
-      rowNAs = as.matrix(!is.na(do.call(cbind,private$data[private$obs.names]))[-1,])
-      sumrowNAs = rowSums(rowNAs)
-      
       message("Calculating one-step ahead residuals...")
       res <- RTMB::oneStepPredict(private$nll,
                                   observation.name="obsMat",
                                   method="oneStepGaussian",
-                                  trace=TRUE)
-      nr <- nrow(private$data)
-      temp.res <- data.frame(private$data$t, matrix(res[["residual"]],ncol=private$number.of.observations))
-      temp.sd <- data.frame(private$data$t, matrix(res[["sd"]],ncol=private$number.of.observations))
-      names(temp.res) = c("t", private$obs.names)
-      names(temp.sd) = c("t", private$obs.names)
-      
-      private$fit$residuals$residuals <- temp.res
-      private$fit$residuals$sd <- temp.sd
-      private$fit$residuals$normalized <- temp.res
-      # The first column is the time column why it is removed
-      private$fit$residuals$normalized[,-1] <- temp.res[,-1]/temp.sd[,-1]
+                                  trace=FALSE,
+                                  parallel=TRUE)
+      private$fit$residuals$residuals = cbind_t(matrix(res[["residual"]], ncol=nobs), .colnames)
+      private$fit$observations$mean$smoothed <- cbind_t(matrix(res[["mean"]], ncol=nobs), .colnames)
+      private$fit$observations$sd$smoothed <- cbind_t(matrix(res[["sd"]], ncol=nobs), .colnames)
       
     }
-  }
-  
-  # return
-  return(invisible(self))
-  
-}
-
-#######################################################
-#######################################################
-# report observations
-#######################################################
-#######################################################
-report_observations <- function(self , private) {
-  
-  ############ KALMAN ############
-  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
-    
-    # Observations -----------------------------------
-    free.and.fixed.parameters <- self$getParameters()[,"estimate"]
-    names(free.and.fixed.parameters) <- private$parameter.names
-    
-    listofvariables.prior = c(
-      as.list(private$fit$states$mean$prior[-1]),
-      as.list(free.and.fixed.parameters),
-      as.list(private$data)
-    )
-    listofvariables.posterior = c(
-      as.list(private$fit$states$mean$posterior[-1]),
-      as.list(free.and.fixed.parameters),
-      as.list(private$data)
-    )
-    obs.df.prior = as.data.frame(
-      lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.prior)})
-    )
-    obs.df.posterior = as.data.frame(
-      lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.posterior)})
-    )
-    
-    private$fit$observations$mean$prior = data.frame(t=private$data$t, obs.df.prior)
-    private$fit$observations$mean$posterior = data.frame(t=private$data$t, obs.df.posterior)
-    
-    # Observation variances -----------------------------------
-    
-    # The observation variance (to first order) is:
-    # y = h(x) + e -> var(y) = dhdx var(x) dhdx^T + var(e)
-    
-    n <- private$number.of.states
-    m <- private$number.of.observations
-    
-    # create expression for observation covariance to be 'eval'-uated
-    jac.h = c()
-    for(i in seq_along(private$obs.names)){
-      for(j in seq_along(private$state.names)){
-        jac.h = c(jac.h, private$diff.terms.obs[[i]][[j]])
-      }
-    }
-    dhdx <- parse(text=sprintf("matrix(c(%s),nrow=%s,ncol=%s)", paste(jac.h,collapse=","), m, n))[[1]]
-    obs.var <- c()
-    for(i in seq_along(private$obs.var.trans)){
-      obs.var = c(obs.var, private$obs.var.trans[[i]]$rhs)
-    }
-    obsvar <- parse(text=sprintf("diag(%s)*c(%s)", m, paste(obs.var,collapse=",")))[[1]]
-    yCov <- substitute(dhdx %*% xCov %*% t(dhdx) + eCov, list(dhdx=dhdx, eCov=obsvar))
-    
-    # evaluate prior and posterior variance
-    list.of.parameters <- c(
-      as.list(private$fit$par.fixed),
-      lapply(private$fixed.pars, function(x) x$initial)
-    )
-    
-    # prior
-    obsvar.prior <- list()
-    for(i in seq_along(private$data$t)){
-      obsvar.prior[[i]] <- eval(expr = yCov,
-                                envir = c(list.of.parameters,
-                                          as.list(private$fit$states$mean$prior[i,-1]),
-                                          list(xCov = private$fit$states$cov$prior[[i]]),
-                                          as.list(private$data[i,-1])
-                                ))
-    }
-    names(obsvar.prior) <- names(private$fit$states$cov$prior)
-    private$fit$observations$cov$prior <- obsvar.prior
-    obs.sd.prior <- cbind(private$fit$states$mean$prior["t"], do.call(rbind, lapply(obsvar.prior, diag)))
-    rownames(obs.sd.prior) <- NULL
-    names(obs.sd.prior) <- c("t",private$obs.names)
-    private$fit$observations$sd$prior <- obs.sd.prior
-    
-    # posterior
-    obsvar.post <- list()
-    for(i in seq_along(private$data$t)){
-      obsvar.post[[i]] <- eval(expr = yCov,
-                               envir = c(list.of.parameters,
-                                         as.list(private$fit$states$mean$posterior[i,-1]),
-                                         list(xCov = private$fit$states$cov$posterior[[i]]),
-                                         as.list(private$data[i,-1])
-                               ))
-    }
-    names(obsvar.post) <- names(private$fit$states$cov$posterior)
-    private$fit$observations$cov$posterior <- obsvar.post
-    obs.sd.post <- cbind(private$fit$states$mean$posterior["t"], do.call(rbind, lapply(obsvar.post, diag)))
-    rownames(obs.sd.post) <- NULL
-    names(obs.sd.post) <- c("t",private$obs.names)
-    private$fit$observations$sd$posterior <- obs.sd.post
-    
-  }
-  
-  ############ LAPLACE ############
-  if(private$method %in% c("laplace","laplace.thygesen")) {
-    
-    # Observations -----------------------------------
-    n <- private$number.of.states
-    m <- private$number.of.observations
-    
-    listofvariables.smoothed = c(
-      # states
-      as.list(private$fit$states$mean$smoothed[-1]),
-      # estimated free parameters 
-      as.list(private$fit$par.fixed),
-      # fixed parameters
-      lapply(private$fixed.pars, function(x) x$initial),
-      # inputs
-      as.list(private$data)
-    )
-    obs.df.smoothed = as.data.frame(
-      lapply(private$obs.eqs.trans, function(ls){eval(ls$rhs, envir = listofvariables.smoothed)})
-    )
-    private$fit$observations$mean$smoothed = data.frame(t=private$data$t, obs.df.smoothed)
-    
-    # Observation variances -----------------------------------
-    # The observation variance (to first order) is: 
-    #
-    # y = h(x) + e -> var(y) = dhdx var(x) dhdx^T + var(e)
-    jac.h = c()
-    for(i in seq_along(private$obs.names)){
-      for(j in seq_along(private$state.names)){
-        jac.h = c(jac.h, private$diff.terms.obs[[i]][[j]])
-      }
-    }
-    dhdx <- parse(text=sprintf("matrix(c(%s),nrow=%s,ncol=%s)", paste(jac.h,collapse=","), m, n))[[1]]
-    obs.var <- c()
-    for(i in seq_along(private$obs.var.trans)){
-      obs.var = c(obs.var, private$obs.var.trans[[i]]$rhs)
-    }
-    obsvar <- parse(text=sprintf("diag(%s)*c(%s)", m, paste(obs.var,collapse=",")))[[1]]
-    yCov <- substitute(dhdx %*% xCov %*% t(dhdx) + eCov, list(dhdx=dhdx, eCov=obsvar))
-    
-    # Evaluate prior and posterior variance
-    list.of.parameters <- c(
-      as.list(private$fit$par.fixed),
-      lapply(private$fixed.pars, function(x) x$initial)
-    )
-    # prior
-    # obsvar.smooth <- list()
-    # for(i in seq_along(private$data$t)){
-    #   obsvar.smooth[[i]] <- eval(expr = yCov,
-    #                             envir = c(list.of.parameters,
-    #                                       as.list(private$fit$states$mean$smoothed[i,-1]),
-    #                                       list(xCov = private$fit$states$cov$smoothed[[i]]),
-    #                                       as.list(private$data[i,-1])
-    #                             ))
-    # }
-    # names(obsvar.smooth) <- names(private$fit$states$cov$prior)
-    # private$fit$observations$cov$prior <- obsvar.prior
-    # obs.sd.prior <- cbind(private$fit$states$mean$prior["t"], do.call(rbind, lapply(obsvar.prior, diag)))
-    # rownames(obs.sd.prior) <- NULL
-    # names(obs.sd.prior) <- c("t",private$obs.names)
-    # private$fit$observations$sd$prior <- obs.sd.prior
-
   }
   
   # return

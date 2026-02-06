@@ -1,11 +1,7 @@
+data(Ornstein)
+df <- Ornstein[1:10,]
+df$z = df$y
 
-# This is a testthat script for automatically testing that the functions in
-# ctsmTMB are working as intended.
-
-model = ctsmTMB$new()
-testthat::expect_s3_class(model, class=c("ctsmTMB","R6"))
-
-# Try to create a model
 model = ctsmTMB$new()
 testthat::expect_no_error({
 model$addSystem(
@@ -36,17 +32,54 @@ model$setParameter(
 model$setInitialState(list(rep(1,2), 0.656*diag(2)))
 })
 
-# CPP FUNCTIONS
-# testthat::expect_no_error(
-#   model$predict(fake.data, silent=T, use.cpp=TRUE)
-# )
+testthat::expect_no_error({
+  model$estimate(df, method="ekf", silent=TRUE, trace=0)
+  model$estimate(df, method="lkf", silent=TRUE, trace=0)
+  model$estimate(df, method="ukf", silent=TRUE, trace=0)
+  model$estimate(df, method="laplace", silent=TRUE, trace=0)
+  model$estimate(df, method="laplace.thygesen", silent=TRUE, trace=0)
+})
 
-# testthat::expect_no_error(
-#   model$simulate(fake.data, silent=T, use.cpp=TRUE)
-# )
+testthat::expect_no_error({
+  model$filter(df, method="ekf", use.cpp=TRUE, silent=TRUE)
+  model$filter(df, method="lkf", use.cpp=TRUE, silent=TRUE)
+  model$filter(df, method="ukf", use.cpp=TRUE, silent=TRUE)
+})
+testthat::expect_no_error({
+  model$filter(df, method="ekf", use.cpp=FALSE, silent=TRUE)
+  model$filter(df, method="lkf", use.cpp=FALSE, silent=TRUE)
+  model$filter(df, method="ukf", use.cpp=FALSE, silent=TRUE)
+})
 
-# something like this for testing
-# identical(
-#   model$predict(data=.data, method="ekf", use.cpp=T),
-#   model$predict(data=.data, method="ekf", use.cpp=F)
-# )
+testthat::expect_no_error({
+  model$smoother(df, method="laplace", silent=TRUE)
+  model$smoother(df, method="laplace.thygesen", silent=TRUE)
+})
+
+testthat::expect_no_error({
+  model$predict(df, method="ekf", use.cpp=TRUE, silent=TRUE)
+  model$predict(df, method="lkf", use.cpp=TRUE, silent=TRUE)
+  model$predict(df, method="ukf", use.cpp=TRUE, silent=TRUE)
+})
+testthat::expect_no_error({
+  model$predict(df, method="ekf", use.cpp=FALSE, silent=TRUE)
+  model$predict(df, method="lkf", use.cpp=FALSE, silent=TRUE)
+  model$predict(df, method="ukf", use.cpp=FALSE, silent=TRUE)
+})
+
+testthat::expect_no_error({
+  model$simulate(df, method="ekf", use.cpp=TRUE, silent=TRUE)
+  model$simulate(df, method="lkf", use.cpp=TRUE, silent=TRUE)
+  model$simulate(df, method="ukf", use.cpp=TRUE, silent=TRUE)
+})
+testthat::expect_no_error({
+  model$simulate(df, method="ekf", use.cpp=FALSE, silent=TRUE)
+  model$simulate(df, method="lkf", use.cpp=FALSE, silent=TRUE)
+  model$simulate(df, method="ukf", use.cpp=FALSE, silent=TRUE)
+})
+
+testthat::expect_no_error({
+  model$likelihood(df, method="lkf", silent=TRUE)
+  model$likelihood(df, method="ukf", silent=TRUE)
+  model$likelihood(df, method="ekf", silent=TRUE)
+})

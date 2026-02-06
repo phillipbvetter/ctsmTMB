@@ -72,3 +72,8 @@ utils::globalVariables(
     "sd"
   )
 )
+
+# C++ function from Rcpp::sourceCpp()
+utils::globalVariables(
+  "get_sysfun_cpp_function_ptrs"
+)

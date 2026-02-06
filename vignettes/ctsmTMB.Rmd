@@ -8,36 +8,36 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-
-Welcome to this guide on how to work with `ctsmTMB` for modelling time-series data.
-
-In this example we consider a simple 1D mean-reverting stochastic differential equation model, the Ornstein-Uhlenbeck process:
-$$ 
-\mathrm{d}x_{t} = \theta (\mu - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} 
-$$
-Here $\theta$, $\mu$ and $\sigma_x$ are (fixed effects) parameters to be estimated. 
   
-We assume that we have **direct** observations of the state $x_{t}$, at discrete times $t_k$ for $k=0,1,2,...,N$ i.e. the observation equation is
-$$
-y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
-$$
-
-The residuals are assumed to be Gaussian, and we choose the variance as
-$$
-\varepsilon_{t_{k}} \sim N(0,\sigma_{y}^{2} \cdot u_{t_{k}})
-$$
-
-
-Here $\sigma_{y}$ is a fixed effect parameter (also to be estimated), and $u_{t}$ is a known time-dependent input. The input is added here for sake of introduction, just to demonstrate how time-dependent inputs are specified. We could for example imagine the input to be given by
-$$
-u_{t_{k}} = \left\{ 1, 4, 1, 4, 1, 4 \cdots \right\}
-$$
-such that certain observations have twice the standard deviation of others, and thus carry less weight (information) about the latent state $x$. In the remainder of this vignette however, we simply set $u_{t} = 1$.
-
-# Initialising
+  Welcome to this guide on how to work with `ctsmTMB` for modelling time-series data.
+  
+  In this example we consider a simple 1D mean-reverting stochastic differential equation model, the Ornstein-Uhlenbeck process:
+  $$ 
+  \mathrm{d}x_{t} = \theta (\mu - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} 
+  $$
+  Here $\theta$, $\mu$ and $\sigma_x$ are (fixed effects) parameters to be estimated. 
+  
+  We assume that we have **direct** observations of the state $x_{t}$, at discrete times $t_k$ for $k=0,1,2,...,N$ i.e. the observation equation is
+  $$
+  y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
+  $$
+  
+  The residuals are assumed to be Gaussian, and we choose the variance as
+  $$
+  \varepsilon_{t_{k}} \sim N(0,\sigma_{y}^{2} \cdot u_{t_{k}})
+  $$
+  
+  
+  Here $\sigma_{y}$ is a fixed effect parameter (also to be estimated), and $u_{t}$ is a known time-dependent input. The input is added here for sake of introduction, just to demonstrate how time-dependent inputs are specified. We could for example imagine the input to be given by
+  $$
+  u_{t_{k}} = \left\{ 1, 4, 1, 4, 1, 4 \cdots \right\}
+  $$
+  such that certain observations have twice the standard deviation of others, and thus carry less weight (information) about the latent state $x$. In the remainder of this vignette however, we simply set $u_{t} = 1$.
+  
+  # Initialising
   
 We initialise a `ctsmTMB` model object using
-
+  
 ```{r}
 library(ctsmTMB)
 model <- ctsmTMB$new()
@@ -127,11 +127,11 @@ print(model)
 
 Lastly the state distribution at the initial time point must be specified via its mean and variance.
 ```{r}
-initial.state <- list(mean=1, cov=1e-1)
+initial.state <- list(mean=0.5, cov=1e-10)
 model$setInitialState(initial.state=initial.state)
 ```
 
-Note that in higher dimensions the provided covariance `cov` must be a matrix. A simple initial covariance could just be a scaled identity e.g. in two dimensions `cov = 1e-1 * diag(2)`
+Note that in higher dimensions the provided covariance `cov` must be a matrix. A simple initial covariance could just be a scaled identity e.g. in two dimensions `cov = 1e-3 * diag(2)`
 
 # Generate Data
 
@@ -153,7 +153,6 @@ The code below performs the simulation and prepares data for likelihood estimati
 library(ggplot2)
 
 # Set simulation settings
-set.seed(11)
 true.pars <- c(theta=10, mu=1, sigma_x=1, sigma_y=0.05)
 dt.sim <- 1e-3
 t.end <- 5
@@ -165,26 +164,31 @@ sim <- model$simulate(data=df.sim,
                       pars=true.pars, 
                       n.sims=1, 
                       silent=T, 
-                      initial.state=initial.state)
-x <- sim$states$x$i0$x1
+                      initial.state=initial.state,
+                      cpp.seeds = c(1,2))
 
-# Extract observations from simulation and add noise
-iobs <- seq(1,length(t.sim), by=10)
+# Extract state and observations
+x.sim <- sim$states$x$i0[,1]
+y.sim <- sim$observations$y$i0[,1]
+
+# Select every ten observations
+iobs <- seq(1, length(t.sim), by=10)
 t.obs <- t.sim[iobs]
-y = x[iobs] + true.pars["sigma_y"] * rnorm(length(iobs))
+y.obs <- y.sim[iobs]
 
 # Create data-frame
-data <- data.frame(
+.df <- data.frame(
   t = t.obs,
-  u = 1,
-  y = y
+  y = y.obs,
+  u = 1
 )
 
 # Plot the simulation and observed data
 ggplot() +
-  geom_line(aes(x=t.sim,y=x,color="Simulation")) +
-  geom_point(aes(x=t.obs,y=y,fill="Observations")) +
-  ctsmTMB:::getggplot2theme() + labs(x="t", y="x",color="",fill="")
+  geom_line(aes(x=t.sim, y=x.sim, color="Simulation")) +
+  geom_point(aes(x=t.obs, y=y.obs, color="Observations")) +
+  ctsmTMB:::getggplot2theme() + 
+  labs(x="t", y="x",color="")
 ```
 
 # Perform estimation
@@ -196,7 +200,7 @@ We can now pass the `data` to the `estimate` method. This will build the model, 
 _**Note**: The data *must* contain an increasing time column named `t` and columns for each of the specified inputs and observations, in this case `u` and `y`._
 
 ```{r}
-fit <- model$estimate(data)
+fit <- model$estimate(.df)
 ```
 
 ```{r, eval=FALSE,echo=FALSE}
@@ -295,11 +299,11 @@ In this example we used the Extended Kalman filter (this is the default filterin
 
 ```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center', fig.alt='The plot shows prior and posterior state estimates against data.',eval=F,include=F}
 # Extract time, and prior/posterior mean and standard deviation estimates
-t         = fit$states$mean$posterior$t
-xprior    = fit$states$mean$prior$x
-xprior_sd = fit$states$sd$prior$x
-xpost     = fit$states$mean$posterior$x
-xpost_sd  = fit$states$sd$posterior$x
+t         = fit$states$mean$posterior[,"t"]
+xprior    = fit$states$mean$prior[,"x"]
+xprior_sd = fit$states$sd$prior[,"x"]
+xpost     = fit$states$mean$posterior[,"x"]
+xpost_sd  = fit$states$sd$posterior[,"x"]
 
 # Create vector c(xprior[1], xpost[1], xprior[2], xpost[2],...)
 t2 <- c(rbind(t,t))
@@ -314,9 +318,9 @@ ggplot() +
   ctsmTMB:::getggplot2theme()
 ```
 ```{r eval=FALSE, include=FALSE}
-  # geom_line(aes(x=t,y=xpost,color="State Estimates (Posterior)"),lwd=1) +
-  # geom_line(aes(x=t,y=xprior,color="State Estimates (Prior)"),lwd=1) +
-  # geom_ribbon(aes(x=t,ymin=xpost-2*xpost_sd,ymax=xpost+2*xpost_sd),fill="grey",alpha=0.5) +
+# geom_line(aes(x=t,y=xpost,color="State Estimates (Posterior)"),lwd=1) +
+# geom_line(aes(x=t,y=xprior,color="State Estimates (Prior)"),lwd=1) +
+# geom_ribbon(aes(x=t,ymin=xpost-2*xpost_sd,ymax=xpost+2*xpost_sd),fill="grey",alpha=0.5) +
 ```
 
 The states can easily be plotted using the provided **S3** plot.ctsmTMB.fit method. Here we plot both prior and posterior states against the observations:

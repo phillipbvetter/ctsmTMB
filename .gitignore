@@ -6,6 +6,7 @@
 *.o
 *.so
 vignettes/ctsmTMB_cppfiles
+vignettes/*.html
 ctsmTMB_cppfiles
 git_push.sh
 src/*.o

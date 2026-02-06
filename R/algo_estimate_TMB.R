@@ -7,7 +7,7 @@
 makeADFun_ekf_tmb = function(self, private){
   
   # Tape Configration ----------------------
-  ConfigureTape("TMB", self, private)
+  configure_ad_tape("TMB", self, private)
   
   # Data ----------------------------------------
   
@@ -94,7 +94,7 @@ makeADFun_ekf_tmb = function(self, private){
 makeADFun_lkf_tmb = function(self, private){
   
   # Tape Configration ----------------------
-  ConfigureTape("TMB", self, private)
+  configure_ad_tape("TMB", self, private)
   
   # Data ----------------------------------------
   
@@ -176,7 +176,7 @@ makeADFun_lkf_tmb = function(self, private){
 makeADFun_ukf_tmb = function(self, private){
   
   # Tape Configration ----------------------
-  ConfigureTape("TMB", self, private)
+  configure_ad_tape("TMB", self, private)
   
   # Data ----------------------------------------
   
@@ -203,7 +203,7 @@ makeADFun_ukf_tmb = function(self, private){
     loss_c = private$loss$c,
     
     # ukf parameters
-    ukf_pars = private$ukf_hyperpars,
+    ukf_pars = private$ukf.hyperpars,
     
     # system size
     n_states = private$number.of.states,

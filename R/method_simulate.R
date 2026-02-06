@@ -1,6 +1,4 @@
-#######################################################
-# MAIN SIMULATE FUNCTION THAT CALL OTHERS
-#######################################################
+# This function is the main caller for carrying out simulations
 perform_simulation <- function(self, private, use.cpp, n.sims){
   
   
@@ -38,53 +36,142 @@ perform_simulation <- function(self, private, use.cpp, n.sims){
   return(invisible(self))
 }
 
-#######################################################
-# MAIN RETURN PREDICTIONS FUNCTION THAT CALL OTHERS
-#######################################################
+lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
+  
+  # observation/input matrix
+  obsMat = as.matrix(private$data[private$obs.names])
+  inputMat = as.matrix(private$data[private$input.names])
+  
+  # non-na observation matrix
+  numeric_is_not_na_obsMat = t(apply(obsMat, 1, FUN=function(x) as.numeric(!is.na(x))))
+  if(nrow(numeric_is_not_na_obsMat)==1) numeric_is_not_na_obsMat = t(numeric_is_not_na_obsMat)
+  
+  # number of non-na observations
+  number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
+  
+  ids <- 1:private$number.of.observations - 1 #minus 1 for 0 indexing
+  non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
+  any_available_obs <- sapply(non_na_ids, function(x) length(x) != 0)
+  
+  output <- NULL
+  if(private$method=="lkf"){
+    output <- lkf_simulate_rcpp(private$rcpp_function_ptr,
+                                obsMat,
+                                inputMat,
+                                pars,
+                                private$initial.state$p0,
+                                private$initial.state$x0,
+                                private$ode.timestep.size,
+                                private$simulation.timestep.size,
+                                private$simulation.timesteps,
+                                any_available_obs,
+                                non_na_ids,
+                                private$number.of.diffusions,
+                                private$last.pred.index,
+                                private$k.ahead,
+                                n.sims,
+                                private$seed$state.seed)
+  } 
+  if(private$method=="ekf"){
+    output <- ekf_simulate_rcpp(private$rcpp_function_ptr,
+                                obsMat,
+                                inputMat,
+                                pars,
+                                private$initial.state$p0,
+                                private$initial.state$x0,
+                                private$ode.timestep.size,
+                                private$ode.timesteps,
+                                private$simulation.timestep.size,
+                                private$simulation.timesteps,
+                                any_available_obs,
+                                non_na_ids,
+                                private$ode.solver,
+                                private$last.pred.index,
+                                private$k.ahead,
+                                private$number.of.diffusions,
+                                n.sims,
+                                private$seed$state.seed)
+  }
+  if(private$method == "ukf"){
+    output <- ukf_simulate_rcpp(private$rcpp_function_ptr,
+                                obsMat,
+                                inputMat,
+                                pars,
+                                private$initial.state$p0,
+                                private$initial.state$x0,
+                                private$ode.timestep.size,
+                                private$ode.timesteps,
+                                private$simulation.timestep.size,
+                                private$simulation.timesteps,
+                                numeric_is_not_na_obsMat,
+                                number_of_available_obs,
+                                private$ukf.hyperpars,
+                                private$number.of.diffusions,
+                                private$last.pred.index,
+                                private$k.ahead,
+                                private$ode.solver,
+                                n.sims,
+                                private$seed$state.seed)
+  }
+  
+  private$simulation.raw <- output
+  
+  return(invisible(NULL))
+}
+
+
+# This function returns simulation results to the user
 create_return_simulation <- function(return.k.ahead, n.sims, self, private){
   
   if(!private$silent) message("Returning results...")
   
-  list.out = vector("list",length=private$number.of.states)
-  names(list.out) = private$state.names
+  # create names for inner list
+  inner.names <- paste0("i", 0:(private$last.pred.index-1))
   
-  # Compute the prediction times for each horizon
-  ran = 0:(private$last.pred.index-1)
-  t.j = private$data$t[rep(ran,each=private$n.ahead+1)+1+rep(0:private$n.ahead,private$last.pred.index)]
-  t.j.splitlist = split(t.j, ceiling(seq_along(t.j)/(private$n.ahead+1)))
-  list.of.time.vectors = lapply(t.j.splitlist, function(x) data.frame(t.j=x))
-  
-  for(i in seq_along(list.out)){
-    list.out[[i]] = stats::setNames(
-      lapply(private$simulation, function(ls.outer){
-        t(do.call(cbind, lapply(ls.outer, function(ls.inner) ls.inner[,i])))
-      }),
-      paste0("i",ran)
-    )
+  # Build returnlist for states
+  state.list <- build_simulation_returnlist(private$simulation.raw,
+                                            private$data$t,
+                                            private$number.of.states,
+                                            private$k.ahead,
+                                            n.sims)
+  # set state names
+  names(state.list) <- private$state.names
+  for(i in seq_along(state.list)){
+    names(state.list[[i]]) <- inner.names
   }
   
-  for(i in seq_along(list.out)){
-    for(j in seq_along(list.out[[i]])){
-      list.out[[i]][[j]] = data.frame(i = j-1, 
-                                      j = (j-1):(j+private$n.ahead-1), 
-                                      t.i = rep(private$data$t[i],private$n.ahead+1),
-                                      t.j = list.of.time.vectors[[j]][,"t.j"], 
-                                      k.ahead = 0:private$n.ahead,
-                                      list.out[[i]][[j]]
-      )
-      nams = paste0(private$state.names[i], 1:n.sims)
-      names(list.out[[i]][[j]]) = c("i","j","t.i","t.j","k.ahead", nams)
-    }
+  # create index/time list
+  time.list <- build_simulation_timelists(private$data$t,
+                                          private$last.pred.index,
+                                          private$k.ahead)
+  names(time.list) <- inner.names
+  
+  # Build returnlist for observations
+  # First we must calculate the simulated observation trajectories
+  simulation.raw.obs <- calculate_simulation_observations(
+    private$simulation.raw,
+    private$rcpp_function_ptr,
+    t(as.matrix(private$data[private$input.names])),
+    private$pars,
+    private$number.of.states,
+    private$number.of.observations,
+    private$k.ahead,
+    n.sims,
+    private$seed$obs.seed
+  )
+  
+  # # Now we can build the returnlist
+  obs.list <- build_simulation_returnlist(simulation.raw.obs,
+                                          private$data$t,
+                                          private$number.of.observations,
+                                          private$k.ahead,
+                                          n.sims)
+  names(obs.list) <- private$obs.names
+  for(i in seq_along(obs.list)){
+    names(obs.list[[i]]) <- inner.names
   }
   
-  # Observations
-  # eval(parse(text=private$rekf.function.strings$h))
-  
-  # We should take the state vector, and pass it through the observation vector, right?
-  # The inputs should come from the inputMat for the j'th row...
-  # There are so many though...
-  
-  private$simulation = list( states = list.out, observations = list() )
+  private$simulation <- list(states=state.list, observations=obs.list, times=time.list)
   
   return(invisible(self))
 }

@@ -9,9 +9,9 @@ apply_algebraics_and_lamperti <- function(self, private){
   calculate_diff_terms(self, private)
 }
 
-create_state_space_function_strings <- function(self, private){
-  create.state.space.function.strings(self, private)
-  create.rcpp.state.space.function.strings(self, private)
+create_all_state_space_function_strings <- function(self, private){
+  create_state_space_function_strings(self, private)
+  create_rcpp_state_space_function_strings(self, private)
 }
 
 #######################################################
@@ -73,7 +73,7 @@ calculate_diff_terms = function(self, private) {
   
   # Calculate drift and diffusion terms (differentiate w.r.t dt and dw)
   for (i in seq_along(private$sys.eqs.trans)) {
-    private$diff.terms[[i]] = lapply(private$diff.processes, function(x) ctsmTMB.Deriv(f=private$sys.eqs.trans[[i]]$rhs, x=x))
+    private$diff.terms[[i]] = lapply(private$diff.processes, function(x) ctsmTMB_Deriv(f=private$sys.eqs.trans[[i]]$rhs, x=x))
     names(private$diff.terms[[i]]) = private$diff.processes
   }
   names(private$diff.terms) = private$state.names
@@ -81,14 +81,14 @@ calculate_diff_terms = function(self, private) {
   
   # dfdx
   for(i in seq_along(private$sys.eqs.trans)){
-    private$diff.terms.drift[[i]] = lapply(private$state.names, function(x) ctsmTMB.Deriv(f=private$sys.eqs.trans[[i]]$diff.dt, x=x))
+    private$diff.terms.drift[[i]] = lapply(private$state.names, function(x) ctsmTMB_Deriv(f=private$sys.eqs.trans[[i]]$diff.dt, x=x))
     names(private$diff.terms.drift[[i]]) = private$state.names
   }
   names(private$diff.terms.drift) = private$state.names
   
   # dhdx
   for(i in seq_along(private$obs.eqs.trans)){
-    private$diff.terms.obs[[i]] = lapply(private$state.names, function(x) ctsmTMB.Deriv(f=private$obs.eqs.trans[[i]]$rhs, x=x))
+    private$diff.terms.obs[[i]] = lapply(private$state.names, function(x) ctsmTMB_Deriv(f=private$obs.eqs.trans[[i]]$rhs, x=x))
     names(private$diff.terms.obs[[i]]) = private$state.names
   }
   names(private$diff.terms.obs) = private$obs.names

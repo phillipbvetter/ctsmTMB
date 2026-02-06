@@ -6,22 +6,31 @@
 # TOP-LAYER FUNCTION CALLING ALL OTHERS DEFINED IN THIS SCRIPT
 ###############################################################
 
+# Why dont we do this every time?
 check_and_set_data = function(data, self, private) {
   
-  # Check data for re-set
+  # Check for new data (only needed for likelihood calculations because new data
+  # requires compilation of TMB's AD graph -> New call to MakeADFun)
   if(any(private$procedure == c("estimation","construction"))){
     
     check_for_data_rebuild(data, self, private)
     
-    # if the data is identical to previous calls do nothing
-    if(!private$rebuild.data) return(invisible(self))
+    # Option 1: Same data
+    #################################
     
-    # if the data changed then we continue in this loop - so disable flag
+    # Exit
+    if(!private$rebuild.data){
+      return(invisible(self))
+    }
+    
+    # Option 2: New data
+    #################################
+    
+    # Revert flags 
     private$rebuild.data <- FALSE
-    # if when
     private$rebuild.ad <- TRUE
     
-    # store this newly provided estimation data
+    # Store new data for next time
     private$old.data$entry.data <- data
   }
   
@@ -42,7 +51,7 @@ check_and_set_data = function(data, self, private) {
   set_ode_timestep(data, self, private)
   set_simulation_timestep(data, self, private)
   
-  # various calculations for tmb's laplace method
+  # various calculations for laplace method
   set_data_for_laplace_method(data, self, private)
   
   # Return
@@ -355,7 +364,7 @@ set_parameters = function(pars, self, private){
   # If no parameters are provided:
   if(is.null(pars)){
     
-    # If estimated parameters available use these, else use initial
+    # If estimated parameters are available use these, else use initial
     if(!is.null(private$fit)){
       pars = self$getParameters(value="estimate")
     } else {
@@ -384,14 +393,14 @@ set_parameters = function(pars, self, private){
       par.type.fixed <- !par.type.free
       
       # Create new par-vector
-      full.parVec <- rep(NA, lp)
+      full.pars <- rep(NA, lp)
       
       # Assign free and fixed pars 
-      full.parVec[par.type.free] <- pars
-      full.parVec[par.type.fixed] <- self$getParameters(type="fixed",value="initial")
+      full.pars[par.type.free] <- pars
+      full.pars[par.type.fixed] <- self$getParameters(type="fixed",value="initial")
       
       # return 
-      pars <- full.parVec
+      pars <- full.pars
     }
   }
   
@@ -406,9 +415,16 @@ set_parameters = function(pars, self, private){
 ########################################################################
 set_k_ahead = function(k.ahead, self, private) {
   
-  # check if n.ahead is positive with length 1
-  if (!(is.numeric(k.ahead)) | !(length(k.ahead==1)) | !(k.ahead >= 1)) {
-    stop("k.ahead must be a non-negative numeric integer")
+  # check if k.ahead is positive with length 1
+  if (!(is.numeric(k.ahead)) | !(length(k.ahead==1)) | !(k.ahead >= 0)) {
+    stop("k.ahead must be a non-negative numeric scalar")
+  }
+  # make sure its an integer
+  k.ahead <- round(k.ahead)
+  
+  
+  if(!is.finite(k.ahead)){
+    k.ahead <- nrow(private$data) - 1 
   }
   
   # Find last prediction index to avoid exciting boundary
@@ -419,7 +435,7 @@ set_k_ahead = function(k.ahead, self, private) {
   }
   
   # set values
-  private$n.ahead = k.ahead
+  private$k.ahead = k.ahead
   private$last.pred.index = last.pred.index
   
   # return values

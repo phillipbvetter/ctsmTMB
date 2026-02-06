@@ -60,7 +60,7 @@ check_system_eqs = function(form, self, private) {
   # Find all diffusion processes
   diff.proc = unique(unlist(stringr::str_extract_all(paste(deparse1(rhs),collapse=""),"dw([a-zA-Z0-9]*)")))
   diff.processes = c("dt",diff.proc)
-  diff.terms = lapply(diff.processes, function(x) { ctsmTMB.Deriv(f=rhs, x=x) })
+  diff.terms = lapply(diff.processes, function(x) { ctsmTMB_Deriv(f=rhs, x=x) })
   names(diff.terms) = diff.processes
   
   # There must be diffusion processes
