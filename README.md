@@ -11,7 +11,6 @@
 status](https://www.r-pkg.org/badges/version/ctsmTMB)](https://CRAN.R-project.org/package=ctsmTMB)
 [![R-CMD-check](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml)
 [![](https://cranlogs.r-pkg.org/badges/ctsmTMB?color=brightgreen)](https://CRAN.R-project.org/package=ctsmTMB)
-<!-- [![](https://cranlogs.r-pkg.org/badges/ctsmTMB?color=brightgreen)](https://cran.rstudio.com/web/packages/ctsmTMB/index.html) -->
 
 <!-- add white space -->
 
@@ -63,7 +62,7 @@ following available methods:
 1.  `likelihood`:
 
     This method is used to extract the likelihood function handles for
-    the function value, its gradient and hessian, directly passed back
+    the function value, its gradient and hessian, direcly passed back
     from `RTMB::MakeADFun`. The is useful for e.g. using other
     optimizers, modifying the likelihood calculations, or adding
     together derivatives from several data series.
@@ -136,7 +135,7 @@ is an implementation of the the stability-improved Laplace approximation
 for state-dependent diffusion due to [Thygesen,
 2025](https://arxiv.org/abs/2503.21358).
 
-A distrinct advantage of the laplace methods over the Kalman filters is
+A distinct advantage of the laplace methods over the Kalman filters is
 the possibility for unimodal non-Gaussian observation densities to
 accommodate the need for e.g. heavier distribution tails (not yet
 supported in the package though).
@@ -236,42 +235,15 @@ Linear Kalman Filter `method='lkf'` could also be used) and inspects the
 resulting residuals, moment predictions and stochastic simulations.
 
 ``` r
-library(ctsmTMB)
-
-############################################################
-# Data simulation
-############################################################
-
-# Simulate data using Euler Maruyama
-set.seed(20)
-true.pars = c(theta=10, mu=1, sigma_x=1, sigma_y=0.1)
-# 
-dt.sim = 1e-3
-t.sim = seq(0,5,by=dt.sim)
-dw = rnorm(length(t.sim)-1,sd=sqrt(dt.sim))
-u.sim = cumsum(rnorm(length(t.sim),sd=0.05))
-x.sim = 3
-for(i in 1:(length(t.sim)-1)) {
-  x.sim[i+1] = x.sim[i] + true.pars["theta"]*(true.pars["mu"]-x.sim[i]+u.sim[i])*dt.sim + true.pars["sigma_x"]*dw[i]
-}
-df.sim <- data.frame(
-  t = t.sim,
-  u = u.sim,
-  x = x.sim
-)
-
-# Extract simulation at observations time points, and create observations by adding noise
-dt.obs = 1e-2
-ids = seq(1,length(t.sim),by=round(dt.obs / dt.sim))
-df.obs <- df.sim[ids,]
-df.obs$y = df.obs$x + true.pars["sigma_y"] * rnorm(nrow(df.obs))
+# library(ctsmTMB)
+devtools::load_all("~/github/ctsmTMB/")
 
 ############################################################
 # Model creation
 ############################################################
 
 # Create model object
-model = ctsmTMB$new()
+model <- newModel()
 
 # Add system equations
 model$addSystem(
@@ -293,15 +265,52 @@ model$addInput(u)
 
 # Specify parameter initial values and lower/upper bounds in estimation
 model$setParameter(
-  theta   = c(initial = 1, lower=1e-5, upper=50),
-  mu      = c(initial=1.5, lower=0, upper=5),
-  sigma_x = c(initial=1, lower=1e-10, upper=30),
-  sigma_y = c(initial=1e-1, lower=1e-10, upper=30)
+  theta   = c(initial=2, lower=1e-5, upper=50),
+  mu      = c(initial=2, lower=0, upper=5),
+  sigma_x = c(initial=1e-2, lower=1e-10, upper=30),
+  sigma_y = c(initial=1e-2, lower=1e-10, upper=30)
 )
 
 # Set initial state mean and covariance
-model$setInitialState(list(x.sim[1], 1e-1*diag(1)))
+initial.state <- list(x0=3,p0=0.01 * diag(1))
+model$setInitialState(initial.state)
 
+############################################################
+# Simulate observations
+############################################################
+
+# First we create data (no observations)
+r.seed <- 20 # this seed for for u.sim rnorm draws
+set.seed(r.seed)
+true.pars = c(theta=10, mu=1, sigma_x=1, sigma_y=0.1)
+dt.sim = 1e-2
+t.sim = seq(0, 5, by=dt.sim)
+u.sim = cumsum(rnorm(length(t.sim),sd=0.05))
+df.obs <- data.frame(
+  t = t.sim,
+  u = u.sim,
+  y = NA
+)
+
+# set seed for simulate c++. The first seed is brownian motion rng,
+# the second is for observations noise rng
+cpp.seeds <- c(20,20)
+sim <- model$simulate(data=df.obs,
+                      # use the true parameters 
+                      pars = true.pars,
+                      # ekf method is default
+                      method="ekf", 
+                      # use a smaller stepsize than diff(df.obs$t)
+                      simulation.timestep = 1e-3,
+                      # we only need 1 simulation
+                      n.sims = 1,
+                      # apply rng seeds
+                      cpp.seeds = cpp.seeds)
+
+# store simulated observations in the data.frame
+df.obs$y <- sim$observations$y$i0
+
+# Now we are ready to see if we can estimate the parameters
 
 ############################################################
 # Model estimation
@@ -312,7 +321,7 @@ fit <- model$estimate(df.obs, method="ekf")
 
 # Check parameter estimates against truth
 fitted.pars <- fit$par.fixed
-cbind(true.pars, fitted.pars, difference=true.pars - fitted.pars)
+cbind(true.pars, fitted.pars, difference=true.pars-fitted.pars)
 
 par(mfrow=c(3,1))
 # Plot prior predictions (1-step predictions) against simulation (truth) and observations (data)
@@ -320,7 +329,7 @@ df.est <- cbind(fit$states$mean$prior, x.sd=fit$states$sd$prior[,"x"])
 t <- df.est[,"t"]
 x <- df.est[,"x"]
 x.sd <- df.est[,"x.sd"]
-plot(x=t, y=x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(-3,3))
+plot(x=t, y=x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(0,3))
 polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
 lines(t, x, col="steelblue", lwd=2)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
@@ -333,7 +342,7 @@ dfp <- pred.10step$states[,c("t.j","x","var.x")]
 t <- dfp[,"t.j"]
 x <- dfp[,"x"]
 x.sd <- sqrt(dfp[,"var.x"])
-plot(x=t, y=x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(-3,3))
+plot(x=t, y=x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(0,3))
 polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
 lines(t, x, col="steelblue", lwd=2)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
@@ -345,7 +354,7 @@ sdf <- model$simulate(df.obs, method="ekf", n.sims=10)
 t <- sdf$times$i0[,"t.j"]
 xsim <- sdf$states$x$i0
 
-matplot(t, xsim, type="l", lty="solid", col="grey70", main="No Update Prediction and Simulations vs Observations", xlab="Time")
+matplot(t, xsim, type="l", lty="solid", col="grey70", main="Full Prediction/Simulations vs Observations", xlab="Time", ylim=c(0,3))
 lines(t, xpred, col="steelblue", lwd=2)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
