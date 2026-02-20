@@ -190,16 +190,16 @@ create_return_prediction <- function(reported.dispersion.type, return.k.ahead, s
     m.obs.pred.mean <- m.obs.pred[,1:n.obs,drop=FALSE]
     colnames(m.obs.pred.mean) <- private$obs.names
     if(reported.dispersion.type == "marginal"){
-      m.obs.pred.disp <- m.obs.pred[,n+diag.ids.obs,drop=FALSE]
-      colnames(m.obs.pred.disp) <- sprintf(rep("var.%s",n), private$obs.names)
+      m.obs.pred.disp <- m.obs.pred[,n.obs+diag.ids.obs, drop=FALSE]
+      colnames(m.obs.pred.disp) <- sprintf(rep("var.%s",n.obs), private$obs.names)
     } else {
       m.obs.pred.disp <- m.obs.pred[,-c(1:n.obs), drop=FALSE]
-      colnames(m.obs.pred.disp) <- sprintf(rep("cov.%s.%s",n^2), rep(private$obs.names,each=n), rep(private$obs.names,n))
+      colnames(m.obs.pred.disp) <- sprintf(rep("cov.%s.%s",n.obs^2), rep(private$obs.names,each=n.obs), rep(private$obs.names,n.obs))
       if(reported.dispersion.type == "correlation"){
         m.obs.pred.disp <- t(apply(m.obs.pred.disp, 1, function(x) as.vector(cov2cor(matrix(x, nrow=n.obs)))))
-        colnames(m.obs.pred.disp) <- sprintf(rep("cor.%s.%s",n^2), rep(private$obs.names,each=n), rep(private$obs.names,n))
+        colnames(m.obs.pred.disp) <- sprintf(rep("cor.%s.%s",n.obs^2), rep(private$obs.names,each=n.obs), rep(private$obs.names,n.obs))
       }
-      colnames(m.disp)[diag.ids] <- sprintf(rep("var.%s",n), private$obs.names)
+      colnames(m.disp)[diag.ids] <- sprintf(rep("var.%s",n.obs), private$obs.names)
     }
     m.obs.pred <- cbind(m.obs.pred.mean, m.obs.pred.disp)
   }
