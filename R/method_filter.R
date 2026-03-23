@@ -108,18 +108,18 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
 }
 
 create_filter_results <- function(self, private, laplace.residuals, silent=private$silent){
-  
+
   if(!silent) message("Returning results...")
-  
+
   rtmb.kalman.methods <- c("lkf","ekf","ukf")
   all.kalman.methods <- c(rtmb.kalman.methods, paste0(rtmb.kalman.methods,".cpp"))
-  
+
   filt <- list()
-  
+
   if(private$method %in% all.kalman.methods){
-    
+
     rep <- private$filtration.raw
-    
+
     ##### helper functions #####
     rbind_vectors <- function(list, colnames=NULL, extra=TRUE){
       if(extra){
@@ -157,39 +157,41 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
         fn(do.call(rbind, lapply(list, diag)))
       }
     }
-    
+
     # column names
     .colnames <- c("t", private$state.names)
     .obs.colnames <- c("t", private$obs.names)
     .covnames <- c("t",as.vector(outer(private$state.names, private$state.names, function(a, b) paste0(a,b))))
     .covnames.list <- paste("t = ", private$data$t, sep="")
-    
+
     ##### priors
     filt$states$mean$prior = rbind_vectors(rep$xPrior, .colnames)
     filt$states$sd$prior = rbind_matrices_diag(rep$pPrior, .colnames, sqrt)
     filt$states$cov$prior = rep$pPrior
     names(filt$states$cov$prior) = .covnames.list
-    
+
     ##### posteriors
     filt$states$mean$posterior = rbind_vectors(rep$xPost, .colnames)
     filt$states$sd$posterior = rbind_matrices_diag(rep$pPost, .colnames, sqrt)
     filt$states$cov$posterior = rep$pPost
     names(filt$states$cov$posterior) = .covnames.list
-    
+
     ##### residuals
     obsMat = as.matrix(private$data[private$obs.names])
     ids <- 1:private$number.of.observations
     non.na.ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
     length.non.na.ids <- lapply(non.na.ids, length)
-    
+
     # pre-allocate
     filt$residuals <- lapply(1:3, function(x) set.colnames(cbind(private$data$t, matrix(NA, nrow=nrow(obsMat), ncol=ncol(obsMat))), .obs.colnames))
     names(filt$residuals) = c("residuals", "sd", "normalized")
-    
-    # Take care rows where all observations are present
-    ids.full.obs <- length.non.na.ids == private$number.of.observations
-    filt$residuals$residuals[ids.full.obs,-1] <- rbind_vectors(rep$Innovation[ids.full.obs], extra=FALSE)
-    filt$residuals$sd[ids.full.obs,-1] <- rbind_matrices_diag(rep$InnovationCovariance[ids.full.obs], fn=sqrt, extra=FALSE)
+
+    # Take care of rows where all observations are present
+    ids.full.obs <- unlist(length.non.na.ids) == private$number.of.observations
+    if(any(ids.full.obs)){
+      filt$residuals$residuals[ids.full.obs,-1] <- rbind_vectors(rep$Innovation[ids.full.obs], extra=FALSE)
+      filt$residuals$sd[ids.full.obs,-1] <- rbind_matrices_diag(rep$InnovationCovariance[ids.full.obs], fn=sqrt, extra=FALSE)
+    }
     # Take care of all other rows with some missing observations
     for(i in seq_along(private$obs.names[-1])){
       ids <- which(length.non.na.ids == i)
@@ -199,10 +201,10 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
       }
     }
     filt$residuals$normalized = filt$residuals$residuals
-    filt$residuals$normalized[,-1] <- filt$residuals$normalized[,-1]/filt$residuals$sd[,-1] 
+    filt$residuals$normalized[,-1] <- filt$residuals$normalized[,-1]/filt$residuals$sd[,-1]
     filt$residuals$cov <- rep$InnovationCovariance
     names(filt$residuals$cov) = .covnames.list
-    
+
     ##### observations
     # call c++ function
     observations <- calculate_filtering_observations(private$filtration.raw,
@@ -219,10 +221,10 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
     names(observations$cov$posterior) = .covnames.list
     filt$observations <- observations
   }
-  
+
   # store
   private$filtration <- filt
-  
+
   # return
   return(invisible(self))
 }
