@@ -204,16 +204,41 @@ plot.ctsmTMB.pred = function(x,
   bool = states[,"k.ahead"] %in% k.ahead
   x = states[bool, "t.j"]
   y = states[bool, state.name]
-  grDevices::dev.new()
-  plot(x=x, y=y, type="l",...)
   
-  if(!is.null(against)){
-    z = obs[bool, against]
-    graphics::points(x=x, y=z,col="red",pch=16)
+  p <- ggplot2::ggplot()
+  
+  # draw 95% CI interval if variance was calculated
+  if(paste0("var.",state.name) %in% colnames(states)){
+    y.sd <- sqrt(states[bool, paste0("var.",state.name)])
+    p <- p +
+      ggplot2::geom_ribbon(aes(x=x,ymin=y-2*y.sd,ymax=y+2*y.sd),fill="grey",alpha=0.8)
   }
   
+  # Draw mean
+  p <- p + 
+    ggplot2::geom_line(aes(x=x,y=y, color=state.name)) +
+    getggplot2theme()
   
-  return(invisible(NULL))
+  # Add observations and colors
+  if(!is.null(against)){
+    z = obs[bool, against]
+    p <- p +
+      ggplot2::geom_point(aes(x=x,y=z,col=against), size=1) +
+      scale_color_manual(values=c("steelblue","tomato"))
+  } else {
+    p <- p +
+      scale_color_manual(values=c("steelblue"))
+  }
+  
+  # add labels
+  p <- p + 
+    labs(color="", x="Time", y="", title="Predictions")
+  
+  # print and return
+  print(p)
+  
+  
+  return(invisible(p))
 }
 
 #' This function creates residual plots for an estimated ctsmTMB object
@@ -523,14 +548,12 @@ plot.ctsmTMB.fit = function(x,
   
   # print the first plot to the console
   if(print.plot != 0){
-    grDevices::dev.new()
     temp.plot <- plots[[print.plot]]
     print(temp.plot)
   }
   
   # print second plot if requested
   if(length(plots2) > 0){
-    grDevices::dev.new()
     temp.plot <- plots2[[print.plot]]
     print(temp.plot)
   }
@@ -758,7 +781,7 @@ profile.ctsmTMB.fit = function(fitted,
 #' out <- profile(fit,parlist=list(theta=NULL, mu=NULL))
 #' 
 #' # plot profile
-#' grDevices::dev.new()
+# # grDevices::dev.new()
 #' plot(out)
 #' @export
 plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
@@ -808,21 +831,21 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
     #       linewidth = 0.6
     #     )
     # } else {
-      # Fallback without labels if geomtextpath is not available
-      # message("Please install 'geomtextpath' to get contour labels.")
-      p <- ggplot2::ggplot() +
-        ggplot2::geom_contour(
-          data = df,
-          ggplot2::aes(
-            x = .data[[par.names[1]]],
-            y = .data[[par.names[2]]],
-            z = .data$likelihood,
-            color = after_stat(level)
-          ),
-          breaks = chisquared_contours,
-          linewidth = 0.6
-        )
-  # }
+    # Fallback without labels if geomtextpath is not available
+    # message("Please install 'geomtextpath' to get contour labels.")
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_contour(
+        data = df,
+        ggplot2::aes(
+          x = .data[[par.names[1]]],
+          y = .data[[par.names[2]]],
+          z = .data$likelihood,
+          color = after_stat(level)
+        ),
+        breaks = chisquared_contours,
+        linewidth = 0.6
+      )
+    # }
     
     # add labels
     p <- p +

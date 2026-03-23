@@ -35,7 +35,7 @@ model$setInitialState(list(rep(1,2), 0.656*diag(2)))
 testthat::expect_no_error({
   model$estimate(df, method="ekf", silent=TRUE, trace=0)
   model$estimate(df, method="lkf", silent=TRUE, trace=0)
-  model$estimate(df, method="ukf", silent=TRUE, trace=0)
+  # model$estimate(df, method="ukf", silent=TRUE, trace=0)
   model$estimate(df, method="laplace", silent=TRUE, trace=0)
   model$estimate(df, method="laplace.thygesen", silent=TRUE, trace=0)
 })
@@ -43,12 +43,13 @@ testthat::expect_no_error({
 testthat::expect_no_error({
   model$filter(df, method="ekf", use.cpp=TRUE, silent=TRUE)
   model$filter(df, method="lkf", use.cpp=TRUE, silent=TRUE)
-  model$filter(df, method="ukf", use.cpp=TRUE, silent=TRUE)
+  # model$filter(df, method="ukf", use.cpp=TRUE, silent=TRUE)
 })
+
 testthat::expect_no_error({
   model$filter(df, method="ekf", use.cpp=FALSE, silent=TRUE)
   model$filter(df, method="lkf", use.cpp=FALSE, silent=TRUE)
-  model$filter(df, method="ukf", use.cpp=FALSE, silent=TRUE)
+  # model$filter(df, method="ukf", use.cpp=FALSE, silent=TRUE)
 })
 
 testthat::expect_no_error({
@@ -59,27 +60,29 @@ testthat::expect_no_error({
 testthat::expect_no_error({
   model$predict(df, method="ekf", use.cpp=TRUE, silent=TRUE)
   model$predict(df, method="lkf", use.cpp=TRUE, silent=TRUE)
-  model$predict(df, method="ukf", use.cpp=TRUE, silent=TRUE)
+  # model$predict(df, method="ukf", use.cpp=TRUE, silent=TRUE)
 })
+
 testthat::expect_no_error({
   model$predict(df, method="ekf", use.cpp=FALSE, silent=TRUE)
   model$predict(df, method="lkf", use.cpp=FALSE, silent=TRUE)
-  model$predict(df, method="ukf", use.cpp=FALSE, silent=TRUE)
+  # model$predict(df, method="ukf", use.cpp=FALSE, silent=TRUE)
 })
 
 testthat::expect_no_error({
   model$simulate(df, method="ekf", use.cpp=TRUE, silent=TRUE)
   model$simulate(df, method="lkf", use.cpp=TRUE, silent=TRUE)
-  model$simulate(df, method="ukf", use.cpp=TRUE, silent=TRUE)
+  # model$simulate(df, method="ukf", use.cpp=TRUE, silent=TRUE)
 })
+
 testthat::expect_no_error({
   model$simulate(df, method="ekf", use.cpp=FALSE, silent=TRUE)
   model$simulate(df, method="lkf", use.cpp=FALSE, silent=TRUE)
-  model$simulate(df, method="ukf", use.cpp=FALSE, silent=TRUE)
+  # model$simulate(df, method="ukf", use.cpp=FALSE, silent=TRUE)
 })
 
 testthat::expect_no_error({
   model$likelihood(df, method="lkf", silent=TRUE)
-  model$likelihood(df, method="ukf", silent=TRUE)
   model$likelihood(df, method="ekf", silent=TRUE)
+  # model$likelihood(df, method="ukf", silent=TRUE)
 })

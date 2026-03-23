@@ -1,22 +1,193 @@
 ---
-title: "Estimating Parameters"
-author: ""
-date: ""
-output: rmarkdown::html_vignette
+title: "Parameter Estimation"
+author: "Phillip Vetter"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
-  %\VignetteIndexEntry{Estimating Parameters}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Parameter Estimation}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+  editor_options: 
+  markdown: 
+    wrap: 72
 ---
-  
-```{r, include=FALSE}
-library(ctsmTMB)
+
+<style>
+body {
+  text-align: justify;
+  hyphens: auto;
+}
+</style>
+
+\newcommand{\E}[1]{\mathrm{E}\left[#1\right]}
+\newcommand{\V}[1]{\mathrm{V}\left[#1\right]}
+\newcommand{\diff}{\mathrm{d}}
+\newcommand{\dp}[2]{\dfrac{\partial #1}{\partial #2}}
+\newcommand{\dd}[2]{\dfrac{\diff #1}{\diff #2}}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse=TRUE, cache=FALSE)
+
 library(ggplot2)
+library(ctsmTMB)
 ```
 
+```{r set-options, echo=FALSE}
+options(width=1e2)
+```
+
+```{r, eval=FALSE, include=FALSE}
+# We can use this to type 'rmd' in the console, and the markdown html document is then knitted fast.
+render.rmd("rmd")
+```
+  
 In this vignette we elaborate on the abilities and workings of the `estimate` method.
 
-The default argument to the `estimate` method are:
+## Introduction
+
+### Notation
+- We use subscript $x_{t} = x(t)$ to denote time for continuous variables.
+
+- We use subscript $y_k = y(t_k)$ to indicate discrete time-points for discrete variables.
+
+- We denote the set of **observations** from the initial time $t_0$ until the "current" time $t_{i}$ by
+$$
+\mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0} \right\}
+$$
+
+- We denote the set of **states** from the initial time $t_0$ until the "current" time $t_{i}$ by
+$$
+\mathcal{X}_{i} = \left\{ x_{i}, x_{i-1},..., x_{1}, x_{0} \right\}
+$$
+
+- We denote mean and variance by $\mu_{t} = \E{x_t}$ and $P_{t} = \V{x_t}$.
+
+- We use $\mu_{k \mid k-1}$ and $P_{k \mid k-1}$ to denote the mean/variance at time $t_{k}$ conditional on the observations $\mathcal{Y}_{k-1}$ i.e.
+$$
+\mu_{k \mid k} = \E{x_{t_k} \mid \mathcal{Y}_{k}} \qquad\qquad P_{k \mid k} = \V{x_{t_k} \mid \mathcal{Y}_{k}}
+$$
+
+
+### Stochastic State Space System
+
+We consider the following types of stochastic state space systems
+
+$$
+x_{t} = f(t,x_t,u_t,\theta) \, \mathrm{d}t + G(t,x_t,u_t, \theta) \, \diff B_{t}
+$$
+
+$$
+y_{k} = h(t_k, x_{t_k}, u_{t_k}, \theta) + \varepsilon_{k}
+$$
+
+where the observation noise is zero-mean Gaussian $\varepsilon_{k} \sim \mathcal{N}(0,\Sigma(t_k, x_{t_k}, u_{t_k}, \theta))$. In this notation $u$ are inputs and $\theta$ are fixed effects parameters to be estimated. 
+
+We refer to the functions $f$ as the *drift*, $G$ as the *diffusion*, and $h$ as the *link*. We may omit arguments and just write e.g. $f(x_t)$ for readability.
+
+### Observations and Likelihood
+
+The likelihood of a model is the joint density of all observations
+
+$$
+L(\theta) = p(\mathcal{Y}_{N})
+$$
+**Kalman Filtering**: In the context of Kalman filtering we work with a likelihood formulation obtained by using repeated conditioning:
+
+$$
+L(\theta) = p(\mathcal{Y}_{N}) = \prod_{k=1}^{N} p(y_{k} \mid \mathcal{Y}_{k-1})
+$$
+**Laplace Smoothing** In the context of Laplace smoothing the likelihood is calculated by integrating out the *random effect* states.
+
+$$
+L(\theta) = p(\mathcal{Y}_{N}) = \int_{X} p(\mathcal{Y}_{N}, \mathcal{X}_{N}) \, \diff \mathcal{X}_{n} = \int_{X} \prod_{k=1}^{N} p(y_{k} \mid x_{k}) \, p(x_{k} \mid x_{k-1}) \, \diff \mathcal{X}_{N}
+$$
+It is due to the Markov property that the joint density of both $\mathcal{Y}_{n}$ and $\mathcal{X}_{n}$ reduces as much as it does.
+
+
+### What is an "Estimation"?
+
+When we say *estimation* we mean minimizing the (negative log) likelihood function to obtain the (fixed effect) parameters $\theta$. The likelihood is calculated using either of the two approaches outlined above, depending on the methods.
+
+**Kalman Likelihood**
+
+The conditional likelihood for the Kalman filter case is given by
+
+$$
+y_{k} \mid \mathcal{Y}_{k-1} \sim \mathcal{N}\left( h(\mu_{k \mid k-1}) , C(\mu_{k \mid k-1}) P_{k \mid k-1} C(\mu_{k \mid k-1})^{T} + \Sigma(\mu_{k \mid k-1}) \right)
+$$
+
+where $C$ is the Jacobian of the link w.r.t to states i.e. $C = \dp{h}{x}$. Remember that $\mu_{k \mid k-1}$ and $P_{k \mid k-1}$ are calculated during the Kalman filter time-update step, by solving the moment differential equations.
+
+
+**Laplace Likelihood** In order to calculate the likelihood in the Laplace case we discretize the SDE using the Euler-Maruyama scheme i.e.
+
+$$
+x_{t_{k+1}} = x_{t_{k}} + f(x_{t_k}) \, \Delta t + G(x_{t_k}) \, \Delta B_{t_{k}}
+$$
+The conditional state distribution is thus the Gaussian
+
+$$
+x_{t_{k+1}} \mid x_{t_{k}} \sim \mathcal{N} \left( x_{t_k} + f(x_{t_k}) \, \Delta t \, , \, G(x_{t_k})G(x_{t_k})^{T} \right)
+$$
+
+The conditional observation distribution is
+
+$$
+y_{k} \mid x_{t_{k}} \sim \mathcal{N} \left( h(x_{t_k}) , \Sigma(x_{t_k}) \right)
+$$
+
+### Moment Differential Equations
+
+The moment differential equations (MDEs) are ordinary differential equations that govern the evolution of the moments of $x_{t}$. The first two moments (mean and variance) are governed by
+
+$$
+\dd{\mu}{t} = \E{f(x_t)}
+$$
+
+$$
+\dd{P}{t}  = \E{ f(x_{t})\left(x_t - \E{x_t}\right)^{T} } + \E{\left(x_t - \E{x_t}\right)f(x_{t})^{T} } + \E{ G(x_t) G(x_t)^{T} }
+$$
+
+In the approximate Gaussian setting where, with respect to $x$, $f$ is linear and $G$ is constant, the MDEs simplify to
+
+$$
+\dd{\mu}{t} = f(\mu_t)
+$$
+
+$$
+\dd{P}{t} = \left[\dp{f}{x}(\mu_t)\right] P + P \left[\dp{f}{x}(\mu_t)\right]^{T} + G(\mu_t) \left[G(\mu_t)\right]^{T}
+$$
+
+A *k-step* prediction is a prior estimate of the assumed Gaussian distribution *k* time-steps ahead, relatively to the current position. This distribution is parametrized by the prior mean $\mu_{i+k \mid i}$ and variance $P_{i+k \mid i}$. These priors are obtained by integrating the MDEs forward in time, starting from the current posterior distribution parametrized by $\mu_{i \mid i}$ and $P_{i \mid i}$ i.e.
+
+$$
+\mu_{i+k|i} = \mu_{i|i} + \int_{t_{i}}^{t_{i+k}} f(\mu_{t}) \, dt
+$$
+
+$$
+P_{i+k|i} = P_{i|i} + \int_{t_{i}}^{t_{i+k}} 
+\left(
+\left[\dp{f}{x}(\mu_t)\right] P + 
+P \left[\dp{f}{x}(\mu_t)\right]^{T} + 
+G(\mu_t) \left[G(\mu_t)\right]^{T} 
+\right)
+\, dt
+$$
+
+In a Kalman filter setting this amounts to repeatedly performing time-update steps while skipping the data-update step entirely.
+
+
+## Example
+
+**Insert Example**
+
+
+## Method Arguments
+
+The `estimate` method accepts the following arguments:
+
 ```{r, eval=FALSE}
 model$estimate(
   data, 
@@ -34,54 +205,59 @@ model$estimate(
 )
 ```
 
-# Arguments
+### `method`
 
-## Argument: `method`
+The `method` argument decides which estimation/filtering algorithm is used. The following methods are available:
 
----
+- `method='lkf'`: The Linear Kalman Filter.
 
-The `method` argument decides which estimation/filtering algorithm is used. Currently, the following methods are available:
+- `method='ekf'`: The Extended Kalman Filter (default).
 
-1. `method='lkf'`: The Linear Kalman Filter.
+- `method='ukf'`: The Unscented Kalman Filter.  
 
-2. `method='ekf'`: The Extended Kalman Filter.
+- `method='laplace'`: The Laplace Approximation.
 
-3. `method='laplace'`: The Laplace Approximation.
-
-<!-- 4. `method='ukf'`: The Unscented Kalman Filter. -->
 
 
 There is a difference between the Kalman filtering methods, and the Laplace method in the way they approach likelihood computations, and thus what information the filters produce:
 
 1. The Kalman filters produce *prior* and *posterior* state estimates. The *prior* estimates are conditioned on observations from the starting time $t_0$ up til the previous time-point $t_{k-1}$. The *posterior* estimates are conditioned also on the observations available at the "current" time-point $t_{k}$. These are denoted respectively by
+
 $$
 \text{Prior:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{t_{k-1}}, y_{t_{k-2}},...,y_{t_0} \right] 
 $$
+
 $$
 \text{Posterior:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{t_{k}}, y_{t_{k-1}},...,y_{t_0} \right]
 $$
+
 The Laplace filter produces *smoothed* state estimates. This is a state estimate based observations at all time-points $t_{0}$ to $t_{N}$ where $N$ is the last index in the time-series. These are denoted by
+
 $$
 \text{Smoothed:} \quad \mathrm{E}\left[ x_{t_k} \mid y_{N}, y_{N-1},...,y_{t_{k}},...,y_{t_1}, y_{t_0} \right]
 $$
-2. The likelihood contributions from the Kalman filters are based on the *prior* estimates, which are one-step-ahead predictions. This gives rise to *independent* one-step-ahead residuals, ideal for residual analysis and goodness-of-fit model validation. The Laplace filter does not produce such residuals inherently, and must instead compute these on the side. Residual calculations are disabled by default and determined with the `laplace.residuals` argument. The computations are very costly and slow. The user is referred to the documentation in `TMB::oneStepPredict` for further information.
 
-## Argument: `ode.solver`
+2. The likelihood contributions from the Kalman filters are based on the *prior* estimates, which are one-step-ahead predictions. This gives rise to *independent* one-step-ahead residuals, ideal for residual analysis and goodness-of-fit model validation. The Laplace filter does not produce such residuals inherently, and must instead compute these on the side. Residual calculations are disabled by default and determined with the `laplace.residuals` argument. The computations are very costly and slow. The user is referred to the documentation in `TMB::oneStepPredict` for further information.
 
 ---
 
+### `ode.solver`
+
 This argument is used for the Kalman filtering methods only to determine the ODE integrator used to solving the moment differential equations i.e.
+
 $$
 \dfrac{d\mathrm{E}\left[x_t\right]}{dt} = f(\mathrm{E}\left[x_t\right])
 $$
+
 $$
 \dfrac{d\mathrm{V}\left[x_t\right]}{dt} = \dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\mathrm{V}\left[x_t\right] + \mathrm{V}\left[x_t\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\right]^{T} + g(\mathrm{E}\left[x_t\right])g(\mathrm{E}\left[x_t\right])^{T}
 $$
+
 The **ctsmTMB** package implements the Explicit Forward-Euler *euler* and the Explicit 4th Order Runge-Kutta *rk4* methods. 
 
-## Argument: `ode.timestep`
-
 ---
+
+### `ode.timestep`
 
 This argument has two different implications depending on whether Kalman filtering or Laplace filtering is carried out. The method accepts either a single scalar value to be used as the global time-step, or a vector of length `diff(data$t)` specifying all individual time-steps. The input values are interpolated linearly between time-points if more than one step is taken.
 
@@ -90,19 +266,22 @@ This argument has two different implications depending on whether Kalman filteri
 2. **Laplace filter:** In this case the argument controls the number of added intermediate time-points between observations each of which represents an additional state (random effect) at that particular time-point.
 
 If a provided time-step $\Delta t_{i}$ does not divide the correspond time-difference $t_{i+1}-t_{i}$ in the data then it is rounded down such that it does. Consider the following example where the time-difference between two observations in the data is 3 seconds, but a time-step of 0.7. This produces a non-integer number of steps i.e.:
+
 $$
 N_{i} = \dfrac{t_{i+1}-t_{i}}{\Delta t_i} = \dfrac{3}{0.7} = 4.28...
 $$
+
 Thus the number of steps taken is rounded up to $N^{*}_i = \left\lceil N_i \right\rceil = \left\lceil 4.28... \right\rceil = 5$ and the corrected time-step then becomes
+
 $$
 \Delta t^{*}_{i} = \dfrac{3}{N^{*}_{i}} = \dfrac{3}{5} = 0.6
 $$
 
 **Note:** The exception to this rule is when the remainder is less than $\epsilon = 10^{-3}$ i.e. if for instance $N_i = 4.0001$ then the time-step is accepted, and the number of steps rounded down to $N^{*}_{i}= \left\lfloor N_i \right\rfloor = 4$.
 
-## Argument: `loss` and `loss_c`
-
 ---
+
+### `loss` / `loss_c`
 
 The following losses are currently available:
 
@@ -115,26 +294,33 @@ The following losses are currently available:
 This argument only affects the Kalman filtering methods, and is used to regularize the likelihood contributions, removing the influence of large outliers.
 
 The i<sup>th</sup> likelihood contributions is given by:
+
 $$
 -\log L_{i}(\theta) \propto f(r_i)
 $$
+
 where $r_i = \sqrt{e_{i}^{T} \Sigma_{i}^{-1} e_{i}}$ is a normalized residual, and where $e_{i}$ is the i<sup>th</sup> residual vector, and $\Sigma_{i}^{-1}$ the i<sup>th</sup> residual precision matrix.
 
 The `loss` argument changes the function $f$ as follows:
 
 1. If `loss='quadratic'` then $f$ is quadratic in the residuals i.e.
+
 $$
 f(r) = r^2
 $$
+
 and the likelihood contributions are exactly those from a Gaussian.
 
 2. If `loss='huber'` then $f$ is the Huber's $\psi$ function given by
+
 $$
 \psi_{c}(r) = \left\{ \begin{array}{l} r^2 & \text{for} \,\, r \leq c \\ c(2r-c) & \text{otherwise} \end{array} \right\}
 $$
+
 which is quadratic/linear in the residuals below/above the threshold determined by $c$.
 
 3. If `loss='tukey'` then $f$ is Tukey's byweight function given by
+
 $$
 l_{c}(r) = \left\{ \begin{array}{l} 
 r^2
@@ -144,19 +330,25 @@ c^2
 & \text{otherwise}
 \end{array} \right\}
 $$
+
 which is quadratic/constant in the residuals below/above the threshold determined by $c$.
 
 In practice a smooth approximation to both Huber and Tukey are implemented in practice using the construction
+
 $$
 \tilde{\psi}_{c}(r) = r^2 (1-\sigma_{c}(r)) + c^2 \sigma_{c}(r)
 $$
+
 $$
 \tilde{l}_{c}(r) = r^2 (1-\sigma_{c}(r)) + c(2r-c) \sigma_{c}(r)
 $$
+
 where $\sigma(r)$ is the sigmoid function
+
 $$
 \sigma_{c}(r) = \dfrac{1}{1+\exp(-5(r-c))}
 $$
+
 The plot below shows the actual and implemented loss functions (almost indistinguishable) for $c=5$. The threshold value is marked by with dashed line for the line $x = c$.
 
 ```{r, echo=FALSE, fig.height=5,fig.width=7,out.width="100%", fig.align='center', fig.cap="Loss Functions", warning=FALSE,message=FALSE}
@@ -190,62 +382,72 @@ ggplot() +
 ```
 
 The `loss_c` argument is used to determine the value of $c$. The default values are chosen based on the fact that under the assumed (multivariate) normal distribution of the residuals, the squared (normalized) residuals follows a $\chi^{2}_{m}$ distribution with degrees of freedom equal to the number of elements of $e_{i}$ i.e:
+
 $$
 r_{i}^2 = e_{i}^{T} \Sigma_{i}^{-1} e_{i} \sim \chi^{2}_{m}
 $$
+
 It is therefore reasonable to choose the threshold level (value of $c$) which determines whether or not $r_{i}$ is an outlier, as the level at which the null-hypothesis
+
 $$
 H_{0}: r_{i}^2 \sim \chi^{2}_{m}
 $$
+
 is rejected for some critical value $1 - \alpha$. Choosing the significance level $\alpha = 0.05$ the appropriate $c$ threshold value becomes
+
 ```{r}
 m <- 1
 qchisq(0.95,df=m)
 ```
+
 where $m$ is the number of observation equations.
 
 **Note:**  The significance level will be higher than the chosen if there are missing observations in some indices of $i$ for systems with multiple observation equations.
 
-## Argument: `use_hessian`
-
 ---
+
+### `use_hessian`
 
 This argument is a boolean which determines whether or not the likelihood hessian constructed by automatic differentiation from **TMB** is used during the optimization procedure by providing it to the `hessian` argument of `stats::nlminb`. The default is `use.hessian=FALSE`. The argument has no effect if `method=laplace` due to restrictions in **TMB**/**RTMB**.
 
-The effect of providing the hessian is typically that an optimum is found in fewer iterations, but the cost of computing the hessian is relatively large, so it is often faster to optimize using only the gradient.
-
-## Argument: `laplace.residuals`
+One advatange of using the hessian is that the optimizer is more robust against parameters being on different scales, and the minimum is typically found in fewer (but more expensive) iterations. It is usually faster just to use the gradient.
 
 ---
+
+### `laplace.residuals`
 
 This boolean controls whether or not model residuals are calculated with `TMB::oneStepPredict` when the Laplace filtering is used (`method=laplace`). This takes a considerable amount of time - typically much longer than the estimation itself.
 
-## Argument: `unconstrainted.optim`
-
 ---
+
+### `unconstrainted.optim`
 
 This boolean allows for quick unconstrained estimation removing the parameter boundaries specified by `setParameter`. This may be useful sometimes, to quickly check whether estimation issues occur because of ill boundaries.
 
-
-## Argument: `estimate.initial.state`
-
 ---
+
+
+### `estimate.initial.state`
 
 This boolean determines whether or not the initial-time state distribution (mean and covariance) should be estimated or not. By default `estimate.initial.state=FALSE` and it is not estimated but simply taken as the values provided by `setInitialState`. When `estimate.initial.state=TRUE` the mean and covariance are estimated as the stationary solution of the moment differential equations using the input values are the initial time-point.
 
 The stationary solution is obtained first by solving
+
 $$
 \dfrac{d\mathrm{E}\left[x_{\infty}\right]}{dt} = f(\mathrm{E}\left[x_\infty\right]) = 0
 $$
-for $\mathrm{E}\left[x_\infty\right]$ using Newton's method. This stationary mean is then used to solve 
-$$
-\dfrac{d\mathrm{V}\left[x_\infty\right]}{dt} = \dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\mathrm{V}\left[x_\infty\right] + \mathrm{V}\left[x_\infty\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\right]^{T} + g(\mathrm{E}\left[x_\infty\right])g(\mathrm{E}\left[x_\infty\right])^{T} = 0
-$$
-for the stationary covariance $\mathrm{V}\left[x_\infty\right]$ by calling a linear solver on the vectorized system of equations (using kronecker products).
 
-## Argument: `control`
+for $\mathrm{E}\left[x_\infty\right]$ using Newton's method. This stationary mean is then used to solve
+
+<!-- $$ -->
+<!-- \dfrac{d\mathrm{V}\left[x_\infty\right]}{dt} = \dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\mathrm{V}\left[x_\infty\right] + \mathrm{V}\left[x_\infty\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_\infty\right])}\right]^{T} + g(\mathrm{E}\left[x_\infty\right])g(\mathrm{E}\left[x_\infty\right])^{T} = 0 -->
+<!-- $$ -->
+
+<!-- for the stationary covariance $\mathrm{V}\left[x_\infty\right]$ by calling a linear solver on the vectorized system of equations (using kronecker products). -->
 
 ---
+
+### `control`
 
 This argument is a list which controls various settings of the `stats::nlminb` optimizer. See the documentation on `?stats::nlminb` for more information.
 
@@ -253,12 +455,10 @@ The default is `list(trace=1,iter.max=1e5,eval.max=1e5)` which prints the iterat
 
 **Note::** The user should remember that disabling tracing by passing `control = list(trace=0)` will remove the `ìter.max`and `eval.max` arguments, so they should be provided as well if needed.
 
-## Argument: `silent`
-
 ---
+
+### `silent`
 
 This boolean argument controls whether or not various information messages are printed by **ctsmTMB** during model building, compilation and estimation.
 
-# Example
-
-**Insert Example**
+---

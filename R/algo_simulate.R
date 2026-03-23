@@ -20,7 +20,7 @@ ekf_lkf_ukf_simulate_r = function(parVec, self, private, nsims)
   
   # various utility functions for likelihood calculations ---------------------
   create_state_space_functions_for_filtering()
-  getSimulationFunctions()
+  get_simulate_functions()
   
   # Get filtered states
   filt <- switch(private$method,

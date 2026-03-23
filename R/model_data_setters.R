@@ -352,60 +352,69 @@ set_simulation_timestep = function(data, self, private){
 #######################################################
 # SET PARAMETERS
 #######################################################
-set_parameters = function(pars, self, private){
+# This function sets the parameters used by methods with the 'pars' argument to various methods.
+set_parameters <- function(pars, self, private){
   
-  # This function sets the parameters used by estimations, filters etc.
-  # The provided 'pars' arguments are used by default, else the estimated onces
-  # if available, else the initial ones provided in the call to setParameter.
+  ## Allow any number of parameters to be received?
+  # We take initial or estimated and fill in from the received parameter vector
   
-  # 
   
-  # If no parameters are provided:
+  # extract model parameters etc...
+  par.matrix <- self$getParameters()
+  n.pars <- private$number.of.pars
+  n.free.pars <- private$number.of.free.pars
+  # n.fixed.pars <- private$number.of.fixed.pars
+  free.parameter.names <- names(private$free.pars)
+  par.length <- length(pars)
+  
+  # If no parameters are provided use 1. estimated or 2. initial
   if(is.null(pars)){
+    # use initial parameters by default
+    pars <- par.matrix$initial
+    # ...unless there are estimated parameters we can use
+    bool.free.pars <- par.matrix$type == "free"
+    is.fitted.pars.finite <- !all(is.na(par.matrix$estimate[bool.free.pars]))
+    if(is.fitted.pars.finite){
+      pars <- par.matrix$estimate
+    }
+    names(pars) <- private$parameter.names
     
-    # If estimated parameters are available use these, else use initial
-    if(!is.null(private$fit)){
-      pars = self$getParameters(value="estimate")
+  } else {
+    
+    # check1 - throw error if not all or free
+    bool <- par.length %in% c(n.pars, n.free.pars)
+    if(!bool){
+      stop("The 'pars' argument should have length ", n.pars, " (all) or ", n.free.pars,
+           " (only fixed) but ", par.length, " were provided.")
+    }
+    
+    # check2 - throw error if NA names
+    is.pars.names.na <- any(is.na(names(pars)))
+    if(is.pars.names.na) stop("The 'pars' vector has NA names")
+    
+    # 1. all parameters were provided
+    if(par.length == n.pars){
+      if(is.null(names(pars))) names(pars) <- private$parameter.names
+      pars <- pars[private$parameter.names]
     } else {
-      pars = self$getParameters(value="initial")
-    }
-  } 
-  
-  # If only the free parameters are provided, then add the fixed ones too,
-  # in the correct order
-  if(!is.null(pars)){
-    
-    # check if parameters is with or without fixed parameters
-    lp = length(private$parameter.names)
-    fp = length(private$fixed.pars)
-    
-    # if not correct length give error
-    if(!any(length(pars) == c(lp, lp-fp))){
-      stop("Incorrect number of parameters supplied (",length(pars),"). ", "Please supply either ",lp," or ", lp-fp, ", i.e. with or without fixed parameters.")
-    }
-    
-    # add fixed parameters if missing
-    if(length(pars)==lp-fp){
-      
-      # Get free and fixes ids
-      par.type.free <- self$getParameters()[,"type"] == "free"
-      par.type.fixed <- !par.type.free
-      
-      # Create new par-vector
-      full.pars <- rep(NA, lp)
-      
-      # Assign free and fixed pars 
-      full.pars[par.type.free] <- pars
-      full.pars[par.type.fixed] <- self$getParameters(type="fixed",value="initial")
-      
-      # return 
-      pars <- full.pars
+    # 2. free parameters were provided
+      if(is.null(names(pars))) names(pars) <- free.parameter.names
+      pars <- pars[free.parameter.names]
+      #check if the names are wrong
+      #check for NA entries
+      if(any(is.na(pars))) stop("fixed parameter(s) were provided in 'pars' when it should only be free parameters.")
+      # add fixed parameters too to get all entries
+      full.par.vector <- sapply(private$parameters, function(x) x$initial)
+      full.par.vector[free.parameter.names] <- pars
+      # overwrite
+      pars <- full.par.vector
     }
   }
   
-  names(pars) <- private$parameter.names
-  private$pars = pars
+  #save to field
+  private$pars <- pars
   
+  #exit
   return(invisible(NULL))
 }
 
@@ -440,3 +449,4 @@ set_k_ahead = function(k.ahead, self, private) {
   # return values
   return(invisible(self))
 }
+

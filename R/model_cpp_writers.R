@@ -267,7 +267,7 @@ write_h_var = function(self, private){
 write_cppfile = function(self, private) {
   
   if(private$method=="lkf.cpp"){
-    stop("LKF not supported yet.")
+    stop("LKF not supported.")
   }
   
   # Get template

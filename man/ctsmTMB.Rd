@@ -792,31 +792,19 @@ Estimate the fixed effects parameters in the specified model.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
-can take \code{NA}-values.}
+\item{\code{data}}{a \code{data.frame} with a time-column (must be named \code{"t"}), observations and
+inputs used maximum-likelihood parameter and state estimation. The observations can take \code{NA}-values.}
 
-\item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
-Must be one of either "lkf", "ekf", "laplace".}
+\item{\code{method}}{a \code{character} string specifying the likelihood method used for parameter and state estimation.}
 
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
-differential equations. The default "euler" is the Forward Euler method, alternatively the classical
-4th order Runge Kutta method is available via "rk4".}
+\item{\code{ode.solver}}{a \code{character} string to determine the ODE solver scheme for the Kalman methods when solving the
+moment differential equations. The methods are either Forward Euler (\code{"euler"}) or 4th order Runge-Kutta (\code{"rk4"})
+(default).}
 
-\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
-The defined step-size is used to calculate the number of steps between observation time-points as
-defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
-is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
-The step-size is used in the two following ways depending on the
-chosen method:
-\enumerate{
-\item Kalman filters: The time-step is used as the step-size in the
-numerical Forward-Euler scheme to compute the prior state mean and
-covariance estimate as the final time solution to the first and second
-order moment differential equations.
-\item TMB method: The time-step is used as the step-size in the Euler-Maruyama
-scheme for simulating a sample path of the stochastic differential equation,
-which serves to link together the latent (random effects) states.
-}}
+\item{\code{ode.timestep}}{a \code{numeric} value that determines the ODE solver time step-size. The passed value
+is used to calculate the number of steps between time-points in \code{data$t} such that an integer number of
+steps are taken. For details see the "Estimation" vignette on the webpage. The step-size is used for solving
+the moment differential equations (Kalman methods) or for simulating the stochastic SDE path (Laplace methods).}
 
 \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
@@ -973,10 +961,12 @@ system contains time-varying inputs, the first element of these is used.}
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A list with components:
+The method retunrns a list which includes function handles for the likelihood function.
 \describe{
-\item{coefficients}{Named numeric vector of model coefficients}
-\item{residuals}{Numeric vector of residuals}
+\item{par}{A vector of initial parameter values. This is the expected input size to \code{fn}, \code{gr} and \code{he}.}
+\item{fn}{Negative log-likelihood function.}
+\item{gr}{Negative log-likelihood gradient.}
+\item{he}{Negative log-likelihood hessian.}
 }
 }
 }
@@ -1081,7 +1071,7 @@ state estimate as the initial condition.
   pars = NULL,
   use.cpp = TRUE,
   cpp.seeds = NULL,
-  method = "ekf",
+  method = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen"),
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   simulation.timestep = diff(data$t),

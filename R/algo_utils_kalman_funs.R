@@ -1,5 +1,5 @@
 
-get.kalman.functions <- function(.envir = parent.frame()){
+get_ekf_update_functions <- function(.envir = parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   
@@ -17,11 +17,13 @@ get.kalman.functions <- function(.envir = parent.frame()){
     # Innovation variance
     R = C %*% covMat %*% t(C) + V
     # Kalman Gain
-    K = covMat %*% t(C) %*% RTMB::solve(R)
+    # K = covMat %*% t(C) %*% RTMB::solve(R)
+    K = t(RTMB::solve(R, C %*% covMat))
     # Posterior State and Covariance
     stateVec = stateVec + K %*% e
-    covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
-    # Likelihood
+    IKC = I0 - K %*% C
+    covMat = IKC %*% covMat %*% t(IKC) + K %*% V %*% t(K)
+    # covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
     # Return
     return(list(stateVec, covMat, e, R))
   }
@@ -38,7 +40,6 @@ get.kalman.functions <- function(.envir = parent.frame()){
     # Observation variance
     V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
     # Innovation variance
-    # R = C %*% covMat %*% t(C) + V
     R <- V
     # Posterior State and Covariance
     stateVec = stateVec
@@ -71,40 +72,15 @@ get.kalman.functions <- function(.envir = parent.frame()){
     return(list(stateVec, covMat, nll))
   }
   
-  kalman.data.update.with.nll.old <- function(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
-    # Remove NA's from obsVec
-    y = obsVec[obsVec_bool]
-    # Create permutation matrix
-    E = E0[obsVec_bool,, drop=FALSE]
-    # Obs Jacobian
-    C = E %*% dhdx__(stateVec, parVec, inputVec)
-    # Innovation
-    e = y - E %*% h__(stateVec, parVec, inputVec)
-    # Observation variance
-    V = E %*% hvar__matrix(stateVec, parVec, inputVec) %*% t(E)
-    # Innovation variance
-    R = C %*% covMat %*% t(C) + V
-    # Kalman Gain
-    K = covMat %*% t(C) %*% RTMB::solve(R)
-    # Posterior State and Covariance
-    stateVec = stateVec + K %*% e
-    covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
-    # Likelihood
-    nll <- loss.function(e,R)
-    # Return
-    return(list(stateVec, covMat, nll))
-  }
-  
   assign("kalman.data.update", kalman.data.update, envir = .envir)
   assign("kalman.data.update.with.nll", kalman.data.update.with.nll, envir = .envir)
   assign("kalman.no.update.with.nll", kalman.no.update.with.nll, envir = .envir)
-  # assign("kalman.no.update.with.nll", kalman.data.update.with.nll.old, envir = .envir)
-  
+
   return(NULL)
 }
 
 
-get.ukf.kalman.functions <- function(.envir = parent.frame()){
+get_ukf_update <- function(.envir = parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   
@@ -129,7 +105,8 @@ get.ukf.kalman.functions <- function(.envir = parent.frame()){
     stateVec = stateVec + K %*% e
     # Jacobian of H needed for Joseph covariance update
     C <- E %*% dhdx__(stateVec, parVec, inputVec)
-    covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
+    IKC <- (I0 - K %*% C)
+    covMat = IKC %*% covMat %*% t(IKC) + K %*% V %*% t(K)
     # covMat <- covMat - K %*% R %*% t(K)
     return(list(stateVec, covMat, e, R))
   }
@@ -155,7 +132,8 @@ get.ukf.kalman.functions <- function(.envir = parent.frame()){
     stateVec = stateVec + K %*% e
     # Jacobian of H needed for Joseph covariance update
     C <- E %*% dhdx__(stateVec, parVec, inputVec)
-    covMat = (I0 - K %*% C) %*% covMat %*% t(I0 - K %*% C) + K %*% V %*% t(K)
+    IKC <- (I0 - K %*% C)
+    covMat = IKC %*% covMat %*% t(IKC) + K %*% V %*% t(K)
     # covMat <- covMat - K %*% R %*% t(K)
     # Likelihood
     nll <- loss.function(e,R)
@@ -191,7 +169,7 @@ get.ukf.kalman.functions <- function(.envir = parent.frame()){
   return(NULL)
 }
 
-getSimulationFunctions <- function(.envir = parent.frame()){
+get_simulate_functions <- function(.envir = parent.frame()){
   
   list2env(as.list(.envir), envir = environment())
   

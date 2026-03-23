@@ -46,73 +46,79 @@ lkf_ekf_ukf_filter_r <- function(pars, self, private){
 
 lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
   
-  # observation/input matrix
-  obsMat = as.matrix(private$data[private$obs.names])
-  inputMat = as.matrix(private$data[private$input.names])
-  
-  ids <- 1:private$number.of.observations - 1 #minus 1 for 0 indexing
-  non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
-  any_available_obs <- sapply(non_na_ids, function(x) !is.null(x))
-  
-  # non-na observation matrix
-  numeric_is_not_na_obsMat = t(apply(obsMat, 1, FUN=function(x) as.numeric(!is.na(x))))
-  if(nrow(numeric_is_not_na_obsMat)==1) numeric_is_not_na_obsMat = t(numeric_is_not_na_obsMat)
-  number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
-  
-  output.list <- list()
-  if(private$method == "lkf"){
-    output.list <- lkf_filter_rcpp(private$rcpp_function_ptr,
-                                   obsMat,
-                                   inputMat,
-                                   pars,
-                                   private$initial.state$p0,
-                                   private$initial.state$x0,
-                                   private$ode.timestep.size,
-                                   any_available_obs,
-                                   non_na_ids)
+  if(private$method %in% c("lkf","ekf","ukf")){
+    
+    # observation/input matrix
+    obsMat = as.matrix(private$data[private$obs.names])
+    inputMat = as.matrix(private$data[private$input.names])
+    
+    ids <- 1:private$number.of.observations - 1 #minus 1 for 0 indexing
+    non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
+    any_available_obs <- sapply(non_na_ids, function(x) !is.null(x))
+    
+    # non-na observation matrix
+    numeric_is_not_na_obsMat = t(apply(obsMat, 1, FUN=function(x) as.numeric(!is.na(x))))
+    if(nrow(numeric_is_not_na_obsMat) == 1){
+      numeric_is_not_na_obsMat <- t(numeric_is_not_na_obsMat) 
+    }
+    number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
+    
+    filt <- switch(private$method,
+      lkf = lkf_filter_rcpp(private$rcpp_function_ptr,
+                            obsMat,
+                            inputMat,
+                            pars,
+                            private$initial.state$p0,
+                            private$initial.state$x0,
+                            private$ode.timestep.size,
+                            any_available_obs,
+                            non_na_ids),
+      ekf = ekf_filter_rcpp(private$rcpp_function_ptr,
+                            obsMat,
+                            inputMat,
+                            pars,
+                            private$initial.state$p0,
+                            private$initial.state$x0,
+                            private$ode.timestep.size,
+                            private$ode.timesteps,
+                            any_available_obs,
+                            non_na_ids,
+                            private$ode.solver),
+      ukf = ukf_filter_rcpp(private$rcpp_function_ptr,
+                            obsMat,
+                            inputMat,
+                            pars,
+                            private$initial.state$p0,
+                            private$initial.state$x0,
+                            private$ode.timestep.size,
+                            private$ode.timesteps,
+                            numeric_is_not_na_obsMat,
+                            number_of_available_obs,
+                            private$ukf.hyperpars,
+                            private$ode.solver)
+    )
   }
-  if(private$method=="ekf"){
-    output.list <- ekf_filter_rcpp(private$rcpp_function_ptr,
-                                   obsMat,
-                                   inputMat,
-                                   pars,
-                                   private$initial.state$p0,
-                                   private$initial.state$x0,
-                                   private$ode.timestep.size,
-                                   private$ode.timesteps,
-                                   any_available_obs,
-                                   non_na_ids,
-                                   private$ode.solver)
-  }
-  if(private$method == "ukf"){
-    output.list <- ukf_filter_rcpp(private$rcpp_function_ptr,
-                                   obsMat,
-                                   inputMat,
-                                   pars,
-                                   private$initial.state$p0,
-                                   private$initial.state$x0,
-                                   private$ode.timestep.size,
-                                   private$ode.timesteps,
-                                   numeric_is_not_na_obsMat,
-                                   number_of_available_obs,
-                                   private$ukf.hyperpars,
-                                   private$ode.solver)
+  if(private$method %in% c("lkf.cpp","ekf.cpp","ukf.cpp")){
+    filt <- private$nll$report(pars)
   }
   
-  private$filtration.raw <- output.list
+  private$filtration.raw <- filt
   
   return(invisible(self))
 }
 
-create_filter_results <- function(self, private, laplace.residuals, return.directly=FALSE, silent=private$silent){
+create_filter_results <- function(self, private, laplace.residuals, silent=private$silent){
   
   if(!silent) message("Returning results...")
   
+  rtmb.kalman.methods <- c("lkf","ekf","ukf")
+  all.kalman.methods <- c(rtmb.kalman.methods, paste0(rtmb.kalman.methods,".cpp"))
   
-  if(any(private$method == c("lkf","ekf","ukf"))){
+  filt <- list()
+  
+  if(private$method %in% all.kalman.methods){
     
     rep <- private$filtration.raw
-    filt <- list()
     
     ##### helper functions #####
     rbind_vectors <- function(list, colnames=NULL, extra=TRUE){
@@ -176,7 +182,6 @@ create_filter_results <- function(self, private, laplace.residuals, return.direc
     non.na.ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
     length.non.na.ids <- lapply(non.na.ids, length)
     
-    
     # pre-allocate
     filt$residuals <- lapply(1:3, function(x) set.colnames(cbind(private$data$t, matrix(NA, nrow=nrow(obsMat), ncol=ncol(obsMat))), .obs.colnames))
     names(filt$residuals) = c("residuals", "sd", "normalized")
@@ -213,12 +218,6 @@ create_filter_results <- function(self, private, laplace.residuals, return.direc
     names(observations$cov$prior) = .covnames.list
     names(observations$cov$posterior) = .covnames.list
     filt$observations <- observations
-    
-  }
-  
-  # When we use for estimate we don't want to store in the filtration
-  if(return.directly){
-    return(filt)
   }
   
   # store

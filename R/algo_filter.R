@@ -27,7 +27,7 @@ ekf_filter_r = function(parVec, self, private)
   if(estimate.initial) {
     get_initial_state_estimator()
   }
-  get.kalman.functions()
+  get_ekf_update_functions()
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
@@ -104,11 +104,11 @@ ekf_filter_r = function(parVec, self, private)
   ###### MAIN LOOP END #######
   
   ####### RETURN #######
-  returnlist <- list(xPost = xPost,
+  returnlist <- list(xPost = lapply(xPost,c),
                      pPost = pPost,
-                     xPrior = xPrior,
+                     xPrior = lapply(xPrior,c),
                      pPrior = pPrior,
-                     Innovation = Innovation,
+                     Innovation = lapply(Innovation,c),
                      InnovationCovariance = InnovationCovariance)
   
   return(invisible(returnlist))
@@ -140,7 +140,7 @@ lkf_filter_r = function(parVec, self, private)
   if(estimate.initial) {
     get_initial_state_estimator()
   }
-  get.kalman.functions()
+  get_ekf_update_functions()
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
@@ -254,11 +254,11 @@ lkf_filter_r = function(parVec, self, private)
   ####### RETURN #######
   returnlist <- list(
     # nll=nll,
-    xPost = xPost,
+    xPost = lapply(xPost,c),
     pPost = pPost,
-    xPrior = xPrior,
+    xPrior = lapply(xPrior,c),
     pPrior = pPrior,
-    Innovation = Innovation,
+    Innovation = lapply(Innovation,c),
     InnovationCovariance = InnovationCovariance
   )
   
@@ -294,7 +294,7 @@ ukf_filter_r = function(parVec, self, private)
   if(private$estimate.initial) {
     get_initial_state_estimator()
   }
-  get.ukf.kalman.functions()
+  get_ukf_update()
   
   # time-steps
   ode_timestep_size = private$ode.timestep.size
@@ -377,11 +377,11 @@ ukf_filter_r = function(parVec, self, private)
   ###### MAIN LOOP END #######
   
   ####### RETURN #######
-  returnlist <- list(xPost = xPost,
+  returnlist <- list(xPost = lapply(xPost,c),
                      pPost = pPost,
-                     xPrior = xPrior,
+                     xPrior = lapply(xPrior,c),
                      pPrior = pPrior,
-                     Innovation = Innovation,
+                     Innovation = lapply(Innovation,c),
                      InnovationCovariance = InnovationCovariance
   )
   

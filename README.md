@@ -32,9 +32,9 @@ linear and mildly non-linear (multi-dimensional) continuous-discrete
 stochastic state space systems, i.e. systems on the form
 
 $$
-dx_{t} = f\left( t, x_t, u_t, p \right) dt + g\left( t, x_t, u_t, p \right) dB_{t}
+dx_{t} = f\left( t, x_t, u_t, \theta \right) \, dt + g\left( t, x_t, u_t, \theta \right) \, dB_{t}
 $$ $$
-y_{t_k} = h\left( t_k, x_{t_k}, u_{t_k}, p \right) + \varepsilon_{t}
+y_{t_k} = h\left( t_k, x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{t}
 $$
 
 That is, the latent state $x_t$ is a continuous-time process whose
@@ -42,10 +42,11 @@ evolution is governed by an (Itô) stochastic differential equation with
 drift $f$, and diffusion $g$. We may estimate the latent state
 distribution and the fixed effects parameters $p$ of the system through
 likelihood inference using the discrete-time measurements
-$\mathcal{Y}_{k} = \{y_{t_0}, y_{t_1},...,y_{t_k}\}$. These measurements
-are related to the latent state through the link function $h$ , but they
-are also contaminated by zero-mean Gaussian measurement noise
-$\varepsilon_{t} \sim \mathcal{N}\left(0, \Sigma(t_k, x_{t_k}, u_{t_k}, p) \right)$.
+$\mathcal{Y}_{k} = \left\{ y_{t_0}, y_{t_1},...,y_{t_k} \right\}$. These
+measurements are related to the latent state through the link function
+$h$ , but they are also contaminated by zero-mean Gaussian measurement
+noise
+$\varepsilon_{t} \sim \mathcal{N} \left(0, \Sigma(t_k, x_{t_k}, u_{t_k}, \theta) \right)$.
 
 Users interact with the *ctsmTMB* package via the available methods of
 the exported *[R6](https://CRAN.R-project.org/package=R6)* `ctsmTMB`
@@ -114,8 +115,8 @@ The following state reconstruction algorithms are currently available:
 The package is currently mostly tailored towards the Kalman Filter. The
 advantages of the methods are:
 
-1.  The hessian of the likelihood function (w.r.t the fixed parameters)
-    is available.
+1.  The hessian of the likelihood function (w.r.t the fixed parameters
+    $\theta$) is available.
 
 2.  The model residuals are easier to compute for e.g. model validation.
 

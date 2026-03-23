@@ -94,7 +94,7 @@ create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.f
     
   }
   
-  return(NULL)
+  return(invisible(NULL))
 }
 
 
@@ -119,7 +119,7 @@ create_state_space_functions_for_filtering <- function(.envir=parent.frame()){
   create_function_from_string_body("dfdu__", "ans", private$r.function.strings$dfdu, .envir=.envir)
   create_function_from_string_body("hvar__", "ans", private$r.function.strings$hvar, .envir=.envir)
   
-  return(NULL)
+  return(invisible(NULL))
 }
 
 
@@ -141,7 +141,6 @@ create_state_space_function_strings = function(self, private)
   names(stateList) = private$state.names
   names(inputList) = private$input.names
   subsList = c(obsList, parList, stateList, inputList)
-  # subsList <- get_substitution_list(self, private)
   
   ##################################################
   # drift

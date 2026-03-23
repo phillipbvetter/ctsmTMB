@@ -6,6 +6,7 @@
 #include "misc_helpers.h"
 #include "ode_solvers.h"
 #include "sde_solvers.h"
+#include "extra_utils.h"
 
 using namespace Rcpp;
 using namespace Eigen;
@@ -25,7 +26,7 @@ List ekf_filter_rcpp(
   const Eigen::VectorXd & ode_timesteps,
   LogicalVector any_available_obs,
   List non_na_ids,
-  const int ode_solver)
+  CharacterVector ode_solver)
 {
 
   auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
@@ -41,6 +42,9 @@ List ekf_filter_rcpp(
   const int n = stateVec.size();
   const int m = obsMat.row(0).size();
   int idx, n_available_obs;
+
+  // ODE solver
+  const int ODE_solver = choose_solver(ode_solver);
 
   // pre-allocate and define
   Eigen::VectorXd H, inputVec(ni), dinputVec(ni), obsVec(m), e(m);
@@ -117,7 +121,7 @@ List ekf_filter_rcpp(
         covMat, stateVec, 
         parVec, 
         inputVec, dinputVec, 
-        ode_timestep_size(i), ode_solver, 
+        ode_timestep_size(i), ODE_solver, 
         k1, k2, k3, k4, c1, c2, c3, c4
         );
       inputVec += dinputVec;
@@ -200,7 +204,7 @@ List ekf_predict_rcpp(
   const Eigen::VectorXd & ode_timesteps,
   Rcpp::LogicalVector any_available_obs,
   List non_na_ids,
-  const int ode_solver,
+  CharacterVector ode_solver,
   const int last_pred_id,
   const int k_step_ahead)
 {
@@ -235,6 +239,9 @@ List ekf_predict_rcpp(
   Rcpp::List xk(last_pred_id), ode_1step_integration(2);
   Eigen::VectorXd inv_ode_timesteps = ode_timesteps.cwiseInverse();
 
+  // ODE solver
+  const int ODE_solver = choose_solver(ode_solver);
+
   // Pre-allocate for ODE solver
   Eigen::VectorXd k1(n), k2(n), k3(n), k4(n);
   Eigen::MatrixXd c1(n,n), c2(n,n), c3(n,n), c4(n,n);
@@ -259,7 +266,7 @@ List ekf_predict_rcpp(
         covMat, stateVec, 
         parVec, 
         inputVec, dinputVec, 
-        ode_timestep_size(i+k), ode_solver, 
+        ode_timestep_size(i+k), ODE_solver, 
         k1, k2, k3, k4, c1, c2, c3, c4
         );
       inputVec += dinputVec;
@@ -292,7 +299,7 @@ List ekf_simulate_rcpp(
   Eigen::VectorXd simulation_timesteps,
   Rcpp::LogicalVector any_available_obs,
   List non_na_ids,
-  const int ode_solver,
+  CharacterVector ode_solver,
   const int last_pred_id,
   const int k_step_ahead,
   const int ng,

@@ -26,7 +26,7 @@ List ukf_filter_rcpp (
   Eigen::MatrixXi bool_is_not_na_obsMat,
   Eigen::VectorXi number_of_available_obs,
   Eigen::VectorXd ukf_pars,
-  const int ode_solver)
+  CharacterVector ode_solver)
 {
 
   auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
@@ -40,6 +40,9 @@ List ukf_filter_rcpp (
   const int n_states = stateVec.size();
   const int nn = 2*n_states + 1;
   const int n_obs = obsMat.row(0).size();
+
+  // ODE solver
+  const int ODE_solver = choose_solver(ode_solver);
 
   // pre-allocate and define
   VectorXd inputVec(n_inputs), dinputVec(n_inputs), obsVec(n_obs), e, y, obsVec_all;
@@ -115,7 +118,7 @@ List ukf_filter_rcpp (
 
     //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
     for(int j=0 ; j < ode_timesteps(i) ; j++){
-      Xsigmapoints = ukf_ode_integration(f__, g__, Xsigmapoints, sqrt_covMat, W, wm, parVec, inputVec, dinputVec, ode_timestep_size(i), sqrt_c, ode_solver, n_states, nn);
+      Xsigmapoints = ukf_ode_integration(f__, g__, Xsigmapoints, sqrt_covMat, W, wm, parVec, inputVec, dinputVec, ode_timestep_size(i), sqrt_c, ODE_solver, n_states, nn);
       sqrt_covMat = sigma2chol(Xsigmapoints, sqrt_c, nn, n_states);  
       // sqrt_covMat = ((Xsigmapoints - Xsigmapoints.col(0).replicate(1, nn))/sqrt(3.0)).block(0, 1, n_states, n_states );
       inputVec += dinputVec;
@@ -180,7 +183,7 @@ List ukf_predict_rcpp(
   Eigen::VectorXd ukf_pars,
   const int last_pred_id,
   const int k_step_ahead,
-  const int ode_solver)
+  CharacterVector ode_solver)
 {
 
   List filt = ukf_filter_rcpp(
@@ -208,6 +211,9 @@ List ukf_predict_rcpp(
   const int n_inputs = inputMat.row(0).size();
   const int nn = 2*n_states + 1;
   const int n_squared = n_states*n_states;
+
+  // ODE solver
+  const int ODE_solver = choose_solver(ode_solver);
 
   // pre-allocate and define
   VectorXd inputVec(n_inputs), dinputVec(n_inputs);
@@ -254,7 +260,7 @@ List ukf_predict_rcpp(
 
       //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
       for(int j=0 ; j < ode_timesteps(i+k) ; j++){
-        Xsigmapoints = ukf_ode_integration(f__, g__, Xsigmapoints, sqrt_covMat, W, wm, parVec, inputVec, dinputVec, ode_timestep_size(i+k), sqrt_c, ode_solver, n_states, nn);
+        Xsigmapoints = ukf_ode_integration(f__, g__, Xsigmapoints, sqrt_covMat, W, wm, parVec, inputVec, dinputVec, ode_timestep_size(i+k), sqrt_c, ODE_solver, n_states, nn);
         sqrt_covMat = sigma2chol(Xsigmapoints, sqrt_c, nn, n_states);  
         inputVec += dinputVec;
       }
@@ -293,7 +299,7 @@ List ukf_simulate_rcpp(
   const int ng,
   const int last_pred_id,
   const int k_step_ahead,
-  const int ode_solver,
+  CharacterVector ode_solver,
   const int nsims,
   Nullable<int> seed)
 {

@@ -161,7 +161,8 @@ get_loss_function <- function(.envir=parent.frame()){
     }
     log2pi = log(2*pi)
     loss.function = function(e,R){
-      r_squared <- t(e) %*% RTMB::solve(R) %*% e
+      # r_squared <- t(e) %*% RTMB::solve(R) %*% e
+      r_squared <- t(e) %*% RTMB::solve(R,e)
       0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*huber.loss(r_squared)
     }
   }
@@ -176,7 +177,8 @@ get_loss_function <- function(.envir=parent.frame()){
     }
     log2pi = log(2*pi)
     loss.function = function(e,R){
-      r_squared <- t(e) %*% RTMB::solve(R) %*% e
+      # r_squared <- t(e) %*% RTMB::solve(R) %*% e
+      r_squared <- t(e) %*% RTMB::solve(R,e)
       0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*tukey.loss(r_squared)
     }
   }
@@ -198,7 +200,7 @@ get_ode_solvers <- function(.envir=parent.frame()){
   }
   
   # forward euler ----------------------------------------
-  if(private$ode.solver==1){
+  if(private$ode.solver=="euler"){
     ode.integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       
       X1 = stateVec + f__(stateVec, parVec, inputVec) * dt
@@ -206,7 +208,7 @@ get_ode_solvers <- function(.envir=parent.frame()){
       
       return(list(X1,P1))
     }
-  } else if (private$ode.solver==2) {
+  } else if (private$ode.solver=="rk4") {
     # rk4 ----------------------------------------
     ode.integrator = function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
       
@@ -245,7 +247,7 @@ get_ode_solvers <- function(.envir=parent.frame()){
       
       return(list(X1,P1))
     }
-  } else if (private$ode.solver==3){
+  } else if (private$ode.solver=="implicit_euler"){
     #### Implicit Euler ####
     
     # id helpers
@@ -490,7 +492,7 @@ get_ukf_ode_solvers <- function(.envir=parent.frame()){
   }
   
   # forward euler ----------------------------------------
-  if(private$ode.solver==1){
+  if(private$ode.solver=="euler"){
     ode.integrator = function(X.sigma, chol.covMat, parVec, inputVec, dinputVec, dt){
       
       X1 <- X.sigma + cov.ode.1step(X.sigma, chol.covMat, parVec, inputVec) * dt
@@ -500,7 +502,7 @@ get_ukf_ode_solvers <- function(.envir=parent.frame()){
   }
   
   # rk4 ----------------------------------------
-  if(private$ode.solver==2){
+  if(private$ode.solver=="rk4"){
     ode.integrator = function(X.sigma, chol.covMat, parVec, inputVec, dinputVec, dt){
       
       # Initials
@@ -534,7 +536,7 @@ get_ukf_ode_solvers <- function(.envir=parent.frame()){
     }
   }
   # implicit euler
-  if(private$ode.solver==3){
+  if(private$ode.solver=="implicit_euler"){
     
     # # id helpers
     sizes <- c(n.states*n.sigmapoints, n.pars, n.inputs, n.inputs, 1, n.states*n.sigmapoints)

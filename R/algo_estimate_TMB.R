@@ -25,7 +25,7 @@ makeADFun_ekf_tmb = function(self, private){
     covMat = private$initial.state$p0,
     
     # ode
-    ode_solver = private$ode.solver,
+    ode_solver = switch(private$ode.solver, euler=1, rk4=2),
     ode_timestep_size = private$ode.timestep.size,
     ode_timesteps = private$ode.timesteps,
     
@@ -194,7 +194,7 @@ makeADFun_ukf_tmb = function(self, private){
     covMat = private$initial.state$p0,
     
     # ode
-    ode_solver = private$ode.solver,
+    ode_solver = switch(private$ode.solver, euler=1, rk4=2),
     ode_timestep_size = private$ode.timestep.size,
     ode_timesteps = private$ode.timesteps,
     

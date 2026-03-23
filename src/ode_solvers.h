@@ -41,8 +41,8 @@ void ode_integrator_inplace(
   Eigen::VectorXd parVec,
   Eigen::VectorXd inputVec,
   Eigen::VectorXd dinputVec,
-  double dt,
-  int ode_solver,
+  const double dt,
+  const int ode_solver,
   Eigen::VectorXd& k1,
   Eigen::VectorXd& k2,
   Eigen::VectorXd& k3,
@@ -53,7 +53,7 @@ void ode_integrator_inplace(
   Eigen::MatrixXd& c4)
 {
 
-  if (ode_solver == 1) {
+  if (ode_solver==1) {
   // Forward Euler
 
     k1 = f__(stateVec, parVec, inputVec);
@@ -64,7 +64,7 @@ void ode_integrator_inplace(
 
     return;
 
-  } else {
+  } else if (ode_solver==2){
   // Runge Kutta 4th Order
     
     const Eigen::VectorXd X0 = stateVec;
@@ -98,36 +98,9 @@ void ode_integrator_inplace(
     // solution
     stateVec = X0 + dt * (k1 + 2*k2 + 2*k3 + k4) / 6.0;
     covMat   = P0 + dt * (c1 + 2*c2 + 2*c3 + c4) / 6.0;
+  } else {
+    // Do nothing
   }
-}
-
-inline Eigen::MatrixXd construct_permutation_matrix(int number_of_available_obs, int number_of_obs_eqs, Eigen::VectorXi bool_is_not_na_obsVec){
-  Eigen::MatrixXd E(number_of_available_obs, number_of_obs_eqs);
-  E.setZero();
-  int j=0;
-  for(int i=0; i < number_of_obs_eqs; i++){
-    /*if p(i) is 1 then include by setting 1 in diagonal of matrix*/
-    if(bool_is_not_na_obsVec(i) == 1){
-      E(j,i) = 1.0;
-      j += 1;
-    }
-  }
-  return E;
-}
-
-inline Eigen::VectorXd remove_NAs(Eigen::VectorXd obsVec, int number_of_available_obs, Eigen::VectorXi bool_is_not_na_obsVec){
-  // Initialize
-  int ii = 0;
-  Eigen::VectorXd obsVec_without_NAs(number_of_available_obs);
-  // For loop to remove NA observations
-  for(int i=0; i < obsVec.size(); i++){
-    if( bool_is_not_na_obsVec(i) == 1){
-      obsVec_without_NAs(ii) = obsVec(i);
-      ii++;
-    }
-  }
-  // Return
-  return obsVec_without_NAs;
 }
 
 #endif

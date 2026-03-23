@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ctsmTMB</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,8 +85,10 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Stochastic Simulations</h1>
-                        <h4 data-toc-skip class="author"></h4>
+                        <h4 data-toc-skip class="author">Phillip
+Vetter</h4>
             
+            <h4 data-toc-skip class="date">2026-02-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/phillipbvetter/ctsmTMB/blob/HEAD/vignettes/simulate.Rmd"><code>vignettes/simulate.Rmd</code></a></small>
       <div class="d-none name"><code>simulate.Rmd</code></div>
@@ -94,249 +96,617 @@
 
     
     
+<style>
+body {
+  text-align: justify;
+  hyphens: auto;
+}
+</style>
 <p>This vignette demonstrates how to use the <code>simulate</code>
-method for calculating <em>k</em>-step (state and observation)
-simulations.</p>
+method for calculating <em>k-step-ahead</em> stochastic simulations
+trajectories.</p>
 <div class="section level2">
-<h2 id="notation">Notation<a class="anchor" aria-label="anchor" href="#notation"></a>
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<hr>
-<p>Let the set of observations from the initial time
+<div class="section level3">
+<h3 id="notation">Notation<a class="anchor" aria-label="anchor" href="#notation"></a>
+</h3>
+<ul>
+<li><p>We use subscript
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>t</mi></msub><mo>=</mo><mi>x</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">x_{t} = x(t)</annotation></semantics></math>
+to denote time for continuous variables.</p></li>
+<li><p>We use subscript
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>k</mi></msub><mo>=</mo><mi>y</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">y_k = y(t_k)</annotation></semantics></math>
+to indicate discrete time-points for discrete variables.</p></li>
+<li><p>We denote the set of observations from the initial time
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mn>0</mn></msub><annotation encoding="application/x-tex">t_0</annotation></semantics></math>
-until the current time
+until the “current” time
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>i</mi></msub><annotation encoding="application/x-tex">t_{i}</annotation></semantics></math>
-be noted by
+by
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝒴</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><msub><mi>y</mi><mi>i</mi></msub><mo>,</mo><msub><mi>y</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>y</mi><mn>1</mn></msub><mo>,</mo><msub><mi>y</mi><mn>0</mn></msub><mo stretchy="true" form="postfix">}</mo></mrow></mrow><annotation encoding="application/x-tex">
-\mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0}\right\}
+\mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0} \right\}
+</annotation></semantics></math></p></li>
+<li><p>We denote mean and variance by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mi>t</mi></msub><mo>=</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\mu_{t} = \mathrm{E}\left[x_t\right]</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>t</mi></msub><mo>=</mo><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">P_{t} = \mathrm{V}\left[x_t\right]</annotation></semantics></math>.</p></li>
+<li><p>We use
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mrow><mi>k</mi><mo>∣</mo><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">\mu_{k \mid k-1}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>P</mi><mrow><mi>k</mi><mo>∣</mo><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">P_{k \mid k-1}</annotation></semantics></math>
+to denote the mean/variance at time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>k</mi></msub><annotation encoding="application/x-tex">t_{k}</annotation></semantics></math>
+conditional on the observations
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝒴</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">\mathcal{Y}_{k-1}</annotation></semantics></math>
+i.e.
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mrow><mi>k</mi><mo>∣</mo><mi>k</mi></mrow></msub><mo>=</mo><mi mathvariant="normal">E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∣</mo><msub><mi>𝒴</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mspace width="2.0em"></mspace><mspace width="2.0em"></mspace><msub><mi>P</mi><mrow><mi>k</mi><mo>∣</mo><mi>k</mi></mrow></msub><mo>=</mo><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∣</mo><msub><mi>𝒴</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
+\mu_{k \mid k} = \mathrm{E}\left[x_{t_k} \mid \mathcal{Y}_{k}\right] \qquad\qquad P_{k \mid k} = \mathrm{V}\left[x_{t_k} \mid \mathcal{Y}_{k}\right]
+</annotation></semantics></math></p></li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="stochastic-state-space-system">Stochastic State Space System<a class="anchor" aria-label="anchor" href="#stochastic-state-space-system"></a>
+</h3>
+<p>We consider the following types of stochastic state space systems</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>t</mi></msub><mo>=</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><msub><mi>u</mi><mi>t</mi></msub><mo>,</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><mi>t</mi><mo>+</mo><mi>G</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><msub><mi>u</mi><mi>t</mi></msub><mo>,</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><mi mathvariant="normal">d</mi><msub><mi>B</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">
+x_{t} = f(t,x_t,u_t,\theta) \, \mathrm{d}t + G(t,x_t,u_t, \theta) \, \mathrm{d}\mathrm{d}B_{t}
 </annotation></semantics></math></p>
-<p>A <em>k</em>-step <strong>simulation</strong> is a sample of the
-stochastic path of the model stochastic differential equation <em>k</em>
-time-steps into the future, conditioned on the current state estimate
-with mean and covariance <span class="math display">$$
-\hat{x}_{i|i} = \mathrm{E}\left[ x_{t_{i}} | y_{t_{i}} \right] \\
-P_{i|i} = \mathrm{V}\left[ x_{t_{i}} | y_{t_{i}} \right]
-$$</span> A single stochastic simulation can be obtained using the
-Euler-Maruyama scheme by
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><msub><mi>t</mi><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msub></msub><mo>=</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>+</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>u</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>Δ</mi><msub><mi>t</mi><mi>j</mi></msub><mo>+</mo><mi>G</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>u</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>Δ</mi><msub><mi>B</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">
-X_{t_{j+1}} = X_{t_{j}} + f(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta t_{j} + G(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta B_{j}
-</annotation></semantics></math> for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi><mo>=</mo><mi>i</mi><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><mi>i</mi><mo>+</mo><mi>k</mi></mrow><annotation encoding="application/x-tex">j=i,...,i+k</annotation></semantics></math>,
-where the initial point follows
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mo stretchy="false" form="prefix">|</mo><mi>i</mi></mrow></msub><mo>,</mo><msub><mi>P</mi><mrow><mi>i</mi><mo stretchy="false" form="prefix">|</mo><mi>i</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>k</mi></msub><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mi>k</mi></msub><mo>,</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>,</mo><msub><mi>u</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>,</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>ε</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">
+y_{k} = h(t_k, x_{t_k}, u_{t_k}, \theta) + \varepsilon_{k}
+</annotation></semantics></math></p>
+<p>where the observation noise is zero-mean Gaussian
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mi>k</mi></msub><mo>∼</mo><mi>𝒩</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mi>Σ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mi>k</mi></msub><mo>,</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>,</mo><msub><mi>u</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>,</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\varepsilon_{k} \sim \mathcal{N}(0,\Sigma(t_k, x_{t_k}, u_{t_k}, \theta))</annotation></semantics></math>.
+In this notation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>u</mi><annotation encoding="application/x-tex">u</annotation></semantics></math>
+are inputs and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+are fixed effects parameters to be estimated.</p>
+<p>We refer to the functions
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+as the <em>drift</em>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>G</mi><annotation encoding="application/x-tex">G</annotation></semantics></math>
+as the <em>diffusion</em>, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
+as the <em>link</em>. We may omit arguments and just write
+e.g. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">f(x_t)</annotation></semantics></math>
+for readability.</p>
+</div>
+<div class="section level3">
+<h3 id="observations-and-likelihood">Observations and Likelihood<a class="anchor" aria-label="anchor" href="#observations-and-likelihood"></a>
+</h3>
+<p>The likelihood, which is the joint density of all observations, can
+be rewritten by using repeated conditioning as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝒴</mi><mi>N</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munderover><mo>∏</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mi>k</mi></msub><mo>∣</mo><msub><mi>𝒴</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munderover><mo>∏</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>ε</mi><mi>k</mi></msub><mo>∣</mo><msub><mi>𝒴</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+L(\theta) = p(\mathcal{Y}_{N}) = \prod_{k=1}^{N} p(y_{k} \mid \mathcal{Y}_{k-1}) = \prod_{k=1}^{N} p(h(x_{k}) + \varepsilon_{k} \mid \mathcal{Y}_{k-1}) 
+</annotation></semantics></math></p>
+</div>
+<div class="section level3">
+<h3 id="what-is-a-simulation">What is a “Simulation”?<a class="anchor" aria-label="anchor" href="#what-is-a-simulation"></a>
+</h3>
+<p>When we say a <em>stochastic simulation</em>(s) we mean sample
+trajectories drawn from the joint state distribution at all future
+sampling times conditional on the (relative) initial posterior state
+distribution i.e.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝒳</mi><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mi>k</mi></mrow></msub></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo>,</mo><msub><mi>x</mi><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>x</mi><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></msub><mo>,</mo><msub><mi>x</mi><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mi>k</mi></mrow></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><mspace width="0.167em"></mspace><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+\mathcal{X}_{t_{i+k}} = \left( x_{t_i}, x_{t_{i+1}}, \dots, x_{t_{i+k-1}}, x_{t_{i+k} } \right) \mid \, p(x_{t_i})
+</annotation></semantics></math></p>
+<p>The initial distribution
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><msub><mi>X</mi><msub><mi>t</mi><mi>i</mi></msub></msub></msub><annotation encoding="application/x-tex">p_{X_{t_i}}</annotation></semantics></math>
+is approximated by a Gaussian with mean and covariance given by the
+posterior expectation and covariance i.e.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mo stretchy="false" form="prefix">|</mo><mi>i</mi></mrow></msub><mo>,</mo><msub><mi>P</mi><mrow><mi>i</mi><mo stretchy="false" form="prefix">|</mo><mi>i</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 X_{t_{i}} \sim N(\hat{x}_{i|i}, P_{i|i} )
-</annotation></semantics></math> and
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><msub><mi>B</mi><mi>j</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mi>Δ</mi><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
-\Delta B_{j} \sim N(0,\Delta t_{j})
 </annotation></semantics></math></p>
-</div>
-<div class="section level2">
-<h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
-</h2>
-<hr>
-<p>The <code>simulate</code> method accepts the following arguments</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span><span class="va">data</span>,</span>
-<span>               pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>               use.cpp <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>               method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
-<span>               ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
-<span>               ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
-<span>               simulation.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
-<span>               k.ahead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span>,</span>
-<span>               return.k.ahead <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">k.ahead</span>,</span>
-<span>               n.sims <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>               initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
-<span>               estimate.initial.state <span class="op">=</span> <span class="va">private</span><span class="op">$</span><span class="va">estimate.initial</span>,</span>
-<span>               silent <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="argument-pars">Argument: <code>pars</code><a class="anchor" aria-label="anchor" href="#argument-pars"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
-vignette</a>.</p>
+<p>We may sample such trajectories as follows:</p>
+<ol style="list-style-type: decimal">
+<li><p>Sample from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">p(x_{t_i})</annotation></semantics></math>
+to generate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><msub><mi>t</mi><mi>i</mi></msub></msub><annotation encoding="application/x-tex">X_{t_{i}}</annotation></semantics></math>.</p></li>
+<li><p>Use the Euler-Maruyama method to generate the future state values
+iteratively</p></li>
+</ol>
+<p>The Euler-Maruyama discretization for the SDE is given by</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><msub><mi>t</mi><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msub></msub><mo>=</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>+</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>u</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>Δ</mi><msub><mi>t</mi><mi>j</mi></msub><mo>+</mo><mi>G</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>u</mi><msub><mi>t</mi><mi>j</mi></msub></msub><mo>,</mo><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>Δ</mi><msub><mi>B</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">
+X_{t_{j+1}} = X_{t_{j}} + f(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta t_{j} + G(X_{t_{j}},u_{t_{j}},t_{j}) \, \Delta B_{j}
+</annotation></semantics></math></p>
+<p>for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi><mo>=</mo><mi>i</mi><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><mi>i</mi><mo>+</mo><mi>k</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">j = i, ... , i+k-1</annotation></semantics></math>,
+and where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><msub><mi>B</mi><mi>j</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mi>Δ</mi><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Delta B_{j} \sim N(0,\Delta t_{j})</annotation></semantics></math>.</p>
 </div>
 <div class="section level3">
-<h3 id="argument-use-cpp">Argument: <code>use.cpp</code><a class="anchor" aria-label="anchor" href="#argument-use-cpp"></a>
+<h3 id="algorithm">Algorithm <a class="anchor" aria-label="anchor" href="#algorithm"></a>
 </h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
-vignette</a>.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-method">Argument: <code>method</code><a class="anchor" aria-label="anchor" href="#argument-method"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
-vignette</a>.</p>
-<p><strong>Note:</strong> The <code>simulate</code> method is currently
-only available using the Extended Kalman filter
-(<code>method="ekf</code>).</p>
-</div>
-<div class="section level3">
-<h3 id="argument-ode-solver">Argument: <code>ode.solver</code><a class="anchor" aria-label="anchor" href="#argument-ode-solver"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
-vignette</a>.</p>
-<p><strong>Note:</strong> When the argument <code>use.cpp=TRUE</code>
-then the only solvers available are <em>euler</em> and <em>rk4</em>.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-ode-timestep">Argument: <code>ode.timestep</code><a class="anchor" aria-label="anchor" href="#argument-ode-timestep"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
-vignette</a>.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-k-ahead">Argument: <code>k.ahead</code><a class="anchor" aria-label="anchor" href="#argument-k-ahead"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
-vignette</a>.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-return-k-ahead">Argument: <code>return.k.ahead</code><a class="anchor" aria-label="anchor" href="#argument-return-k-ahead"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
-vignette</a>.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-simulation-timestep">Argument: <code>simulation.timestep</code><a class="anchor" aria-label="anchor" href="#argument-simulation-timestep"></a>
-</h3>
-<hr>
-<p>This argument is the same as <code>ode.timestep</code> but determines
-the time-steps used between data-points when performing the
-Euler-Maruyama simulation.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-n-sims">Argument: <code>n.sims</code><a class="anchor" aria-label="anchor" href="#argument-n-sims"></a>
-</h3>
-<hr>
-<p>The number of stochastic simulations (trajectories) generated.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-initial-state">Argument: <code>initial.state</code><a class="anchor" aria-label="anchor" href="#argument-initial-state"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
-vignette</a>.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-estimate-initial-state">Argument: <code>estimate.initial.state</code><a class="anchor" aria-label="anchor" href="#argument-estimate-initial-state"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
-vignette</a>.</p>
-</div>
-<div class="section level3">
-<h3 id="argument-silent">Argument: <code>silent</code><a class="anchor" aria-label="anchor" href="#argument-silent"></a>
-</h3>
-<hr>
-<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
-vignette</a>.</p>
+<p>When using the <code>simulate</code> method the forecast horizon is
+controlled by the <code>k.ahead</code> argument, i.e. how many
+time-steps “into the future” forecasts are wanted for.</p>
+<p>The algorithm returns
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+forecast scenarios, calculated by <code>nrow(data)-k.ahead</code>. Each
+of these
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>=</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>.</mi><mi>.</mi><mo>,</mo><mi>N</mi></mrow><annotation encoding="application/x-tex">i=0,1,..,N</annotation></semantics></math>
+scenarios consist of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>k</mi><mtext mathvariant="normal">ahead</mtext></msub><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">k_{\text{ahead}}+1</annotation></semantics></math>
+state values, for every
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mtext mathvariant="normal">sims</mtext></msub><annotation encoding="application/x-tex">n_{\text{sims}}</annotation></semantics></math>
+requested simulation trajectories, one for each time point
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">t=t_{i+j}</annotation></semantics></math>
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi><mo>=</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>k</mi><mtext mathvariant="normal">ahead</mtext></msub></mrow><annotation encoding="application/x-tex">j=0,1,..,k_{\text{ahead}}</annotation></semantics></math>.
+The number of simulation trajectories
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mtext mathvariant="normal">sim</mtext></msub><annotation encoding="application/x-tex">n_{\text{sim}}</annotation></semantics></math>
+can be controlled via the <code>n.sims</code> argument.</p>
+<p>The algorithm carries out the following step-wise procedure:</p>
+<ul>
+<li><p>Filter with the provided data to obtain posterior state and
+covariance estimates for every point in time in the provided
+<code>data[,"t"]</code> column.</p></li>
+<li><p>Extract the first
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+estimates and discard the remainder.</p></li>
+<li><p>For each
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>=</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>.</mi><mi>.</mi><mo>,</mo><mi>N</mi></mrow><annotation encoding="application/x-tex">i=0,1,..,N</annotation></semantics></math>
+sample
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>=</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>n</mi><mtext mathvariant="normal">sims</mtext></msub></mrow><annotation encoding="application/x-tex">k=0,1,..,n_{\text{sims}}</annotation></semantics></math>
+realisations
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>X</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>k</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup><annotation encoding="application/x-tex">X^{(k)}</annotation></semantics></math>
+from the posterior Gaussians given by</p></li>
+</ul>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>X</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>k</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup><mo>∼</mo><mi>𝒩</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mo>∣</mo><mi>i</mi></mrow></msub><mo>,</mo><msub><mi>P</mi><mrow><mi>i</mi><mo>∣</mo><mi>i</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+X^{(k)} \sim \mathcal{N}\left(\hat{x}_{i \mid i}, P_{i \mid i}\right)
+</annotation></semantics></math></p>
+<ul>
+<li>For each of the realized variables
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>X</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>k</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup><annotation encoding="application/x-tex">X^{(k)}</annotation></semantics></math>
+apply the Euler-Maruyama scheme repeatedly until from the initial time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>i</mi></msub><annotation encoding="application/x-tex">t_{i}</annotation></semantics></math>
+until time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><msub><mi>k</mi><mtext mathvariant="normal">ahead</mtext></msub></mrow></msub><annotation encoding="application/x-tex">t_{i+k_{\text{ahead}}}</annotation></semantics></math>
+producing forecasts at each of the intermediate times
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">t_{i+j}</annotation></semantics></math>.</li>
+</ul>
+<p>In summary this produces for each of the system states (i.e. for each
+element of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mi>t</mi></msub><annotation encoding="application/x-tex">x_t</annotation></semantics></math>)
+a <code>list</code> with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+entries, where each entry is a <code>matrix</code> of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>k</mi><mtext mathvariant="normal">ahead</mtext></msub><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">k_{\text{ahead}}+1</annotation></semantics></math>
+rows and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mtext mathvariant="normal">sims</mtext></msub><annotation encoding="application/x-tex">n_{\text{sims}}</annotation></semantics></math>
+columns. Each column is thus a stochastic realisation of the associated
+forecast distribution.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <p>We consider a modified Ornstein Uhlenbeck process:</p>
-<p><span class="math display">$$
-\mathrm{d}x_{t} = \theta (a_t - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \,
-\mathrm{d}b_{t} \\
-y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
-$$</span> where the mean is some complex time-varying input
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>t</mi></msub><mo>=</mo><mi>t</mi><msubsup><mi>u</mi><mi>t</mi><mn>2</mn></msubsup><mo>−</mo><mo>cos</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><msub><mi>u</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">a_t = tu_{t}^{2}-\cos(tu_{t})</annotation></semantics></math>,
-and
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><mi mathvariant="normal">d</mi><msub><mi>x</mi><mi>t</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mi>θ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>a</mi><mi>t</mi></msub><mo>−</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><mi>t</mi><mspace width="0.167em"></mspace><mo>+</mo><msub><mi>σ</mi><mi>x</mi></msub><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><msub><mi>b</mi><mi>t</mi></msub></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>y</mi><msub><mi>t</mi><mi>k</mi></msub></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><msub><mi>x</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>+</mo><msub><mi>ε</mi><msub><mi>t</mi><mi>k</mi></msub></msub></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{align}
+\mathrm{d}x_{t} &amp; = \theta (a_t - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} \\
+y_{t_{k}} &amp; = x_{t_{k}} + \varepsilon_{t_{k}}
+\end{align}
+</annotation></semantics></math></p>
+<p>where the mean is given by (some time-varying input)</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>t</mi></msub><mo>=</mo><mi>t</mi><msubsup><mi>u</mi><mi>t</mi><mn>2</mn></msubsup><mo>−</mo><mo>cos</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><msub><mi>u</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+a_t = tu_{t}^{2}-\cos(tu_{t})
+</annotation></semantics></math></p>
+<p>and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>u</mi><mi>t</mi></msub><annotation encoding="application/x-tex">u_{t}</annotation></semantics></math>
-is a given time-varying input signal.</p>
-<p>We create the model and simulate the data as follows:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">model</span> <span class="op">=</span> <span class="va"><a href="../reference/ctsmTMB.html">ctsmTMB</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
+is a known <em>input</em> signal. The variance is zero-mean Gaussian
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∼</mo><mi>𝒩</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>y</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\varepsilon_{t_{k}} \sim \mathcal{N}(0,\sigma_{y}^2)</annotation></semantics></math>,
+and we assume that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\sigma_{y}</annotation></semantics></math>
+is known.</p>
+<div class="section level3">
+<h3 id="create-model">Create Model<a class="anchor" aria-label="anchor" href="#create-model"></a>
+</h3>
+<p>First we create the model as follows:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Load libraries</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/phillipbvetter/ctsmTMB">ctsmTMB</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span> <span class="co">## plots</span></span>
+<span></span>
+<span><span class="co">## Create model</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/newModel.html">newModel</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">model</span><span class="op">$</span><span class="fu">addSystem</span><span class="op">(</span><span class="va">dx</span> <span class="op">~</span> <span class="va">theta</span> <span class="op">*</span> <span class="op">(</span><span class="va">t</span><span class="op">*</span><span class="va">u</span><span class="op">^</span><span class="fl">2</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">t</span><span class="op">*</span><span class="va">u</span><span class="op">)</span> <span class="op">-</span> <span class="va">x</span><span class="op">)</span> <span class="op">*</span> <span class="va">dt</span> <span class="op">+</span> <span class="va">sigma_x</span><span class="op">*</span><span class="va">dw</span><span class="op">)</span></span>
 <span><span class="va">model</span><span class="op">$</span><span class="fu">addObs</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span><span class="op">)</span></span>
 <span><span class="va">model</span><span class="op">$</span><span class="fu">setVariance</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">sigma_y</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">model</span><span class="op">$</span><span class="fu">addInput</span><span class="op">(</span><span class="va">u</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Set parameter values</span></span>
+<span><span class="co">## note: not strictly necessary to set lower/upper bounds</span></span>
 <span><span class="va">model</span><span class="op">$</span><span class="fu">setParameter</span><span class="op">(</span></span>
 <span>  theta   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">2</span>, lower <span class="op">=</span> <span class="fl">0</span>,    upper <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>,</span>
 <span>  sigma_x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">0.2</span>, lower <span class="op">=</span> <span class="fl">1e-5</span>, upper <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span>
+<span>  <span class="co">## fix sigma_y to 0.05 by not giving any upper/lower bounds</span></span>
 <span>  sigma_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>initial <span class="op">=</span> <span class="fl">5e-2</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Set initial state mean and covariance</span></span>
+<span><span class="co">## note: diag(1) is not strictly needed</span></span>
 <span><span class="va">model</span><span class="op">$</span><span class="fu">setInitialState</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1e-1</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Set simulation settings</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span></span>
-<span><span class="va">true.pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>theta<span class="op">=</span><span class="fl">20</span>, sigma_x<span class="op">=</span><span class="fl">1</span>, sigma_y<span class="op">=</span><span class="fl">5e-2</span><span class="op">)</span></span>
+</div>
+<div class="section level3">
+<h3 id="create-data">Create Data<a class="anchor" aria-label="anchor" href="#create-data"></a>
+</h3>
+<p>Next we create a <code>data.frame</code> that contains time-points
+and input values.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## set true parameters, and create data</span></span>
+<span><span class="va">true.pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>theta<span class="op">=</span><span class="fl">20</span>, sigma_x<span class="op">=</span><span class="fl">1</span>, sigma_y<span class="op">=</span><span class="fl">0.05</span><span class="op">)</span></span>
 <span><span class="va">dt.sim</span> <span class="op">&lt;-</span> <span class="fl">1e-3</span></span>
 <span><span class="va">t.sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, by<span class="op">=</span><span class="va">dt.sim</span><span class="op">)</span></span>
-<span><span class="va">u.sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.sim</span><span class="op">)</span>,sd<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">df.sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>t<span class="op">=</span><span class="va">t.sim</span>, y<span class="op">=</span><span class="cn">NA</span>, u<span class="op">=</span><span class="va">u.sim</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Simulate data</span></span>
+<span><span class="co">## seed for input creation</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">u.sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.sim</span><span class="op">)</span>,sd<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">df.sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>t<span class="op">=</span><span class="va">t.sim</span>, y<span class="op">=</span><span class="cn">NA</span>, u<span class="op">=</span><span class="va">u.sim</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="simulate">Simulate<a class="anchor" aria-label="anchor" href="#simulate"></a>
+</h3>
+<p>Then we call the method to simulate.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Set rng seeds for C++ states and observations</span></span>
+<span><span class="va">cpp.seeds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>,<span class="fl">20</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## perform simulation</span></span>
 <span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">df.sim</span>, </span>
 <span>                      pars<span class="op">=</span><span class="va">true.pars</span>, </span>
-<span>                      n.sims<span class="op">=</span><span class="fl">1</span>,</span>
-<span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
+<span>                      k.ahead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df.sim</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span>, <span class="co">## default</span></span>
+<span>                      n.sims <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>                      cpp.seeds <span class="op">=</span> <span class="va">cpp.seeds</span><span class="op">)</span></span>
+<span><span class="co">## Checking model components...</span></span>
+<span><span class="co">## Compiling C++ function pointers...</span></span>
+<span><span class="co">## Checking and setting data...</span></span>
+<span><span class="co">## Simulating with C++...</span></span>
+<span><span class="co">## Returning results...</span></span>
+<span><span class="co">## Finished.</span></span></code></pre></div>
+<p>A few notes for the code above:</p>
+<ul>
+<li><p>We use the default value of argument
+<code>k.ahead = nrow(data)-1</code> to get a forecast over the entire
+time-vector. This means that there is only
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">N=1</annotation></semantics></math>
+forecast scenario.</p></li>
+<li><p>We remove the first observation to prevent a posterior update at
+the initial time-point <code>t[1]</code>. This allows us to fully
+control the initial state mean and covariance via
+<code>setInitialState</code>.</p></li>
+<li><p>Since <code>k.ahead = nrow(data)-1</code> and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">N=1</annotation></semantics></math>
+implies just one forecast scenario starting from the initial time point
+the remaining observations <code>y[2:nrow(data)]</code> will not be
+used, why we set them as <code>NA</code>.</p></li>
+<li><p>The <code>cpp.seeds</code> argument control the RNG seed for the
+state and observations respectively, i.e. for the Brownian increments
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><msub><mi>B</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">dB_t</annotation></semantics></math>
+and for the observation noise
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\varepsilon_t</annotation></semantics></math>.</p></li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
+</h3>
+<p>The returned <code>sim</code> object is a list of lists of lists of
+matrices.</p>
+<ul>
+<li><p>The outer list has the three elements <code>states</code>,
+<code>observations</code> and <code>times</code>.</p></li>
+<li><p>The <code>states</code>, and <code>observations</code> list each
+contain entries for all state and observation variables respectively
+named accordingly.</p></li>
+<li><p>The state and observation variable lists e.g. <code>x</code>,
+<code>y</code> contain matrices where the columns are simulated forecast
+trajectories, and the rows corresponds to forecast time-points, as
+described in the <strong>Algorithm Overview</strong> section. These are
+named <code>i0</code>, <code>i1</code>, <code>i2</code> indicative of
+the time-point from which the forecast begun.</p></li>
+<li><p>Each entry in the ‘times’ list contains 5-column matrices with
+time indices and time-values for each of the forecast scenarios. These
+are also named <code>i0</code>, <code>i1</code>, <code>i2</code>
+matching those from the states and observations.</p></li>
+</ul>
+<p>Below we bind together the matching output from <code>times</code>,
+<code>states$x</code>, <code>observations$y</code> for the first (and
+only in this case) forecast scenario.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">sim</span><span class="op">$</span><span class="va">times</span><span class="op">$</span><span class="va">i0</span>, x<span class="op">=</span><span class="va">sim</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">x</span><span class="op">$</span><span class="va">i0</span>, y<span class="op">=</span><span class="va">sim</span><span class="op">$</span><span class="va">observations</span><span class="op">$</span><span class="va">y</span><span class="op">$</span><span class="va">i0</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">mat</span><span class="op">)</span></span>
+<span><span class="co">##      i j t.i   t.j k.ahead       x.1       x.2       y.1       y.2</span></span>
+<span><span class="co">## [1,] 0 0   0 0.000       0 0.5255843 0.7101432 0.4505726 0.6643129</span></span>
+<span><span class="co">## [2,] 0 1   0 0.001       1 0.5018194 0.7004629 0.5124870 0.7392365</span></span>
+<span><span class="co">## [3,] 0 2   0 0.002       2 0.5349053 0.6775028 0.6347102 0.6949730</span></span>
+<span><span class="co">## [4,] 0 3   0 0.003       3 0.4575998 0.6020440 0.3839036 0.5357770</span></span>
+<span><span class="co">## [5,] 0 4   0 0.004       4 0.4585211 0.6045719 0.5060700 0.6592290</span></span>
+<span><span class="co">## [6,] 0 5   0 0.005       5 0.4160683 0.5715023 0.3950665 0.5699553</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="va">mat</span><span class="op">)</span></span>
+<span><span class="co">##         i    j t.i   t.j k.ahead        x.1        x.2        y.1        y.2</span></span>
+<span><span class="co">##  [996,] 0  995   0 0.995     995 -0.2784495 -0.3005070 -0.2290918 -0.2292191</span></span>
+<span><span class="co">##  [997,] 0  996   0 0.996     996 -0.2523736 -0.2198851 -0.2605479 -0.1425121</span></span>
+<span><span class="co">##  [998,] 0  997   0 0.997     997 -0.3046669 -0.2223966 -0.4343075 -0.2722980</span></span>
+<span><span class="co">##  [999,] 0  998   0 0.998     998 -0.2688731 -0.2173837 -0.2827411 -0.2773187</span></span>
+<span><span class="co">## [1000,] 0  999   0 0.999     999 -0.1870747 -0.1701929 -0.1368140 -0.1730233</span></span>
+<span><span class="co">## [1001,] 0 1000   0 1.000    1000 -0.1478336 -0.1148420 -0.1612386 -0.1022415</span></span></code></pre></div>
+<ul>
+<li><p>The column <code>i</code> holds the time-index from where the
+forecast began.</p></li>
+<li><p>The column <code>j</code> holds the time-index for where the
+forecast is.</p></li>
+<li><p>The column <code>t.i</code> is the numeric time value associated
+with index <code>i.</code></p></li>
+<li><p>The column <code>t.j</code> is the numeric time value associated
+with index <code>j.</code></p></li>
+<li><p>The column <code>k.ahead</code> is the number of forecasted
+timesteps since the last posterior update (if any data was available at
+that time-point).</p></li>
+</ul>
+<p>Note that because we chose only a single simulation by setting
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mtext mathvariant="normal">sims</mtext></msub><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">n_{\text{sims}}=2</annotation></semantics></math>
+via the argument <code>n.sims=2</code> we get two columns (trajectories)
+for <code>x</code> and <code>y</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="estimating-with-the-simulated-observations">Estimating with the Simulated Observations<a class="anchor" aria-label="anchor" href="#estimating-with-the-simulated-observations"></a>
+</h3>
+<p>Let us extract the observations that we just simulated, and feed them
+to estimate to see if we can recover the true parameters.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Extract all observations</span></span>
+<span><span class="va">y.sim</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">observations</span><span class="op">$</span><span class="va">y</span><span class="op">$</span><span class="va">i0</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span></span>
 <span></span>
-<span><span class="co"># Grab first simulation trajectory</span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">x</span><span class="op">$</span><span class="va">i0</span><span class="op">$</span><span class="va">x1</span></span>
-<span></span>
-<span><span class="co"># Extract observations from simulation and add noise</span></span>
-<span><span class="va">iobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.sim</span><span class="op">)</span>, by<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co">## Only select every tenth, to reduce the available information</span></span>
+<span><span class="va">iobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">t.sim</span><span class="op">)</span>, by<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="va">t.obs</span> <span class="op">&lt;-</span> <span class="va">t.sim</span><span class="op">[</span><span class="va">iobs</span><span class="op">]</span></span>
+<span><span class="va">y.obs</span> <span class="op">&lt;-</span> <span class="va">y.sim</span><span class="op">[</span><span class="va">iobs</span><span class="op">]</span></span>
 <span><span class="va">u.obs</span> <span class="op">&lt;-</span> <span class="va">u.sim</span><span class="op">[</span><span class="va">iobs</span><span class="op">]</span></span>
-<span><span class="va">y</span> <span class="op">=</span> <span class="va">x</span><span class="op">[</span><span class="va">iobs</span><span class="op">]</span> <span class="op">+</span> <span class="va">true.pars</span><span class="op">[</span><span class="st">"sigma_y"</span><span class="op">]</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">iobs</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Create data-frame</span></span>
-<span><span class="va">.data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span><span class="co">## Create data for re-estimation</span></span>
+<span><span class="va">df.obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  t <span class="op">=</span> <span class="va">t.obs</span>,</span>
 <span>  u <span class="op">=</span> <span class="va">u.obs</span>,</span>
-<span>  y <span class="op">=</span> <span class="va">y</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>We can simulate many trajectories using:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>, </span>
-<span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>,<span class="fl">1</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>
-<span>                      n.sims<span class="op">=</span><span class="fl">100</span>,</span>
-<span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
-<p>with parameters
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>20</mn><mo>,</mo><msub><mi>σ</mi><mi>x</mi></msub><mo>=</mo><mn>1</mn><mo>,</mo><msub><mi>σ</mi><mi>y</mi></msub><mo>=</mo><mn>0.05</mn></mrow><annotation encoding="application/x-tex">\theta = 20, \sigma_{x} = 1, \sigma_{y} = 0.05</annotation></semantics></math>.</p>
-<p><strong>Note:</strong> The value of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\sigma_{y}</annotation></semantics></math>
-has no impact when doing “full” simulations (i.e. choosing maximum
-<code>k.ahead</code>) since no data updates occur.</p>
-<p>The simulations can be plotted quickly using
-<code>matplot</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Get the first (and only in this case) k-step simulation data.frame</span></span>
-<span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">x</span><span class="op">$</span><span class="va">i0</span></span>
+<span>  y <span class="op">=</span> <span class="va">y.obs</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Grab all the simulations (the first five columns are indices, time, etc.)</span></span>
-<span><span class="va">Y</span> <span class="op">&lt;-</span> <span class="va">X</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span><span class="op">]</span></span>
-<span></span>
-<span><span class="co"># Grab prediction time column</span></span>
-<span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">X</span><span class="op">[</span>,<span class="st">"t.j"</span><span class="op">]</span></span>
-<span></span>
-<span><span class="co"># Plot</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/matplot.html" class="external-link">matplot</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">Y</span>,type<span class="op">=</span><span class="st">"l"</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-6-1.png" alt="The plot shows 100 simulated trajectories." width="100%" style="display: block; margin: auto;"></p>
-<p>Lets see the effect of setting
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>x</mi></msub><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">\sigma_{x} = 3</annotation></semantics></math>:</p>
+<span><span class="co">## Try to estimate the parameters</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">df.obs</span><span class="op">)</span></span>
+<span><span class="co">## Checking and setting data...</span></span>
+<span><span class="co">## Constructing objective function and derivative tables...</span></span>
+<span><span class="co">## Minimizing the negative log-likelihood...</span></span>
+<span><span class="co">##   0:     942.26752:  2.00000 0.200000</span></span>
+<span><span class="co">##  10:    -50.890921:  20.1830  1.32382</span></span>
+<span><span class="co">##   Optimization finished!:</span></span>
+<span><span class="co">##             Elapsed time: 0.003 seconds.</span></span>
+<span><span class="co">##             The objective value is: -5.11315e+01</span></span>
+<span><span class="co">##             The maximum gradient component is: 4.7e-06</span></span>
+<span><span class="co">##             The convergence message is: relative convergence (4)</span></span>
+<span><span class="co">##             Iterations: 17</span></span>
+<span><span class="co">##             Evaluations: Fun: 19 Grad: 18</span></span>
+<span><span class="co">##             See stats::nlminb for available tolerance/control arguments.</span></span>
+<span><span class="co">## Returning results...</span></span>
+<span><span class="co">## Finished!</span></span></code></pre></div>
+<p>So that was fairly straight-forward. We can inspect the fit to see
+the related Wald test statistics.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>, </span>
-<span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>,<span class="fl">3</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>
-<span>                      n.sims<span class="op">=</span><span class="fl">100</span>,</span>
-<span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-8-1.png" alt="The plot shows 100 simulated trajectories for a different value of the process diffusion parameter sigma_x." width="100%" style="display: block; margin: auto;"></p>
-<p>Lets see the effect of setting
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>50</mn></mrow><annotation encoding="application/x-tex">\theta = 50</annotation></semantics></math>:</p>
+<code class="sourceCode R"><span><span class="va">fit</span></span>
+<span><span class="co">## Coefficent Matrix </span></span>
+<span><span class="co">##         Estimate Std. Error t value  Pr(&gt;|t|)    </span></span>
+<span><span class="co">## theta   18.96771    2.24401  8.4526 2.549e-13 ***</span></span>
+<span><span class="co">## sigma_x  1.36329    0.12749 10.6935 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">## ---</span></span>
+<span><span class="co">## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="many-simulations">Many Simulations<a class="anchor" aria-label="anchor" href="#many-simulations"></a>
+</h3>
+<p>We can change the <code>n.sims</code> argument to get more
+trajectories, and these can be plotted easily with
+<code>matplot</code>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">.data</span>, </span>
-<span>                      pars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>,<span class="fl">1</span>,<span class="fl">0.05</span><span class="op">)</span>, </span>
-<span>                      n.sims<span class="op">=</span><span class="fl">100</span>,</span>
-<span>                      silent<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
-<p><img src="simulate_files/figure-html/unnamed-chunk-10-1.png" alt="The plot shows 100 simulated trajectories for a different value of the theta parameter." width="100%" style="display: block; margin: auto;"></p>
+<code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">df.sim</span>, pars<span class="op">=</span><span class="va">true.pars</span>, n.sims<span class="op">=</span><span class="fl">5</span>, cpp.seeds <span class="op">=</span> <span class="va">cpp.seeds</span><span class="op">)</span></span>
+<span><span class="co">## Checking and setting data...</span></span>
+<span><span class="co">## Simulating with C++...</span></span>
+<span><span class="co">## Returning results...</span></span>
+<span><span class="co">## Finished.</span></span>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">x</span><span class="op">$</span><span class="va">i0</span></span>
+<span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">times</span><span class="op">$</span><span class="va">i0</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/matplot.html" class="external-link">matplot</a></span><span class="op">(</span><span class="va">t</span><span class="op">[</span>,<span class="st">"t.j"</span><span class="op">]</span>, <span class="va">x</span>, type<span class="op">=</span><span class="st">"l"</span>, lty<span class="op">=</span><span class="st">"solid"</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>,<span class="fl">4</span><span class="op">)</span>, xlab<span class="op">=</span><span class="st">"Time"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="simulate_files/figure-html/unnamed-chunk-8-1.png" width="100%" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level3">
+<h3 id="increasing-process-noise">Increasing Process Noise<a class="anchor" aria-label="anchor" href="#increasing-process-noise"></a>
+</h3>
+<p>Let’s check the effect of the process noise by increasing from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>x</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\sigma_{x}=1</annotation></semantics></math>
+up to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>x</mi></msub><mo>=</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">\sigma_{x}=4</annotation></semantics></math>.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">new.pars</span> <span class="op">&lt;-</span> <span class="va">true.pars</span></span>
+<span><span class="va">new.pars</span><span class="op">[</span><span class="st">"sigma_x"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">4</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">df.sim</span>, pars<span class="op">=</span><span class="va">new.pars</span>, n.sims<span class="op">=</span><span class="fl">5</span>, cpp.seeds<span class="op">=</span><span class="va">cpp.seeds</span><span class="op">)</span></span>
+<span><span class="co">## Checking and setting data...</span></span>
+<span><span class="co">## Simulating with C++...</span></span>
+<span><span class="co">## Returning results...</span></span>
+<span><span class="co">## Finished.</span></span>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">x</span><span class="op">$</span><span class="va">i0</span></span>
+<span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">times</span><span class="op">$</span><span class="va">i0</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/matplot.html" class="external-link">matplot</a></span><span class="op">(</span><span class="va">t</span><span class="op">[</span>,<span class="st">"t.j"</span><span class="op">]</span>, <span class="va">x</span>, type<span class="op">=</span><span class="st">"l"</span>, lty<span class="op">=</span><span class="st">"solid"</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>,<span class="fl">4</span><span class="op">)</span>, xlab<span class="op">=</span><span class="st">"Time"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="simulate_files/figure-html/unnamed-chunk-9-1.png" width="100%" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level3">
+<h3 id="distribution-plot">Distribution Plot<a class="anchor" aria-label="anchor" href="#distribution-plot"></a>
+</h3>
+<p>We demonstrate how one might plot the entire distribution using
+<code>ggplot2</code> below:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">new.pars</span><span class="op">[</span><span class="st">"sigma_x"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">4</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span>data<span class="op">=</span><span class="va">df.sim</span>, pars<span class="op">=</span><span class="va">new.pars</span>, n.sims<span class="op">=</span><span class="fl">100</span>, cpp.seeds<span class="op">=</span><span class="va">cpp.seeds</span><span class="op">)</span></span>
+<span><span class="co">## Checking and setting data...</span></span>
+<span><span class="co">## Simulating with C++...</span></span>
+<span><span class="co">## Returning results...</span></span>
+<span><span class="co">## Finished.</span></span>
+<span></span>
+<span><span class="co">## quantiles</span></span>
+<span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.9</span>,by<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span>, <span class="fl">0.95</span>, <span class="fl">0.99</span><span class="op">)</span></span>
+<span><span class="va">Q</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">sim</span><span class="op">$</span><span class="va">states</span><span class="op">$</span><span class="va">x</span><span class="op">$</span><span class="va">i0</span>, <span class="fl">1</span>,<span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, probs<span class="op">=</span><span class="va">p</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## create data for distribution plot</span></span>
+<span><span class="va">p.center</span> <span class="op">&lt;-</span> <span class="va">p</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span><span class="op">/</span><span class="fl">2</span></span>
+<span><span class="va">col.ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/col.html" class="external-link">col</a></span><span class="op">(</span><span class="va">Q</span><span class="op">[</span>,<span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">row.ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/row.html" class="external-link">row</a></span><span class="op">(</span><span class="va">Q</span><span class="op">[</span>,<span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">fan.df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  t <span class="op">=</span> <span class="va">sim</span><span class="op">$</span><span class="va">times</span><span class="op">$</span><span class="va">i0</span><span class="op">[</span><span class="va">row.ids</span>,<span class="st">"t.j"</span><span class="op">]</span>,</span>
+<span>  ymin <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Q</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">Q</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>  ymax <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Q</span><span class="op">[</span>,<span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>  ids <span class="op">=</span> <span class="va">col.ids</span>,</span>
+<span>  <span class="co">## symmetric colors around median</span></span>
+<span>  fill.value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fl">0.5</span> <span class="op">-</span> <span class="va">p.center</span><span class="op">[</span><span class="va">col.ids</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Create plot</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html" class="external-link">geom_ribbon</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fan.df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">t</span>, ymin<span class="op">=</span><span class="va">ymin</span>, ymax<span class="op">=</span><span class="va">ymax</span>, fill<span class="op">=</span><span class="va">fill.value</span>, group<span class="op">=</span><span class="va">ids</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">sim</span><span class="op">$</span><span class="va">times</span><span class="op">$</span><span class="va">i0</span><span class="op">[</span>,<span class="st">"t.j"</span><span class="op">]</span>, y<span class="op">=</span><span class="va">Q</span><span class="op">[</span>,<span class="st">"50%"</span><span class="op">]</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"black"</span>, linewidth<span class="op">=</span><span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_gradient.html" class="external-link">scale_fill_gradientn</a></span><span class="op">(</span>colors<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>,<span class="st">"yellow"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/guides.html" class="external-link">guides</a></span><span class="op">(</span>fill<span class="op">=</span><span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x<span class="op">=</span><span class="st">"Time"</span>,y<span class="op">=</span><span class="st">""</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="simulate_files/figure-html/unnamed-chunk-10-1.png" width="100%" style="display: block; margin: auto;"></p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="method-arguments">Method Arguments<a class="anchor" aria-label="anchor" href="#method-arguments"></a>
+</h2>
+<p>The <code>simulate</code> method accepts the following arguments</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">simulate</span><span class="op">(</span><span class="va">data</span>,</span>
+<span>               pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>               use.cpp <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>               cpp.seeds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>               method <span class="op">=</span> <span class="st">"ekf"</span>,</span>
+<span>               ode.solver <span class="op">=</span> <span class="st">"rk4"</span>,</span>
+<span>               ode.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
+<span>               simulation.timestep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">t</span><span class="op">)</span>,</span>
+<span>               k.ahead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span>,</span>
+<span>               return.k.ahead <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">k.ahead</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span>,</span>
+<span>               n.sims <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>               ukf.hyperpars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">3</span><span class="op">)</span>,</span>
+<span>               initial.state <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="fu">getInitialState</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>               estimate.initial.state <span class="op">=</span> <span class="va">private</span><span class="op">$</span><span class="va">estimate.initial</span>,</span>
+<span>               silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>               <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="pars">
+<code>pars</code><a class="anchor" aria-label="anchor" href="#pars"></a>
+</h3>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="use-cpp">
+<code>use.cpp</code><a class="anchor" aria-label="anchor" href="#use-cpp"></a>
+</h3>
+<p>Use C++ or pure R implementation.</p>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="method">
+<code>method</code><a class="anchor" aria-label="anchor" href="#method"></a>
+</h3>
+<p>Filtering method used - one of ‘ekf’, ‘lkf’, or ‘ukf’.</p>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
+vignette</a>.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="ode-solver">
+<code>ode.solver</code><a class="anchor" aria-label="anchor" href="#ode-solver"></a>
+</h3>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
+vignette</a>.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="ode-timestep">
+<code>ode.timestep</code><a class="anchor" aria-label="anchor" href="#ode-timestep"></a>
+</h3>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html" class="external-link">estimate
+vignette</a>.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="k-ahead">
+<code>k.ahead</code><a class="anchor" aria-label="anchor" href="#k-ahead"></a>
+</h3>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="return-k-ahead">
+<code>return.k.ahead</code><a class="anchor" aria-label="anchor" href="#return-k-ahead"></a>
+</h3>
+<p>See the description in the <a href="https://phillipbvetter.github.io/ctsmTMB/articles/predict.html" class="external-link">predict
+vignette</a>.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="simulation-timestep">
+<code>simulation.timestep</code><a class="anchor" aria-label="anchor" href="#simulation-timestep"></a>
+</h3>
+<p>The number of intermediate time-steps taken between time-points in
+the provided data for the Euler-Maruyama method.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="n-sims">
+<code>n.sims</code><a class="anchor" aria-label="anchor" href="#n-sims"></a>
+</h3>
+<p>The number of stochastic simulation trajectories generated.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="initial-state">
+<code>initial.state</code><a class="anchor" aria-label="anchor" href="#initial-state"></a>
+</h3>
+<p>Sets the initial state
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mrow><mn>0</mn><mo>∣</mo><mn>0</mn></mrow></msub><annotation encoding="application/x-tex">\hat{x}_{0 \mid 0}</annotation></semantics></math>
+and variance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>P</mi><mrow><mn>0</mn><mo>∣</mo><mn>0</mn></mrow></msub><annotation encoding="application/x-tex">P_{0 \mid 0}</annotation></semantics></math>.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="estimate-initial-state">
+<code>estimate.initial.state</code><a class="anchor" aria-label="anchor" href="#estimate-initial-state"></a>
+</h3>
+<p>A boolean to indicate whether or not estimate the initial state mean
+value instead of using the one provided via the
+<code>model$setInitialState</code> method or the
+<code>initial.state</code> argument to this method.</p>
+<p>The estimation is carried out by root-finding the stationary mean
+equation equivalent to minimizing</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mrow><mn>0</mn><mo>∣</mo><mn>0</mn></mrow></msub><mo>=</mo><munder><mo>min</mo><mi>x</mi></munder><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mn>0</mn></msub><mo>,</mo><mi>x</mi><mo>,</mo><msub><mi>u</mi><mn>0</mn></msub><mo>,</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">
+\hat{x}_{0 \mid 0} = \min_{x} \left(f(t_0, x, u_{0}, \theta)\right)^{2}
+</annotation></semantics></math></p>
+<p>using a Newton approach.</p>
+<p><strong>Note</strong>: This option is only available when
+<code>use.cpp=FALSE</code> using the pure R implementation.</p>
+<hr>
+</div>
+<div class="section level3">
+<h3 id="silent">
+<code>silent</code><a class="anchor" aria-label="anchor" href="#silent"></a>
+</h3>
+<p>Disable message print-outs.</p>
+<hr>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

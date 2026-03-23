@@ -2,169 +2,381 @@
 title: "Moment Predictions"
 author: ""
 date: ""
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Moment Predictions}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
   
-```{r, include=FALSE}
-library(ctsmTMB)
-library(ggplot2)
+\newcommand{\E}[1]{\mathrm{E}\left[#1\right]}
+\newcommand{\V}[1]{\mathrm{V}\left[#1\right]}
+\newcommand{\diff}{\mathrm{d}}
+\newcommand{\dp}[2]{\dfrac{\partial #1}{\partial #2}}
+\newcommand{\dd}[2]{\dfrac{\diff #1}{\diff #2}}
+  
+<style>
+body {
+  text-align: justify;
+  hyphens: auto;
+}
+</style>
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse=TRUE, cache=FALSE)
 ```
 
-This vignette demonstrates how to use the `predict` method for calculating *k*-step (state and observation) predictions. 
+```{r set-options, echo=FALSE}
+options(width=1e2)
+```
 
-**Note:** These moment predictions assume that the underlying probability density of the SDE remains approximately Gaussian. This is generally less accurate the longer the prediction horizon for non-linear SDEs, in which case stochastic simulations are more appropriate why the `simulate` method should be used instead (see the relevant [vignette](https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html)).
+```{r, eval=FALSE, include=FALSE}
+# We can use this to type 'rmd' in the console, and the markdown html document is then knitted fast.
+render.rmd("rmd")
+```
 
-# Notation
+This vignette demonstrates how to use the `predict` method for calculating *k-step-ahead* forecasts for the mean and variance, available for the Kalman filtering methods (`lkf`, `ekf` and `ukf`).
 
----
+**Note:** These moment predictions assume that the underlying probability density of the SDE remains approximately Gaussian. This will hold for linear and mildly non-linear SDEs. In addition the assumption will be worse the longer the prediction horizon. In those cases the `simulate` method may be more useful (see the relevant [vignette](https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html)).
 
-Let the set of observations from the initial time $t_0$ until the current time $t_{i}$ be noted by
+## Introduction
+
+### Notation
+- We use subscript $x_{t} = x(t)$ to denote time for continuous variables.
+
+- We use subscript $y_k = y(t_k)$ to indicate discrete time-points for discrete variables.
+
+- We denote the set of observations from the initial time $t_0$ until the "current" time $t_{i}$ by
 $$
-\mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0}\right\}
-$$
-A *k*-step **prediction** is a *prior* estimate of the state mean and covariance *k* time-steps into the "future" (without updating to any observations along the way) i.e.:
-$$
-\hat{x}_{i+k|i} = \mathrm{E}\left[ x_{t_{i+k}} | y_{t_{i}} \right] \\
-\hat{P}_{i+k|i} = \mathrm{V}\left[ x_{t_{i+k}} | y_{t_{i}} \right]
+\mathcal{Y}_{i} = \left\{ y_{i}, y_{i-1},...,y_{1},y_{0} \right\}
 $$
 
-We obtain predictions by integrating the moment differential equations (for linear $f$) forward in time i.e:
-$$
-\hat{x}_{i+k|i} = \hat{x}_{i|i} + \int_{t_{i}}^{t_{i+k}} f(\hat{x}_{i}(\tau)) \, d\tau \\
-\hat{P}_{i+k|i} = \hat{P}_{i|i} + \int_{t_{i}}^{t_{i+k}} A(\hat{x}_{i}(\tau)) \hat{P}_{i}(\tau) + \hat{P}_{i}(\tau) A^{T}(\hat{x}_{i}(\tau)) + G(\hat{x}_{i}(\tau)) G^{T}(\hat{x}_{i}(\tau)) \, d\tau
-$$
-where $\hat{x}_{i}(\tau) = \mathrm{E}\left[ x_{\tau} | y_{t_{i}} \right]$ and $\hat{P}_{i}(\tau) = \mathrm{V}\left[ x_{\tau} | y_{t_{i}} \right]$, and $A = \dfrac{df}{dx}$
+- We denote mean and variance by $\mu_{t} = \E{x_t}$ and $P_{t} = \V{x_t}$.
 
-# Example
+- We use $\mu_{k \mid k-1}$ and $P_{k \mid k-1}$ to denote the mean/variance at time $t_{k}$ conditional on the observations $\mathcal{Y}_{k-1}$ i.e.
+$$
+\mu_{k \mid k} = \E{x_{t_k} \mid \mathcal{Y}_{k}} \qquad\qquad P_{k \mid k} = \V{x_{t_k} \mid \mathcal{Y}_{k}}
+$$
 
-We consider a modified Ornstein Uhlenbeck process:
+
+### Stochastic State Space System
+
+We consider the following types of stochastic state space systems
+
+$$
+x_{t} = f(t,x_t,u_t,\theta) \, \mathrm{d}t + G(t,x_t,u_t, \theta) \, \diff B_{t}
+$$
+
+$$
+y_{k} = h(t_k, x_{t_k}, u_{t_k}, \theta) + \varepsilon_{k}
+$$
+
+where the observation noise is zero-mean Gaussian $\varepsilon_{k} \sim \mathcal{N}(0,\Sigma(t_k, x_{t_k}, u_{t_k}, \theta))$. In this notation $u$ are inputs and $\theta$ are fixed effects parameters to be estimated. 
+
+We refer to the functions $f$ as the *drift*, $G$ as the *diffusion*, and $h$ as the *link*. We may omit arguments and just write e.g. $f(x_t)$ for readability.
+
+### Observations and Likelihood
+
+The likelihood, which is the joint density of all observations, can be rewritten by using repeated conditioning as
+
+$$
+L(\theta) = p(\mathcal{Y}_{N}) = \prod_{k=1}^{N} p(y_{k} \mid \mathcal{Y}_{k-1}) = \prod_{k=1}^{N} p(h(x_{k}) + \varepsilon_{k} \mid \mathcal{Y}_{k-1}) 
+$$
+
+### What is a "Prediction"?
+
+When we say *predictions* we mean forecasts of the mean and variance (first and second order moments) of the underlying SDE. The fact that these are used to represent the forecast distribution implies the underlying assumption of linearity of the SDE, such that distributions are always Gaussian.
+
+We use the moment differential equations of the SDE to generate these forecasts.
+
+### Moment Differential Equations
+
+The moment differential equations (MDEs) are ordinary differential equations that govern the evolution of the moments of $x_{t}$. The first two moments (mean and variance) are governed by
+
+$$
+\dd{\mu}{t} = \E{f(x_t)}
+$$
+
+$$
+\dd{P}{t}  = \E{ f(x_{t})\left(x_t - \E{x_t}\right)^{T} } + \E{\left(x_t - \E{x_t}\right)f(x_{t})^{T} } + \E{ G(x_t) G(x_t)^{T} }
+$$
+
+In the approximate Gaussian setting where, with respect to $x$, $f$ is linear and $G$ is constant, the MDEs simplify to
+
+$$
+\dd{\mu}{t} = f(\mu_t)
+$$
+
+$$
+\dd{P}{t} = \left[\dp{f}{x}(\mu_t)\right] P + P \left[\dp{f}{x}(\mu_t)\right]^{T} + G(\mu_t) \left[G(\mu_t)\right]^{T}
+$$
+
+A *k-step* prediction is a prior estimate of the assumed Gaussian distribution *k* time-steps ahead, relatively to the current position. This distribution is parametrized by the prior mean $\mu_{i+k \mid i}$ and variance $P_{i+k \mid i}$. These priors are obtained by integrating the MDEs forward in time, starting from the current posterior distribution parametrized by $\mu_{i \mid i}$ and $P_{i \mid i}$ i.e.
+
+$$
+\mu_{i+k|i} = \mu_{i|i} + \int_{t_{i}}^{t_{i+k}} f(\mu_{t}) \, dt
+$$
+
+$$
+P_{i+k|i} = P_{i|i} + \int_{t_{i}}^{t_{i+k}} 
+\left(
+\left[\dp{f}{x}(\mu_t)\right] P + 
+P \left[\dp{f}{x}(\mu_t)\right]^{T} + 
+G(\mu_t) \left[G(\mu_t)\right]^{T} 
+\right)
+\, dt
+$$
+
+In a Kalman filter setting this amounts to repeatedly performing time-update steps while skipping the data-update step entirely.
+
+### Algorithm
+
+When using the `predict` method the forecast horizon is controlled by
+the `k.ahead` argument, i.e. how many time-steps "into the future"
+forecasts are wanted for. The algorithm returns $N$ (`N = nrow(data) - k.ahead`) forecast scenarios. Each of these $i=0,1,..,N-1$ scenarios consist of
+$k_{\text{ahead}}+1$ state values, one for each time point $t=t_{i+j}$ where
+$j=0,1,..,k_{\text{ahead}}$.
+
+The algorithm carries out the following step-wise procedure:
+
+-   Filter with the provided data to obtain posterior state and variance estimates for every point in time in the provided `data[,"t"]` column.
+
+-   Extract the first $N$ estimates and discard the remainder.
+
+-   For each $i=0,1,..,N-1$ posteriors, integrate the MDEs forward from the initial time $t_{i}$ until time $t_{i+k_{\text{ahead}}}$ producing moment forecasts at each of the intermediate times $t_{i+j}$.
+
+The output of `predict` is a list with the two entries `states` and `observations`. Each entry is a matrix with $N \cdot (1+k_{\text{ahead}})$ rows, obtained by row-binding each forecast scenario together.
+
+
+
+## Example
+
+We consider the Ornstein Uhlenbeck SDE with time-varying mean and with identify link function:
 
 $$ 
-\mathrm{d}x_{t} = \theta (a_t - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} \\
+\diff x_{t} = \theta (a_t - x_{t}) \, \diff t \, + \sigma_{x} \, \diff b_{t}
+$$
+
+$$
 y_{t_{k}} = x_{t_{k}} + \varepsilon_{t_{k}}
 $$
-where the mean is some complex time-varying input $a_t = tu_{t}^{2}-\cos(tu_{t})$, and $u_{t}$ is a given time-varying input signal.
 
-We create the model and simulate the data as follows:
+The mean is the "arbitrary" time-varying signal $a_t = tu_{t}^{2}-\cos(tu_{t})$, where $u_{t}$ is a known input signal.
+
+### Create Model
+
+First we create the model as follows:
+
 ```{r}
-model = ctsmTMB$new()
-model$addSystem(dx ~ theta * (t*u^2-cos(t*u) - x) * dt + sigma_x*dw)
+## Load libraries
+library(ctsmTMB)
+library(ggplot2) ## plots
+library(latex2exp) ## LaTeX plot fonts
+
+## Create model
+model <- newModel()
+model$addSystem(dx ~ theta * (a*u^2-cos(2*pi*t*u) - x) * dt + sigma_x*dw)
 model$addObs(y ~ x)
 model$setVariance(y ~ sigma_y^2)
 model$addInput(u)
+
+## Set parameter values
+## note: not strictly necessary to set lower/upper bounds
 model$setParameter(
   theta   = c(initial = 2, lower = 0,    upper = 100),
+  a       = c(initial = 1, lower = 1e-5, upper = 100),
   sigma_x = c(initial = 0.2, lower = 1e-5, upper = 5),
+  ## fix sigma_y to 0.05 by not giving any upper/lower bounds
   sigma_y = c(initial = 5e-2)
 )
-model$setInitialState(list(1, 1e-1*diag(1)))
 
-true.pars <- c(theta=20, sigma_x=1, sigma_y=0.05)
+## Set initial state mean and covariance
+## note: diag(1) is not strictly needed
+model$setInitialState(list(1, 1e-1*diag(1)))
+```
+
+### Create Data using Simulate
+
+Now we create data to perform predictions on using the `simulate` method, using the true parameters
+
+$$
+\theta = 20 \qquad a = 1 \qquad \sigma_{x} = 1.00 \qquad \sigma_{y}=0.05
+$$
+and the input signal
+
+$$
+u_{t} = \tanh\left(\sin\left(B_{t}\right)\right)
+$$
+```{r}
+## set true parameters, and create data
+true.pars <- c(theta=4, a=10, sigma_x=1, sigma_y=0.05)
 dt.sim <- 1e-3
 t.sim <- seq(0, 1, by=dt.sim)
+
+## seed for input creation
 set.seed(20)
 u.sim <- cumsum(rnorm(length(t.sim),sd=0.1))
+# u.sim <- tanh(sin(u.sim))
 df.sim <- data.frame(t=t.sim, y=NA, u=u.sim)
 
-# Perform simulation
+## set rng seeds for C++ states and observations
+cpp.seeds <- c(20,20)
+
+## perform simulation
 sim <- model$simulate(data=df.sim, 
                       pars=true.pars, 
                       n.sims=1,
                       silent=T,
-                      cpp.seeds = c(1,1))
+                      cpp.seeds = cpp.seeds)
+
+## extract simulations
 y.sim <- sim$observations$y$i0[,1]
 
+## extract observations as every 10th simulation
 iobs <- seq(1, length(t.sim), by=10)
 t.obs <- t.sim[iobs]
 y.obs <- y.sim[iobs]
 u.obs <- u.sim[iobs]
 
-# Create data-frame
-.data <- data.frame(
+## create data
+df.obs <- data.frame(
   t = t.obs,
   u = u.obs,
   y = y.obs
 )
 ```
-with the true parameters
-$$
-\theta = 20 \qquad \sigma_{x} = 1.00 \qquad \sigma_{y}=0.05
-$$
 
-The data is plotted below:
-```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows observations and input signal.'}
+We show the simulated and observed inputs and observations in the plot below.
+
+```{r, echo=TRUE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
 ggplot() + 
-  geom_point(aes(x=t.obs, y=y.obs, color="y(t)")) +
-  geom_line(aes(x=t.obs, y=u.obs, color="u(t)")) +
-  ctsmTMB:::getggplot2theme() + 
+  geom_line(aes(x=t.sim, y=y.sim, color="y_t")) +
+  geom_point(aes(x=t.obs, y=y.obs, color="y_k")) +
+  geom_line(aes(x=t.sim, y=u.sim, color="u_t")) +
+  geom_point(aes(x=t.obs, y=u.obs, color="u_k")) +
+  scale_color_discrete(
+    labels=unname(TeX(c("$y_{t}$","$y_{k}$","$u_{t}$","$u_{k}$"))),
+    breaks = c("y_t", "y_k", "u_t", "u_k"),
+  ) +
+  ctsmTMB:::getggplot2theme() +
   theme(legend.text = ggplot2::element_text(size=15)) +
   labs(color="",x="Time",y="")
 ```
 
-A good starting point for using predictions, is to check for appropriate parameter values, which may be provided to `setParameter` for good initial guesses for the optimization. Note however that `setParameter` must be called in order to `predict` to be callable (the parameter names of the model needs to be identified), but the parameter values can be changed when calling `predict`. Let's calculate predictions for a series of parameter values (changing only `theta`):
+### Predict
 
-**Note:** The default behaviour of `predict` is to use a "full" prediction horizon e.g. with `k.ahead` as big as possible (`k.ahead = nrow(.data)-1`), and using the parameters from `setParameter` in this case `pars=c(2,1,1)`:
-
-```{r, message=FALSE}
-pred = model$predict(.data, k.ahead=nrow(.data)-1, pars=c(1, 1, 0.05))
-pred1 = model$predict(.data, k.ahead=nrow(.data)-1, pars=c(10, 1, 0.05))
-pred2 = model$predict(.data, k.ahead=nrow(.data)-1, pars=c(50, 1, 0.05))
-pred3 = model$predict(.data, k.ahead=nrow(.data)-1, pars=c(100, 1, 0.05))
-```
-
-The output of `predict` is a list of two `data.frames`, one for states and one for observations. The five first columns of the two `data.frames` are identical - they contain the columns `i` and `j` (indices), associated time-points `t.i` and `t.j`, and `k.ahead`. The remaining columns for states are the mean predictions, and associated covariances.
+We can now try to predict on the generated data
 
 ```{r}
-head(pred$states) 
+## set the first observation to NA
+df.temp <- df.obs
+df.temp$y[1] <- NA
+
+## predict
+pred <- model$predict(data=df.temp,
+                      pars=true.pars,
+                      k.ahead=nrow(df.temp)-1)
 ```
 
-The *observations* `data.frame` currently only contain mean estimates, which are obtained by passing the mean state estimates through the observation function, which is this case is $y = h(x) = x$. The actual observed data is also provided with the suffix *.data*.
+
+A few notes for the code above:
+
+-   We use the default value of argument `k.ahead = nrow(data)-1` to get
+a forecast over the entire time-vector. This means that there is
+only $N=1$ forecast scenario, but its very long.
+
+-   We remove the first observation to prevent a posterior update at the
+initial time-point `t[1]`. This allows us to fully control the
+initial state mean and variance via `setInitialState`.
+
+-   Since `k.ahead = nrow(data)-1` and $N=1$ implies just one forecast
+scenario starting from the initial time point the remaining
+observations `y[2:nrow(data)]` are not used at all, and might as well be `NA`.
+
+### Output
+
+The returned `pred` object is a list of two matrices named `states` and `observations`.
+
+1. The first five columns of each matrix are time indices and time-values for each of the forecast scenarios:
+    - The column `i` holds the time-index from where the forecast began.
+    - The column `j` holds the time-index for where the forecast is.
+    - The column `t.i` is the numeric time value associated with index `i.`
+    - The column `t.j` is the numeric time value associated with index `j.`
+    - The column `k.ahead` is the number of forecasted timesteps since the last posterior update (if any data was available at that time-point).
+
+2. The next columns in both matrices are mean and covariances for the states and observations respectively, named appropriately.
+
+3. The final columns in the `observations` matrix also hold the corresponding observations in the data. The name is suffixed by `.data` e.g. `y.data`.
 
 ```{r}
+head(pred$states)
+
 head(pred$observations)
 ```
 
-When we plot these predictions against data we can perhaps identify that $\theta \in \left[10,50\right]$ (with $\theta=20$ being the truth here).
 
-```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows a series of full predictions for different values of the theta parameter, against the observations.'}
-t <- pred$states[,"t.j"]
-latex.str <- lapply(
-  c(sprintf("theta[%s]", c(1,10,50,100)),"y[t[k]]"),
-  str2expression
-)
-ggplot() +
-  geom_line(aes(x=t, y=pred$states[,"x"], color="label1")) +
-  geom_line(aes(x=t, y=pred1$states[,"x"], color="label2")) +
-  geom_line(aes(x=t, y=pred2$states[,"x"], color="label3")) +
-  geom_line(aes(x=t, y=pred3$states[,"x"], color="label4")) +
-  geom_point(aes(x=t.obs, y=y.obs, color="y(t)")) +
-  scale_color_discrete(labels=latex.str) +
+### Long prediction horizons
+
+We can perform long horizon estimates simply by setting the `k.ahead` argument very large. The default and maximum allowed value is `k.ahead = nrow(.data)-1`. Thus, by default, the `predict` method will generate one single prediction the length of the provided data.
+
+This is useful for instance when searching for good initial guesses for the optimizer before calling the `estimate` method. Consider the example below where we calculate predictions for a series of differnet values of `theta`:
+
+```{r, message=FALSE}
+## create vectors with different theta's
+pars <- lapply(c(1,2,4,8), function(x) c(x, 10, 1, 0.05))
+
+## predict for the various theta values
+pred1 = model$predict(df.obs, pars=pars[[1]])
+pred2 = model$predict(df.obs, pars=pars[[2]])
+pred3 = model$predict(df.obs, pars=pars[[3]])
+pred4 = model$predict(df.obs, pars=pars[[4]])
+```
+
+Plotting these state estimates against the data we get a feeling that $\theta \in \left[10,50\right]$ (with $\theta=20$ being the truth here).
+
+```{r, echo=TRUE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
+plot.df <- data.frame(t = pred$states[,"t.j"],
+                      t.obs = t.obs,
+                      y.obs = y.obs,
+                      x1=pred1$states[,"x"],
+                      x2=pred2$states[,"x"],
+                      x3=pred3$states[,"x"],
+                      x4=pred4$states[,"x"])
+ggplot(data=plot.df) +
+  geom_line(aes(x=t, y=x1, color="x1")) +
+  geom_line(aes(x=t, y=x2, color="x2")) +
+  geom_line(aes(x=t, y=x3, color="x3")) +
+  geom_line(aes(x=t, y=x4, color="x4")) +
+  geom_point(aes(x=t.obs, y=y.obs, color="y")) +
+  scale_color_discrete(
+    labels=unname(TeX(c("$\\theta=1$","$\\theta=10$","$\\theta=50","$\\theta=100$","$y_{k}$"))),
+    breaks = c("x1", "x2", "x3", "x4", "y"),
+  ) +
   ctsmTMB:::getggplot2theme() + 
   theme(legend.text = ggplot2::element_text(size=15)) +
   labs(color="",x="Time",y="")
 ```
 
-# Forecasting Evaluation
+### Forecast Evaluation
 
 We can evaluate the forecast performance of our model by comparing predictions against the observed data. We start by estimating the most likely parameters of the model:
 
 ```{r}
-fit = model$estimate(.data)
+fit = model$estimate(df.obs)
+
 print(fit)
 ```
 
 
 and then predict over an appropriate forecast horizon. In this example we let that horizon be 25-steps:
 ```{r}
-pred.horizon <- 25
-pred = model$predict(.data, k.ahead=pred.horizon)
+pred.horizon <- 15
+pred = model$predict(df.obs, k.ahead=pred.horizon)
 ```
 
-Let's plot the 10-step predictions against the observations.
+Let's plot the `pred.horizon`-step predictions against the observations.
 ```{r}
 pred.obs = pred$states[pred$states[,"k.ahead"]==pred.horizon,]
 ```
@@ -183,13 +395,13 @@ ggplot() +
   ctsmTMB:::getggplot2theme()
 ```
 
-Lastly lets calculate the mean prediction accuracy using an RMSE-score:
+Lastly we calculate the mean prediction accuracy using an RMSE-score for all prediction horizons:
 ```{r}
 pdf <- data.frame(pred$states, y.data = pred$observations[,"y.data"])
 rmse <- data.frame(
   k.ahead = 0:pred.horizon,
   rmse = sapply(
-    split(pdf, pdf$k.ahead), 
+    with(pdf, split(pdf, k.ahead)), 
     function(df) {
       sqrt(mean((df$x - df$y.data)^2, na.rm = TRUE))
     })
@@ -209,7 +421,7 @@ ggplot(data=rmse) +
   ctsmTMB:::getggplot2theme()
 ```
 
-# Arguments
+## Arguments
 
 ---
 
@@ -232,76 +444,84 @@ model$predict(data,
               ...)
 ```
 
-## Argument: `pars`
-
----
+### `pars`
 
 This argument is a vector of parameter values, which are used to generate the predictions. The default behaviour is to use the parameters obtained from the latest call to `estimate` (if any) or alternative to use the initial guesses defined in `setParameter`.
 
-## Argument: `use.cpp`
-
 ---
+
+### `use.cpp`
 
 Perform predictions in R-based code (`use.cpp=FALSE`) or C++-based code or **C++** (`use.cpp=TRUE`, default).
 
-## Argument: `method`
-
 ---
+
+### `method`
 
 See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
 
-## Argument: `ode.solver`
-
 ---
+
+### `ode.solver`
 
 See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
 
 **Note:** When the argument `use.cpp=TRUE` then the only solvers available are *euler* and *rk4*.
 
-## Argument: `ode.timestep`
-
 ---
+
+### `ode.timestep`
 
 See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
 
-## Argument: `k.ahead`
-
 ---
+
+### `k.ahead`
 
 This integer argument determines the number of prediction steps desired.
 
-
-## Argument: `return.k.ahead`
-
 ---
+
+
+### `return.k.ahead`
 
 This vector of integers determines which k-step predictions are returned. The default behaviour is to return all prediction steps (as determined by `k.ahead`).
 
-## Argument: `return.variance``
-
 ---
+
+### `return.variance`
 
 The four options are:
 
-  1. 'marginal' - return marginal variances only.
-  2. 'none' - return no dispersion-related quantities.
-  3. 'covariance' - return full covariance matrix.
-  4. 'correlation' - return full correlation matrix.
-
-## Argument: `initial.state`
+1. 'marginal' - return marginal variances only.
+2. 'none' - return no dispersion-related quantities.
+3. 'covariance' - return full covariance matrix.
+4. 'correlation' - return full correlation matrix.
 
 ---
 
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+### `initial.state`
 
-## Argument: `estimate.initial.state`
-
----
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-## Argument: `silent`
+Sets the initial state $\hat{x}_{0 \mid 0}$ and variance $P_{0 \mid 0}$.
 
 ---
 
+### `estimate.initial.state`
+
+A boolean to indicate whether or not estimate the initial state mean value instead of using the one provided via the `model$setInitialState` method or the `initial.state` argument to this method.
+
+The estimation is carried out by root-finding the stationary mean equation equivalent to minimizing
+
+$$
+\hat{x}_{0 \mid 0} = \min_{x} \left(f(t_0, x, u_{0}, \theta)\right)^{2}
+$$
+
+**Note**: This option is only available when `use.cpp=FALSE` using the pure R implementation.
+
+---
+
+### `silent`
+
 See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+---

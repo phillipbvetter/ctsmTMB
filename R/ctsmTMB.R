@@ -1296,31 +1296,16 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     #' @description Estimate the fixed effects parameters in the specified model.
     #' 
-    #' @param data data.frame containing time-vector 't', observations and inputs. The observations
-    #' can take \code{NA}-values.  
-    #' @param use.hessian boolean value. The default (\code{TRUE}) causes the optimization algorithm
-    #' \code{stats::nlminb} to use the fixed effects hessian of the (negative log) likelihood when
-    #' performing the optimization. This feature is only available for the kalman filter methods 
-    #' without any random effects.
-    #' @param ode.timestep numeric value. Sets the time step-size in numerical filtering schemes. 
-    #' The defined step-size is used to calculate the number of steps between observation time-points as 
-    #' defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N 
-    #' is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations  
-    #' The step-size is used in the two following ways depending on the
-    #' chosen method:
-    #' 1. Kalman filters: The time-step is used as the step-size in the
-    #' numerical Forward-Euler scheme to compute the prior state mean and
-    #' covariance estimate as the final time solution to the first and second
-    #' order moment differential equations.
-    #' 2. TMB method: The time-step is used as the step-size in the Euler-Maruyama
-    #' scheme for simulating a sample path of the stochastic differential equation,
-    #' which serves to link together the latent (random effects) states.
-    #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment 
-    #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
-    #' 4th order Runge Kutta method is available via "rk4".
-    #' @param method character vector specifying the filtering method used for state/likelihood calculations. 
-    #' Must be one of either "lkf", "ekf", "laplace".
-    #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
+    #' @param data a \code{data.frame} with a time-column (must be named \code{"t"}), observations and 
+    #' inputs used maximum-likelihood parameter and state estimation. The observations can take \code{NA}-values.  
+    #' @param ode.timestep a \code{numeric} value that determines the ODE solver time step-size. The passed value 
+    #' is used to calculate the number of steps between time-points in \code{data$t} such that an integer number of
+    #' steps are taken. For details see the "Estimation" vignette on the webpage. The step-size is used for solving
+    #' the moment differential equations (Kalman methods) or for simulating the stochastic SDE path (Laplace methods).
+    #' @param ode.solver a \code{character} string to determine the ODE solver scheme for the Kalman methods when solving the
+    #' moment differential equations. The methods are either Forward Euler (\code{"euler"}) or 4th order Runge-Kutta (\code{"rk4"}) 
+    #' (default).
+    #' @param method a \code{character} string specifying the likelihood method used for parameter and state estimation.
     #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
     #' without any of the parameter bounds specified during \code{setParameter}.
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
@@ -1340,12 +1325,17 @@ ctsmTMB = R6::R6Class(
     #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff 
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid 
     #' approximation respectively) for smooth derivatives.
+    #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param report boolean - whether or not to report filtered states, observations and residuals.
     #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
     #' using the method of \link[TMB]{oneStepPredict}.
     #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param control list of control parameters parsed to \code{nlminb} as its \code{control} argument. 
     #' See \code{?stats::nlminb} for more information
+    #' @param use.hessian boolean value. The default (\code{TRUE}) causes the optimization algorithm
+    #' \code{stats::nlminb} to use the fixed effects hessian of the (negative log) likelihood when
+    #' performing the optimization. This feature is only available for the kalman filter methods 
+    #' without any random effects.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param trace integer passed to \code{control} which determines number of steps between each print-out 
@@ -1466,10 +1456,12 @@ ctsmTMB = R6::R6Class(
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param compile boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.
     #' @param ... additional arguments
-    #' @return A list with components:
+    #' @return The method retunrns a list which includes function handles for the likelihood function.
     #' \describe{
-    #'   \item{coefficients}{Named numeric vector of model coefficients}
-    #'   \item{residuals}{Numeric vector of residuals}
+    #'   \item{par}{A vector of initial parameter values. This is the expected input size to \code{fn}, \code{gr} and \code{he}.}
+    #'   \item{fn}{Negative log-likelihood function.}
+    #'   \item{gr}{Negative log-likelihood gradient.}
+    #'   \item{he}{Negative log-likelihood hessian.}
     #' }
     likelihood = function(data,
                           method = "ekf",
@@ -1567,6 +1559,9 @@ ctsmTMB = R6::R6Class(
                        silent = FALSE,
                        ...){
       
+      # match arguments
+      reported.dispersion.type <- match.arg(return.variance)
+      
       # set flags
       args <- as.list(environment())[names(formals())]
       set_flags("prediction", args, self, private)
@@ -1585,7 +1580,6 @@ ctsmTMB = R6::R6Class(
       perform_prediction(self, private, use.cpp)
       
       # return
-      reported.dispersion.type <- match.arg(return.variance)
       create_return_prediction(reported.dispersion.type, return.k.ahead, self, private)
       
       # return
@@ -1664,7 +1658,7 @@ ctsmTMB = R6::R6Class(
                         pars = NULL,
                         use.cpp = TRUE,
                         cpp.seeds = NULL,
-                        method = "ekf",
+                        method = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen"),
                         ode.solver = "rk4",
                         ode.timestep = diff(data$t),
                         simulation.timestep = diff(data$t),
@@ -1676,6 +1670,9 @@ ctsmTMB = R6::R6Class(
                         estimate.initial.state = private$estimate.initial,
                         silent = FALSE,
                         ...){
+      
+      # match arguments
+      method <- match.arg(method)
       
       # set flags
       args <- as.list(environment())[names(formals())]
@@ -1717,7 +1714,7 @@ ctsmTMB = R6::R6Class(
       fixedpars <- private$number.of.fixed.pars
       freepars = private$number.of.free.pars
       
-      cat("This ctsmTMB model contains:")
+      cat("A ctsmTMB stochastic state space model consisting of:")
       basic.data = c(n,ng,m,p,par)
       row.names = c("States",
                     "Diffusions",
@@ -2250,10 +2247,7 @@ ctsmTMB = R6::R6Class(
       }
       
       # set solver
-      private$ode.solver <- switch(ode.solver,
-                                   euler = 1,
-                                   rk4 = 2,
-                                   implicit_euler = 3)
+      private$ode.solver <- ode.solver
       
       # return
       return(invisible(self))
@@ -2280,12 +2274,12 @@ ctsmTMB = R6::R6Class(
       
       # if the call was made from setInitialState then just over-write that field and leave
       if(called.by.setInitialState){
-        private$initial.state.fixed <- list(x0=x0,p0=p0)
+        private$initial.state.fixed <- list(x0=x0, p0=p0)
         return(invisible(self))
       }
       
       # Store old initial state and check for AD rebuild if the state changed
-      names(initial.state) <- c("x0","p0")
+      names(initial.state) <- c("x0", "p0")
       bool <- identical(initial.state, private$initial.state)
       if(!bool) private$rebuild.ad <- TRUE
       
@@ -2369,7 +2363,7 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # SET UNSCENTED TRANSFORMATION HYPERPARAMAETERS
     ########################################################################
-    set_ukf.hyperpars = function(par.vector) {
+    set_ukf_hyperpars = function(par.vector) {
       
       if(is.null(names(par.vector))) {
         names(par.vector) <- c("alpha","beta","kappa")

@@ -189,8 +189,24 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
       
       # Call filter with silenced settings
       silent.setting <- private$silent
-      on.exit(private$silent<-silent.setting, add=TRUE)
-      self$filter(private$data, silent=TRUE)
+      on.exit(private$silent <- silent.setting, add=TRUE)
+      
+      # perform filtering
+      self$filter(data=private$data,
+                  pars = NULL,
+                  method=private$method,
+                  ode.solver=private$ode.solver,
+                  ode.timestep=private$ode.timestep,
+                  loss=private$loss$loss,
+                  loss_c=private$loss$loss_c,
+                  ukf.hyperpars=private$ukf.hyperpars,
+                  initial.state=private$initial.state,
+                  laplace.residuals=laplace.residuals,
+                  estimate.initial.state=private$estimate.initial,
+                  use.cpp = TRUE,
+                  silent = TRUE)
+      
+      # add filtered results to fit
       private$fit = c(private$fit, private$filtration)
       
     } 

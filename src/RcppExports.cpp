@@ -14,7 +14,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // ekf_filter_rcpp
-List ekf_filter_rcpp(List funPtrs, const Eigen::MatrixXd& obsMat, const Eigen::MatrixXd& inputMat, const Eigen::VectorXd& parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, const Eigen::VectorXd& ode_timestep_size, const Eigen::VectorXd& ode_timesteps, LogicalVector any_available_obs, List non_na_ids, const int ode_solver);
+List ekf_filter_rcpp(List funPtrs, const Eigen::MatrixXd& obsMat, const Eigen::MatrixXd& inputMat, const Eigen::VectorXd& parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, const Eigen::VectorXd& ode_timestep_size, const Eigen::VectorXd& ode_timesteps, LogicalVector any_available_obs, List non_na_ids, CharacterVector ode_solver);
 RcppExport SEXP _ctsmTMB_ekf_filter_rcpp(SEXP funPtrsSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP any_available_obsSEXP, SEXP non_na_idsSEXP, SEXP ode_solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -29,13 +29,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type ode_timesteps(ode_timestepsSEXP);
     Rcpp::traits::input_parameter< LogicalVector >::type any_available_obs(any_available_obsSEXP);
     Rcpp::traits::input_parameter< List >::type non_na_ids(non_na_idsSEXP);
-    Rcpp::traits::input_parameter< const int >::type ode_solver(ode_solverSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type ode_solver(ode_solverSEXP);
     rcpp_result_gen = Rcpp::wrap(ekf_filter_rcpp(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // ekf_predict_rcpp
-List ekf_predict_rcpp(List funPtrs, const Eigen::MatrixXd& obsMat, const Eigen::MatrixXd& inputMat, const Eigen::VectorXd& parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, const Eigen::VectorXd& ode_timestep_size, const Eigen::VectorXd& ode_timesteps, Rcpp::LogicalVector any_available_obs, List non_na_ids, const int ode_solver, const int last_pred_id, const int k_step_ahead);
+List ekf_predict_rcpp(List funPtrs, const Eigen::MatrixXd& obsMat, const Eigen::MatrixXd& inputMat, const Eigen::VectorXd& parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, const Eigen::VectorXd& ode_timestep_size, const Eigen::VectorXd& ode_timesteps, Rcpp::LogicalVector any_available_obs, List non_na_ids, CharacterVector ode_solver, const int last_pred_id, const int k_step_ahead);
 RcppExport SEXP _ctsmTMB_ekf_predict_rcpp(SEXP funPtrsSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP any_available_obsSEXP, SEXP non_na_idsSEXP, SEXP ode_solverSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -50,7 +50,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type ode_timesteps(ode_timestepsSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type any_available_obs(any_available_obsSEXP);
     Rcpp::traits::input_parameter< List >::type non_na_ids(non_na_idsSEXP);
-    Rcpp::traits::input_parameter< const int >::type ode_solver(ode_solverSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type ode_solver(ode_solverSEXP);
     Rcpp::traits::input_parameter< const int >::type last_pred_id(last_pred_idSEXP);
     Rcpp::traits::input_parameter< const int >::type k_step_ahead(k_step_aheadSEXP);
     rcpp_result_gen = Rcpp::wrap(ekf_predict_rcpp(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, last_pred_id, k_step_ahead));
@@ -58,7 +58,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // ekf_simulate_rcpp
-List ekf_simulate_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Rcpp::LogicalVector any_available_obs, List non_na_ids, const int ode_solver, const int last_pred_id, const int k_step_ahead, const int ng, const int nsims, Nullable<int> seed);
+List ekf_simulate_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Rcpp::LogicalVector any_available_obs, List non_na_ids, CharacterVector ode_solver, const int last_pred_id, const int k_step_ahead, const int ng, const int nsims, Nullable<int> seed);
 RcppExport SEXP _ctsmTMB_ekf_simulate_rcpp(SEXP funPtrsSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP simulation_timestep_sizeSEXP, SEXP simulation_timestepsSEXP, SEXP any_available_obsSEXP, SEXP non_na_idsSEXP, SEXP ode_solverSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ngSEXP, SEXP nsimsSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -75,7 +75,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type simulation_timesteps(simulation_timestepsSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type any_available_obs(any_available_obsSEXP);
     Rcpp::traits::input_parameter< List >::type non_na_ids(non_na_idsSEXP);
-    Rcpp::traits::input_parameter< const int >::type ode_solver(ode_solverSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type ode_solver(ode_solverSEXP);
     Rcpp::traits::input_parameter< const int >::type last_pred_id(last_pred_idSEXP);
     Rcpp::traits::input_parameter< const int >::type k_step_ahead(k_step_aheadSEXP);
     Rcpp::traits::input_parameter< const int >::type ng(ngSEXP);
@@ -244,7 +244,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // ukf_filter_rcpp
-List ukf_filter_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, const int ode_solver);
+List ukf_filter_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, CharacterVector ode_solver);
 RcppExport SEXP _ctsmTMB_ukf_filter_rcpp(SEXP funPtrsSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ukf_parsSEXP, SEXP ode_solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -260,13 +260,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::MatrixXi >::type bool_is_not_na_obsMat(bool_is_not_na_obsMatSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXi >::type number_of_available_obs(number_of_available_obsSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type ukf_pars(ukf_parsSEXP);
-    Rcpp::traits::input_parameter< const int >::type ode_solver(ode_solverSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type ode_solver(ode_solverSEXP);
     rcpp_result_gen = Rcpp::wrap(ukf_filter_rcpp(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, ode_solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // ukf_predict_rcpp
-List ukf_predict_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, const int last_pred_id, const int k_step_ahead, const int ode_solver);
+List ukf_predict_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, const int last_pred_id, const int k_step_ahead, CharacterVector ode_solver);
 RcppExport SEXP _ctsmTMB_ukf_predict_rcpp(SEXP funPtrsSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ukf_parsSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -284,13 +284,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type ukf_pars(ukf_parsSEXP);
     Rcpp::traits::input_parameter< const int >::type last_pred_id(last_pred_idSEXP);
     Rcpp::traits::input_parameter< const int >::type k_step_ahead(k_step_aheadSEXP);
-    Rcpp::traits::input_parameter< const int >::type ode_solver(ode_solverSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type ode_solver(ode_solverSEXP);
     rcpp_result_gen = Rcpp::wrap(ukf_predict_rcpp(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, last_pred_id, k_step_ahead, ode_solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // ukf_simulate_rcpp
-List ukf_simulate_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, const int ng, const int last_pred_id, const int k_step_ahead, const int ode_solver, const int nsims, Nullable<int> seed);
+List ukf_simulate_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, Eigen::VectorXd simulation_timestep_size, Eigen::VectorXd simulation_timesteps, Eigen::MatrixXi bool_is_not_na_obsMat, Eigen::VectorXi number_of_available_obs, Eigen::VectorXd ukf_pars, const int ng, const int last_pred_id, const int k_step_ahead, CharacterVector ode_solver, const int nsims, Nullable<int> seed);
 RcppExport SEXP _ctsmTMB_ukf_simulate_rcpp(SEXP funPtrsSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP simulation_timestep_sizeSEXP, SEXP simulation_timestepsSEXP, SEXP bool_is_not_na_obsMatSEXP, SEXP number_of_available_obsSEXP, SEXP ukf_parsSEXP, SEXP ngSEXP, SEXP last_pred_idSEXP, SEXP k_step_aheadSEXP, SEXP ode_solverSEXP, SEXP nsimsSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -311,7 +311,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type ng(ngSEXP);
     Rcpp::traits::input_parameter< const int >::type last_pred_id(last_pred_idSEXP);
     Rcpp::traits::input_parameter< const int >::type k_step_ahead(k_step_aheadSEXP);
-    Rcpp::traits::input_parameter< const int >::type ode_solver(ode_solverSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type ode_solver(ode_solverSEXP);
     Rcpp::traits::input_parameter< const int >::type nsims(nsimsSEXP);
     Rcpp::traits::input_parameter< Nullable<int> >::type seed(seedSEXP);
     rcpp_result_gen = Rcpp::wrap(ukf_simulate_rcpp(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, ng, last_pred_id, k_step_ahead, ode_solver, nsims, seed));

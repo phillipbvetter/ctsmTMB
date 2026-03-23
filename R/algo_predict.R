@@ -21,7 +21,7 @@ ekf_predict_r = function(parVec, self, private)
   xPost <- filt$xPost
   pPost <- filt$pPost
   stateVec <- xPost[[1]]
-  covMat <- matrix(pPost[[1]],nrow=n.states)
+  covMat <- matrix(pPost[[1]], nrow=n.states)
   
   # time-steps
   ode_timestep_size = private$ode.timestep.size
@@ -156,7 +156,7 @@ ukf_predict_r = function(parVec, self, private)
   create_state_space_functions_for_filtering()
   get_ukf_weights()
   get_ukf_ode_solvers()
-  get.ukf.kalman.functions()
+  get_ukf_update()
   
   # Get filtered states
   filt <- ukf_filter_r(parVec, self, private)

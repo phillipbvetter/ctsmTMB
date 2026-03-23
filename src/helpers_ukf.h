@@ -4,7 +4,6 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
 
-
 using namespace Rcpp;
 using namespace Eigen;
 
@@ -93,9 +92,9 @@ MatrixXd ukf_ode_integration(
   VectorXd dinputVec, 
   double dt,
   double sqrt_c, 
-  int ode_solver, 
-  int n, 
-  int nn){
+  const int ode_solver, 
+  const int n, 
+  const int nn){
 
     /*Initial State and Cov Values*/
     MatrixXd X1sigmapoints;
@@ -106,11 +105,8 @@ MatrixXd ukf_ode_integration(
 
      X1sigmapoints = X0sigmapoints + ukf_1step(f__, g__, Xsigmapoints, sqrt_covMat, W, wm, parVec, inputVec, sqrt_c, n, nn) * dt;
 
-    }
-
+    } else if (ode_solver == 2){
     /*4th Order Runge-Kutta 4th*/
-    if (ode_solver == 2){
-
      MatrixXd c1, c2, c3, c4;
 
      /*1. Approx Slope at Initial Point*/
@@ -138,10 +134,11 @@ MatrixXd ukf_ode_integration(
 
      /*ODE UPDATE*/
      X1sigmapoints = X0sigmapoints + dt * (c1 + 2.0*c2 + 2.0*c3 + c4)/6.0; 
-
+   } else {
+    // Do nothing
    }
 
    return X1sigmapoints;
-  }
+}
 
 #endif

@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Estimating Parameters • ctsmTMB</title>
+<title>Parameter Estimation • ctsmTMB</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
 <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="../apple-touch-icon.png">
@@ -18,7 +18,7 @@
 <link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating Parameters">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Parameter Estimation">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ctsmTMB</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,9 +84,11 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Estimating Parameters</h1>
-                        <h4 data-toc-skip class="author"></h4>
+      <img src="../logo.png" class="logo" alt=""><h1>Parameter Estimation</h1>
+                        <h4 data-toc-skip class="author">Phillip
+Vetter</h4>
             
+            <h4 data-toc-skip class="date">2026-02-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/phillipbvetter/ctsmTMB/blob/HEAD/vignettes/estimate.Rmd"><code>vignettes/estimate.Rmd</code></a></small>
       <div class="d-none name"><code>estimate.Rmd</code></div>
@@ -94,9 +96,27 @@
 
     
     
+<style>
+body {
+  text-align: justify;
+  hyphens: auto;
+}
+</style>
 <p>In this vignette we elaborate on the abilities and workings of the
 <code>estimate</code> method.</p>
-<p>The default argument to the <code>estimate</code> method are:</p>
+<div class="section level2">
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+</h2>
+</div>
+<div class="section level2">
+<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+</h2>
+<p><strong>Insert Example</strong></p>
+</div>
+<div class="section level2">
+<h2 id="method-arguments">Method Arguments<a class="anchor" aria-label="anchor" href="#method-arguments"></a>
+</h2>
+<p>The <code>estimate</code> method accepts the following arguments:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>, </span>
@@ -112,22 +132,21 @@
 <span>  estimate.initial.state <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  silent <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="section level2">
-<h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
-</h2>
 <div class="section level3">
-<h3 id="argument-method">Argument: <code>method</code><a class="anchor" aria-label="anchor" href="#argument-method"></a>
+<h3 id="method">
+<code>method</code><a class="anchor" aria-label="anchor" href="#method"></a>
 </h3>
-<hr>
 <p>The <code>method</code> argument decides which estimation/filtering
-algorithm is used. Currently, the following methods are available:</p>
-<ol style="list-style-type: decimal">
+algorithm is used. The following methods are available:</p>
+<ul>
 <li><p><code>method='lkf'</code>: The Linear Kalman Filter.</p></li>
-<li><p><code>method='ekf'</code>: The Extended Kalman Filter.</p></li>
+<li><p><code>method='ekf'</code>: The Extended Kalman Filter
+(default).</p></li>
+<li><p><code>method='ukf'</code>: The Unscented Kalman Filter.</p></li>
 <li><p><code>method='laplace'</code>: The Laplace
 Approximation.</p></li>
-</ol>
-<!-- 4. `method='ukf'`: The Unscented Kalman Filter. --><p>There is a difference between the Kalman filtering methods, and the
+</ul>
+<p>There is a difference between the Kalman filtering methods, and the
 Laplace method in the way they approach likelihood computations, and
 thus what information the filters produce:</p>
 <ol style="list-style-type: decimal">
@@ -169,11 +188,12 @@ computations are very costly and slow. The user is referred to the
 documentation in <code><a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">TMB::oneStepPredict</a></code> for further
 information.</li>
 </ol>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-ode-solver">Argument: <code>ode.solver</code><a class="anchor" aria-label="anchor" href="#argument-ode-solver"></a>
+<h3 id="ode-solver">
+<code>ode.solver</code><a class="anchor" aria-label="anchor" href="#ode-solver"></a>
 </h3>
-<hr>
 <p>This argument is used for the Kalman filtering methods only to
 determine the ODE integrator used to solving the moment differential
 equations i.e.
@@ -184,11 +204,12 @@ equations i.e.
 </annotation></semantics></math> The <strong>ctsmTMB</strong> package
 implements the Explicit Forward-Euler <em>euler</em> and the Explicit
 4th Order Runge-Kutta <em>rk4</em> methods.</p>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-ode-timestep">Argument: <code>ode.timestep</code><a class="anchor" aria-label="anchor" href="#argument-ode-timestep"></a>
+<h3 id="ode-timestep">
+<code>ode.timestep</code><a class="anchor" aria-label="anchor" href="#ode-timestep"></a>
 </h3>
-<hr>
 <p>This argument has two different implications depending on whether
 Kalman filtering or Laplace filtering is carried out. The method accepts
 either a single scalar value to be used as the global time-step, or a
@@ -228,11 +249,12 @@ i.e. if for instance
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mi>i</mi></msub><mo>=</mo><mn>4.0001</mn></mrow><annotation encoding="application/x-tex">N_i = 4.0001</annotation></semantics></math>
 then the time-step is accepted, and the number of steps rounded down to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>N</mi><mi>i</mi><mo>*</mo></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">⌊</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">⌋</mo></mrow><mo>=</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">N^{*}_{i}= \left\lfloor N_i \right\rfloor = 4</annotation></semantics></math>.</p>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-loss-and-loss_c">Argument: <code>loss</code> and <code>loss_c</code><a class="anchor" aria-label="anchor" href="#argument-loss-and-loss_c"></a>
+<h3 id="loss-loss_c">
+<code>loss</code> / <code>loss_c</code><a class="anchor" aria-label="anchor" href="#loss-loss_c"></a>
 </h3>
-<hr>
 <p>The following losses are currently available:</p>
 <ol style="list-style-type: decimal">
 <li><p><code>loss='quadratic'</code> (default)</p></li>
@@ -337,8 +359,8 @@ the appropriate
 threshold value becomes</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/Chisquare.html" class="external-link">qchisq</a></span><span class="op">(</span><span class="fl">0.95</span>,df<span class="op">=</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 3.841459</span></span></code></pre>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/Chisquare.html" class="external-link">qchisq</a></span><span class="op">(</span><span class="fl">0.95</span>,df<span class="op">=</span><span class="va">m</span><span class="op">)</span></span>
+<span><span class="co">## [1] 3.841459</span></span></code></pre></div>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
 is the number of observation equations.</p>
@@ -346,11 +368,12 @@ is the number of observation equations.</p>
 chosen if there are missing observations in some indices of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
 for systems with multiple observation equations.</p>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-use_hessian">Argument: <code>use_hessian</code><a class="anchor" aria-label="anchor" href="#argument-use_hessian"></a>
+<h3 id="use_hessian">
+<code>use_hessian</code><a class="anchor" aria-label="anchor" href="#use_hessian"></a>
 </h3>
-<hr>
 <p>This argument is a boolean which determines whether or not the
 likelihood hessian constructed by automatic differentiation from
 <strong>TMB</strong> is used during the optimization procedure by
@@ -359,33 +382,36 @@ providing it to the <code>hessian</code> argument of
 <code>use.hessian=FALSE</code>. The argument has no effect if
 <code>method=laplace</code> due to restrictions in
 <strong>TMB</strong>/<strong>RTMB</strong>.</p>
-<p>The effect of providing the hessian is typically that an optimum is
-found in fewer iterations, but the cost of computing the hessian is
-relatively large, so it is often faster to optimize using only the
-gradient.</p>
+<p>One advatange of using the hessian is that the optimizer is more
+robust against parameters being on different scales, and the minimum is
+typically found in fewer (but more expensive) iterations. It is usually
+faster just to use the gradient.</p>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-laplace-residuals">Argument: <code>laplace.residuals</code><a class="anchor" aria-label="anchor" href="#argument-laplace-residuals"></a>
+<h3 id="laplace-residuals">
+<code>laplace.residuals</code><a class="anchor" aria-label="anchor" href="#laplace-residuals"></a>
 </h3>
-<hr>
 <p>This boolean controls whether or not model residuals are calculated
 with <code><a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">TMB::oneStepPredict</a></code> when the Laplace filtering is used
 (<code>method=laplace</code>). This takes a considerable amount of time
 - typically much longer than the estimation itself.</p>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-unconstrainted-optim">Argument: <code>unconstrainted.optim</code><a class="anchor" aria-label="anchor" href="#argument-unconstrainted-optim"></a>
+<h3 id="unconstrainted-optim">
+<code>unconstrainted.optim</code><a class="anchor" aria-label="anchor" href="#unconstrainted-optim"></a>
 </h3>
-<hr>
 <p>This boolean allows for quick unconstrained estimation removing the
 parameter boundaries specified by <code>setParameter</code>. This may be
 useful sometimes, to quickly check whether estimation issues occur
 because of ill boundaries.</p>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-estimate-initial-state">Argument: <code>estimate.initial.state</code><a class="anchor" aria-label="anchor" href="#argument-estimate-initial-state"></a>
+<h3 id="estimate-initial-state">
+<code>estimate.initial.state</code><a class="anchor" aria-label="anchor" href="#estimate-initial-state"></a>
 </h3>
-<hr>
 <p>This boolean determines whether or not the initial-time state
 distribution (mean and covariance) should be estimated or not. By
 default <code>estimate.initial.state=FALSE</code> and it is not
@@ -406,11 +432,12 @@ using Newton’s method. This stationary mean is then used to solve
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">V</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>x</mi><mi>∞</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\mathrm{V}\left[x_\infty\right]</annotation></semantics></math>
 by calling a linear solver on the vectorized system of equations (using
 kronecker products).</p>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-control">Argument: <code>control</code><a class="anchor" aria-label="anchor" href="#argument-control"></a>
+<h3 id="control">
+<code>control</code><a class="anchor" aria-label="anchor" href="#control"></a>
 </h3>
-<hr>
 <p>This argument is a list which controls various settings of the
 <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code> optimizer. See the documentation on
 <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">?stats::nlminb</a></code> for more information.</p>
@@ -422,20 +449,17 @@ terminates.</p>
 tracing by passing <code>control = list(trace=0)</code> will remove the
 <code>ìter.max</code>and <code>eval.max</code> arguments, so they should
 be provided as well if needed.</p>
+<hr>
 </div>
 <div class="section level3">
-<h3 id="argument-silent">Argument: <code>silent</code><a class="anchor" aria-label="anchor" href="#argument-silent"></a>
+<h3 id="silent">
+<code>silent</code><a class="anchor" aria-label="anchor" href="#silent"></a>
 </h3>
-<hr>
 <p>This boolean argument controls whether or not various information
 messages are printed by <strong>ctsmTMB</strong> during model building,
 compilation and estimation.</p>
+<hr>
 </div>
-</div>
-<div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
-</h2>
-<p><strong>Insert Example</strong></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
