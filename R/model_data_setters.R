@@ -410,6 +410,80 @@ set_parameters = function(pars, self, private){
 }
 
 ########################################################################
+# SET PARAMETERS (NEW VERSION - FOR TESTING BEFORE REPLACING ABOVE)
+########################################################################
+set_parameters2 = function(pars, self, private){
+
+  # This function sets the parameters used by estimations, filters etc.
+  #
+  # Base-case (pars = NULL):
+  #   Each parameter is taken from its estimated value if available, else
+  #   its initial value. Free parameters use fit$par.fixed once a fit exists;
+  #   fixed parameters always fall back to their initial value.
+  #
+  # Named pars:
+  #   The supplied vector replaces the corresponding entries in the base
+  #   vector by name. A partial set of names is fine.
+  #
+  # Unnamed pars:
+  #   Must have length equal to all parameters (lp) or only the free
+  #   parameters (lp - fp). Values are inserted in the natural order
+  #   returned by self$getParameters().
+
+  lp = length(private$parameter.names)
+  fp = length(private$fixed.pars)
+
+  # Build base vector: per-parameter best available value ----------------
+  base.pars = self$getParameters(value = "initial")
+
+  if (!is.null(private$fit$par.fixed)) {
+    estimated = self$getParameters(value = "estimate")
+    has.estimate = !is.na(estimated)
+    base.pars[has.estimate] = estimated[has.estimate]
+  }
+
+  # Apply user-supplied overrides ----------------------------------------
+  if (is.null(pars)) {
+
+    # Nothing supplied: use base vector as-is
+    pars = base.pars
+
+  } else if (!is.null(names(pars))) {
+
+    # Named vector: replace only the named entries
+    bad.names = setdiff(names(pars), private$parameter.names)
+    if (length(bad.names) > 0) {
+      stop("The following parameter name(s) are not recognised: ",
+           paste(bad.names, collapse = ", "))
+    }
+    base.pars[names(pars)] = pars
+    pars = base.pars
+
+  } else {
+
+    # Unnamed vector: must be length lp or lp-fp
+    if (!any(length(pars) == c(lp, lp - fp))) {
+      stop("Incorrect number of parameters supplied (", length(pars), "). ",
+           "Please supply either ", lp, " (all) or ", lp - fp,
+           " (free only), i.e. with or without fixed parameters.")
+    }
+
+    if (length(pars) == lp - fp) {
+      # Free parameters only: slot them in at the free-parameter positions
+      par.type.free = self$getParameters()[, "type"] == "free"
+      base.pars[par.type.free] = pars
+      pars = base.pars
+    }
+    # else length == lp: use pars directly (full vector in natural order)
+  }
+
+  names(pars) = private$parameter.names
+  private$pars = pars
+
+  return(invisible(NULL))
+}
+
+########################################################################
 # SET K STEP AHEAD (DEPENDS ON PRIVATE$DATA)
 ########################################################################
 set_k_ahead = function(k.ahead, self, private) {
