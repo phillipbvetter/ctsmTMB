@@ -11,12 +11,17 @@ build_model = function(self, private) {
   # Print
   if(!private$silent) message("Checking model components...")
   
-  # check_model
+  # basic sanity checks (does not need trans equations)
   basic_model_check(self, private)
-  
-  # last check
+
+  # apply algebraics/lamperti and build state-space function strings
+  # must happen before final_build_check, which inspects the *.trans fields
+  apply_algebraics_and_lamperti(self, private)
+  create_all_state_space_function_strings(self, private)
+
+  # last check (needs obs.eqs.trans / sys.eqs.trans populated above)
   final_build_check(self, private)
-  
+
   # compile rcpp functions
   compile_rcpp_functions(self, private)
   

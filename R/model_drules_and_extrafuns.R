@@ -1,28 +1,11 @@
-# Deriv requires e.g. that the "erf" function is specified, even though it does
-# not need to do numeric calculations (in our case) - just symbolics. This is 
-# why we only need to specify some arbitrary function return (NULL).
-get_Deriv_environment = function(){
-  e <- new.env()
-  
-  # add custom functions
-  
-  # return
-  return(e)
-}
-
-# This functions returns a table of derivatives for symbolic differentiation
-# with Deriv, used in the ctsmTMB_Deriv function.
-get_Deriv_drules = function(){
-  
-  # get standard library
-  drule <- Deriv::drule
-  
-  # add custom entries
-  drule$erf <- alist(x = 2/sqrt(pi)*exp(-x^2))
-  
-  # return
-  return(drule)
-}
+# Package-level cached constants for symbolic differentiation.
+# These are built once at load time rather than on every ctsmTMB_Deriv call.
+.ctsmTMB_deriv_env   <- new.env()
+.ctsmTMB_deriv_rules <- local({
+  drule      <- Deriv::drule
+  drule$erf  <- alist(x = 2/sqrt(pi)*exp(-x^2))
+  drule
+})
 
 
 # We create our own Deriv function based on Deriv::Deriv with custom environment and
@@ -31,12 +14,12 @@ ctsmTMB_Deriv = function(
     f,
     x = if (is.function(f)) NULL else all.vars(if (is.character(f)) parse(text = f) else
       f),
-    env = get_Deriv_environment(),
-    use.D = FALSE,
+    env      = .ctsmTMB_deriv_env,
+    use.D    = FALSE,
     cache.exp = FALSE,
-    nderiv = NULL,
-    combine = "c",
-    drule = get_Deriv_drules()
+    nderiv   = NULL,
+    combine  = "c",
+    drule    = .ctsmTMB_deriv_rules
 ){
   Deriv::Deriv(
     f = f,

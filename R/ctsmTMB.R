@@ -284,13 +284,9 @@ ctsmTMB = R6::R6Class(
       private$diff.processes = unique(unlist(lapply(private$sys.eqs, function(x) x$diff)))
       private$number.of.diffusions =  length(private$diff.processes) - 1 # minus 1 to remove 'dt'
       
-      # apply algebraics/transformations and create state space funs
-      apply_algebraics_and_lamperti(self, private)
-      create_all_state_space_function_strings(self, private)
-      
       return(invisible(self))
     },
-    
+
     ########################################################################
     # ADD OBSERVATIONS
     ########################################################################
@@ -354,11 +350,7 @@ ctsmTMB = R6::R6Class(
       
       # update system size
       private$number.of.observations = length(private$obs.eqs)
-      
-      # apply algebraics/transformations and create state space funs
-      apply_algebraics_and_lamperti(self, private)
-      create_all_state_space_function_strings(self, private)
-      
+
       return(invisible(self))
     },
     
@@ -401,13 +393,9 @@ ctsmTMB = R6::R6Class(
         check_for_bad_algebraics(result$name, self, private)
       })
       
-      # apply algebraics/transformations and create state space funs
-      apply_algebraics_and_lamperti(self, private)
-      create_all_state_space_function_strings(self, private)
-      
       return(invisible(self))
     },
-    
+
     ########################################################################
     # ADD INPUTS
     ########################################################################
@@ -444,11 +432,7 @@ ctsmTMB = R6::R6Class(
       
       # update system size
       private$number.of.inputs = length(private$inputs)
-      
-      # apply algebraics/transformations and create state space funs
-      apply_algebraics_and_lamperti(self, private)
-      create_all_state_space_function_strings(self, private)
-      
+
       return(invisible(self))
     },
     
@@ -593,9 +577,6 @@ ctsmTMB = R6::R6Class(
         
       }
       
-      # create state space funs
-      create_all_state_space_function_strings(self, private)
-      
       # return
       return(invisible(self))
     },
@@ -633,12 +614,9 @@ ctsmTMB = R6::R6Class(
         remove_parameter(result$name, self, private)
       })
       
-      apply_algebraics_and_lamperti(self, private)
-      create_all_state_space_function_strings(self, private)
-      
       return(invisible(self))
     },
-    
+
     ########################################################################
     # SET INITIAL STATE
     ########################################################################
@@ -759,14 +737,10 @@ ctsmTMB = R6::R6Class(
       # Store the transformation
       private$lamperti = list(transforms=transforms, states=states)
       
-      # apply algebraics/transformations and create state space funs
-      apply_algebraics_and_lamperti(self, private)
-      create_all_state_space_function_strings(self, private)
-      
       # return
       return(invisible(self))
     },
-    
+
     ########################################################################
     # SET MODEL NAME
     ########################################################################
