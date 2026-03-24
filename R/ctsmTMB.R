@@ -6,7 +6,9 @@
 #' thus must be functions of at least one state.
 #' 
 #' @returns The function returns an object of class \code{R6} and \code{ctsmTMB}, 
-#' which can be used to define a stochastic state space system.
+#' which can be used to define a stochastic state space system. The model object has methods
+#' \code{likelihood} and \code{estimate} for parameter estimation, \code{filter} for state reconstruction, 
+#' and \code{predict} / \code{simulate} for forecasting.
 #' 
 #' @examples
 #' library(ctsmTMB)
@@ -857,7 +859,7 @@ ctsmTMB = R6::R6Class(
       }
       private$rtmb.tapeconfig <- rtmb.tapeconfig
       
-      # TapeConfig for RTMB models
+      # TapeConfig for TMB models
       if(!identical(private$advanced.settings$tmb.tapeconfig, tmb.tapeconfig)){
         private$rebuild.ad <- TRUE
       }
@@ -936,72 +938,50 @@ ctsmTMB = R6::R6Class(
     # GET PARAMETER MATRIX
     ########################################################################
     #' @description Get initial (and estimated) parameters.
-    #' @param type one of "all", free" or "fixed" parameters.
-    #' @param value one of "all", initial", "estimate", "lower" or "upper"
+    #' @param type one of "all", "free" or "fixed" parameters.
+    #' @param value one of "all", "initial", "estimate", "lower" or "upper".
+    #'   When not "all", a named numeric vector is returned.
     getParameters = function(type="all", value="all") {
-      
-      if(is.null(private$parameters)){
-        return(NULL)
+
+      if (is.null(private$parameters)) return(NULL)
+
+      nms = private$parameter.names
+
+      # Build data.frame with an explicit name column
+      .df = data.frame(
+        name     = nms,
+        type     = "free",
+        initial  = sapply(private$parameters, `[[`, "initial"),
+        lower    = sapply(private$parameters, `[[`, "lower"),
+        upper    = sapply(private$parameters, `[[`, "upper"),
+        estimate = NA,
+        stringsAsFactors = FALSE,
+        row.names = nms
+      )
+
+      if (length(private$fixed.pars) > 0) {
+        fn = names(private$fixed.pars)
+        .df[fn, "type"]     = "fixed"
+        .df[fn, "estimate"] = sapply(private$fixed.pars, `[[`, "initial")
       }
-      
-      # create return matrix
-      .df = data.frame(matrix(NA,nrow=length(private$parameters),ncol=5))
-      names(.df) = c("type","estimate", "initial","lower","upper")
-      rownames(.df) = private$parameter.names
-      
-      # put parameters into it
-      .df[,c("initial","lower","upper")] = t(sapply(private$parameters,unlist))
-      .df[["type"]] = "free"
-      .df[["estimate"]] = NA
-      .df[names(private$fixed.pars),"type"] = "fixed"
-      .df[names(private$fixed.pars),"estimate"] = sapply(private$fixed.pars,function(x) x$initial)
-      
-      # if the fit exists then assign the free (estimate) parameters the estimated values from fit$par.fixed
-      if(!is.null(private$fit$par.fixed)){
-        .df[names(private$free.pars),"estimate"] = private$fit$par.fixed[names(private$free.pars)]
+
+      # Assign estimated values for free parameters after a successful fit
+      if (!is.null(private$fit$par.fixed)) {
+        fn = names(private$free.pars)
+        .df[fn, "estimate"] = private$fit$par.fixed[fn]
       }
-      # if(is.null(private$fit)){
-      #   # remove estimate if not fit has been generated
-      #   # .df = .df[,-2]
-      # } else {
-      #   # if the fit exists then assign the free (estimate) parameters the estimated values
-      #   # from fit$par.fixed
-      #   .df[names(private$free.pars),"estimate"] = private$fit$par.fixed[names(private$free.pars)]
-      # }
-      
-      # Filter rows by free or fixed parameter types
-      .df = switch(type,
-                   free = {
-                     .df[.df[["type"]] == "free",]
-                   },
-                   fixed = {
-                     .df[.df[["type"]] == "fixed",]
-                   },
-                   all = {
-                     .df
-                   })
-      
-      
-      # Filter columns by value 
-      .df = switch(value,
-                   initial = {
-                     .df[,"initial",drop=T]
-                   },
-                   lower = {
-                     .df[,"lower",drop=T]
-                   },
-                   upper = {
-                     .df[,"upper",drop=T]
-                   },
-                   estimate = {
-                     .df[,"estimate",drop=T]
-                   },
-                   all = {
-                     .df
-                   })
-      
-      # return
-      return(.df)
+
+      # Filter rows by parameter type
+      if (type != "all") {
+        .df = .df[.df[["type"]] == type, , drop = FALSE]
+      }
+
+      # Return a named vector when a single value column is requested
+      if (value != "all") {
+        return(setNames(.df[[value]], .df[["name"]]))
+      }
+
+      .df
     },
     
     ########################################################################

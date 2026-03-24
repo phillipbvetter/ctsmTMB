@@ -353,7 +353,7 @@ set_simulation_timestep = function(data, self, private){
 # SET PARAMETERS
 #######################################################
 # This function sets the parameters used by methods with the 'pars' argument to various methods.
-set_parameters <- function(pars, self, private){
+set_parameters.old <- function(pars, self, private){
   
   ## Allow any number of parameters to be received?
   # We take initial or estimated and fill in from the received parameter vector
@@ -387,7 +387,7 @@ set_parameters <- function(pars, self, private){
       stop("The 'pars' argument should have length ", n.pars, " (all) or ", n.free.pars,
            " (only fixed) but ", par.length, " were provided.")
     }
-    
+  
     # check2 - throw error if NA names
     is.pars.names.na <- any(is.na(names(pars)))
     if(is.pars.names.na) stop("The 'pars' vector has NA names")
@@ -421,7 +421,7 @@ set_parameters <- function(pars, self, private){
 ########################################################################
 # SET PARAMETERS (NEW VERSION - FOR TESTING BEFORE REPLACING ABOVE)
 ########################################################################
-set_parameters2 = function(pars, self, private){
+set_parameters = function(pars, self, private){
 
   # This function sets the parameters used by estimations, filters etc.
   #
@@ -438,7 +438,7 @@ set_parameters2 = function(pars, self, private){
   #   Must have length equal to all parameters (lp) or only the free
   #   parameters (lp - fp). Values are inserted in the natural order
   #   returned by self$getParameters().
-
+  
   lp = length(private$parameter.names)
   fp = length(private$fixed.pars)
 
@@ -450,7 +450,7 @@ set_parameters2 = function(pars, self, private){
     has.estimate = !is.na(estimated)
     base.pars[has.estimate] = estimated[has.estimate]
   }
-
+  
   # Apply user-supplied overrides ----------------------------------------
   if (is.null(pars)) {
 
@@ -460,12 +460,7 @@ set_parameters2 = function(pars, self, private){
   } else if (!is.null(names(pars))) {
 
     # Named vector: replace only the named entries
-    bad.names = setdiff(names(pars), private$parameter.names)
-    if (length(bad.names) > 0) {
-      stop("The following parameter name(s) are not recognised: ",
-           paste(bad.names, collapse = ", "))
-    }
-    base.pars[names(pars)] = pars
+    base.pars[names(pars)] <- pars
     pars = base.pars
 
   } else {

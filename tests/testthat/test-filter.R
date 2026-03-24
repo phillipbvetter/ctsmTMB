@@ -101,7 +101,7 @@ testthat::test_that("filter runs without error using R (ukf)", {
 
 testthat::test_that("filter handles all-NA observations without error using C++ (ekf)", {
   df_na <- df
-  df_na$y <- NA_real_
+  df_na$y <- NA
   testthat::expect_no_error(
     model$filter(df_na, method = "ekf", use.cpp = TRUE, silent = TRUE)
   )
@@ -109,7 +109,7 @@ testthat::test_that("filter handles all-NA observations without error using C++ 
 
 testthat::test_that("filter handles all-NA observations without error using C++ (lkf)", {
   df_na <- df
-  df_na$y <- NA_real_
+  df_na$y <- NA
   testthat::expect_no_error(
     model$filter(df_na, method = "lkf", use.cpp = TRUE, silent = TRUE)
   )
@@ -117,7 +117,7 @@ testthat::test_that("filter handles all-NA observations without error using C++ 
 
 testthat::test_that("filter handles all-NA observations without error using C++ (ukf)", {
   df_na <- df
-  df_na$y <- NA_real_
+  df_na$y <- NA
   testthat::expect_no_error(
     model$filter(df_na, method = "ukf", use.cpp = TRUE, silent = TRUE)
   )
@@ -125,7 +125,7 @@ testthat::test_that("filter handles all-NA observations without error using C++ 
 
 testthat::test_that("filter handles all-NA observations without error using R (ekf)", {
   df_na <- df
-  df_na$y <- NA_real_
+  df_na$y <- NA
   testthat::expect_no_error(
     model$filter(df_na, method = "ekf", use.cpp = FALSE, silent = TRUE)
   )
@@ -133,7 +133,7 @@ testthat::test_that("filter handles all-NA observations without error using R (e
 
 testthat::test_that("filter handles all-NA observations without error using R (lkf)", {
   df_na <- df
-  df_na$y <- NA_real_
+  df_na$y <- NA
   testthat::expect_no_error(
     model$filter(df_na, method = "lkf", use.cpp = FALSE, silent = TRUE)
   )
@@ -141,7 +141,7 @@ testthat::test_that("filter handles all-NA observations without error using R (l
 
 testthat::test_that("filter handles all-NA observations without error using R (ukf)", {
   df_na <- df
-  df_na$y <- NA_real_
+  df_na$y <- NA
   testthat::expect_no_error(
     model$filter(df_na, method = "ukf", use.cpp = FALSE, silent = TRUE)
   )
@@ -188,8 +188,8 @@ testthat::test_that("filter (2D) runs without error using R (ukf)", {
 
 testthat::test_that("filter (2D) handles all-NA observations without error using C++ (ekf)", {
   df2_na <- df2
-  df2_na$y1 <- NA_real_
-  df2_na$y2 <- NA_real_
+  df2_na$y1 <- NA
+  df2_na$y2 <- NA
   testthat::expect_no_error(
     model2$filter(df2_na, method = "ekf", use.cpp = TRUE, silent = TRUE)
   )
@@ -197,8 +197,8 @@ testthat::test_that("filter (2D) handles all-NA observations without error using
 
 testthat::test_that("filter (2D) handles all-NA observations without error using C++ (lkf)", {
   df2_na <- df2
-  df2_na$y1 <- NA_real_
-  df2_na$y2 <- NA_real_
+  df2_na$y1 <- NA
+  df2_na$y2 <- NA
   testthat::expect_no_error(
     model2$filter(df2_na, method = "lkf", use.cpp = TRUE, silent = TRUE)
   )
@@ -206,8 +206,8 @@ testthat::test_that("filter (2D) handles all-NA observations without error using
 
 testthat::test_that("filter (2D) handles all-NA observations without error using C++ (ukf)", {
   df2_na <- df2
-  df2_na$y1 <- NA_real_
-  df2_na$y2 <- NA_real_
+  df2_na$y1 <- NA
+  df2_na$y2 <- NA
   testthat::expect_no_error(
     model2$filter(df2_na, method = "ukf", use.cpp = TRUE, silent = TRUE)
   )
@@ -215,8 +215,8 @@ testthat::test_that("filter (2D) handles all-NA observations without error using
 
 testthat::test_that("filter (2D) handles all-NA observations without error using R (ekf)", {
   df2_na <- df2
-  df2_na$y1 <- NA_real_
-  df2_na$y2 <- NA_real_
+  df2_na$y1 <- NA
+  df2_na$y2 <- NA
   testthat::expect_no_error(
     model2$filter(df2_na, method = "ekf", use.cpp = FALSE, silent = TRUE)
   )
@@ -224,8 +224,8 @@ testthat::test_that("filter (2D) handles all-NA observations without error using
 
 testthat::test_that("filter (2D) handles all-NA observations without error using R (lkf)", {
   df2_na <- df2
-  df2_na$y1 <- NA_real_
-  df2_na$y2 <- NA_real_
+  df2_na$y1 <- NA
+  df2_na$y2 <- NA
   testthat::expect_no_error(
     model2$filter(df2_na, method = "lkf", use.cpp = FALSE, silent = TRUE)
   )
@@ -233,8 +233,8 @@ testthat::test_that("filter (2D) handles all-NA observations without error using
 
 testthat::test_that("filter (2D) handles all-NA observations without error using R (ukf)", {
   df2_na <- df2
-  df2_na$y1 <- NA_real_
-  df2_na$y2 <- NA_real_
+  df2_na$y1 <- NA
+  df2_na$y2 <- NA
   testthat::expect_no_error(
     model2$filter(df2_na, method = "ukf", use.cpp = FALSE, silent = TRUE)
   )

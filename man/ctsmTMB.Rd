@@ -5,7 +5,9 @@
 \title{Methods for the 'ctsmTMB' R6 class}
 \value{
 The function returns an object of class \code{R6} and \code{ctsmTMB},
-which can be used to define a stochastic state space system.
+which can be used to define a stochastic state space system. The model object has methods
+\code{likelihood} and \code{estimate} for parameter estimation, \code{filter} for state reconstruction,
+and \code{predict} / \code{simulate} for forecasting.
 }
 \description{
 The following public methods are used to construct a stochastic state space model
@@ -522,9 +524,10 @@ Get initial (and estimated) parameters.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{type}}{one of "all", free" or "fixed" parameters.}
+\item{\code{type}}{one of "all", "free" or "fixed" parameters.}
 
-\item{\code{value}}{one of "all", initial", "estimate", "lower" or "upper"}
+\item{\code{value}}{one of "all", "initial", "estimate", "lower" or "upper".
+When not "all", a named numeric vector is returned.}
 }
 \if{html}{\out{</div>}}
 }
