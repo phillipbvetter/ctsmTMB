@@ -3,14 +3,14 @@
 get_substitution_list = function(self, private){
   
   # Create substitution translation list
-  obsList = lapply(seq_along(private$obs.names), function(id) substitute(obsVec(i),list(i=as.numeric(id-1))))
-  parList = lapply(seq_along(private$parameter.names), function(id) substitute(parVec(i),list(i=as.numeric(id-1))))
-  stateList = lapply(seq_along(private$state.names), function(id) substitute(stateVec(i),list(i=as.numeric(id-1))))
-  inputList = lapply(seq_along(private$input.names), function(id) substitute(inputVec(i),list(i=as.numeric(id-1))))
-  names(obsList) = private$obs.names
-  names(parList) = private$parameter.names
-  names(stateList) = private$state.names
-  names(inputList) = private$input.names
+  obsList = lapply(seq_along(private$names$obs), function(id) substitute(obsVec(i),list(i=as.numeric(id-1))))
+  parList = lapply(seq_along(private$names$parameters), function(id) substitute(parVec(i),list(i=as.numeric(id-1))))
+  stateList = lapply(seq_along(private$names$states), function(id) substitute(stateVec(i),list(i=as.numeric(id-1))))
+  inputList = lapply(seq_along(private$names$inputs), function(id) substitute(inputVec(i),list(i=as.numeric(id-1))))
+  names(obsList) = private$names$obs
+  names(parList) = private$names$parameters
+  names(stateList) = private$names$states
+  names(inputList) = private$names$inputs
   subsList = c(obsList, parList, stateList, inputList)
   
   return(subsList)
@@ -25,10 +25,10 @@ write_f = function(self, private){
   subsList <- get_substitution_list(self, private)
   
   f <- c()
-  for(i in seq_along(private$state.names)){
-    drift.term <- Deriv::Simplify(private$diff.terms[[i]]$dt)
+  for(i in seq_along(private$names$states)){
+    drift.term <- Deriv::Simplify(private$model$diff.terms[[i]]$dt)
     if(!(drift.term==0)){
-      drift.term = hat2pow(private$diff.terms[[i]]$dt)
+      drift.term = hat2pow(private$model$diff.terms[[i]]$dt)
       new.drift.term = do.call(substitute, list(drift.term, subsList))
       f <- c(f, sprintf("f__(%i) = %s;",i-1, deparse1(new.drift.term)))
     }
@@ -43,7 +43,7 @@ write_f = function(self, private){
     return f__;
   }"
   
-  newtxt = sprintf(newtxt, private$number.of.states, paste(f,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dimensions$states, paste(f,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -57,9 +57,9 @@ write_jac_f = function(self, private){
   subsList <- get_substitution_list(self, private)
   
   jac.f = c()
-  for(i in seq_along(private$state.names)){
-    for(j in seq_along(private$state.names)){
-      term <- Deriv::Simplify(private$diff.terms.drift[[i]][[j]])
+  for(i in seq_along(private$names$states)){
+    for(j in seq_along(private$names$states)){
+      term <- Deriv::Simplify(private$model$diff.terms.drift[[i]][[j]])
       if(!(term==0)){
         term = hat2pow(term)
         new.term = do.call(substitute, list(term, subsList))
@@ -77,7 +77,7 @@ write_jac_f = function(self, private){
     return dfdx__;
   }"
   
-  newtxt = sprintf(newtxt, private$number.of.states, private$number.of.states, paste(jac.f, collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dimensions$states, private$dimensions$states, paste(jac.f, collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -91,9 +91,9 @@ write_g = function(self, private){
   subsList <- get_substitution_list(self, private)
   
   g = c()
-  for(i in seq_along(private$state.names)){
-    for(j in seq_along(private$diff.processes[-1])){
-      term <- Deriv::Simplify(private$diff.terms[[i]][[j+1]])
+  for(i in seq_along(private$names$states)){
+    for(j in seq_along(private$model$diff.processes[-1])){
+      term <- Deriv::Simplify(private$model$diff.terms[[i]][[j+1]])
       if(!(term==0)){
         term = hat2pow(term)
         new.term = do.call(substitute, list(term, subsList))
@@ -111,7 +111,7 @@ write_g = function(self, private){
     return g__;
   }"
   
-  newtxt = sprintf(newtxt, private$number.of.states, private$number.of.diffusions, paste(g,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dimensions$states, private$dimensions$diffusions, paste(g,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -125,8 +125,8 @@ write_h = function(self, private){
   subsList <- get_substitution_list(self, private)
   
   h <- c()
-  for(i in seq_along(private$obs.names)){
-    term <- Deriv::Simplify(private$obs.eqs.trans[[i]]$rhs)
+  for(i in seq_along(private$names$obs)){
+    term <- Deriv::Simplify(private$model$obs.eqs.trans[[i]]$rhs)
     if(term!=0){
       term = hat2pow(term)
       new.term = do.call(substitute, list(term, subsList))
@@ -143,7 +143,7 @@ write_h = function(self, private){
     return h__;
   }"
   
-  newtxt = sprintf(newtxt, private$number.of.observations, paste(h,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dimensions$observations, paste(h,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -157,9 +157,9 @@ write_jac_h = function(self, private){
   subsList <- get_substitution_list(self, private)
   
   jac.h = c()
-  for(i in seq_along(private$obs.names)){
-    for(j in seq_along(private$state.names)){
-      term = Deriv::Simplify(private$diff.terms.obs[[i]][[j]])
+  for(i in seq_along(private$names$obs)){
+    for(j in seq_along(private$names$states)){
+      term = Deriv::Simplify(private$model$diff.terms.obs[[i]][[j]])
       if(term!=0){
         term = hat2pow(term)
         new.term = do.call(substitute, list(term, subsList))
@@ -176,7 +176,7 @@ write_jac_h = function(self, private){
     %s
     return dhdx__;
   }"
-  newtxt = sprintf(newtxt, private$number.of.observations, private$number.of.states, paste(jac.h,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dimensions$observations, private$dimensions$states, paste(jac.h,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -191,22 +191,22 @@ write_jac_f_wrt_u <- function(self, private){
   
   # 1. We first find constant terms
   # this corresponds to an input that is always 1 (first element of U)
-  zero.list <- as.list(numeric(private$number.of.inputs + private$number.of.states))
-  names(zero.list) <-c(private$input.names, private$state.names)
-  constant.terms <- sapply(private$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list))))
+  zero.list <- as.list(numeric(private$dimensions$inputs + private$dimensions$states))
+  names(zero.list) <-c(private$names$inputs, private$names$states)
+  constant.terms <- sapply(private$model$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list))))
   if(inherits(constant.terms, "try-error")){
-    constant.terms <- rep(0, private$number.of.states)
+    constant.terms <- rep(0, private$dimensions$states)
   }
   
   jac.f.wrt.u = c()
   # 2. Now we find input-terms by differentiation
-  for(i in seq_along(private$state.names)){
+  for(i in seq_along(private$names$states)){
     #its inputs + 1 below because the first element is for constants
-    for(j in 1:(private$number.of.inputs+1)){
+    for(j in 1:(private$dimensions$inputs+1)){
       if(j==1){
         term <- constant.terms[[i]]
       } else {
-        term <- ctsmTMB_Deriv(f=private$sys.eqs.trans[[i]]$diff.dt, x=private$input.names[j-1])
+        term <- ctsmTMB_Deriv(f=private$model$sys.eqs.trans[[i]]$diff.dt, x=private$names$inputs[j-1])
       }
       # skip if zero
       if(term=="0") next
@@ -224,7 +224,7 @@ write_jac_f_wrt_u <- function(self, private){
     %s
     return dfdu__;
   }"
-  newtxt = sprintf(newtxt, private$number.of.states, private$number.of.inputs+1, paste(jac.f.wrt.u, collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dimensions$states, private$dimensions$inputs+1, paste(jac.f.wrt.u, collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -238,8 +238,8 @@ write_h_var = function(self, private){
   subsList <- get_substitution_list(self, private)
   
   hvar <- c()
-  for(i in seq_along(private$obs.var.trans)){
-    term <- Deriv::Simplify(private$obs.var.trans[[i]]$rhs)
+  for(i in seq_along(private$model$obs.var.trans)){
+    term <- Deriv::Simplify(private$model$obs.var.trans[[i]]$rhs)
     if(term!=0){
       term <- hat2pow(term)
       new.term = do.call(substitute, list(term, subsList))
@@ -255,7 +255,7 @@ write_h_var = function(self, private){
     %s
     return hvar__;
   }"
-  newtxt = sprintf(newtxt, private$number.of.observations, paste(hvar,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dimensions$observations, paste(hvar,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -266,20 +266,20 @@ write_h_var = function(self, private){
 # This is the main writer function for creating the likelihood C++ file
 write_cppfile = function(self, private) {
   
-  if(private$method=="lkf.cpp"){
+  if(private$algo.settings$method=="lkf.cpp"){
     stop("LKF not supported.")
   }
   
   # Get template
-  method <- stringr::str_replace(private$method, ".cpp", "")
+  method <- stringr::str_replace(private$algo.settings$method, ".cpp", "")
   filepath <- sprintf("include/template_%s.h",method)
   txt <- readLines(system.file(filepath, package="ctsmTMB"))
   
   # Embed system info
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_STATES")] <- sprintf("// STATES:%s", private$number.of.states)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_OBS")] <- sprintf("// OBS:%s", private$number.of.observations)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_INPUTS")] <- sprintf("// INPUTS:%s", private$number.of.inputs)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_PARS")] <- sprintf("// PARS:%s", private$number.of.pars)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_STATES")] <- sprintf("// STATES:%s", private$dimensions$states)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_OBS")] <- sprintf("// OBS:%s", private$dimensions$observations)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_INPUTS")] <- sprintf("// INPUTS:%s", private$dimensions$inputs)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_PARS")] <- sprintf("// PARS:%s", private$dimensions$pars)
   
   # Insert user functions
   txt[which(txt %in% "// INSERT F")] <- write_f(self, private)
