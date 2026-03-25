@@ -161,10 +161,10 @@ compile_cppfile <- function(self, private) {
       model.cpp.path <- paste0(private$cppfile.path.with.method, ".cpp")
       out <- readLines(model.cpp.path)
       model.dims <- as.numeric(stringr::str_extract(out[1:4], ".*:(\\d+)", group=1))
-      bool <- !all(model.dims[1] == private$dimensions$states,
-                   model.dims[2] == private$dimensions$observations,
-                   model.dims[3] == private$dimensions$inputs,
-                   model.dims[4] == private$dimensions$pars
+      bool <- !all(model.dims[1] == private$dims$states,
+                   model.dims[2] == private$dims$observations,
+                   model.dims[3] == private$dims$inputs,
+                   model.dims[4] == private$dims$pars
       )
       # if the dimensions are wrong recompile the c++ file
       if(bool){

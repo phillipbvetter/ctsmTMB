@@ -17,11 +17,11 @@ perform_smoothing = function(self, private){
   }
   
   # Kalman smoothers
-  private$smooth <- switch(private$algo.settings$method,
+  private$results$smooth <- switch(private$algo.settings$method,
                            # These must be changed to e.g. lkf_smoother_r when available
-                           # lkf = lkf_smoother_r(private$model$argument.parameters, self, private),
-                           # ekf = ekf_smoother_r(private$model$argument.parameters, self, private),
-                           # ukf = ukf_smoother_r(private$model$argument.parameters, self, private),
+                           # lkf = lkf_smoother_r(private$algo.settings$argument.parameters, self, private),
+                           # ekf = ekf_smoother_r(private$algo.settings$argument.parameters, self, private),
+                           # ukf = ukf_smoother_r(private$algo.settings$argument.parameters, self, private),
                            laplace = laplace_smooth(self, private),
                            laplace.thygesen = laplace_smooth(self, private)
   )
@@ -33,7 +33,7 @@ laplace_smooth <- function(self, private){
   
   # Integrate out random effect states (perform laplace approx)
   par.type.free <- self$getParameters()[,"type"] == "free"
-  free.pars <- private$model$argument.parameters[par.type.free]
+  free.pars <- private$algo.settings$argument.parameters[par.type.free]
   private$nll$fn(free.pars)
   
   # Report result
@@ -52,8 +52,8 @@ create_smooth_results <- function(self, private, laplace.residuals){
     random.effects.ids <- private$ode.timesteps.cumsum + 1
   
     # States (Smoothed) -----------------------------------
-    temp.states <- matrix(private$sdr$par.random, ncol=private$dimensions$states)[random.effects.ids, ]
-    temp.sd <- matrix(sqrt(private$sdr$diag.cov.random), ncol=private$dimensions$states)[random.effects.ids, ]
+    temp.states <- matrix(private$sdr$par.random, ncol=private$dims$states)[random.effects.ids, ]
+    temp.sd <- matrix(sqrt(private$sdr$diag.cov.random), ncol=private$dims$states)[random.effects.ids, ]
     temp.states <- cbind(private$data$t, temp.states)
     temp.sd <- cbind(private$data$t, temp.sd)
     
@@ -74,8 +74,8 @@ create_smooth_results <- function(self, private, laplace.residuals){
                                   method="oneStepGaussian",
                                   trace=TRUE)
       nr <- nrow(private$data)
-      temp.res <- data.frame(private$data$t, matrix(res[["residual"]],ncol=private$dimensions$observations))
-      temp.sd <- data.frame(private$data$t, matrix(res[["sd"]],ncol=private$dimensions$observations))
+      temp.res <- data.frame(private$data$t, matrix(res[["residual"]],ncol=private$dims$observations))
+      temp.sd <- data.frame(private$data$t, matrix(res[["sd"]],ncol=private$dims$observations))
       names(temp.res) = c("t", private$names$obs)
       names(temp.sd) = c("t", private$names$obs)
       
@@ -87,6 +87,6 @@ create_smooth_results <- function(self, private, laplace.residuals){
     
   }
   
-  private$smooth <- smooth
+  private$results$smooth <- smooth
   
 }

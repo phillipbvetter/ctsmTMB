@@ -10,7 +10,7 @@ ekf_predict_r = function(parVec, self, private)
   # Data ----------------------------------------
   get_sys_dims()
   # inputs
-  inputMat = as.matrix(private$data[private$input.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
   
   # Utilities
   create_state_space_functions_for_filtering()
@@ -28,8 +28,8 @@ ekf_predict_r = function(parVec, self, private)
   ode_timesteps = private$ode.timesteps
   
   # prediction settings
-  k.ahead <- private$k.ahead
-  last.pred.index <- private$last.pred.index
+  k.ahead <- private$algo.settings$k.ahead
+  last.pred.index <- private$algo.settings$last.pred.index
   
   ####### STORAGE #######
   predMats <- lapply(1:last.pred.index, function(x) matrix(NA, nrow=k.ahead+1, ncol=n.states+n.states^2))
@@ -70,12 +70,12 @@ lkf_predict_r = function(parVec, self, private)
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
-  inputMat = as.matrix(private$data[private$input.names])
-  obsMat = as.matrix(private$data[private$obs.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # prediction settings
-  k.ahead <- private$k.ahead
-  last.pred.index <- private$last.pred.index
+  k.ahead <- private$algo.settings$k.ahead
+  last.pred.index <- private$algo.settings$last.pred.index
   
   create_state_space_functions_for_filtering()
   
@@ -146,12 +146,12 @@ ukf_predict_r = function(parVec, self, private)
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
-  inputMat = as.matrix(private$data[private$input.names])
-  obsMat = as.matrix(private$data[private$obs.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # prediction settings
-  k.ahead <- private$k.ahead
-  last.pred.index <- private$last.pred.index
+  k.ahead <- private$algo.settings$k.ahead
+  last.pred.index <- private$algo.settings$last.pred.index
   
   create_state_space_functions_for_filtering()
   get_ukf_weights()

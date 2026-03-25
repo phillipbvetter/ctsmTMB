@@ -22,14 +22,14 @@ perform_prediction <- function(self, private, use.cpp){
         
         if(!private$silent) message("Predicting with C++...")
         
-        lkf_ekf_ukf_predict_rcpp(private$model$argument.parameters, self, private)
+        lkf_ekf_ukf_predict_rcpp(private$algo.settings$argument.parameters, self, private)
         
         # Predict with R implementation
       } else {
         
         if(!private$silent) message("Predicting with R...")
         
-        lkf_ekf_ukf_predict_r(private$model$argument.parameters, self, private)
+        lkf_ekf_ukf_predict_r(private$algo.settings$argument.parameters, self, private)
         
       }
       
@@ -48,8 +48,8 @@ lkf_ekf_ukf_predict_r <- function(pars, self, private){
                    ukf = ukf_predict_r(pars, self, private),
   )
   
-  # private$prediction <- output
-  private$prediction.raw <- output
+  # private$results$prediction <- output
+  private$results$prediction.raw <- output
   
   return(invisible(self))
 }
@@ -67,7 +67,7 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
   # number of non-na observations
   number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
   
-  ids <- 1:private$dimensions$observations - 1 #minus 1 for 0 indexing
+  ids <- 1:private$dims$observations - 1 #minus 1 for 0 indexing
   non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
   any_available_obs <- sapply(non_na_ids, function(x) !is.null(x))
   
@@ -119,7 +119,7 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
   }
   
   ####### STORE PREDICTION #######
-  private$prediction.raw <- output[[1]]
+  private$results$prediction.raw <- output[[1]]
   
   ####### RETURN #######
   return(invisible(self))
@@ -134,14 +134,14 @@ create_return_prediction <- function(reported.dispersion.type, return.k.ahead, s
   if(!private$silent) message("Returning results...")
   
   # Simlify variable names
-  n               <- private$dimensions$states
-  n.obs           <- private$dimensions$observations
+  n               <- private$dims$states
+  n.obs           <- private$dims$observations
   k.ahead         <- private$algo.settings$k.ahead
   state.names     <- private$names$states
   last.pred.index <- private$algo.settings$last.pred.index
   diag.ids        <- seq(from=1, to=n^2, by=n+1)
   diag.ids.obs    <- seq(from=1, to=n.obs^2, by=n.obs+1)
-  rbinded.predmat <- do.call(rbind, private$prediction.raw)
+  rbinded.predmat <- do.call(rbind, private$results$prediction.raw)
   
   # time-related entries
   m.state = matrix(nrow=last.pred.index*(k.ahead+1), ncol=5+n)
@@ -179,9 +179,9 @@ create_return_prediction <- function(reported.dispersion.type, return.k.ahead, s
   m.obs.pred <- calculate_prediction_observations(rbinded.predmat, 
                                                   private$model$rcpp_function_ptr,
                                                   as.matrix(private$data[private$names$inputs]),
-                                                  private$model$argument.parameters,
-                                                  private$dimensions$states,
-                                                  private$dimensions$observations,
+                                                  private$algo.settings$argument.parameters,
+                                                  private$dims$states,
+                                                  private$dims$observations,
                                                   private$algo.settings$last.pred.index,
                                                   private$algo.settings$k.ahead,
                                                   reported.dispersion.type != "none")
@@ -218,7 +218,7 @@ create_return_prediction <- function(reported.dispersion.type, return.k.ahead, s
   list.out = list(states = m.state, observations = m.obs)
   class(list.out) = c(class(list.out), "ctsmTMB.pred")
   
-  private$prediction = list.out
+  private$results$prediction = list.out
   
   return(invisible(self))
   

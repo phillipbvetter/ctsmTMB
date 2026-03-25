@@ -16,12 +16,12 @@ perform_filtering = function(self, private, use.cpp){
     if(use.cpp){
       
       if(!private$silent) message("Filtering with C++...")
-      lkf_ekf_ukf_filter_rcpp(private$model$argument.parameters, self, private)
+      lkf_ekf_ukf_filter_rcpp(private$algo.settings$argument.parameters, self, private)
       
     } else {
       
       if(!private$silent) message("Filtering with R...")
-      lkf_ekf_ukf_filter_r(private$model$argument.parameters, self, private)
+      lkf_ekf_ukf_filter_r(private$algo.settings$argument.parameters, self, private)
       
     }
   }, gcFirst = FALSE)
@@ -39,7 +39,7 @@ lkf_ekf_ukf_filter_r <- function(pars, self, private){
                  ukf = ukf_filter_r(pars, self, private),
   )
   
-  private$filtration.raw <- filt
+  private$results$filtration.raw <- filt
   
   return(invisible(self))
 }
@@ -52,7 +52,7 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
     obsMat = as.matrix(private$data[private$names$obs])
     inputMat = as.matrix(private$data[private$names$inputs])
     
-    ids <- 1:private$dimensions$observations - 1 #minus 1 for 0 indexing
+    ids <- 1:private$dims$observations - 1 #minus 1 for 0 indexing
     non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
     any_available_obs <- sapply(non_na_ids, function(x) !is.null(x))
     
@@ -102,7 +102,7 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
     filt <- private$nll$report(pars)
   }
   
-  private$filtration.raw <- filt
+  private$results$filtration.raw <- filt
   
   return(invisible(self))
 }
@@ -118,7 +118,7 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
 
   if(private$algo.settings$method %in% all.kalman.methods){
 
-    rep <- private$filtration.raw
+    rep <- private$results$filtration.raw
 
     ##### helper functions #####
     rbind_vectors <- function(list, colnames=NULL, extra=TRUE){
@@ -178,7 +178,7 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
 
     ##### residuals
     obsMat = as.matrix(private$data[private$names$obs])
-    ids <- 1:private$dimensions$observations
+    ids <- 1:private$dims$observations
     non.na.ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
     length.non.na.ids <- lapply(non.na.ids, length)
 
@@ -187,7 +187,7 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
     names(filt$residuals) = c("residuals", "sd", "normalized")
 
     # Take care of rows where all observations are present
-    ids.full.obs <- unlist(length.non.na.ids) == private$dimensions$observations
+    ids.full.obs <- unlist(length.non.na.ids) == private$dims$observations
     if(any(ids.full.obs)){
       filt$residuals$residuals[ids.full.obs,-1] <- rbind_vectors(rep$Innovation[ids.full.obs], extra=FALSE)
       filt$residuals$sd[ids.full.obs,-1] <- rbind_matrices_diag(rep$InnovationCovariance[ids.full.obs], fn=sqrt, extra=FALSE)
@@ -207,11 +207,11 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
 
     ##### observations
     # call c++ function
-    observations <- calculate_filtering_observations(private$filtration.raw,
+    observations <- calculate_filtering_observations(private$results$filtration.raw,
                                                      private$model$rcpp_function_ptr,
                                                      as.matrix(private$data[private$names$inputs]),
-                                                     private$model$argument.parameters,
-                                                     private$dimensions$observations
+                                                     private$algo.settings$argument.parameters,
+                                                     private$dims$observations
     )
     colnames(observations$mean$prior) <- .obs.colnames
     colnames(observations$mean$posterior) <- .obs.colnames
@@ -223,7 +223,7 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
   }
 
   # store
-  private$filtration <- filt
+  private$results$filtration <- filt
 
   # return
   return(invisible(self))

@@ -452,7 +452,7 @@ check_for_bad_algebraics <- function(added.name, self, private){
 
 check_initial_state <- function(x0, p0, self, private){
 
-  n.states <- private$dimensions$states
+  n.states <- private$dims$states
 
   ###### mean vector checks ######
   if (!is.numeric(x0)) {

@@ -8,12 +8,12 @@ ekf_filter_r = function(parVec, self, private)
 {
   
   # Data ----------------------------------------
-  n.states <- private$number.of.states
-  n.obs <- private$number.of.observations
-  n.pars <- private$number.of.pars
-  n.diffusions <- private$number.of.diffusions
-  n.inputs <- private$number.of.inputs
-  estimate.initial <- private$estimate.initial
+  n.states <- private$dims$states
+  n.obs <- private$dims$observations
+  n.pars <- private$dims$pars
+  n.diffusions <- private$dims$diffusions
+  n.inputs <- private$dims$inputs
+  estimate.initial <- private$algo.settings$estimate.initial
   
   # initial
   stateVec = private$initial.state$x0
@@ -32,8 +32,8 @@ ekf_filter_r = function(parVec, self, private)
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
-  inputMat = as.matrix(private$data[private$input.names])
-  obsMat = as.matrix(private$data[private$obs.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   ####### STORAGE #######
   xPrior <- pPrior <- xPost <- pPost <- Innovation <- InnovationCovariance <- vector("list",length=nrow(obsMat))
@@ -124,12 +124,12 @@ lkf_filter_r = function(parVec, self, private)
 {
   
   # Data ----------------------------------------
-  n.states <- private$number.of.states
-  n.obs <- private$number.of.observations
-  n.pars <- private$number.of.pars
-  n.diffusions <- private$number.of.diffusions
-  n.inputs <- private$number.of.inputs
-  estimate.initial <- private$estimate.initial
+  n.states <- private$dims$states
+  n.obs <- private$dims$observations
+  n.pars <- private$dims$pars
+  n.diffusions <- private$dims$diffusions
+  n.inputs <- private$dims$inputs
+  estimate.initial <- private$algo.settings$estimate.initial
   
   # initial
   stateVec = private$initial.state$x0
@@ -145,8 +145,8 @@ lkf_filter_r = function(parVec, self, private)
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
-  inputMat = as.matrix(private$data[private$input.names])
-  obsMat = as.matrix(private$data[private$obs.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # detect time-variations etc ----------------------
   constant.time.diff <- FALSE
@@ -275,7 +275,7 @@ ukf_filter_r = function(parVec, self, private)
 {
   
   # Data ----------------------------------------
-  estimate.initial <- private$estimate.initial
+  estimate.initial <- private$algo.settings$estimate.initial
   get_sys_dims()
   
   # initial
@@ -283,15 +283,15 @@ ukf_filter_r = function(parVec, self, private)
   covMat = private$initial.state$p0
   
   # inputs and observations
-  inputMat = as.matrix(private$data[private$input.names])
-  obsMat = as.matrix(private$data[private$obs.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   create_state_space_functions_for_filtering()
   # Fsigma <- array(list(),c(1,n.sigmapoints))
   # Hsigma <- array(list(),c(1,n.sigmapoints))
   get_ukf_weights()
   get_ukf_ode_solvers()
-  if(private$estimate.initial) {
+  if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }
   get_ukf_update()
@@ -312,7 +312,7 @@ ukf_filter_r = function(parVec, self, private)
   
   ####### INITIAL STATE / COVARIANCE #######
   inputVec = inputMat[1,]
-  if(private$estimate.initial){
+  if(private$algo.settings$estimate.initial){
     stateVec <- f.initial.state.newton(c(parVec, inputVec))
     # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
   }

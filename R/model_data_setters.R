@@ -239,7 +239,7 @@ set_data_for_laplace_method = function(data, self, private){
   # initial guess on random effects  ------------------------------------
 
   # set state values using only initial guess
-  tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$dimensions$states))
+  tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$dims$states))
   names(tempdata) <- private$names$states
   for(i in seq_along(private$names$states)){
     tempdata[i] <- rep(private$initial.state$x0[i], nrow(data))
@@ -250,7 +250,7 @@ set_data_for_laplace_method = function(data, self, private){
 
   # next we need to repeat these each of these state values to create
   #intermediate points determined by the user-selected ode.timestep variable
-  private$tmb.initial.state <- vector("list",length=private$dimensions$states)
+  private$tmb.initial.state <- vector("list",length=private$dims$states)
   for(i in seq_along(private$names$states)){
     private$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$ode.timesteps,1))
   }
@@ -361,7 +361,7 @@ set_parameters = function(pars, self, private){
 
   # Build base vector: per-parameter best available value ----------------
   base.pars = self$getParameters(value = "initial")
-  if (!is.null(private$fit$par.fixed)) {
+  if (!is.null(private$results$fit$par.fixed)) {
     estimated = self$getParameters(value = "estimate")
     has.estimate = !is.na(estimated)
     base.pars[has.estimate] = estimated[has.estimate]
@@ -398,7 +398,7 @@ set_parameters = function(pars, self, private){
   }
 
   names(pars) = private$names$parameters
-  private$model$argument.parameters = pars
+  private$algo.settings$argument.parameters = pars
 
   return(invisible(NULL))
 }

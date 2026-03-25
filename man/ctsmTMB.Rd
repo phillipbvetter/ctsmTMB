@@ -73,7 +73,6 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
 \item \href{#method-ctsmTMB-setParameter}{\code{ctsmTMB$setParameter()}}
 \item \href{#method-ctsmTMB-setAlgebraics}{\code{ctsmTMB$setAlgebraics()}}
 \item \href{#method-ctsmTMB-setInitialState}{\code{ctsmTMB$setInitialState()}}
-\item \href{#method-ctsmTMB-setInitialVarianceScaling}{\code{ctsmTMB$setInitialVarianceScaling()}}
 \item \href{#method-ctsmTMB-setLamperti}{\code{ctsmTMB$setLamperti()}}
 \item \href{#method-ctsmTMB-setModelname}{\code{ctsmTMB$setModelname()}}
 \item \href{#method-ctsmTMB-setMAP}{\code{ctsmTMB$setMAP()}}
@@ -219,7 +218,7 @@ a single variable (of class 'call').}
 \subsection{Method \code{setVariance()}}{
 Specify the variance of an observation equation.
 
-A defined observation variable \code{y} in e.g. \code{addObs(y ~ 
+A defined observation variable \code{y} in e.g. \code{addObs(y ~
 h(t,<states>,<inputs>)} is perturbed by Gaussian noise with zero mean and
 variance
 to-be specified using \code{setVariance(y ~ p(t,<states>,<inputs>)}.
@@ -273,7 +272,7 @@ Declare which variables that are (fixed effects) parameters in
 the specified model, and specify the initial optimizer guess, as well as
 lower / upper bounds during optimization. There are two ways to declare parameters:
 \enumerate{
-\item You can declare parameters using formulas i.e. \code{setParameter( 
+\item You can declare parameters using formulas i.e. \code{setParameter(
 theta = c(1,0,10), mu = c(0,-10,10) )}. The first value is the initial
 value for the optimizer, the second value is the lower optimization
 bound and the third value is the upper optimization bound.
@@ -334,25 +333,6 @@ Declare the initial state values i.e. mean and covariance for the system states.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-setInitialVarianceScaling"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-setInitialVarianceScaling}{}}}
-\subsection{Method \code{setInitialVarianceScaling()}}{
-A scalar value that is multiplied onto the estimated
-initial state covariance matrix. The scaling is only applied when the
-initial state/cov is estimated, not when it is set by the user.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setInitialVarianceScaling(scaling)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{scaling}}{a numeric scalar value.}
 }
 \if{html}{\out{</div>}}
 }
@@ -992,7 +972,7 @@ state estimate as the initial condition.
   return.variance = c("marginal", "none", "covariance", "correlation"),
   ukf.hyperpars = c(1, 0, 3),
   initial.state = self$getInitialState(),
-  estimate.initial.state = private$estimate.initial,
+  estimate.initial.state = private$algo.settings$estimate.initial,
   use.cpp = TRUE,
   silent = FALSE,
   ...
@@ -1083,7 +1063,7 @@ state estimate as the initial condition.
   n.sims = 100,
   ukf.hyperpars = c(1, 0, 3),
   initial.state = self$getInitialState(),
-  estimate.initial.state = private$estimate.initial,
+  estimate.initial.state = private$algo.settings$estimate.initial,
   silent = FALSE,
   ...
 )}\if{html}{\out{</div>}}

@@ -3,7 +3,7 @@
 # rebuild the symbolic model, set the data again, recompile the cpp function,
 # or construct the AD functions.
 
-save_settings_for_check <- function(self, private){
+save_settings_for_ad_construct_check <- function(self, private){
 
   private$old.data$method              <- private$algo.settings$method
   private$old.data$ode.solver          <- private$algo.settings$ode.solver
@@ -18,8 +18,7 @@ save_settings_for_check <- function(self, private){
 
 check_for_data_rebuild <- function(data, self, private){
 
-  # Check if the data, or the requested ode/sde time-steps has changed
-  # since the last call
+  # Check if the data, or the requested ode/sde time-steps has changed since last call
   bool <- c(
     private$rebuild$data,
     !identical(private$old.data$entry.data, data),

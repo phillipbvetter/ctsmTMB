@@ -118,7 +118,7 @@ apply_lamperti = function(self, private) {
   # check how many diff.terms is non-zero. Each non-zero is a diffusion process
   nonzero.diffterms = lapply(private$model$diff.terms, function(x) unlist(lapply(x, function(y) y==0))) #state names are retained
   number.of.diffterms = lapply(nonzero.diffterms, sum)
-  diffusion.id = numeric(private$dimensions$states)
+  diffusion.id = numeric(private$dims$states)
   bool = transforms != "identity" #this removes identity transforms altogether
 
   for(i in seq_along(states)){

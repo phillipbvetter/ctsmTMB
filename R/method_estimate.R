@@ -117,13 +117,13 @@ perform_estimation = function(self, private) {
     }
 
     # exit if optimization failed
-    private$opt = NULL
+    private$results$opt = NULL
     return(invisible(self))
   }
 
   # store optimization object
   names(opt$par) <- names(private$model$free.pars)
-  private$opt = opt
+  private$results$opt = opt
 
   # extract maxmimum gradient component, and format computation time to 5 digits
   outer_mgc = max(abs(private$nll$gr(opt$par)))
@@ -167,15 +167,15 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
   if(!private$silent) message("Returning results...")
 
   # Initialization and Clearing -----------------------------------
-  if (is.null(private$opt)) {
+  if (is.null(private$results$opt)) {
     return(NULL)
   }
 
   # clear fit
-  private$fit = NULL
+  private$results$fit = NULL
 
   # get convergence
-  private$fit$convergence = private$opt$convergence
+  private$results$fit$convergence = private$results$opt$convergence
 
   # Fit Info -----------------------------------
   compute_mle_gradient_and_hessian(self, private)
@@ -207,7 +207,7 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
                   silent = TRUE)
 
       # add filtered results to fit
-      private$fit = c(private$fit, private$filtration)
+      private$results$fit = c(private$results$fit, private$results$filtration)
 
     }
 
@@ -222,10 +222,10 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
 
   # clone private into fit -----------------------------------
   # no need for deep copy??
-  private$fit$private <- self$clone()$.__enclos_env__$private
+  private$results$fit$private <- self$clone()$.__enclos_env__$private
 
   # set s3 class -----------------------------------
-  class(private$fit) = "ctsmTMB.fit"
+  class(private$results$fit) = "ctsmTMB.fit"
 
   # return -----------------------------------
   return(invisible(self))

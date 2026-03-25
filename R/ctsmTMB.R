@@ -85,6 +85,22 @@ ctsmTMB = R6::R6Class(
       # estimation, prediction or simulation?
       private$procedure = NULL
 
+      # data, nll, opt
+      private$data = NULL
+      private$nll = NULL
+
+      private$compile = FALSE
+      private$silent = FALSE
+
+      # rebuild
+      private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE)
+      private$old.data = list()
+
+      private$initial.state = NULL
+      private$initial.state.fixed = NULL
+      private$tmb.initial.state = NULL
+      private$iobs = NULL
+
       # model equations
       private$model = list(
         sys.eqs      = NULL,
@@ -103,17 +119,11 @@ ctsmTMB = R6::R6Class(
         diff.terms.drift = NULL,
         fixed.pars             = list(),
         free.pars              = list(),
-        argument.parameters    = NULL,
         rtmb.function.strings.indexed2 = NULL,
         r.function.strings     = NULL,
         rcpp.function.strings  = NULL,
         rcpp_function_ptr      = NULL
       )
-
-      private$initial.state = NULL
-      private$initial.state.fixed = NULL
-      private$tmb.initial.state = NULL
-      private$iobs = NULL
 
       # options
       private$optim.settings = list(
@@ -129,24 +139,14 @@ ctsmTMB = R6::R6Class(
         ode.solver                  = NULL,
         estimate.initial            = FALSE,
         map                         = NULL,
-        advanced.settings           = list(forceAD          = TRUE,
-                                           rtmb.tapeconfig  = NULL,
-                                           tmb.tapeconfig   = NULL),
+        advanced.settings           = list(forceAD = TRUE, rtmb.tapeconfig = NULL, tmb.tapeconfig = NULL),
         train.against.full.prediction = FALSE,
         k.ahead                     = 0,
         last.pred.index             = 0,
         seed                        = NULL,
-        ukf.hyperpars               = list()
+        ukf.hyperpars               = list(),
+        argument.parameters         = NULL
       )
-
-      private$compile = FALSE
-      private$silent = FALSE
-
-      # rebuild
-      private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE)
-      private$old.data = list()
-
-      # names
       private$names = list(
         states     = NULL,
         obs        = NULL,
@@ -154,9 +154,8 @@ ctsmTMB = R6::R6Class(
         inputs     = "t",
         parameters = NULL
       )
-
       # lengths
-      private$dimensions = list(
+      private$dims = list(
         states       = 0,
         observations = 0,
         diffusions   = 0,
@@ -166,20 +165,17 @@ ctsmTMB = R6::R6Class(
         inputs       = 1  # for 't'
       )
 
-      # data, nll, opt
-      private$data = NULL
-      private$nll = NULL
-      private$opt = NULL
-      private$fit = NULL
-
-      # prediction, simulation, filtering
-      private$filtration.raw = NULL
-      private$filtration = NULL
-      private$prediction.raw = NULL
-      private$prediction = NULL
-      private$simulation.raw = NULL
-      private$simulation = NULL
-      private$smooth = NULL
+      private$results = list(
+        opt            = NULL,
+        fit            = NULL,
+        filtration.raw = NULL,
+        filtration     = NULL,
+        prediction.raw = NULL,
+        prediction     = NULL,
+        simulation.raw = NULL,
+        simulation     = NULL,
+        smooth         = NULL
+      )
 
       # timers
       private$timers = list(
@@ -278,9 +274,9 @@ ctsmTMB = R6::R6Class(
       })
 
       # update system size
-      private$dimensions$states = length(private$model$sys.eqs)
+      private$dims$states = length(private$model$sys.eqs)
       private$model$diff.processes = unique(unlist(lapply(private$model$sys.eqs, function(x) x$diff)))
-      private$dimensions$diffusions =  length(private$model$diff.processes) - 1 # minus 1 to remove 'dt'
+      private$dims$diffusions =  length(private$model$diff.processes) - 1 # minus 1 to remove 'dt'
 
       return(invisible(self))
     },
@@ -347,7 +343,7 @@ ctsmTMB = R6::R6Class(
       })
 
       # update system size
-      private$dimensions$observations = length(private$model$obs.eqs)
+      private$dims$observations = length(private$model$obs.eqs)
 
       return(invisible(self))
     },
@@ -429,7 +425,7 @@ ctsmTMB = R6::R6Class(
       })
 
       # update system size
-      private$dimensions$inputs = length(private$model$inputs)
+      private$dims$inputs = length(private$model$inputs)
 
       return(invisible(self))
     },
@@ -569,9 +565,9 @@ ctsmTMB = R6::R6Class(
         }
 
         # update system size
-        private$dimensions$pars = length(private$model$parameters)
-        private$dimensions$free.pars = length(private$model$free.pars)
-        private$dimensions$fixed.pars = length(private$model$fixed.pars)
+        private$dims$pars = length(private$model$parameters)
+        private$dims$free.pars = length(private$model$free.pars)
+        private$dims$fixed.pars = length(private$model$fixed.pars)
 
       }
 
@@ -919,9 +915,9 @@ ctsmTMB = R6::R6Class(
       }
 
       # Assign estimated values for free parameters after a successful fit
-      if (!is.null(private$fit$par.fixed)) {
+      if (!is.null(private$results$fit$par.fixed)) {
         fn = names(private$model$free.pars)
-        .df[fn, "estimate"] = private$fit$par.fixed[fn]
+        .df[fn, "estimate"] = private$results$fit$par.fixed[fn]
       }
 
       # Filter rows by parameter type
@@ -972,13 +968,13 @@ ctsmTMB = R6::R6Class(
 
 
       # extract fit
-      if(is.null(private$fit)){
+      if(is.null(private$results$fit)){
         message("There are no estimation results to be exctracted - run 'estimate'.")
         return(invisible(NULL))
       }
 
       # return
-      fit <- private$fit
+      fit <- private$results$fit
       fit$private = self$clone()$getPrivate()
       return(invisible(fit))
     },
@@ -1009,13 +1005,13 @@ ctsmTMB = R6::R6Class(
 
 
       # extract algebraic relation formulas
-      if(is.null(private$prediction)){
+      if(is.null(private$results$prediction)){
         message("There are no prediction results to be extracted - run 'predict'.")
         return(invisible(NULL))
       }
 
       # return
-      return(invisible(private$prediction))
+      return(invisible(private$results$prediction))
     },
 
     ########################################################################
@@ -1026,13 +1022,13 @@ ctsmTMB = R6::R6Class(
 
 
       # extract algebraic relation formulas
-      if(is.null(private$simulation)){
+      if(is.null(private$results$simulation)){
         message("There are no simulation results to be extracted - run 'simulate'.")
         return(invisible(NULL))
       }
 
       # return
-      return(invisible(private$simulation))
+      return(invisible(private$results$simulation))
     },
     ########################################################################
     # FILTERING
@@ -1125,7 +1121,7 @@ ctsmTMB = R6::R6Class(
 
       # return
       if(!private$silent) message("Finished!")
-      return(invisible(private$filtration))
+      return(invisible(private$results$filtration))
     },
 
     ########################################################################
@@ -1219,7 +1215,7 @@ ctsmTMB = R6::R6Class(
 
       # return
       if(!private$silent) message("Finished!")
-      return(invisible(private$smooth))
+      return(invisible(private$results$smooth))
     },
 
 
@@ -1314,7 +1310,7 @@ ctsmTMB = R6::R6Class(
       perform_estimation(self, private)
 
       # exit if optimization failed
-      if(is.null(private$opt)){
+      if(is.null(private$results$opt)){
         return(invisible(NULL))
       }
 
@@ -1323,7 +1319,7 @@ ctsmTMB = R6::R6Class(
 
       # return
       if(!private$silent) message("Finished!")
-      return(invisible(private$fit))
+      return(invisible(private$results$fit))
     },
 
     ########################################################################
@@ -1516,7 +1512,7 @@ ctsmTMB = R6::R6Class(
 
       # return
       if(!private$silent) message("Finished!")
-      return(invisible(private$prediction))
+      return(invisible(private$results$prediction))
     },
 
     ########################################################################
@@ -1628,7 +1624,7 @@ ctsmTMB = R6::R6Class(
 
       # return
       if(!private$silent) message("Finished.")
-      return(invisible(private$simulation))
+      return(invisible(private$results$simulation))
     },
 
     ########################################################################
@@ -1637,14 +1633,14 @@ ctsmTMB = R6::R6Class(
     #' @description Function to print the model object
     print = function() {
 
-      n <- private$dimensions$states
-      m <- private$dimensions$observations
-      p <- private$dimensions$inputs
-      ng <- private$dimensions$diffusions
+      n <- private$dims$states
+      m <- private$dims$observations
+      p <- private$dims$inputs
+      ng <- private$dims$diffusions
       q = length(private$model$alg.eqs)
-      par <- private$dimensions$pars
-      fixedpars <- private$dimensions$fixed.pars
-      freepars = private$dimensions$free.pars
+      par <- private$dims$pars
+      fixedpars <- private$dims$fixed.pars
+      freepars = private$dims$free.pars
 
       cat("A ctsmTMB stochastic state space model consisting of:")
       basic.data = c(n,ng,m,p,par)
@@ -1761,30 +1757,18 @@ ctsmTMB = R6::R6Class(
     old.data = list(),
 
     # lengths
-    dimensions = NULL,
+    dims = NULL,
 
-    # data, nll, opt
+    # data, nll, sdr
     data = NULL,
     nll = NULL,
-    opt = NULL,
     sdr = NULL,
-    fit = NULL,
 
-    # filtering, prediction, simulations...
-    filtration = NULL,
-    filtration.raw = NULL,
-    prediction = NULL,
-    prediction.raw = NULL,
-    simulation = NULL,
-    simulation.raw = NULL,
-    smooth = NULL,
+    # results
+    results = NULL,
 
     # timers
     timers = NULL,
-
-
-    # unscented transform
-    ukf.hyperpars = NULL,
 
     ########################################################################
     # ADD TRANSFORMED SYSTEM EQS
@@ -2178,7 +2162,7 @@ ctsmTMB = R6::R6Class(
       }
 
       if(is.null(loss_c)){
-        loss_c <- stats::qchisq(0.95, df=private$dimensions$observations)
+        loss_c <- stats::qchisq(0.95, df=private$dims$observations)
       }
 
       if(loss_c <= 0){

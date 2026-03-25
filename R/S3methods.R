@@ -316,7 +316,7 @@ plot.ctsmTMB.fit = function(x,
   if(type=="residuals"){
     
     if(is.null(fit$residuals)){
-      if(private$method=="laplace"){
+      if(private$algo.settings$method=="laplace"){
         stop("No residuals to plot. Did you calculate residuals with argument 'laplace.residuals=TRUE' when calling 'estimate'?")
       }
       stop("Error: no residuals were found in the fit object.")
@@ -326,10 +326,10 @@ plot.ctsmTMB.fit = function(x,
     t <- fit$residuals$residuals[,"t"]
     if(residual.burnin) t <- tail(t,-residual.burnin)
     
-    for (i in 1:private$number.of.observations) {
+    for (i in 1:private$dims$observations) {
       
-      e = fit$residuals$normalized[, private$obs.names[i]]
-      e0 <- fit$residuals$residuals[, private$obs.names[i]]
+      e = fit$residuals$normalized[, private$names$obs[i]]
+      e0 <- fit$residuals$residuals[, private$names$obs[i]]
       if(residual.burnin){
         e <- tail(e,-residual.burnin)
         e0 <- tail(e0,-residual.burnin)
@@ -337,7 +337,7 @@ plot.ctsmTMB.fit = function(x,
       id = !is.na(e)
       e = e[id]
       t = t[id]
-      nam = private$obs.names[i]
+      nam = private$names$obs[i]
       
       # time vs residuals
       plot.res =
@@ -425,7 +425,7 @@ plot.ctsmTMB.fit = function(x,
       if(residual.vs.obs.and.inputs){
         
         y.obs <- private$data[[nam]]
-        y <- private$data[[private$obs.names[i]]]
+        y <- private$data[[private$names$obs[i]]]
         if(residual.burnin){
           y.obs <- tail(y.obs, -residual.burnin)
           y <- tail(y, -residual.burnin)
@@ -460,8 +460,8 @@ plot.ctsmTMB.fit = function(x,
         # input plots are constant across obs plot index "i"
         if(i==1){
           input.plots <- list()
-          input.names <- private$input.names
-          k <- private$number.of.inputs-1
+          input.names <- private$names$inputs
+          k <- private$dims$inputs-1
           for(j in 1:k){
             y.input <- private$data[[input.names[j+1]]]
             if(residual.burnin){
@@ -509,8 +509,8 @@ plot.ctsmTMB.fit = function(x,
     mycolors <- c("steelblue","tomato")
     t <- fit$private$data$t
     
-    for (i in 1:private$number.of.states) {
-      nam <- private$state.names[i]
+    for (i in 1:private$dims$states) {
+      nam <- private$names$states[i]
       y.mean <- fit$states$mean[[state.type]][,nam]
       y.sd <- fit$states$sd[[state.type]][,nam]
       y.lab <- sprintf("%s (%s)", capitalize_first(state.type), nam)

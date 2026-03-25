@@ -41,7 +41,7 @@ testthat::test_that("set_parameters produces named private$argument.parameters w
 
   check_pars = function(pars_arg) {
     model$filter(df, method = "ekf", pars = pars_arg, use.cpp = FALSE, silent = TRUE)
-    p = prv$model$argument.parameters
+    p = prv$algo.settings$argument.parameters
     testthat::expect_equal(length(p), n)
     testthat::expect_false(is.null(names(p)))
     testthat::expect_false(any(is.na(names(p))))
@@ -99,11 +99,11 @@ testthat::test_that("partial named pars only modifies the specified entries of p
 
   run_and_capture = function(method, call_fn) {
     call_fn(pars = NULL)
-    baseline = prv$model$argument.parameters
+    baseline = prv$algo.settings$argument.parameters
 
     override = c(mu = 3.0, logtheta = -1.0)
     call_fn(pars = override)
-    result = prv$model$argument.parameters
+    result = prv$algo.settings$argument.parameters
 
     # Overridden entries match the supplied values
     testthat::expect_equal(result[names(override)], override,

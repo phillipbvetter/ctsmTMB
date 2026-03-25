@@ -34,9 +34,9 @@ makeADFun_ekf_tmb = function(self, private){
     loss_c = private$algo.settings$loss$c,
     
     # system size
-    n_states = private$dimensions$states,
-    n_obs = private$dimensions$observations,
-    n_inputs = private$dimensions$inputs,
+    n_states = private$dims$states,
+    n_obs = private$dims$observations,
+    n_inputs = private$dims$inputs,
     
     # estimate stationary levels
     estimate_stationary_initials = as.numeric(private$algo.settings$estimate.initial)
@@ -66,7 +66,7 @@ makeADFun_ekf_tmb = function(self, private){
   parameters = list(parVec = parVec)
   
   # Create map for fixed parameters ----------------------------------------
-  pseq <- 1:private$dimensions$pars
+  pseq <- 1:private$dims$pars
   id.fixed.pars <- private$names$parameters %in% names(private$model$fixed.pars)
   pseq[id.fixed.pars] <- NA
   map <- list(parVec = factor(pseq))
@@ -116,9 +116,9 @@ makeADFun_lkf_tmb = function(self, private){
     loss_c = private$algo.settings$loss$c,
     
     # system size
-    n_states = private$dimensions$states,
-    n_obs = private$dimensions$observations,
-    n_inputs = private$dimensions$inputs,
+    n_states = private$dims$states,
+    n_obs = private$dims$observations,
+    n_inputs = private$dims$inputs,
     
     # estimate stationary levels
     estimate_stationary_initials = as.numeric(private$algo.settings$estimate.initial)
@@ -148,7 +148,7 @@ makeADFun_lkf_tmb = function(self, private){
   parameters = list(parVec = parVec)
   
   # Create map for fixed parameters ----------------------------------------
-  pseq <- 1:private$dimensions$pars
+  pseq <- 1:private$dims$pars
   id.fixed.pars <- private$names$parameters %in% names(private$model$fixed.pars)
   pseq[id.fixed.pars] <- NA
   map <- list(parVec = factor(pseq))
@@ -206,9 +206,9 @@ makeADFun_ukf_tmb = function(self, private){
     ukf_pars = private$algo.settings$ukf.hyperpars,
     
     # system size
-    n_states = private$dimensions$states,
-    n_obs = private$dimensions$observations,
-    n_inputs = private$dimensions$inputs,
+    n_states = private$dims$states,
+    n_obs = private$dims$observations,
+    n_inputs = private$dims$inputs,
     
     # estimate stationary levels
     estimate_stationary_initials = as.numeric(private$algo.settings$estimate.initial)
@@ -238,7 +238,7 @@ makeADFun_ukf_tmb = function(self, private){
   parameters = list(parVec = parVec)
   
   # Create map for fixed parameters ----------------------------------------
-  pseq <- 1:private$dimensions$pars
+  pseq <- 1:private$dims$pars
   id.fixed.pars <- private$names$parameters %in% names(private$model$fixed.pars)
   pseq[id.fixed.pars] <- NA
   map <- list(parVec = factor(pseq))

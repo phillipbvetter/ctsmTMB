@@ -146,7 +146,7 @@ create_state_space_function_strings = function(self, private)
   # drift
   ##################################################
   f.elements <- c()
-  f.elements2 <- numeric(private$dimensions$states)
+  f.elements2 <- numeric(private$dims$states)
   for(i in seq_along(private$names$states)){
     term <- deparse1(do.call(substitute, list(private$model$diff.terms[[i]]$dt, subsList)))
     # skip if zero
@@ -167,7 +167,7 @@ create_state_space_function_strings = function(self, private)
   # drift jacobian
   ##################################################
   f.elements = c()
-  f.elements2 <- 0*diag(private$dimensions$states)
+  f.elements2 <- 0*diag(private$dims$states)
   for(i in seq_along(private$names$states)){
     for(j in seq_along(private$names$states)){
       term <- deparse1(do.call(substitute, list(private$model$diff.terms.drift[[i]][[j]], subsList)))
@@ -191,7 +191,7 @@ create_state_space_function_strings = function(self, private)
   # diffusion
   ##################################################
   f.elements = c()
-  f.elements2 <- matrix(0, private$dimensions$states, private$dimensions$diffusions)
+  f.elements2 <- matrix(0, private$dims$states, private$dims$diffusions)
   for(i in seq_along(private$names$states)){
     for(j in seq_along(private$model$diff.processes[-1])){
       term <- deparse1(do.call(substitute, list(private$model$diff.terms[[i]][[j+1]], subsList)))
@@ -215,7 +215,7 @@ create_state_space_function_strings = function(self, private)
   # observation
   ##################################################
   f.elements <- c()
-  f.elements2 <- numeric(private$dimensions$observations)
+  f.elements2 <- numeric(private$dims$observations)
   for(i in seq_along(private$names$obs)){
     term <- deparse1(do.call(substitute, list(private$model$obs.eqs.trans[[i]]$rhs, subsList)))
     # skip if zero
@@ -240,7 +240,7 @@ create_state_space_function_strings = function(self, private)
   
   # calculate all the terms and substitute variables
   f.elements = c()
-  f.elements2 <- matrix(0, private$dimensions$observations, private$dimensions$states)
+  f.elements2 <- matrix(0, private$dims$observations, private$dims$states)
   for(i in seq_along(private$names$obs)){
     for(j in seq_along(private$names$states)){
       term <- deparse1(do.call(substitute, list(private$model$diff.terms.obs[[i]][[j]], subsList)))
@@ -265,7 +265,7 @@ create_state_space_function_strings = function(self, private)
   ##################################################
   
   f.elements <- c()
-  f2.elements <- numeric(private$dimensions$observations)
+  f2.elements <- numeric(private$dims$observations)
   for(i in seq_along(private$names$obs)){
     term <- deparse1(do.call(substitute, list(private$model$obs.var.trans[[i]]$rhs, subsList)))
     # skip if zero
@@ -286,7 +286,7 @@ create_state_space_function_strings = function(self, private)
   
   ### MATRIX FORM ### (for kalman)
   f.elements <- c()
-  f.elements2 <- numeric(private$dimensions$observations)
+  f.elements2 <- numeric(private$dims$observations)
   for(i in seq_along(private$names$obs)){
     term <- deparse1(do.call(substitute, list(private$model$obs.var.trans[[i]]$rhs, subsList)))
     # skip if zero
@@ -319,7 +319,7 @@ create_state_space_function_strings = function(self, private)
   
   # 1. We first find constant terms
   # this corresponds to an input that is always 1 (first element of U)
-  zero.list <- as.list(numeric(private$dimensions$inputs + private$dimensions$states))
+  zero.list <- as.list(numeric(private$dims$inputs + private$dims$states))
   names(zero.list) <-c(private$names$inputs, private$names$states)
   constant.terms <- try_with_warning_recovery(
     unname(sapply(
@@ -328,16 +328,16 @@ create_state_space_function_strings = function(self, private)
     ))
   )
   if(inherits(constant.terms, "try-error")){
-    constant.terms <- rep(0, private$dimensions$states)
+    constant.terms <- rep(0, private$dims$states)
   }
   
   f.elements <- c()
-  # f.elements2 <- matrix(0, private$dimensions$states, private$dimensions$inputs+1)
-  f.elements2 <- matrix("RTMB::AD(0)", private$dimensions$states, private$dimensions$inputs+1)
+  # f.elements2 <- matrix(0, private$dims$states, private$dims$inputs+1)
+  f.elements2 <- matrix("RTMB::AD(0)", private$dims$states, private$dims$inputs+1)
   # 2. Now we find input-terms by differentiation
   for(i in seq_along(private$names$states)){
     #its inputs + 1 below because the first element is for constants
-    for(j in 1:(private$dimensions$inputs+1)){
+    for(j in 1:(private$dims$inputs+1)){
       
       if(j==1){
         term <- constant.terms[i]
@@ -405,7 +405,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  Eigen::VectorXd f(%s);
                  %s
                  return f;
-                 }",private$dimensions$states, paste(f,collapse=""))
+                 }",private$dims$states, paste(f,collapse=""))
   
   private$model$rcpp.function.strings$f = code
   
@@ -413,7 +413,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  Eigen::VectorXd f(%s);
                  %s
                  return f;
-                 }",private$dimensions$states, paste(f,collapse="\n "))
+                 }",private$dims$states, paste(f,collapse="\n "))
   private$model$rcpp.function.strings$f_const = code
   
   f = sapply( seq_along(private$names$states),
@@ -444,7 +444,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  Eigen::MatrixXd dfdx(%s,%s);
                  %s
                  return dfdx;
-                 }",private$dimensions$states, private$dimensions$states, paste(dfdx,collapse=""))
+                 }",private$dims$states, private$dims$states, paste(dfdx,collapse=""))
   
   private$model$rcpp.function.strings$dfdx = code
   
@@ -452,7 +452,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  Eigen::MatrixXd dfdx(%s,%s);
                  %s
                  return dfdx;
-                 }",private$dimensions$states, private$dimensions$states, paste(dfdx,collapse=""))
+                 }",private$dims$states, private$dims$states, paste(dfdx,collapse=""))
   private$model$rcpp.function.strings$dfdx_const = code
   
   dfdx = c()
@@ -485,7 +485,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  Eigen::MatrixXd g(%s,%s);
                  %s
                  return g;
-                 }",private$dimensions$states, private$dimensions$diffusions, paste(g,collapse=""))
+                 }",private$dims$states, private$dims$diffusions, paste(g,collapse=""))
   
   private$model$rcpp.function.strings$g = code
   
@@ -493,7 +493,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  Eigen::MatrixXd g(%s,%s);
                  %s
                  return g;
-                 }",private$dimensions$states, private$dimensions$diffusions, paste(g,collapse=""))
+                 }",private$dims$states, private$dims$diffusions, paste(g,collapse=""))
   private$model$rcpp.function.strings$g_const = code
   
   g = c()
@@ -525,14 +525,14 @@ create_rcpp_state_space_function_strings = function(self, private){
                  Eigen::VectorXd h(%s);
                  %s
                  return h;
-                 }",private$dimensions$observations, paste(h,collapse=""))
+                 }",private$dims$observations, paste(h,collapse=""))
   private$model$rcpp.function.strings$h = code
   
   code = sprintf("Eigen::VectorXd h_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::VectorXd h(%s);
                  %s
                  return h;
-                 }",private$dimensions$observations, paste(h,collapse=""))
+                 }",private$dims$observations, paste(h,collapse=""))
   private$model$rcpp.function.strings$h_const = code
   
   h = sapply(seq_along(private$names$obs), 
@@ -563,14 +563,14 @@ create_rcpp_state_space_function_strings = function(self, private){
                  Eigen::MatrixXd dhdx(%s,%s);
                  %s
                  return dhdx;
-                 }", private$dimensions$observations, private$dimensions$states, paste(dhdx,collapse=""))
+                 }", private$dims$observations, private$dims$states, paste(dhdx,collapse=""))
   private$model$rcpp.function.strings$dhdx = code
   
   code = sprintf("Eigen::MatrixXd dhdx_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd dhdx(%s,%s);
                  %s
                  return dhdx;
-                 }", private$dimensions$observations, private$dimensions$states, paste(dhdx,collapse=""))
+                 }", private$dims$observations, private$dims$states, paste(dhdx,collapse=""))
   private$model$rcpp.function.strings$dhdx_const = code
   
   dhdx = c()
@@ -601,7 +601,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  hvar.setZero();
                  %s
                  return hvar;
-                 }", private$dimensions$observations, private$dimensions$observations, paste(hvar,collapse=""))
+                 }", private$dims$observations, private$dims$observations, paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar = code
   
   code = sprintf("Eigen::MatrixXd hvar_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
@@ -609,7 +609,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  hvar.setZero();
                  %s
                  return hvar;
-                 }", private$dimensions$observations, private$dimensions$observations, paste(hvar,collapse=""))
+                 }", private$dims$observations, private$dims$observations, paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar_const = code
   
   hvar = lapply(seq_along(private$model$obs.var.trans), 
@@ -639,7 +639,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  hvar.setZero();
                  %s
                  return hvar;
-                 }", private$dimensions$observations, paste(hvar,collapse=""))
+                 }", private$dims$observations, paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar_array = code
   
   code = sprintf("Eigen::ArrayXd hvar_array_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
@@ -647,7 +647,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  hvar.setZero();
                  %s
                  return hvar;
-                 }", private$dimensions$observations, paste(hvar,collapse=""))
+                 }", private$dims$observations, paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar_array_const = code
   
   ##################################################
@@ -656,18 +656,18 @@ create_rcpp_state_space_function_strings = function(self, private){
   
   # We first find constant terms
   # this corresponds to an input that is always 1 (first element of U)
-  zero.list <- as.list(numeric(private$dimensions$inputs + private$dimensions$states))
+  zero.list <- as.list(numeric(private$dims$inputs + private$dims$states))
   names(zero.list) <-c(private$names$inputs, private$names$states)
   constant.terms <- sapply(private$model$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list))))
   if(inherits(constant.terms, "try-error")){
-    constant.terms <- rep(0, private$dimensions$states)
+    constant.terms <- rep(0, private$dims$states)
   }
   
   jac.f.wrt.u = c()
   # 2. Now we find input-terms by differentiation
   for(i in seq_along(private$names$states)){
     #its inputs + 1 below because the first element is for constants
-    for(j in 1:(private$dimensions$inputs+1)){
+    for(j in 1:(private$dims$inputs+1)){
       if(j==1){
         term <- constant.terms[[i]]
       } else {
@@ -686,7 +686,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  ans.setZero();
                  %s
                  return ans;
-                 }", private$dimensions$states, private$dimensions$inputs+1, paste(jac.f.wrt.u, collapse=""))
+                 }", private$dims$states, private$dims$inputs+1, paste(jac.f.wrt.u, collapse=""))
   
   private$model$rcpp.function.strings$dfdu = code
   
@@ -695,7 +695,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  ans.setZero();
                  %s
                  return ans;
-                 }", private$dimensions$states, private$dimensions$inputs+1, paste(jac.f.wrt.u, collapse=""))
+                 }", private$dims$states, private$dims$inputs+1, paste(jac.f.wrt.u, collapse=""))
   private$model$rcpp.function.strings$dfdu_const = code
   
   

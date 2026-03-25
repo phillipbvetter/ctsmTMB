@@ -1,16 +1,16 @@
 
 # This function call all others in this script to check / build a model object
 build_model = function(self, private) {
-  
+
   # Check if model is already built else set flags
-  if(!private$rebuild.model) return(invisible(self))
-  private$rebuild.model <- FALSE
-  private$rebuild.data <- TRUE
-  private$rebuild.ad <- TRUE
-  
+  if(!private$rebuild$model) return(invisible(self))
+  private$rebuild$model <- FALSE
+  private$rebuild$data <- TRUE
+  private$rebuild$ad <- TRUE
+
   # Print
   if(!private$silent) message("Checking model components...")
-  
+
   # basic sanity checks (does not need trans equations)
   basic_model_check(self, private)
 
@@ -24,7 +24,7 @@ build_model = function(self, private) {
 
   # compile rcpp functions
   compile_rcpp_functions(self, private)
-  
+
   # return
   return(invisible(self))
 }
@@ -34,29 +34,29 @@ build_model = function(self, private) {
 #######################################################
 
 basic_model_check = function(self, private) {
-  
+
   # system eqs
-  if(private$number.of.states == 0) {
+  if(private$dims$states == 0) {
     stop("There were no specified system equations - use 'addSystem'.")
   }
-  
+
   # obs eqs
-  if(private$number.of.observations == 0) {
+  if(private$dims$observations == 0) {
     stop("There were no specified observation equations - use 'addObs'.")
   }
-  
+
   # obs var
-  missing.var = sapply(private$obs.var, length) == 0
+  missing.var = sapply(private$model$obs.var, length) == 0
   if (any(missing.var)) {
-    missing.names = paste(private$obs.names[missing.var], collapse=", ")
+    missing.names = paste(private$names$obs[missing.var], collapse=", ")
     stop("There are no observation variances specified for the observation(s): \n\t", missing.names)
   }
-  
+
   # parameters
-  if(private$number.of.pars == 0) {
+  if(private$dims$pars == 0) {
     stop("There are no parameters in the model.")
   }
-  
+
   return(invisible(self))
 }
 
@@ -71,33 +71,33 @@ basic_model_check = function(self, private) {
 
 
 final_build_check = function(self, private) {
-  
+
   # Verify that all observations relate to a state (have a state on their rhs)
-  bool = unlist(lapply(private$obs.eqs.trans, function(x) any(private$state.names %in% x$allvars)))
+  bool = unlist(lapply(private$model$obs.eqs.trans, function(x) any(private$names$states %in% x$allvars)))
   if (any(!bool)) {
-    stop("Error: There are no states on the right-hand side of the following observation equation(s) : \n\t ",paste(private$obs.names[!bool],collapse=", "))
+    stop("Error: There are no states on the right-hand side of the following observation equation(s) : \n\t ",paste(private$names$obs[!bool],collapse=", "))
   }
-  
+
   # Verify that observations dont have other observations on their rhs
-  bool = unlist(lapply(private$obs.eqs.trans, function(x) any(private$obs.names %in% x$allvars)))
+  bool = unlist(lapply(private$model$obs.eqs.trans, function(x) any(private$names$obs %in% x$allvars)))
   if (any(bool)) {
-    stop("The following observation(s) attempt to observe other observations! \n\t ",paste(private$obs.names[!bool],collapse=", "))
+    stop("The following observation(s) attempt to observe other observations! \n\t ",paste(private$names$obs[!bool],collapse=", "))
   }
-  
+
   # Verify that all variables on the rhs of system, obs and obs.variance equations
   # have been provided. They can either be inputs, parameters and states
   vars = list()
-  vars[[1]] = unlist(lapply(private$sys.eqs.trans, function(x) x$allvars))
-  vars[[2]] = unlist(lapply(private$obs.eqs.trans, function(x) x$allvars))
-  vars[[3]] = unlist(lapply(private$obs.var.trans, function(x) x$allvars))
+  vars[[1]] = unlist(lapply(private$model$sys.eqs.trans, function(x) x$allvars))
+  vars[[2]] = unlist(lapply(private$model$obs.eqs.trans, function(x) x$allvars))
+  vars[[3]] = unlist(lapply(private$model$obs.var.trans, function(x) x$allvars))
   rhs.vars = unique(unlist(vars))
-  given.vars = c("pi", private$parameter.names, private$input.names, private$state.names)
+  given.vars = c("pi", private$names$parameters, private$names$inputs, private$names$states)
   bool = rhs.vars %in% given.vars
   if (any(!bool)) {
     stop("Error: The following variables(s) in the model have not been declared as parameters, inputs or states: \n\t ",
          paste(rhs.vars[!bool],collapse=", "))
   }
-  
+
   # return
   return(invisible(self))
 }

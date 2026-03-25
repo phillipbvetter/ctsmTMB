@@ -83,13 +83,13 @@ testthat::test_that("estimate runs without error (ukf)", {
 
 testthat::test_that("estimate runs without error (laplace)", {
   testthat::expect_no_error(
-    model$estimate(df, method = "laplace", silent = TRUE, trace = 0)
+    suppressWarnings(model$estimate(df, method = "laplace", silent = TRUE, trace = 0))
   )
 })
 
 testthat::test_that("estimate runs without error (laplace.thygesen)", {
   testthat::expect_no_error(
-    model$estimate(df, method = "laplace.thygesen", silent = TRUE, trace = 0)
+    suppressWarnings(model$estimate(df, method = "laplace.thygesen", silent = TRUE, trace = 0))
   )
 })
 
@@ -116,12 +116,12 @@ testthat::test_that("estimate (2D) runs without error (ukf)", {
 
 testthat::test_that("estimate (2D) runs without error (laplace)", {
   testthat::expect_no_error(
-    model2$estimate(df2, method = "laplace", silent = TRUE, trace = 0)
+    suppressWarnings(model2$estimate(df2, method = "laplace", silent = TRUE, trace = 0))
   )
 })
 
 testthat::test_that("estimate (2D) runs without error (laplace.thygesen)", {
   testthat::expect_no_error(
-    model2$estimate(df2, method = "laplace.thygesen", silent = TRUE, trace = 0)
+    suppressWarnings(model2$estimate(df2, method = "laplace.thygesen", silent = TRUE, trace = 0))
   )
 })

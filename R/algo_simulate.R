@@ -10,10 +10,10 @@ ekf_lkf_ukf_simulate_r = function(parVec, self, private, nsims)
   # Data ----------------------------------------
   get_sys_dims()
   # inputs
-  inputMat = as.matrix(private$data[private$input.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
   # prediction settings
-  k.ahead <- private$k.ahead
-  last.pred.index <- private$last.pred.index
+  k.ahead <- private$algo.settings$k.ahead
+  last.pred.index <- private$algo.settings$last.pred.index
   # time-steps
   sde_timestep_size <- private$simulation.timestep.size
   sde_timesteps <- private$simulation.timesteps
@@ -23,7 +23,7 @@ ekf_lkf_ukf_simulate_r = function(parVec, self, private, nsims)
   get_simulate_functions()
   
   # Get filtered states
-  filt <- switch(private$method,
+  filt <- switch(private$algo.settings$method,
                  lkf = lkf_filter_r(parVec, self, private),
                  ekf = ekf_filter_r(parVec, self, private),
                  ukf = ukf_filter_r(parVec, self, private)
@@ -63,7 +63,7 @@ ekf_lkf_ukf_simulate_r = function(parVec, self, private, nsims)
   ###### MAIN LOOP END #######
   
   ####### STORE SIMULATION #######
-  private$simulation.raw = xSim
+  private$results$simulation.raw = xSim
   
   ####### RETURN #######
   return(invisible(self))

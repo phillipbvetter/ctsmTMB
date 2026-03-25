@@ -43,7 +43,7 @@ write_f = function(self, private){
     return f__;
   }"
   
-  newtxt = sprintf(newtxt, private$dimensions$states, paste(f,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dims$states, paste(f,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -77,7 +77,7 @@ write_jac_f = function(self, private){
     return dfdx__;
   }"
   
-  newtxt = sprintf(newtxt, private$dimensions$states, private$dimensions$states, paste(jac.f, collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dims$states, private$dims$states, paste(jac.f, collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -111,7 +111,7 @@ write_g = function(self, private){
     return g__;
   }"
   
-  newtxt = sprintf(newtxt, private$dimensions$states, private$dimensions$diffusions, paste(g,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dims$states, private$dims$diffusions, paste(g,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -143,7 +143,7 @@ write_h = function(self, private){
     return h__;
   }"
   
-  newtxt = sprintf(newtxt, private$dimensions$observations, paste(h,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dims$observations, paste(h,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -176,7 +176,7 @@ write_jac_h = function(self, private){
     %s
     return dhdx__;
   }"
-  newtxt = sprintf(newtxt, private$dimensions$observations, private$dimensions$states, paste(jac.h,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dims$observations, private$dims$states, paste(jac.h,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -191,18 +191,18 @@ write_jac_f_wrt_u <- function(self, private){
   
   # 1. We first find constant terms
   # this corresponds to an input that is always 1 (first element of U)
-  zero.list <- as.list(numeric(private$dimensions$inputs + private$dimensions$states))
+  zero.list <- as.list(numeric(private$dims$inputs + private$dims$states))
   names(zero.list) <-c(private$names$inputs, private$names$states)
   constant.terms <- sapply(private$model$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list))))
   if(inherits(constant.terms, "try-error")){
-    constant.terms <- rep(0, private$dimensions$states)
+    constant.terms <- rep(0, private$dims$states)
   }
   
   jac.f.wrt.u = c()
   # 2. Now we find input-terms by differentiation
   for(i in seq_along(private$names$states)){
     #its inputs + 1 below because the first element is for constants
-    for(j in 1:(private$dimensions$inputs+1)){
+    for(j in 1:(private$dims$inputs+1)){
       if(j==1){
         term <- constant.terms[[i]]
       } else {
@@ -224,7 +224,7 @@ write_jac_f_wrt_u <- function(self, private){
     %s
     return dfdu__;
   }"
-  newtxt = sprintf(newtxt, private$dimensions$states, private$dimensions$inputs+1, paste(jac.f.wrt.u, collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dims$states, private$dims$inputs+1, paste(jac.f.wrt.u, collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -255,7 +255,7 @@ write_h_var = function(self, private){
     %s
     return hvar__;
   }"
-  newtxt = sprintf(newtxt, private$dimensions$observations, paste(hvar,collapse="\n\t\t"))
+  newtxt = sprintf(newtxt, private$dims$observations, paste(hvar,collapse="\n\t\t"))
   
   return(newtxt)
 }
@@ -276,10 +276,10 @@ write_cppfile = function(self, private) {
   txt <- readLines(system.file(filepath, package="ctsmTMB"))
   
   # Embed system info
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_STATES")] <- sprintf("// STATES:%s", private$dimensions$states)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_OBS")] <- sprintf("// OBS:%s", private$dimensions$observations)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_INPUTS")] <- sprintf("// INPUTS:%s", private$dimensions$inputs)
-  txt[which(txt %in% "// SYSINFO: NUMBER_OF_PARS")] <- sprintf("// PARS:%s", private$dimensions$pars)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_STATES")] <- sprintf("// STATES:%s", private$dims$states)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_OBS")] <- sprintf("// OBS:%s", private$dims$observations)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_INPUTS")] <- sprintf("// INPUTS:%s", private$dims$inputs)
+  txt[which(txt %in% "// SYSINFO: NUMBER_OF_PARS")] <- sprintf("// PARS:%s", private$dims$pars)
   
   # Insert user functions
   txt[which(txt %in% "// INSERT F")] <- write_f(self, private)
