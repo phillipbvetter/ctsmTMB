@@ -5,11 +5,11 @@ perform_prediction <- function(self, private, use.cpp){
   
   
   # Laplace cant produce predictions currently...
-  if(private$method=="laplace"){
+  if(private$algo.settings$method=="laplace"){
     stop("Predictions arent available for laplace yet.")
   }
   
-  if(private$method=="laplace.thygesen"){
+  if(private$algo.settings$method=="laplace.thygesen"){
     stop("Predictions arent available for laplace.thygesen yet.")
   }
   
@@ -22,27 +22,27 @@ perform_prediction <- function(self, private, use.cpp){
         
         if(!private$silent) message("Predicting with C++...")
         
-        lkf_ekf_ukf_predict_rcpp(private$pars, self, private)
+        lkf_ekf_ukf_predict_rcpp(private$model$argument.parameters, self, private)
         
         # Predict with R implementation
       } else {
         
         if(!private$silent) message("Predicting with R...")
         
-        lkf_ekf_ukf_predict_r(private$pars, self, private)
+        lkf_ekf_ukf_predict_r(private$model$argument.parameters, self, private)
         
       }
       
     }, gcFirst = FALSE)
   
-  private$timer_prediction <- comptime
+  private$timers$prediction <- comptime
   
   return(invisible(self))
 }
 
 lkf_ekf_ukf_predict_r <- function(pars, self, private){
   
-  output <- switch(private$method,
+  output <- switch(private$algo.settings$method,
                    lkf = lkf_predict_r(pars, self, private),
                    ekf = ekf_predict_r(pars, self, private),
                    ukf = ukf_predict_r(pars, self, private),
@@ -57,8 +57,8 @@ lkf_ekf_ukf_predict_r <- function(pars, self, private){
 lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
   
   # observation/input matrix
-  obsMat = as.matrix(private$data[private$obs.names])
-  inputMat = as.matrix(private$data[private$input.names])
+  obsMat = as.matrix(private$data[private$names$obs])
+  inputMat = as.matrix(private$data[private$names$inputs])
   
   # non-na observation matrix
   numeric_is_not_na_obsMat = t(apply(obsMat, 1, FUN=function(x) as.numeric(!is.na(x))))
@@ -67,14 +67,14 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
   # number of non-na observations
   number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
   
-  ids <- 1:private$number.of.observations - 1 #minus 1 for 0 indexing
+  ids <- 1:private$dimensions$observations - 1 #minus 1 for 0 indexing
   non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
   any_available_obs <- sapply(non_na_ids, function(x) !is.null(x))
   
   output <- NULL
   # predict using c++ function
-  if(private$method=="lkf"){
-    output <- lkf_predict_rcpp(private$rcpp_function_ptr,
+  if(private$algo.settings$method=="lkf"){
+    output <- lkf_predict_rcpp(private$model$rcpp_function_ptr,
                                obsMat,
                                inputMat,
                                pars,
@@ -83,11 +83,11 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
                                private$ode.timestep.size,
                                any_available_obs,
                                non_na_ids,
-                               private$last.pred.index,
-                               private$k.ahead)
+                               private$algo.settings$last.pred.index,
+                               private$algo.settings$k.ahead)
   }
-  if(private$method == "ekf"){
-    output <- ekf_predict_rcpp(private$rcpp_function_ptr,
+  if(private$algo.settings$method == "ekf"){
+    output <- ekf_predict_rcpp(private$model$rcpp_function_ptr,
                                obsMat,
                                inputMat,
                                pars,
@@ -97,12 +97,12 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
                                private$ode.timesteps,
                                any_available_obs,
                                non_na_ids,
-                               private$ode.solver,
-                               private$last.pred.index,
-                               private$k.ahead)
+                               private$algo.settings$ode.solver,
+                               private$algo.settings$last.pred.index,
+                               private$algo.settings$k.ahead)
   }
-  if(private$method == "ukf"){
-    output <- ukf_predict_rcpp(private$rcpp_function_ptr,
+  if(private$algo.settings$method == "ukf"){
+    output <- ukf_predict_rcpp(private$model$rcpp_function_ptr,
                                obsMat,
                                inputMat,
                                pars,
@@ -112,10 +112,10 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
                                private$ode.timesteps,
                                numeric_is_not_na_obsMat,
                                number_of_available_obs,
-                               private$ukf.hyperpars,
-                               private$last.pred.index,
-                               private$k.ahead,
-                               private$ode.solver)
+                               private$algo.settings$ukf.hyperpars,
+                               private$algo.settings$last.pred.index,
+                               private$algo.settings$k.ahead,
+                               private$algo.settings$ode.solver)
   }
   
   ####### STORE PREDICTION #######
@@ -134,18 +134,18 @@ create_return_prediction <- function(reported.dispersion.type, return.k.ahead, s
   if(!private$silent) message("Returning results...")
   
   # Simlify variable names
-  n               <- private$number.of.states
-  n.obs           <- private$number.of.observations
-  k.ahead         <- private$k.ahead
-  state.names     <- private$state.names
-  last.pred.index <- private$last.pred.index
+  n               <- private$dimensions$states
+  n.obs           <- private$dimensions$observations
+  k.ahead         <- private$algo.settings$k.ahead
+  state.names     <- private$names$states
+  last.pred.index <- private$algo.settings$last.pred.index
   diag.ids        <- seq(from=1, to=n^2, by=n+1)
   diag.ids.obs    <- seq(from=1, to=n.obs^2, by=n.obs+1)
   rbinded.predmat <- do.call(rbind, private$prediction.raw)
   
   # time-related entries
   m.state = matrix(nrow=last.pred.index*(k.ahead+1), ncol=5+n)
-  colnames(m.state) = c("i.","j.","t.i","t.j","k.ahead", private$state.names)
+  colnames(m.state) = c("i.","j.","t.i","t.j","k.ahead", private$names$states)
   ran = 0:(last.pred.index-1)
   m.state[,"i."] <- rep(ran, each=k.ahead+1)
   m.state[,"k.ahead"] <- rep(0:k.ahead, last.pred.index)
@@ -177,35 +177,35 @@ create_return_prediction <- function(reported.dispersion.type, return.k.ahead, s
   ##### OBSERVATION PREDICTIONS #####
   # calculate observations
   m.obs.pred <- calculate_prediction_observations(rbinded.predmat, 
-                                                  private$rcpp_function_ptr,
-                                                  as.matrix(private$data[private$input.names]),
-                                                  private$pars,
-                                                  private$number.of.states,
-                                                  private$number.of.observations,
-                                                  private$last.pred.index,
-                                                  private$k.ahead,
+                                                  private$model$rcpp_function_ptr,
+                                                  as.matrix(private$data[private$names$inputs]),
+                                                  private$model$argument.parameters,
+                                                  private$dimensions$states,
+                                                  private$dimensions$observations,
+                                                  private$algo.settings$last.pred.index,
+                                                  private$algo.settings$k.ahead,
                                                   reported.dispersion.type != "none")
   # set name etc
   if(reported.dispersion.type != "none"){
     m.obs.pred.mean <- m.obs.pred[,1:n.obs,drop=FALSE]
-    colnames(m.obs.pred.mean) <- private$obs.names
+    colnames(m.obs.pred.mean) <- private$names$obs
     if(reported.dispersion.type == "marginal"){
       m.obs.pred.disp <- m.obs.pred[,n.obs+diag.ids.obs, drop=FALSE]
-      colnames(m.obs.pred.disp) <- sprintf(rep("var.%s",n.obs), private$obs.names)
+      colnames(m.obs.pred.disp) <- sprintf(rep("var.%s",n.obs), private$names$obs)
     } else {
       m.obs.pred.disp <- m.obs.pred[,-c(1:n.obs), drop=FALSE]
-      colnames(m.obs.pred.disp) <- sprintf(rep("cov.%s.%s",n.obs^2), rep(private$obs.names,each=n.obs), rep(private$obs.names,n.obs))
+      colnames(m.obs.pred.disp) <- sprintf(rep("cov.%s.%s",n.obs^2), rep(private$names$obs,each=n.obs), rep(private$names$obs,n.obs))
       if(reported.dispersion.type == "correlation"){
         m.obs.pred.disp <- t(apply(m.obs.pred.disp, 1, function(x) as.vector(cov2cor(matrix(x, nrow=n.obs)))))
-        colnames(m.obs.pred.disp) <- sprintf(rep("cor.%s.%s",n.obs^2), rep(private$obs.names,each=n.obs), rep(private$obs.names,n.obs))
+        colnames(m.obs.pred.disp) <- sprintf(rep("cor.%s.%s",n.obs^2), rep(private$names$obs,each=n.obs), rep(private$names$obs,n.obs))
       }
-      colnames(m.disp)[diag.ids] <- sprintf(rep("var.%s",n.obs), private$obs.names)
+      colnames(m.disp)[diag.ids] <- sprintf(rep("var.%s",n.obs), private$names$obs)
     }
     m.obs.pred <- cbind(m.obs.pred.mean, m.obs.pred.disp)
   }
   
-  m.obs.data = as.matrix(private$data[m.state[,"j."]+1, private$obs.names, drop=F])
-  colnames(m.obs.data) = paste(private$obs.names,".data",sep="")
+  m.obs.data = as.matrix(private$data[m.state[,"j."]+1, private$names$obs, drop=F])
+  colnames(m.obs.data) = paste(private$names$obs,".data",sep="")
   
   # cbind all obs-related mats
   m.obs <- cbind(m.obs, m.obs.pred, m.obs.data)

@@ -19,7 +19,7 @@ compile_rcpp_functions = function(self, private){
   # 
   # # Create XPtr's
   # print(system.time(
-  #   outlist <- lapply(private$rcpp.function.strings, 
+  #   outlist <- lapply(private$model$rcpp.function.strings, 
   #                     function(s) RcppXPtrUtils::cppXPtr(s, 
   #                                                        depends=.depends, 
   #                                                        includes = .includes)
@@ -29,7 +29,7 @@ compile_rcpp_functions = function(self, private){
   # # Add to private fields
   # nams <- c("f","dfdx","g","h","dhdx","hvar","dfdu")
   # names(outlist) <- nams
-  # private$rcpp_function_ptr[nams] <- outlist[nams]
+  # private$model$rcpp_function_ptr[nams] <- outlist[nams]
   #   
   
   
@@ -37,21 +37,21 @@ compile_rcpp_functions = function(self, private){
   txt <- readLines(system.file("include/template_user_functions.h", package="ctsmTMB"))
   
   # Insert our created system function strings
-  txt[which(txt %in% "// INSERT F_CONST")] <- private$rcpp.function.strings$f_const
-  txt[which(txt %in% "// INSERT DFDX_CONST")] <- private$rcpp.function.strings$dfdx_const
-  txt[which(txt %in% "// INSERT G_CONST")] <- private$rcpp.function.strings$g_const
-  txt[which(txt %in% "// INSERT H_CONST")] <- private$rcpp.function.strings$h_const
-  txt[which(txt %in% "// INSERT DHDX_CONST")] <- private$rcpp.function.strings$dhdx_const
-  txt[which(txt %in% "// INSERT HVAR_CONST")] <- private$rcpp.function.strings$hvar_const
-  txt[which(txt %in% "// INSERT HVAR_ARRAY_CONST")] <- private$rcpp.function.strings$hvar_array_const
-  txt[which(txt %in% "// INSERT DFDU_CONST")] <- private$rcpp.function.strings$dfdu_const
+  txt[which(txt %in% "// INSERT F_CONST")] <- private$model$rcpp.function.strings$f_const
+  txt[which(txt %in% "// INSERT DFDX_CONST")] <- private$model$rcpp.function.strings$dfdx_const
+  txt[which(txt %in% "// INSERT G_CONST")] <- private$model$rcpp.function.strings$g_const
+  txt[which(txt %in% "// INSERT H_CONST")] <- private$model$rcpp.function.strings$h_const
+  txt[which(txt %in% "// INSERT DHDX_CONST")] <- private$model$rcpp.function.strings$dhdx_const
+  txt[which(txt %in% "// INSERT HVAR_CONST")] <- private$model$rcpp.function.strings$hvar_const
+  txt[which(txt %in% "// INSERT HVAR_ARRAY_CONST")] <- private$model$rcpp.function.strings$hvar_array_const
+  txt[which(txt %in% "// INSERT DFDU_CONST")] <- private$model$rcpp.function.strings$dfdu_const
   
   # We use sourceCpp now instead of RcppXptrUtils - faster, only one compilation
   # We compile using 'code' over 'file' in sourceCpp. This is better because:
   # 1. The caching is automatically handled, so second call is much faster
   # 2. Prevents Rstudio from entering "Source Cpp" tab automatically (annoying for users)
   Rcpp::sourceCpp(code=paste(txt, collapse=" \n "))
-  private$rcpp_function_ptr <- get_sysfun_cpp_function_ptrs()
+  private$model$rcpp_function_ptr <- get_sysfun_cpp_function_ptrs()
   
   # return
   return(invisible(self))
@@ -71,7 +71,7 @@ compile_cppfile <- function(self, private) {
   
   # Start Check:
   # - Exit if the method uses RTMB and does not need C++ compilation.
-  bool <- any(private$method == c("lkf", "ekf", "ukf", "laplace", "laplace.thygesen"))
+  bool <- any(private$algo.settings$method == c("lkf", "ekf", "ukf", "laplace", "laplace.thygesen"))
   if(bool){
     return(invisible(self))
   }
@@ -130,7 +130,7 @@ compile_cppfile <- function(self, private) {
         
       }, gcFirst = FALSE)
     
-    private$timer_cppbuild <- comptime
+    private$timers$cppbuild <- comptime
     
     if(inherits(out,"error")){
       stop("Stopping because compilation failed.")
@@ -161,10 +161,10 @@ compile_cppfile <- function(self, private) {
       model.cpp.path <- paste0(private$cppfile.path.with.method, ".cpp")
       out <- readLines(model.cpp.path)
       model.dims <- as.numeric(stringr::str_extract(out[1:4], ".*:(\\d+)", group=1))
-      bool <- !all(model.dims[1] == private$number.of.states,
-                   model.dims[2] == private$number.of.observations,
-                   model.dims[3] == private$number.of.inputs,
-                   model.dims[4] == private$number.of.pars
+      bool <- !all(model.dims[1] == private$dimensions$states,
+                   model.dims[2] == private$dimensions$observations,
+                   model.dims[3] == private$dimensions$inputs,
+                   model.dims[4] == private$dimensions$pars
       )
       # if the dimensions are wrong recompile the c++ file
       if(bool){

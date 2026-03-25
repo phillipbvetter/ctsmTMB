@@ -32,20 +32,20 @@ model$setInitialState(list(rep(1, 2), 0.656 * diag(2)))
 model$estimate(df, method = "ekf", silent = TRUE, trace = 0)
 
 ########################################################################
-# set_parameters: private$pars is always named with correct length
+# set_parameters: private$argument.parameters is always named with correct length
 ########################################################################
-testthat::test_that("set_parameters produces named private$pars with correct length", {
+testthat::test_that("set_parameters produces named private$argument.parameters with correct length", {
 
   prv = model$.__enclos_env__$private
-  n   = length(prv$parameters)
+  n   = length(prv$model$parameters)
 
   check_pars = function(pars_arg) {
     model$filter(df, method = "ekf", pars = pars_arg, use.cpp = FALSE, silent = TRUE)
-    p = prv$pars
+    p = prv$model$argument.parameters
     testthat::expect_equal(length(p), n)
     testthat::expect_false(is.null(names(p)))
     testthat::expect_false(any(is.na(names(p))))
-    testthat::expect_equal(names(p), prv$parameter.names)
+    testthat::expect_equal(names(p), prv$names$parameters)
   }
 
   # NULL path: best-available values (estimated > initial)
@@ -93,17 +93,17 @@ testthat::test_that("getParameters() data.frame can be passed back to setParamet
 ########################################################################
 # Partial named pars override: only the named entries change
 ########################################################################
-testthat::test_that("partial named pars only modifies the specified entries of private$pars", {
+testthat::test_that("partial named pars only modifies the specified entries of private$argument.parameters", {
 
   prv = model$.__enclos_env__$private
 
   run_and_capture = function(method, call_fn) {
     call_fn(pars = NULL)
-    baseline = prv$pars
+    baseline = prv$model$argument.parameters
 
     override = c(mu = 3.0, logtheta = -1.0)
     call_fn(pars = override)
-    result = prv$pars
+    result = prv$model$argument.parameters
 
     # Overridden entries match the supplied values
     testthat::expect_equal(result[names(override)], override,

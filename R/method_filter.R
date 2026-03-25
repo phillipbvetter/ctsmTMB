@@ -4,11 +4,11 @@
 
 perform_filtering = function(self, private, use.cpp){
   
-  if(private$method == c("laplace")){
+  if(private$algo.settings$method == c("laplace")){
     stop("The Laplace method is a smoothing method. Use 'smooth' method instead.")
   }
   
-  if(private$method == c("laplace.thygesen")){
+  if(private$algo.settings$method == c("laplace.thygesen")){
     stop("The Laplace method is a smoothing method. Use 'smooth' method instead.")
   }
   
@@ -16,24 +16,24 @@ perform_filtering = function(self, private, use.cpp){
     if(use.cpp){
       
       if(!private$silent) message("Filtering with C++...")
-      lkf_ekf_ukf_filter_rcpp(private$pars, self, private)
+      lkf_ekf_ukf_filter_rcpp(private$model$argument.parameters, self, private)
       
     } else {
       
       if(!private$silent) message("Filtering with R...")
-      lkf_ekf_ukf_filter_r(private$pars, self, private)
+      lkf_ekf_ukf_filter_r(private$model$argument.parameters, self, private)
       
     }
   }, gcFirst = FALSE)
   
-  private$timer_filtration <- comptime
+  private$timers$filtration <- comptime
   
   return(invisible(self))
 }
 
 lkf_ekf_ukf_filter_r <- function(pars, self, private){
   
-  filt <- switch(private$method,
+  filt <- switch(private$algo.settings$method,
                  lkf = lkf_filter_r(pars, self, private),
                  ekf = ekf_filter_r(pars, self, private),
                  ukf = ukf_filter_r(pars, self, private),
@@ -46,13 +46,13 @@ lkf_ekf_ukf_filter_r <- function(pars, self, private){
 
 lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
   
-  if(private$method %in% c("lkf","ekf","ukf")){
+  if(private$algo.settings$method %in% c("lkf","ekf","ukf")){
     
     # observation/input matrix
-    obsMat = as.matrix(private$data[private$obs.names])
-    inputMat = as.matrix(private$data[private$input.names])
+    obsMat = as.matrix(private$data[private$names$obs])
+    inputMat = as.matrix(private$data[private$names$inputs])
     
-    ids <- 1:private$number.of.observations - 1 #minus 1 for 0 indexing
+    ids <- 1:private$dimensions$observations - 1 #minus 1 for 0 indexing
     non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
     any_available_obs <- sapply(non_na_ids, function(x) !is.null(x))
     
@@ -63,8 +63,8 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
     }
     number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
     
-    filt <- switch(private$method,
-      lkf = lkf_filter_rcpp(private$rcpp_function_ptr,
+    filt <- switch(private$algo.settings$method,
+      lkf = lkf_filter_rcpp(private$model$rcpp_function_ptr,
                             obsMat,
                             inputMat,
                             pars,
@@ -73,7 +73,7 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                             private$ode.timestep.size,
                             any_available_obs,
                             non_na_ids),
-      ekf = ekf_filter_rcpp(private$rcpp_function_ptr,
+      ekf = ekf_filter_rcpp(private$model$rcpp_function_ptr,
                             obsMat,
                             inputMat,
                             pars,
@@ -83,8 +83,8 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                             private$ode.timesteps,
                             any_available_obs,
                             non_na_ids,
-                            private$ode.solver),
-      ukf = ukf_filter_rcpp(private$rcpp_function_ptr,
+                            private$algo.settings$ode.solver),
+      ukf = ukf_filter_rcpp(private$model$rcpp_function_ptr,
                             obsMat,
                             inputMat,
                             pars,
@@ -94,11 +94,11 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                             private$ode.timesteps,
                             numeric_is_not_na_obsMat,
                             number_of_available_obs,
-                            private$ukf.hyperpars,
-                            private$ode.solver)
+                            private$algo.settings$ukf.hyperpars,
+                            private$algo.settings$ode.solver)
     )
   }
-  if(private$method %in% c("lkf.cpp","ekf.cpp","ukf.cpp")){
+  if(private$algo.settings$method %in% c("lkf.cpp","ekf.cpp","ukf.cpp")){
     filt <- private$nll$report(pars)
   }
   
@@ -116,7 +116,7 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
 
   filt <- list()
 
-  if(private$method %in% all.kalman.methods){
+  if(private$algo.settings$method %in% all.kalman.methods){
 
     rep <- private$filtration.raw
 
@@ -159,9 +159,9 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
     }
 
     # column names
-    .colnames <- c("t", private$state.names)
-    .obs.colnames <- c("t", private$obs.names)
-    .covnames <- c("t",as.vector(outer(private$state.names, private$state.names, function(a, b) paste0(a,b))))
+    .colnames <- c("t", private$names$states)
+    .obs.colnames <- c("t", private$names$obs)
+    .covnames <- c("t",as.vector(outer(private$names$states, private$names$states, function(a, b) paste0(a,b))))
     .covnames.list <- paste("t = ", private$data$t, sep="")
 
     ##### priors
@@ -177,8 +177,8 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
     names(filt$states$cov$posterior) = .covnames.list
 
     ##### residuals
-    obsMat = as.matrix(private$data[private$obs.names])
-    ids <- 1:private$number.of.observations
+    obsMat = as.matrix(private$data[private$names$obs])
+    ids <- 1:private$dimensions$observations
     non.na.ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
     length.non.na.ids <- lapply(non.na.ids, length)
 
@@ -187,13 +187,13 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
     names(filt$residuals) = c("residuals", "sd", "normalized")
 
     # Take care of rows where all observations are present
-    ids.full.obs <- unlist(length.non.na.ids) == private$number.of.observations
+    ids.full.obs <- unlist(length.non.na.ids) == private$dimensions$observations
     if(any(ids.full.obs)){
       filt$residuals$residuals[ids.full.obs,-1] <- rbind_vectors(rep$Innovation[ids.full.obs], extra=FALSE)
       filt$residuals$sd[ids.full.obs,-1] <- rbind_matrices_diag(rep$InnovationCovariance[ids.full.obs], fn=sqrt, extra=FALSE)
     }
     # Take care of all other rows with some missing observations
-    for(i in seq_along(private$obs.names[-1])){
+    for(i in seq_along(private$names$obs[-1])){
       ids <- which(length.non.na.ids == i)
       for(j in ids){
         filt$residuals$residuals[j, non.na.ids[[j]]+1] <- rep$Innovation[[j]]
@@ -208,10 +208,10 @@ create_filter_results <- function(self, private, laplace.residuals, silent=priva
     ##### observations
     # call c++ function
     observations <- calculate_filtering_observations(private$filtration.raw,
-                                                     private$rcpp_function_ptr,
-                                                     as.matrix(private$data[private$input.names]),
-                                                     private$pars,
-                                                     private$number.of.observations
+                                                     private$model$rcpp_function_ptr,
+                                                     as.matrix(private$data[private$names$inputs]),
+                                                     private$model$argument.parameters,
+                                                     private$dimensions$observations
     )
     colnames(observations$mean$prior) <- .obs.colnames
     colnames(observations$mean$posterior) <- .obs.colnames

@@ -1,59 +1,46 @@
-# These data checking and setting functions are called automatically when the user
-# requests an estimation, prediction or construct_nll.
-
-
 ###############################################################
 # TOP-LAYER FUNCTION CALLING ALL OTHERS DEFINED IN THIS SCRIPT
 ###############################################################
 
-# Why dont we do this every time?
 check_and_set_data = function(data, self, private) {
-  
-  # Check for new data (only needed for likelihood calculations because new data
-  # requires compilation of TMB's AD graph -> New call to MakeADFun)
-  if(any(private$procedure == c("estimation","construction"))){
-    
+
+  # AD-Check: Did data change or can we re-use old nll
+  if(private$procedure %in% c("estimation", "likelihood")){
+
+    # check if we need to rebuild the ad graph due to data changes
     check_for_data_rebuild(data, self, private)
-    
-    # Option 1: Same data
-    #################################
-    
-    # Exit
-    if(!private$rebuild.data){
+
+    # Exit if data is unchanged
+    if(!private$rebuild$data){
       return(invisible(self))
     }
-    
-    # Option 2: New data
-    #################################
-    
-    # Revert flags 
-    private$rebuild.data <- FALSE
-    private$rebuild.ad <- TRUE
-    
-    # Store new data for next time
+
+    # If new data: revert flags and store for check next time
+    private$rebuild$data <- FALSE
+    private$rebuild$ad <- TRUE
     private$old.data$entry.data <- data
   }
-  
-  if(!private$silent) message("Checking and setting data...")
-  
+
+  if(!private$silent) message("Checking data...")
+
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)
-  
+
   # calculate "complex" right-hand side observation equations
   data <- calculate_complex_observation_lefthandsides(data, self, private)
-  
+
   # save data
-  # only store the obs.names, not the parsed data 
+  # only store the obs.names, not the parsed data
   # example: if we have obs eq log(y) ~ x with name log_y, then we store log_y, but not y itself.
-  private$data = data[c(private$obs.names, private$input.names)]
-  
+  private$data = data[c(private$names$obs, private$names$inputs)]
+
   # set timesteps
   set_ode_timestep(data, self, private)
   set_simulation_timestep(data, self, private)
-  
+
   # various calculations for laplace method
   set_data_for_laplace_method(data, self, private)
-  
+
   # Return
   return(invisible(self))
 }
@@ -72,41 +59,41 @@ check_and_set_data = function(data, self, private) {
 #######################################################
 
 basic_data_check = function(data, self, private) {
-  
-  # check if data is list or data.frame
-  if (!(is.list(data) | is.data.frame(data))) {
-    stop("The data should be a data.frame or a list")
+
+  # check if data is a data.frame
+  if (!(is.data.frame(data))) {
+    stop("The data should be a data.frame.")
   }
-  
+
   # check if all inputs are in the data
-  bool = private$input.names %in% names(data)
+  bool = private$names$inputs %in% names(data)
   if (any(!bool)){
-    stop("The following required inputs were not provided in the data: 
-         ", paste(private$input.names[!bool],collapse=", "))
+    stop("The following required inputs were not provided in the data:
+         ", paste(private$names$inputs[!bool],collapse=", "))
   }
-  
+
   # check if all (basic) observations are in the data.
-  # The basic observations are not obs.names, but variables on lhs of obs equations, 
+  # The basic observations are not obs.names, but variables on lhs of obs equations,
   # due to the ability to say e.g. log(y) ~ ..., obsname=log(y)
-  required.obs = unique(unlist(sapply(private$obs.eqs.trans, function(ls) all.vars(ls$lhs))))
+  required.obs = unique(unlist(sapply(private$model$obs.eqs.trans, function(ls) all.vars(ls$lhs))))
   bool = required.obs %in% names(data)
   if (any(!bool)){
-    stop("The following required observations were not provided in the data: 
+    stop("The following required observations were not provided in the data:
          ", required.obs[!bool])
   }
-  
+
   # time vector must be increasing
   if (any(diff(data$t)<=0)) {
     ids = which(diff(data$t)<=0)
     stop(sprintf("The time-vector is non-increasing at the following indice(s) %s",paste(ids,collapse=", ")))
   }
-  
+
   # time vector must only contain numerics
   if (any(is.na(data$t))) {
     ids = which(is.na(data$t))
     stop(sprintf("The time-vector is NA at the following indice(s) %s",paste(ids,collapse=", ")))
   }
-  
+
   return(invisible(self))
 }
 
@@ -115,118 +102,118 @@ basic_data_check = function(data, self, private) {
 #######################################################
 
 calculate_complex_observation_lefthandsides = function(data, self, private){
-  
+
   # The class of the quote(log(x)) is 'call' whereas quote(x) is 'name', so complex
   # observation equations can be identified as being class 'call'
-  
+
   # detect the complex obs lhs
-  bool = as.vector(unlist(lapply(private$obs.eqs.trans, function(ls) inherits(ls$lhs, "call"))))
-  
+  bool = as.vector(unlist(lapply(private$model$obs.eqs.trans, function(ls) inherits(ls$lhs, "call"))))
+
   # if there are none, return
   if(!any(bool)){
     return(data)
   }
-  
+
   # otherwise, calculate these variables using data variables
   temp.data = list()
-  for(i in seq_along(private$obs.eqs.trans)[bool]){
-    
+  for(i in seq_along(private$model$obs.eqs.trans)[bool]){
+
     # get name and lhs
-    lhs = private$obs.eqs.trans[[i]]$lhs
-    name = private$obs.eqs.trans[[i]]$name
-    
+    lhs = private$model$obs.eqs.trans[[i]]$lhs
+    name = private$model$obs.eqs.trans[[i]]$name
+
     # Check if the variables are available in data
     bool = all.vars(lhs) %in% names(data)
     if(!all(bool)){
-      stop("Unable to compute the observation ",name," because the following variable(s) are not in the provided data: 
+      stop("Unable to compute the observation ",name," because the following variable(s) are not in the provided data:
            ",all.vars(lhs)[!bool])
     }
-    
+
     # Compute the complex observation
     new.data.entry = with(data, eval(lhs))
-    
+
     # append to the data
     temp.data[[name]] = new.data.entry
   }
-  
+
   # concatenate data frames
   newdata = data.frame(data, temp.data)
-  
+
   # return
   return(newdata)
 }
 
 #######################################################
-# SETTINGS FOR ODE TIMESTEP 
+# SETTINGS FOR ODE TIMESTEP
 #######################################################
 
 set_ode_timestep = function(data, self, private){
-  
+
   # If the required number of steps is N + epsilon or larger (e.g. 3+0.01) then increase step by 1, and reduce timestep there.
   # :::::EXAMPLE:::::
   # data$t = [0 , 1 , 2, 4.5], so data.dt = [1,1,2.5]
   # ode.timestep = 1. There are therefore [1, 1, 2.5] steps required. The last (2.5) has residual larger than 0.05 so (2.5 %% 1 = 0.5 > 0.05)
-  # so we round up the number of steps there i.e. ode.N = [1 , 1 , 3]. The last entry is the important one. 
-  # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333 
+  # so we round up the number of steps there i.e. ode.N = [1 , 1 , 3]. The last entry is the important one.
+  # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333
   # down from the set ode.timestep = 1
-  
+
   ode.timestep <- private$ode.timestep
-  
+
   # check that ode.timestep has length 1 or at least nrow(data)-1.
   if (length(ode.timestep) == 1) {
-    
+
     # Recycle to correct length
     ode.timestep = rep(ode.timestep, nrow(data)-1)
-    
+
   }  else if (length(ode.timestep) == nrow(data) -1) {
-    
+
     # do nothing
-    
+
   } else if (length(ode.timestep) > nrow(data) - 1 ) {
-    
+
     # trim if it is larger than nrow(data)-1
     ode.timestep = head(ode.timestep, nrow(data)-1)
     warning("The provided ode.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.")
-    
+
   } else {
-    
+
     # throw error
     stop("Error: The provided ode.timestep must have length 1 or nrow(data)-1")
   }
-  
-  
+
+
   # Data time-difference, and ode.timesteps (number of steps to take)
   data.dt = diff(data$t)
   ode.timesteps = rep(1,length(data.dt))
-  
+
   # For the data time-gaps larger than ode.timestep, we set the time-step to the requested ode.timestep
   # For all others just take a timestep equal to the time-gap in the data (which will be smaller than ode.timestep)
   ode_timestep_size = data.dt
   bool = data.dt > ode.timestep
   ode_timestep_size[bool] = ode.timestep[bool]
-  
+
   # where data.dt > ode.timestep, calculate the required number of steps using ode.timestep
   ode.timesteps[bool] = data.dt[bool] / ode.timestep[bool]
-  
+
   # Find those indices where the number of steps must increase
   epsilon.step  = 1e-3
-  residual.step.bool = (ode.timesteps %% 1) > epsilon.step 
-  
+  residual.step.bool = (ode.timesteps %% 1) > epsilon.step
+
   # increment these steps from N to N+1
-  ode.timesteps[residual.step.bool] = ceiling(ode.timesteps[residual.step.bool]) 
-  
+  ode.timesteps[residual.step.bool] = ceiling(ode.timesteps[residual.step.bool])
+
   # round other steps down (e.g. any number less than N+epsilon becomes N)
   ode.timesteps[!residual.step.bool] = floor(ode.timesteps[!residual.step.bool])
-  
+
   # now reduce the timestep at these locations to match the integer number of steps such that ode.timesteps * ode.timestep = data.dt
   # e.g. ode.timestep = data.dt / ode.timesteps
   ode_timestep_size[residual.step.bool] = data.dt[residual.step.bool] / ode.timesteps[residual.step.bool]
-  
+
   # store the calculated step-size, number of steps, and cumulative number of steps
   private$ode.timestep.size = ode_timestep_size
   private$ode.timesteps = ode.timesteps
   private$ode.timesteps.cumsum = c(0,cumsum(private$ode.timesteps)) #this is used in the laplace method
-  
+
   # return
   return(invisible(self))
 }
@@ -240,182 +227,112 @@ set_ode_timestep = function(data, self, private){
 # to use the one-step-residual function from TMB...???
 
 set_data_for_laplace_method = function(data, self, private){
-  
+
   # create iobs vector  ------------------------------------
   iobs = list()
-  for (i in seq_along(private$obs.names)) {
-    iobs[[i]] = seq_along(data$t)[!is.na(data[[private$obs.names[i]]])]
+  for (i in seq_along(private$names$obs)) {
+    iobs[[i]] = seq_along(data$t)[!is.na(data[[private$names$obs[i]]])]
   }
-  names(iobs) = paste("iobs_",private$obs.names,sep="")
+  names(iobs) = paste("iobs_",private$names$obs,sep="")
   private$iobs = iobs
-  
+
   # initial guess on random effects  ------------------------------------
-  
+
   # set state values using only initial guess
-  tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$number.of.states))
-  names(tempdata) <- private$state.names
-  for(i in seq_along(private$state.names)){
-    tempdata[i] <- rep(private$initial.state$x0[i], nrow(data)) 
+  tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$dimensions$states))
+  names(tempdata) <- private$names$states
+  for(i in seq_along(private$names$states)){
+    tempdata[i] <- rep(private$initial.state$x0[i], nrow(data))
   }
   # now overwrite if initial guesses were provided in the data
-  bool <- private$state.names %in% names(data)
-  tempdata[private$state.names[bool]] <- data[private$state.names[bool]]
-  
-  # next we need to repeat these each of these state values to create 
+  bool <- private$names$states %in% names(data)
+  tempdata[private$names$states[bool]] <- data[private$names$states[bool]]
+
+  # next we need to repeat these each of these state values to create
   #intermediate points determined by the user-selected ode.timestep variable
-  private$tmb.initial.state <- vector("list",length=private$number.of.states)
-  for(i in seq_along(private$state.names)){
+  private$tmb.initial.state <- vector("list",length=private$dimensions$states)
+  for(i in seq_along(private$names$states)){
     private$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$ode.timesteps,1))
   }
-  names(private$tmb.initial.state) = private$state.names
+  names(private$tmb.initial.state) = private$names$states
   private$tmb.initial.state <- as.data.frame(private$tmb.initial.state)
-  
-  
+
+
   # return
   return(invisible(self))
 }
 
 #######################################################
-# SETTINGS FOR ODE TIMESTEP 
+# SETTINGS FOR ODE TIMESTEP
 #######################################################
 
 set_simulation_timestep = function(data, self, private){
-  
+
   # If the required number of steps is N + epsilon or larger (e.g. 3+0.01) then increase step by 1, and reduce timestep there.
   # :::::EXAMPLE:::::
   # data$t = [0 , 1 , 2, 4.5], so data.dt = [1,1,2.5]
   # ode.timestep = 1. There are therefore [1, 1, 2.5] steps required. The last (2.5) has residual larger than 0.05 so (2.5 %% 1 = 0.5 > 0.05)
-  # so we round up the number of steps there i.e. ode.N = [1 , 1 , 3]. The last entry is the important one. 
-  # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333 
+  # so we round up the number of steps there i.e. ode.N = [1 , 1 , 3]. The last entry is the important one.
+  # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333
   # down from the set ode.timestep = 1
   simulation.timestep <- private$simulation.timestep
-  
+
   # check that simulation.timestep has length 1 or at least nrow(data)-1.
   if (length(simulation.timestep) == 1) {
-    
+
     # Recycle to correct length
     simulation.timestep = rep(simulation.timestep, nrow(data)-1)
-    
+
   }  else if (length(simulation.timestep) == nrow(data) - 1) {
-    
+
     # do nothing
-    
+
   } else if (length(simulation.timestep) > nrow(data) - 1 ) {
-    
+
     # trim if it is larger than nrow(data)-1
     simulation.timestep = head(simulation.timestep, nrow(data)-1)
     # warning("The provided simulation.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.")
-    
+
   } else {
-    
+
     # throw error
     stop("Error: The provided simulation.timestep must have length 1 or nrow(data)-1")
   }
-  
-  
+
+
   # Data time-difference, and simulation.timesteps (number of steps to take)
   data.dt = diff(data$t)
   simulation.timesteps = rep(1,length(data.dt))
-  
+
   # For the data time-gaps larger than ode.timestep, we set the time-step to the requested ode.timestep
   # For all others just take a timestep equal to the time-gap in the data (which will be smaller than ode.timestep)
   simulation_timestep_size = data.dt
   bool = data.dt > simulation.timestep
   simulation_timestep_size[bool] = simulation.timestep[bool]
-  
+
   # where data.dt > ode.timestep, calculate the required number of steps using ode.timestep
   simulation.timesteps[bool] = data.dt[bool] / simulation.timestep[bool]
-  
+
   # Find those indices where the number of steps must increase
   epsilon.step  = 1e-2
-  residual.step.bool = (simulation.timesteps %% 1) > epsilon.step 
-  
+  residual.step.bool = (simulation.timesteps %% 1) > epsilon.step
+
   # increment these steps from N to N+1
-  simulation.timesteps[residual.step.bool] = ceiling(simulation.timesteps[residual.step.bool]) 
-  
+  simulation.timesteps[residual.step.bool] = ceiling(simulation.timesteps[residual.step.bool])
+
   # round other steps down (e.g. any number less than N+epsilon becomes N)
   simulation.timesteps[!residual.step.bool] = floor(simulation.timesteps[!residual.step.bool])
-  
+
   # now reduce the timestep at these locations to match the integer number of steps such that simulation.timesteps * ode.timestep = data.dt
   # e.g. ode.timestep = data.dt / simulation.timesteps
   simulation_timestep_size[residual.step.bool] = data.dt[residual.step.bool] / simulation.timesteps[residual.step.bool]
-  
+
   # store the calculated step-size, number of steps, and cumulative number of steps
   private$simulation.timestep.size = simulation_timestep_size
   private$simulation.timesteps = simulation.timesteps
-  
+
   # return
   return(invisible(self))
-}
-
-
-#######################################################
-# SET PARAMETERS
-#######################################################
-# This function sets the parameters used by methods with the 'pars' argument to various methods.
-set_parameters.old <- function(pars, self, private){
-  
-  ## Allow any number of parameters to be received?
-  # We take initial or estimated and fill in from the received parameter vector
-  
-  
-  # extract model parameters etc...
-  par.matrix <- self$getParameters()
-  n.pars <- private$number.of.pars
-  n.free.pars <- private$number.of.free.pars
-  # n.fixed.pars <- private$number.of.fixed.pars
-  free.parameter.names <- names(private$free.pars)
-  par.length <- length(pars)
-  
-  # If no parameters are provided use 1. estimated or 2. initial
-  if(is.null(pars)){
-    # use initial parameters by default
-    pars <- par.matrix$initial
-    # ...unless there are estimated parameters we can use
-    bool.free.pars <- par.matrix$type == "free"
-    is.fitted.pars.finite <- !all(is.na(par.matrix$estimate[bool.free.pars]))
-    if(is.fitted.pars.finite){
-      pars <- par.matrix$estimate
-    }
-    names(pars) <- private$parameter.names
-    
-  } else {
-    
-    # check1 - throw error if not all or free
-    bool <- par.length %in% c(n.pars, n.free.pars)
-    if(!bool){
-      stop("The 'pars' argument should have length ", n.pars, " (all) or ", n.free.pars,
-           " (only fixed) but ", par.length, " were provided.")
-    }
-  
-    # check2 - throw error if NA names
-    is.pars.names.na <- any(is.na(names(pars)))
-    if(is.pars.names.na) stop("The 'pars' vector has NA names")
-    
-    # 1. all parameters were provided
-    if(par.length == n.pars){
-      if(is.null(names(pars))) names(pars) <- private$parameter.names
-      pars <- pars[private$parameter.names]
-    } else {
-    # 2. free parameters were provided
-      if(is.null(names(pars))) names(pars) <- free.parameter.names
-      pars <- pars[free.parameter.names]
-      #check if the names are wrong
-      #check for NA entries
-      if(any(is.na(pars))) stop("fixed parameter(s) were provided in 'pars' when it should only be free parameters.")
-      # add fixed parameters too to get all entries
-      full.par.vector <- sapply(private$parameters, function(x) x$initial)
-      full.par.vector[free.parameter.names] <- pars
-      # overwrite
-      pars <- full.par.vector
-    }
-  }
-  
-  #save to field
-  private$pars <- pars
-  
-  #exit
-  return(invisible(NULL))
 }
 
 ########################################################################
@@ -438,19 +355,18 @@ set_parameters = function(pars, self, private){
   #   Must have length equal to all parameters (lp) or only the free
   #   parameters (lp - fp). Values are inserted in the natural order
   #   returned by self$getParameters().
-  
-  lp = length(private$parameter.names)
-  fp = length(private$fixed.pars)
+
+  lp = length(private$names$parameters)
+  fp = length(private$model$fixed.pars)
 
   # Build base vector: per-parameter best available value ----------------
   base.pars = self$getParameters(value = "initial")
-
   if (!is.null(private$fit$par.fixed)) {
     estimated = self$getParameters(value = "estimate")
     has.estimate = !is.na(estimated)
     base.pars[has.estimate] = estimated[has.estimate]
   }
-  
+
   # Apply user-supplied overrides ----------------------------------------
   if (is.null(pars)) {
 
@@ -481,8 +397,8 @@ set_parameters = function(pars, self, private){
     # else length == lp: use pars directly (full vector in natural order)
   }
 
-  names(pars) = private$parameter.names
-  private$pars = pars
+  names(pars) = private$names$parameters
+  private$model$argument.parameters = pars
 
   return(invisible(NULL))
 }
@@ -491,30 +407,30 @@ set_parameters = function(pars, self, private){
 # SET K STEP AHEAD (DEPENDS ON PRIVATE$DATA)
 ########################################################################
 set_k_ahead = function(k.ahead, self, private) {
-  
+
   # check if k.ahead is positive with length 1
   if (!(is.numeric(k.ahead)) | !(length(k.ahead==1)) | !(k.ahead >= 0)) {
     stop("k.ahead must be a non-negative numeric scalar")
   }
   # make sure its an integer
   k.ahead <- round(k.ahead)
-  
-  
+
+
   if(!is.finite(k.ahead)){
-    k.ahead <- nrow(private$data) - 1 
+    k.ahead <- nrow(private$data) - 1
   }
-  
+
   # Find last prediction index to avoid exciting boundary
   last.pred.index = nrow(private$data) - k.ahead
   if(last.pred.index < 1){
     k.ahead = nrow(private$data) - 1
     last.pred.index = 1
   }
-  
+
   # set values
-  private$k.ahead = k.ahead
-  private$last.pred.index = last.pred.index
-  
+  private$algo.settings$k.ahead = k.ahead
+  private$algo.settings$last.pred.index = last.pred.index
+
   # return values
   return(invisible(self))
 }

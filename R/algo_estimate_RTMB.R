@@ -17,11 +17,11 @@ makeADFun_ekf_rtmb = function(self, private)
   covMat = private$initial.state$p0
   
   # input and obs matrix
-  inputMat = as.matrix(private$data[private$input.names])
-  obsMat = as.matrix(private$data[private$obs.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # create and load state space functions
-  force.ad <- private$advanced.settings$forceAD
+  force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
   
   # various utility functions for likelihood calculations ---------------------
@@ -34,7 +34,7 @@ makeADFun_ekf_rtmb = function(self, private)
   
   # use standard kalman update, or no update
   data.update.fun <- kalman.data.update.with.nll
-  if(private$train.against.full.prediction){
+  if(private$algo.settings$train.against.full.prediction){
     data.update.fun <- kalman.no.update.with.nll
   }
   
@@ -62,7 +62,7 @@ makeADFun_ekf_rtmb = function(self, private)
     
     ####### Stationary Solution #######
     inputVec = inputMat[1,]
-    if(private$estimate.initial){
+    if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
@@ -111,8 +111,8 @@ makeADFun_ekf_rtmb = function(self, private)
   }
   
   # construct AD-likelihood function ----------------------------------------
-  map <- lapply(private$fixed.pars, function(x) x$factor)
-  parameters <- lapply(private$parameters, function(x) x$initial)
+  map <- lapply(private$model$fixed.pars, function(x) x$factor)
+  parameters <- lapply(private$model$parameters, function(x) x$initial)
   nll <- RTMB::MakeADFun(func = ekf.nll,
                          parameters = parameters,
                          map = map,
@@ -124,11 +124,11 @@ makeADFun_ekf_rtmb = function(self, private)
   
   # # MAP Estimation?
   # MAP_bool = 0L
-  # if (!is.null(private$map)) {
+  # if (!is.null(private$algo.settings$map)) {
   #   bool = self$getParameters()[,"type"] == "free"
   #   MAP_bool = 1L
-  #   map_mean__ = private$map$mean[bool]
-  #   map_cov__ = private$map$cov[bool,bool]
+  #   map_mean__ = private$algo.settings$map$mean[bool]
+  #   map_cov__ = private$algo.settings$map$cov[bool,bool]
   #   map_ints__ = as.numeric(bool)
   #   sum_map_ints__ = sum(as.numeric(bool))
   # }
@@ -156,11 +156,11 @@ makeADFun_lkf_rtmb = function(self, private)
   covMat = private$initial.state$p0
   
   # input and obs matrix
-  inputMat = as.matrix(private$data[private$input.names])
-  obsMat = as.matrix(private$data[private$obs.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # create and load state space functions
-  force.ad <- private$advanced.settings$forceAD
+  force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
   
   # various utility functions for likelihood calculations ---------------------
@@ -168,12 +168,12 @@ makeADFun_lkf_rtmb = function(self, private)
   get_adjoints()
   get_loss_function()
   # get_ode_solvers()
-  if(private$estimate.initial) {
+  if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }
   get_ekf_update_functions()
   data.update.fun <- kalman.data.update.with.nll
-  if(private$train.against.full.prediction){
+  if(private$algo.settings$train.against.full.prediction){
     data.update.fun <- kalman.no.update.with.nll
   }
   
@@ -252,7 +252,7 @@ makeADFun_lkf_rtmb = function(self, private)
     
     ####### INITIAL STATE / COVARIANCE #######
     inputVec = inputMat[1,]
-    if(private$estimate.initial){
+    if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
@@ -302,10 +302,10 @@ makeADFun_lkf_rtmb = function(self, private)
   # Construct Neg. Log-Likelihood
   ################################################
   
-  parameters <- lapply(private$parameters, function(x) x[["initial"]])
+  parameters <- lapply(private$model$parameters, function(x) x[["initial"]])
   nll = RTMB::MakeADFun(func = lkf.nll,
                         parameters = parameters,
-                        map = lapply(private$fixed.pars, function(x) x$factor),
+                        map = lapply(private$model$fixed.pars, function(x) x$factor),
                         silent=TRUE)
   
   # save objective function
@@ -330,12 +330,12 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
   covMat = private$initial.state$p0
   
   # inputs
-  inputMat = as.matrix(private$data[private$input.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
   # observations
-  obsMat = as.matrix(private$data[private$obs.names])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # State Space Functions
-  force.ad <- private$advanced.settings$forceAD
+  force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
   
   # Weights
@@ -346,12 +346,12 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
   get_adjoints()
   get_loss_function()
   get_ukf_ode_solvers()
-  if(private$estimate.initial) {
+  if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }
   get_ukf_update()
   data.update.fun <- kalman.data.update.with.nll
-  if(private$train.against.full.prediction){
+  if(private$algo.settings$train.against.full.prediction){
     data.update.fun <- kalman.no.update.with.nll
   }
   
@@ -400,7 +400,7 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
     
     ####### INITIAL STATE / COVARIANCE #######
     inputVec = inputMat[1,]
-    if(private$estimate.initial){
+    if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
@@ -467,8 +467,8 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
   # construct AD-likelihood function ----------------------------------------
   
   # parameters ----------------------------------------
-  map <- lapply(private$fixed.pars, function(x) x$factor)
-  parameters <- lapply(private$parameters, function(x) x$initial)
+  map <- lapply(private$model$fixed.pars, function(x) x$factor)
+  parameters <- lapply(private$model$parameters, function(x) x$initial)
   nll = RTMB::MakeADFun(func = ukf.nll,
                         parameters=parameters,
                         map = map,
@@ -501,12 +501,12 @@ makeADFun_ukf_rtmb = function(self, private)
   covMat = private$initial.state$p0
   
   # inputs
-  inputMat = as.matrix(private$data[private$input.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
   # observations
-  obsMat = as.matrix(private$data[private$obs.names])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # State Space Functions
-  force.ad <- private$advanced.settings$forceAD
+  force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
   
   # Weights
@@ -517,12 +517,12 @@ makeADFun_ukf_rtmb = function(self, private)
   get_adjoints()
   get_loss_function()
   get_ukf_ode_solvers()
-  if(private$estimate.initial) {
+  if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }
   get_ukf_update()
   data.update.fun <- kalman.data.update.with.nll
-  if(private$train.against.full.prediction){
+  if(private$algo.settings$train.against.full.prediction){
     data.update.fun <- kalman.no.update.with.nll
   }
   
@@ -551,7 +551,7 @@ makeADFun_ukf_rtmb = function(self, private)
     
     ####### INITIAL STATE / COVARIANCE #######
     inputVec = inputMat[1,]
-    if(private$estimate.initial){
+    if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
@@ -622,8 +622,8 @@ makeADFun_ukf_rtmb = function(self, private)
   # construct AD-likelihood function ----------------------------------------
   
   # parameters ----------------------------------------
-  map <- lapply(private$fixed.pars, function(x) x$factor)
-  parameters <- lapply(private$parameters, function(x) x$initial)
+  map <- lapply(private$model$fixed.pars, function(x) x$factor)
+  parameters <- lapply(private$model$parameters, function(x) x$initial)
   nll = RTMB::MakeADFun(func = ukf.nll,
                         parameters=parameters,
                         map = map,
@@ -654,19 +654,19 @@ makeADFun_laplace_rtmb = function(self, private)
   covMat <- private$initial.state$p0
   
   # inputs
-  inputMat = as.matrix(private$data[private$input.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
   # observations
-  obsMat = as.matrix(private$data[private$obs.names])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # create and load state space functions
-  force.ad <- private$advanced.settings$forceAD
+  force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
   
   
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
   get_adjoints()
-  if(private$estimate.initial) {
+  if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }
   
@@ -695,7 +695,7 @@ makeADFun_laplace_rtmb = function(self, private)
     parVec <- do.call(c, p[1:n.pars])
     
     inputVec = inputMat[1,]
-    if(private$estimate.initial){
+    if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
@@ -770,13 +770,13 @@ makeADFun_laplace_rtmb = function(self, private)
   ################################################
   
   parameters <- c(
-    lapply(private$parameters, function(x) x$initial),
+    lapply(private$model$parameters, function(x) x$initial),
     private$tmb.initial.state
   )
-  map <- lapply(private$fixed.pars, function(x) x$factor)
+  map <- lapply(private$model$fixed.pars, function(x) x$factor)
   nll = RTMB::MakeADFun(func = laplace.nll, 
                         parameters=parameters, 
-                        random=private$state.names,
+                        random=private$names$states,
                         map = map,
                         silent=TRUE)
   
@@ -807,18 +807,18 @@ makeADFun_laplace2_rtmb = function(self, private)
   stateVec <- private$initial.state$x0
   covMat <- private$initial.state$p0
   # inputs
-  inputMat = as.matrix(private$data[private$input.names])
+  inputMat = as.matrix(private$data[private$names$inputs])
   # observations
-  obsMat = as.matrix(private$data[private$obs.names])
+  obsMat = as.matrix(private$data[private$names$obs])
   
   # create and load state space functions
-  force.ad <- private$advanced.settings$forceAD
+  force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
   
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
   get_adjoints()
-  if(private$estimate.initial) {
+  if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }
   
@@ -848,7 +848,7 @@ makeADFun_laplace2_rtmb = function(self, private)
     parVec <- do.call(c, p[1:n.pars])
     
     inputVec = inputMat[1,]
-    if(private$estimate.initial){
+    if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
@@ -932,15 +932,15 @@ makeADFun_laplace2_rtmb = function(self, private)
   db.len <- n.diffusions * n.dbs
   dB = matrix(numeric(n.diffusions * n.dbs), nrow=n.dbs, ncol=n.diffusions)
   parameters = c(
-    lapply(private$parameters, function(x) x[["initial"]]),
+    lapply(private$model$parameters, function(x) x[["initial"]]),
     private$tmb.initial.state,
     dB = list(dB)
   )
   
   nll = RTMB::MakeADFun(func = laplace2.nll, 
                         parameters=parameters, 
-                        random=c(private$state.names,"dB"),
-                        map = lapply(private$fixed.pars, function(x) x$factor),
+                        random=c(private$names$states,"dB"),
+                        map = lapply(private$model$fixed.pars, function(x) x$factor),
                         silent=TRUE)
   
   # save objective function

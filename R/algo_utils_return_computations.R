@@ -12,7 +12,7 @@ compute_mle_gradient_and_hessian <- function(self, private){
   private$fit$nll.gradient = try_with_warning_recovery(
     {
       nll.grad = as.vector(private$nll$gr(private$opt$par))
-      names(nll.grad) = names(private$free.pars)
+      names(nll.grad) = names(private$model$free.pars)
       nll.grad
     }
   )
@@ -21,12 +21,12 @@ compute_mle_gradient_and_hessian <- function(self, private){
   }
   
   # MLE Hessian
-  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")){
+  if(private$algo.settings$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")){
     private$fit$nll.hessian = try_with_warning_recovery(
       {
         nll.hess = private$nll$he(private$opt$par)
-        rownames(nll.hess) = names(private$free.pars)
-        colnames(nll.hess) = names(private$free.pars)
+        rownames(nll.hess) = names(private$model$free.pars)
+        colnames(nll.hess) = names(private$model$free.pars)
         nll.hess
       }
     )
@@ -46,27 +46,27 @@ compute_mle_parameters_and_std_errors <- function(self, private){
   private$fit$par.fixed = private$opt$par
   
   # allocate 
-  n.fixed.pars <- private$number.of.fixed.pars
+  n.fixed.pars <- private$dimensions$fixed.pars
   private$fit$sd.fixed = rep(NA, n.fixed.pars)
   private$fit$cov.fixed = array(NA, dim=rep(n.fixed.pars,2))
   private$fit$tvalue = rep(NA, n.fixed.pars)
   private$fit$Pr.tvalue = rep(NA, n.fixed.pars)
   
   ############ LAPLACE ############
-  if(private$method %in% c("laplace","laplace.thygesen")){
+  if(private$algo.settings$method %in% c("laplace","laplace.thygesen")){
     private$fit$cov.fixed <- private$sdr$cov.fixed
     private$fit$sd.fixed <- sqrt(diag(private$fit$cov.fixed))
   }
   
   ############ KALMAN ############
-  if(private$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")){
+  if(private$algo.settings$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")){
     calculate_covariance_from_hessian(self, private)
   }
   
   # t-values and Pr( t > t_test ) -----------------------------------
   private$fit$tvalue = private$fit$par.fixed / private$fit$sd.fixed
   # The degrees of fredom are number of (non NA) observations minus number of (free) parameters
-  freedom.degrees <- sum(!is.na(private$data[private$obs.names])) - private$number.of.free.pars
+  freedom.degrees <- sum(!is.na(private$data[private$names$obs])) - private$dimensions$free.pars
   private$fit$Pr.tvalue <- rep(NA, length(private$fit$par.fixed))
   if(freedom.degrees > 0.1){
     private$fit$Pr.tvalue = 2 * pt(q=abs(private$fit$tvalue), df=freedom.degrees, lower.tail=FALSE)
@@ -201,10 +201,10 @@ iterative_hessian_inversion <- function(self, private){
 laplace_report <- function(self, private, laplace.residuals){
   
   # lengths
-  n.states <- private$number.of.states
-  n.diff <- private$number.of.diffusions
-  nobs <- private$number.of.observations
-  .colnames <- c("t", private$obs.names)
+  n.states <- private$dimensions$states
+  n.diff <- private$dimensions$diffusions
+  nobs <- private$dimensions$observations
+  .colnames <- c("t", private$names$obs)
   
   set.col.names <- function(object, colnames){
     colnames(object) <- colnames
@@ -216,18 +216,18 @@ laplace_report <- function(self, private, laplace.residuals){
   
   ############ states ############
   random.ids <- private$ode.timesteps.cumsum+1
-  if(private$method %in% c("laplace")){
+  if(private$algo.settings$method %in% c("laplace")){
     
     # Smoothed States -----------------------------------
     temp.states <- data.frame(private$data$t, matrix(private$sdr$par.random, ncol=n.states)[random.ids, ])
     temp.sd <- data.frame(private$data$t, matrix(sqrt(private$sdr$diag.cov.random), ncol=n.states)[random.ids, ])
-    names(temp.states) = c("t", private$state.names)
-    names(temp.sd) = c("t", private$state.names)
+    names(temp.states) = c("t", private$names$states)
+    names(temp.sd) = c("t", private$names$states)
     private$fit$states$mean$smoothed = temp.states
     private$fit$states$sd$smoothed = temp.sd
   }
   
-  if(private$method %in% c("laplace.thygesen")){
+  if(private$algo.settings$method %in% c("laplace.thygesen")){
     
     # Smoothed States -----------------------------------
     # Fill with zeros to complete perfect columns (dB's have 1 missing elements compared to random effect states)
@@ -236,14 +236,14 @@ laplace_report <- function(self, private, laplace.residuals){
     sd.random <- c(sqrt(private$sdr$diag.cov.random), numeric(n.diff))
     temp.states <- data.frame(private$data$t, matrix(par.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
     temp.sd <- data.frame(private$data$t, matrix(sd.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
-    names(temp.states) = c("t", private$state.names)
-    names(temp.sd) = c("t", private$state.names)
+    names(temp.states) = c("t", private$names$states)
+    names(temp.sd) = c("t", private$names$states)
     private$fit$states$mean$smoothed = temp.states
     private$fit$states$sd$smoothed = temp.sd
   }
   
   ############ observations and residuals ############
-  if(private$method %in% c("laplace","laplace.thygesen")) {
+  if(private$algo.settings$method %in% c("laplace","laplace.thygesen")) {
     
     # compute one-step residuals
     if(laplace.residuals){
@@ -271,25 +271,25 @@ laplace_report <- function(self, private, laplace.residuals){
 laplace_states <- function(self, private){
   
   # lengths
-  n.states <- private$number.of.states
-  n.diff <- private$number.of.diffusions
+  n.states <- private$dimensions$states
+  n.diff <- private$dimensions$diffusions
   
   ############ LAPLACE ############
   
   random.ids <- private$ode.timesteps.cumsum+1
   
-  if(private$method %in% c("laplace")){
+  if(private$algo.settings$method %in% c("laplace")){
     
     # Smoothed States -----------------------------------
     temp.states <- data.frame(private$data$t, matrix(private$sdr$par.random, ncol=n.states)[random.ids, ])
     temp.sd <- data.frame(private$data$t, matrix(sqrt(private$sdr$diag.cov.random), ncol=n.states)[random.ids, ])
-    names(temp.states) = c("t", private$state.names)
-    names(temp.sd) = c("t", private$state.names)
+    names(temp.states) = c("t", private$names$states)
+    names(temp.sd) = c("t", private$names$states)
     private$fit$states$mean$smoothed = temp.states
     private$fit$states$sd$smoothed = temp.sd
   }
   
-  if(private$method %in% c("laplace.thygesen")){
+  if(private$algo.settings$method %in% c("laplace.thygesen")){
     
     # Smoothed States -----------------------------------
     # Fill with zeros to complete perfect columns (dB's have 1 missing elements compared to random effect states)
@@ -298,8 +298,8 @@ laplace_states <- function(self, private){
     sd.random <- c(sqrt(private$sdr$diag.cov.random), numeric(n.diff))
     temp.states <- data.frame(private$data$t, matrix(par.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
     temp.sd <- data.frame(private$data$t, matrix(sd.random, ncol=n.states+n.diff)[random.ids, 1:n.states])
-    names(temp.states) = c("t", private$state.names)
-    names(temp.sd) = c("t", private$state.names)
+    names(temp.states) = c("t", private$names$states)
+    names(temp.sd) = c("t", private$names$states)
     private$fit$states$mean$smoothed = temp.states
     private$fit$states$sd$smoothed = temp.sd
   }
@@ -316,15 +316,15 @@ laplace_states <- function(self, private){
 #######################################################
 report_residuals_and_observations <- function(laplace.residuals, self , private) {
   
-  nobs <- private$number.of.observations
-  .colnames <- c("t", private$obs.names)
+  nobs <- private$dimensions$observations
+  .colnames <- c("t", private$names$obs)
   
   cbind_t <- function(object, names){
     set.colnames(cbind(private$data$t, object), names)
   }
   
   ############ LAPLACE ############
-  if(private$method %in% c("laplace","laplace.thygesen")) {
+  if(private$algo.settings$method %in% c("laplace","laplace.thygesen")) {
     
     # compute one-step residuals
     if(laplace.residuals){

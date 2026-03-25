@@ -2,11 +2,11 @@
 perform_simulation <- function(self, private, use.cpp, n.sims){
   
   
-  if(private$method=="laplace"){
+  if(private$algo.settings$method=="laplace"){
     stop("Simulations are not available for the Laplace method")
   }
   
-  if(private$method=="laplace.thygesen"){
+  if(private$algo.settings$method=="laplace.thygesen"){
     stop("Simulations are not available for the Laplace-Thygesen method")
   }
   
@@ -18,20 +18,20 @@ perform_simulation <- function(self, private, use.cpp, n.sims){
         
         if(!private$silent) message("Simulating with C++...")
         
-        lkf_ekf_ukf_simulate_rcpp(private$pars, self, private, n.sims)
+        lkf_ekf_ukf_simulate_rcpp(private$model$argument.parameters, self, private, n.sims)
         
         # Predict with R implementation
       } else {
         
         if(!private$silent) message("Simulating with R...")
         
-        ekf_lkf_ukf_simulate_r(private$pars, self, private, n.sims)
+        ekf_lkf_ukf_simulate_r(private$model$argument.parameters, self, private, n.sims)
         
       }
       
     }, gcFirst = FALSE)
   
-  private$timer_simulation <- comptime
+  private$timers$simulation <- comptime
   
   return(invisible(self))
 }
@@ -39,8 +39,8 @@ perform_simulation <- function(self, private, use.cpp, n.sims){
 lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
   
   # observation/input matrix
-  obsMat = as.matrix(private$data[private$obs.names])
-  inputMat = as.matrix(private$data[private$input.names])
+  obsMat = as.matrix(private$data[private$names$obs])
+  inputMat = as.matrix(private$data[private$names$inputs])
   
   # non-na observation matrix
   numeric_is_not_na_obsMat = t(apply(obsMat, 1, FUN=function(x) as.numeric(!is.na(x))))
@@ -49,13 +49,13 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
   # number of non-na observations
   number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
   
-  ids <- 1:private$number.of.observations - 1 #minus 1 for 0 indexing
+  ids <- 1:private$dimensions$observations - 1 #minus 1 for 0 indexing
   non_na_ids <- apply(obsMat, 1, function(x) ids[!is.na(x)], simplify = FALSE)
   any_available_obs <- sapply(non_na_ids, function(x) length(x) != 0)
   
   output <- NULL
-  if(private$method=="lkf"){
-    output <- lkf_simulate_rcpp(private$rcpp_function_ptr,
+  if(private$algo.settings$method=="lkf"){
+    output <- lkf_simulate_rcpp(private$model$rcpp_function_ptr,
                                 obsMat,
                                 inputMat,
                                 pars,
@@ -66,14 +66,14 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
                                 private$simulation.timesteps,
                                 any_available_obs,
                                 non_na_ids,
-                                private$number.of.diffusions,
-                                private$last.pred.index,
-                                private$k.ahead,
+                                private$dimensions$diffusions,
+                                private$algo.settings$last.pred.index,
+                                private$algo.settings$k.ahead,
                                 n.sims,
-                                private$seed$state.seed)
+                                private$algo.settings$seed$state.seed)
   } 
-  if(private$method=="ekf"){
-    output <- ekf_simulate_rcpp(private$rcpp_function_ptr,
+  if(private$algo.settings$method=="ekf"){
+    output <- ekf_simulate_rcpp(private$model$rcpp_function_ptr,
                                 obsMat,
                                 inputMat,
                                 pars,
@@ -85,15 +85,15 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
                                 private$simulation.timesteps,
                                 any_available_obs,
                                 non_na_ids,
-                                private$ode.solver,
-                                private$last.pred.index,
-                                private$k.ahead,
-                                private$number.of.diffusions,
+                                private$algo.settings$ode.solver,
+                                private$algo.settings$last.pred.index,
+                                private$algo.settings$k.ahead,
+                                private$dimensions$diffusions,
                                 n.sims,
-                                private$seed$state.seed)
+                                private$algo.settings$seed$state.seed)
   }
-  if(private$method == "ukf"){
-    output <- ukf_simulate_rcpp(private$rcpp_function_ptr,
+  if(private$algo.settings$method == "ukf"){
+    output <- ukf_simulate_rcpp(private$model$rcpp_function_ptr,
                                 obsMat,
                                 inputMat,
                                 pars,
@@ -105,13 +105,13 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
                                 private$simulation.timesteps,
                                 numeric_is_not_na_obsMat,
                                 number_of_available_obs,
-                                private$ukf.hyperpars,
-                                private$number.of.diffusions,
-                                private$last.pred.index,
-                                private$k.ahead,
-                                private$ode.solver,
+                                private$algo.settings$ukf.hyperpars,
+                                private$dimensions$diffusions,
+                                private$algo.settings$last.pred.index,
+                                private$algo.settings$k.ahead,
+                                private$algo.settings$ode.solver,
                                 n.sims,
-                                private$seed$state.seed)
+                                private$algo.settings$seed$state.seed)
   }
   
   private$simulation.raw <- output
@@ -126,47 +126,47 @@ create_return_simulation <- function(return.k.ahead, n.sims, self, private){
   if(!private$silent) message("Returning results...")
   
   # create names for inner list
-  inner.names <- paste0("i", 0:(private$last.pred.index-1))
+  inner.names <- paste0("i", 0:(private$algo.settings$last.pred.index-1))
   
   # Build returnlist for states
   state.list <- build_simulation_returnlist(private$simulation.raw,
                                             private$data$t,
-                                            private$number.of.states,
-                                            private$k.ahead,
+                                            private$dimensions$states,
+                                            private$algo.settings$k.ahead,
                                             n.sims)
   # set state names
-  names(state.list) <- private$state.names
+  names(state.list) <- private$names$states
   for(i in seq_along(state.list)){
     names(state.list[[i]]) <- inner.names
   }
   
   # create index/time list
   time.list <- build_simulation_timelists(private$data$t,
-                                          private$last.pred.index,
-                                          private$k.ahead)
+                                          private$algo.settings$last.pred.index,
+                                          private$algo.settings$k.ahead)
   names(time.list) <- inner.names
   
   # Build returnlist for observations
   # First we must calculate the simulated observation trajectories
   simulation.raw.obs <- calculate_simulation_observations(
     private$simulation.raw,
-    private$rcpp_function_ptr,
-    t(as.matrix(private$data[private$input.names])),
-    private$pars,
-    private$number.of.states,
-    private$number.of.observations,
-    private$k.ahead,
+    private$model$rcpp_function_ptr,
+    t(as.matrix(private$data[private$names$inputs])),
+    private$model$argument.parameters,
+    private$dimensions$states,
+    private$dimensions$observations,
+    private$algo.settings$k.ahead,
     n.sims,
-    private$seed$obs.seed
+    private$algo.settings$seed$obs.seed
   )
   
   # # Now we can build the returnlist
   obs.list <- build_simulation_returnlist(simulation.raw.obs,
                                           private$data$t,
-                                          private$number.of.observations,
-                                          private$k.ahead,
+                                          private$dimensions$observations,
+                                          private$algo.settings$k.ahead,
                                           n.sims)
-  names(obs.list) <- private$obs.names
+  names(obs.list) <- private$names$obs
   for(i in seq_along(obs.list)){
     names(obs.list[[i]]) <- inner.names
   }

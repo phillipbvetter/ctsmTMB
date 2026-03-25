@@ -64,14 +64,14 @@ create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.f
     assign("hvar_vec", hvar_vec, envir = .envir)
     assign("dfdu_mat", dfdu_mat, envir = .envir)
     
-    create_function_from_string_body("f__", "f_vec", private$rtmb.function.strings.indexed2$f, .envir=.envir)
-    create_function_from_string_body("dfdx__", "dfdx_mat", private$rtmb.function.strings.indexed2$dfdx, .envir=.envir)
-    create_function_from_string_body("g__",  "g_mat", private$rtmb.function.strings.indexed2$g, .envir=.envir)
-    create_function_from_string_body("h__", "h_vec", private$rtmb.function.strings.indexed2$h, .envir=.envir)
-    create_function_from_string_body("dhdx__", "dhdx_mat", private$rtmb.function.strings.indexed2$dhdx, .envir=.envir)
-    create_function_from_string_body("hvar__matrix", "hvar_mat", private$rtmb.function.strings.indexed2$hvar__matrix, .envir=.envir)
-    create_function_from_string_body("dfdu__", "dfdu_mat", private$rtmb.function.strings.indexed2$dfdu, .envir=.envir)
-    create_function_from_string_body("hvar__", "hvar_vec", private$rtmb.function.strings.indexed2$hvar, .envir=.envir)
+    create_function_from_string_body("f__", "f_vec", private$model$rtmb.function.strings.indexed2$f, .envir=.envir)
+    create_function_from_string_body("dfdx__", "dfdx_mat", private$model$rtmb.function.strings.indexed2$dfdx, .envir=.envir)
+    create_function_from_string_body("g__",  "g_mat", private$model$rtmb.function.strings.indexed2$g, .envir=.envir)
+    create_function_from_string_body("h__", "h_vec", private$model$rtmb.function.strings.indexed2$h, .envir=.envir)
+    create_function_from_string_body("dhdx__", "dhdx_mat", private$model$rtmb.function.strings.indexed2$dhdx, .envir=.envir)
+    create_function_from_string_body("hvar__matrix", "hvar_mat", private$model$rtmb.function.strings.indexed2$hvar__matrix, .envir=.envir)
+    create_function_from_string_body("dfdu__", "dfdu_mat", private$model$rtmb.function.strings.indexed2$dfdu, .envir=.envir)
+    create_function_from_string_body("hvar__", "hvar_vec", private$model$rtmb.function.strings.indexed2$hvar, .envir=.envir)
     
   } else {
     
@@ -83,14 +83,14 @@ create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.f
       assign("Hsigma", Hsigma, envir = .envir)
     }
     
-    create_function_from_string_body("f__", "ans", private$r.function.strings$f, .envir=.envir)
-    create_function_from_string_body("dfdx__", "ans", private$r.function.strings$dfdx, .envir=.envir)
-    create_function_from_string_body("g__",  "ans", private$r.function.strings$g, .envir=.envir)
-    create_function_from_string_body("h__", "ans", private$r.function.strings$h, .envir=.envir)
-    create_function_from_string_body("dhdx__", "ans", private$r.function.strings$dhdx, .envir=.envir)
-    create_function_from_string_body("hvar__matrix", "ans", private$r.function.strings$hvar__matrix, .envir=.envir)
-    create_function_from_string_body("dfdu__", "ans", private$r.function.strings$dfdu, .envir=.envir)
-    create_function_from_string_body("hvar__", "ans", private$r.function.strings$hvar, .envir=.envir)
+    create_function_from_string_body("f__", "ans", private$model$r.function.strings$f, .envir=.envir)
+    create_function_from_string_body("dfdx__", "ans", private$model$r.function.strings$dfdx, .envir=.envir)
+    create_function_from_string_body("g__",  "ans", private$model$r.function.strings$g, .envir=.envir)
+    create_function_from_string_body("h__", "ans", private$model$r.function.strings$h, .envir=.envir)
+    create_function_from_string_body("dhdx__", "ans", private$model$r.function.strings$dhdx, .envir=.envir)
+    create_function_from_string_body("hvar__matrix", "ans", private$model$r.function.strings$hvar__matrix, .envir=.envir)
+    create_function_from_string_body("dfdu__", "ans", private$model$r.function.strings$dfdu, .envir=.envir)
+    create_function_from_string_body("hvar__", "ans", private$model$r.function.strings$hvar, .envir=.envir)
     
   }
   
@@ -110,14 +110,14 @@ create_state_space_functions_for_filtering <- function(.envir=parent.frame()){
     assign("Hsigma", Hsigma, envir = .envir)
   }
   
-  create_function_from_string_body("f__", "ans", private$r.function.strings$f, .envir=.envir)
-  create_function_from_string_body("dfdx__", "ans", private$r.function.strings$dfdx, .envir=.envir)
-  create_function_from_string_body("g__",  "ans", private$r.function.strings$g, .envir=.envir)
-  create_function_from_string_body("h__", "ans", private$r.function.strings$h, .envir=.envir)
-  create_function_from_string_body("dhdx__", "ans", private$r.function.strings$dhdx, .envir=.envir)
-  create_function_from_string_body("hvar__matrix", "ans", private$r.function.strings$hvar__matrix, .envir=.envir)
-  create_function_from_string_body("dfdu__", "ans", private$r.function.strings$dfdu, .envir=.envir)
-  create_function_from_string_body("hvar__", "ans", private$r.function.strings$hvar, .envir=.envir)
+  create_function_from_string_body("f__", "ans", private$model$r.function.strings$f, .envir=.envir)
+  create_function_from_string_body("dfdx__", "ans", private$model$r.function.strings$dfdx, .envir=.envir)
+  create_function_from_string_body("g__",  "ans", private$model$r.function.strings$g, .envir=.envir)
+  create_function_from_string_body("h__", "ans", private$model$r.function.strings$h, .envir=.envir)
+  create_function_from_string_body("dhdx__", "ans", private$model$r.function.strings$dhdx, .envir=.envir)
+  create_function_from_string_body("hvar__matrix", "ans", private$model$r.function.strings$hvar__matrix, .envir=.envir)
+  create_function_from_string_body("dfdu__", "ans", private$model$r.function.strings$dfdu, .envir=.envir)
+  create_function_from_string_body("hvar__", "ans", private$model$r.function.strings$hvar, .envir=.envir)
   
   return(invisible(NULL))
 }
@@ -160,8 +160,8 @@ create_state_space_function_strings = function(self, private)
       f.elements <- c(f.elements, sprintf("f_vec[[%s]] <- %s",i,term))
     }
   }
-  private$rtmb.function.strings.indexed2$f = paste(f.elements,collapse="; ")
-  private$r.function.strings$f <- paste("ans <- c(",paste(f.elements2,collapse=", "),")")
+  private$model$rtmb.function.strings.indexed2$f = paste(f.elements,collapse="; ")
+  private$model$r.function.strings$f <- paste("ans <- c(",paste(f.elements2,collapse=", "),")")
   
   ##################################################
   # drift jacobian
@@ -184,8 +184,8 @@ create_state_space_function_strings = function(self, private)
       }
     }
   }
-  private$rtmb.function.strings.indexed2$dfdx = paste(f.elements, collapse=";")
-  private$r.function.strings$dfdx <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
+  private$model$rtmb.function.strings.indexed2$dfdx = paste(f.elements, collapse=";")
+  private$model$r.function.strings$dfdx <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
   
   ##################################################
   # diffusion
@@ -208,8 +208,8 @@ create_state_space_function_strings = function(self, private)
       }
     }
   }
-  private$rtmb.function.strings.indexed2$g = paste(f.elements,collapse=";")
-  private$r.function.strings$g <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
+  private$model$rtmb.function.strings.indexed2$g = paste(f.elements,collapse=";")
+  private$model$r.function.strings$g <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
   
   ##################################################
   # observation
@@ -231,8 +231,8 @@ create_state_space_function_strings = function(self, private)
       f.elements <- c(f.elements, sprintf("h_vec[[%s]] <- %s",i, term))
     }
   }
-  private$rtmb.function.strings.indexed2$h = paste(f.elements, collapse=";")
-  private$r.function.strings$h <- paste("ans <- c(",paste(f.elements2,collapse=", "),")")
+  private$model$rtmb.function.strings.indexed2$h = paste(f.elements, collapse=";")
+  private$model$r.function.strings$h <- paste("ans <- c(",paste(f.elements2,collapse=", "),")")
   
   ##################################################
   # observation jacobian
@@ -257,8 +257,8 @@ create_state_space_function_strings = function(self, private)
       }
     }
   }
-  private$rtmb.function.strings.indexed2$dhdx = paste(f.elements,collapse=";")
-  private$r.function.strings$dhdx <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), ncol=n.states)")
+  private$model$rtmb.function.strings.indexed2$dhdx = paste(f.elements,collapse=";")
+  private$model$r.function.strings$dhdx <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), ncol=n.states)")
   
   ##################################################
   # observation variance
@@ -281,8 +281,8 @@ create_state_space_function_strings = function(self, private)
       f.elements <- c(f.elements, sprintf("hvar_vec[[%s]] <- %s",i, term))
     }
   }
-  private$rtmb.function.strings.indexed2$hvar = paste(f.elements,collapse=";")
-  private$r.function.strings$hvar <- paste("ans <- c(",paste(c(f.elements2),collapse=", "),")")
+  private$model$rtmb.function.strings.indexed2$hvar = paste(f.elements,collapse=";")
+  private$model$r.function.strings$hvar <- paste("ans <- c(",paste(c(f.elements2),collapse=", "),")")
   
   ### MATRIX FORM ### (for kalman)
   f.elements <- c()
@@ -301,8 +301,8 @@ create_state_space_function_strings = function(self, private)
       f.elements <- c(f.elements, sprintf("hvar_mat[[%s,%s]] <- %s",i,i,term))
     }
   }
-  private$rtmb.function.strings.indexed2$hvar__matrix = paste(f.elements,collapse=";")
-  private$r.function.strings$hvar__matrix <- paste("ans <- RTMB::diag(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.obs)")
+  private$model$rtmb.function.strings.indexed2$hvar__matrix = paste(f.elements,collapse=";")
+  private$model$r.function.strings$hvar__matrix <- paste("ans <- RTMB::diag(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.obs)")
   
   ##################################################
   # derivative w.r.t inputs (for linear kalman filter)
@@ -360,8 +360,8 @@ create_state_space_function_strings = function(self, private)
       }
     }
   }
-  private$rtmb.function.strings.indexed2$dfdu = paste(f.elements,collapse=";")
-  private$r.function.strings$dfdu <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
+  private$model$rtmb.function.strings.indexed2$dfdu = paste(f.elements,collapse=";")
+  private$model$r.function.strings$dfdu <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
   
   return(invisible(NULL))
 }
@@ -407,14 +407,14 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return f;
                  }",private$dimensions$states, paste(f,collapse=""))
   
-  private$rcpp.function.strings$f = code
+  private$model$rcpp.function.strings$f = code
   
   code = sprintf("Eigen::VectorXd f_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::VectorXd f(%s);
                  %s
                  return f;
                  }",private$dimensions$states, paste(f,collapse="\n "))
-  private$rcpp.function.strings$f_const = code
+  private$model$rcpp.function.strings$f_const = code
   
   f = sapply( seq_along(private$names$states),
               function(i){
@@ -425,7 +425,7 @@ create_rcpp_state_space_function_strings = function(self, private){
   code = sprintf("void f_prealoc(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec, Eigen::VectorXd& out){
                  %s
                  }", paste(f, collapse="\n "))
-  private$rcpp.function.strings$f_prealoc = code
+  private$model$rcpp.function.strings$f_prealoc = code
   
   ##################################################
   # drift jacobian
@@ -446,14 +446,14 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return dfdx;
                  }",private$dimensions$states, private$dimensions$states, paste(dfdx,collapse=""))
   
-  private$rcpp.function.strings$dfdx = code
+  private$model$rcpp.function.strings$dfdx = code
   
   code = sprintf("Eigen::MatrixXd dfdx_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd dfdx(%s,%s);
                  %s
                  return dfdx;
                  }",private$dimensions$states, private$dimensions$states, paste(dfdx,collapse=""))
-  private$rcpp.function.strings$dfdx_const = code
+  private$model$rcpp.function.strings$dfdx_const = code
   
   dfdx = c()
   for(i in seq_along(private$names$states)){
@@ -466,7 +466,7 @@ create_rcpp_state_space_function_strings = function(self, private){
   code = sprintf("void dfdx_prealoc(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec, Eigen::MatrixXd& out){
                  %s
                  }", paste(dfdx,collapse=""))
-  private$rcpp.function.strings$dfdx_prealoc = code
+  private$model$rcpp.function.strings$dfdx_prealoc = code
   
   ##################################################
   # diffusion
@@ -487,14 +487,14 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return g;
                  }",private$dimensions$states, private$dimensions$diffusions, paste(g,collapse=""))
   
-  private$rcpp.function.strings$g = code
+  private$model$rcpp.function.strings$g = code
   
   code = sprintf("Eigen::MatrixXd g_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd g(%s,%s);
                  %s
                  return g;
                  }",private$dimensions$states, private$dimensions$diffusions, paste(g,collapse=""))
-  private$rcpp.function.strings$g_const = code
+  private$model$rcpp.function.strings$g_const = code
   
   g = c()
   for(i in seq_along(private$names$states)){
@@ -508,7 +508,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  }", paste(g,collapse="\n "))
   
-  private$rcpp.function.strings$g_prealoc = code
+  private$model$rcpp.function.strings$g_prealoc = code
   
   ##################################################
   # observation
@@ -526,14 +526,14 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return h;
                  }",private$dimensions$observations, paste(h,collapse=""))
-  private$rcpp.function.strings$h = code
+  private$model$rcpp.function.strings$h = code
   
   code = sprintf("Eigen::VectorXd h_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::VectorXd h(%s);
                  %s
                  return h;
                  }",private$dimensions$observations, paste(h,collapse=""))
-  private$rcpp.function.strings$h_const = code
+  private$model$rcpp.function.strings$h_const = code
   
   h = sapply(seq_along(private$names$obs), 
              function(i){
@@ -544,7 +544,7 @@ create_rcpp_state_space_function_strings = function(self, private){
   code = sprintf("void h_prealoc(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec, Eigen::VectorXd& out) {
                  %s
                  }", paste(h,collapse="\n "))
-  private$rcpp.function.strings$h_prealoc = code
+  private$model$rcpp.function.strings$h_prealoc = code
   
   ##################################################
   # observation jacobian
@@ -564,14 +564,14 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return dhdx;
                  }", private$dimensions$observations, private$dimensions$states, paste(dhdx,collapse=""))
-  private$rcpp.function.strings$dhdx = code
+  private$model$rcpp.function.strings$dhdx = code
   
   code = sprintf("Eigen::MatrixXd dhdx_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd dhdx(%s,%s);
                  %s
                  return dhdx;
                  }", private$dimensions$observations, private$dimensions$states, paste(dhdx,collapse=""))
-  private$rcpp.function.strings$dhdx_const = code
+  private$model$rcpp.function.strings$dhdx_const = code
   
   dhdx = c()
   for(i in seq_along(private$names$obs)){
@@ -584,7 +584,7 @@ create_rcpp_state_space_function_strings = function(self, private){
   code = sprintf("void dhdx_prealoc(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec, Eigen::MatrixXd& out) {
                  %s
                  }", paste(dhdx,collapse=""))
-  private$rcpp.function.strings$dhdx_prealoc = code
+  private$model$rcpp.function.strings$dhdx_prealoc = code
 
   ##################################################
   # observation variance
@@ -602,7 +602,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return hvar;
                  }", private$dimensions$observations, private$dimensions$observations, paste(hvar,collapse=""))
-  private$rcpp.function.strings$hvar = code
+  private$model$rcpp.function.strings$hvar = code
   
   code = sprintf("Eigen::MatrixXd hvar_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd hvar(%s,%s);
@@ -610,7 +610,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return hvar;
                  }", private$dimensions$observations, private$dimensions$observations, paste(hvar,collapse=""))
-  private$rcpp.function.strings$hvar_const = code
+  private$model$rcpp.function.strings$hvar_const = code
   
   hvar = lapply(seq_along(private$model$obs.var.trans), 
                 function(i) {
@@ -622,7 +622,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  out.setZero();
                  %s
                  }", paste(hvar,collapse=""))
-  private$rcpp.function.strings$hvar_prealoc = code
+  private$model$rcpp.function.strings$hvar_prealoc = code
   
   ##################################################
   # observation variance vector form
@@ -640,7 +640,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return hvar;
                  }", private$dimensions$observations, paste(hvar,collapse=""))
-  private$rcpp.function.strings$hvar_array = code
+  private$model$rcpp.function.strings$hvar_array = code
   
   code = sprintf("Eigen::ArrayXd hvar_array_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::ArrayXd hvar(%s);
@@ -648,7 +648,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return hvar;
                  }", private$dimensions$observations, paste(hvar,collapse=""))
-  private$rcpp.function.strings$hvar_array_const = code
+  private$model$rcpp.function.strings$hvar_array_const = code
   
   ##################################################
   # derivative w.r.t inputs (for linear kalman filter)
@@ -688,7 +688,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return ans;
                  }", private$dimensions$states, private$dimensions$inputs+1, paste(jac.f.wrt.u, collapse=""))
   
-  private$rcpp.function.strings$dfdu = code
+  private$model$rcpp.function.strings$dfdu = code
   
   code = sprintf("Eigen::MatrixXd dfdu_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd ans(%s,%s);
@@ -696,7 +696,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return ans;
                  }", private$dimensions$states, private$dimensions$inputs+1, paste(jac.f.wrt.u, collapse=""))
-  private$rcpp.function.strings$dfdu_const = code
+  private$model$rcpp.function.strings$dfdu_const = code
   
   
 }

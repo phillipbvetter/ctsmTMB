@@ -100,7 +100,14 @@ ctsmTMB = R6::R6Class(
         diff.processes = NULL,
         diff.terms     = NULL,
         diff.terms.obs   = NULL,
-        diff.terms.drift = NULL
+        diff.terms.drift = NULL,
+        fixed.pars             = list(),
+        free.pars              = list(),
+        argument.parameters    = NULL,
+        rtmb.function.strings.indexed2 = NULL,
+        r.function.strings     = NULL,
+        rcpp.function.strings  = NULL,
+        rcpp_function_ptr      = NULL
       )
 
       private$initial.state = NULL
@@ -138,11 +145,6 @@ ctsmTMB = R6::R6Class(
       # rebuild
       private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE)
       private$old.data = list()
-
-      # hidden
-      private$fixed.pars = list()
-      private$free.pars = list()
-      private$argument.parameters = NULL
 
       # names
       private$names = list(
@@ -189,14 +191,6 @@ ctsmTMB = R6::R6Class(
         simulation      = NA
       )
 
-
-      # function strings
-      private$rtmb.function.strings.indexed2 = NULL
-      private$r.function.strings = NULL
-      private$rcpp.function.strings = NULL
-
-      # rcpp functions
-      private$rcpp_function_ptr = NULL
 
     },
 
@@ -492,11 +486,11 @@ ctsmTMB = R6::R6Class(
             # FIXED PARAMETER
 
             # if this is a new fixed parameter than recompile ad
-            if(is.null(private$fixed.pars[[par.name]])){
+            if(is.null(private$model$fixed.pars[[par.name]])){
               private$rebuild$ad <- TRUE
             } else {
               # if this is an existing fixed parameter but its value changed then also recompile ad
-              prev.value <- private$fixed.pars[[par.name]]$initial
+              prev.value <- private$model$fixed.pars[[par.name]]$initial
               new.value <- par.entry[["initial"]]
               bool <- identical(prev.value, new.value)
               if(!bool){
@@ -505,25 +499,25 @@ ctsmTMB = R6::R6Class(
             }
 
             # set the parameter values
-            private$fixed.pars[[par.name]] = private$model$parameters[[par.name]]
-            private$fixed.pars[[par.name]][["factor"]] = factor(NA)
+            private$model$fixed.pars[[par.name]] = private$model$parameters[[par.name]]
+            private$model$fixed.pars[[par.name]][["factor"]] = factor(NA)
 
             # remove the parameter from the free list (in case it was there previously)
-            private$free.pars[[par.name]] = NULL
+            private$model$free.pars[[par.name]] = NULL
 
           } else {
             # FREE PARAMETER
 
             # if the entry is new, then recompile the ad graph
-            if(is.null(private$free.pars[[par.name]])){
+            if(is.null(private$model$free.pars[[par.name]])){
               private$rebuild$ad <- TRUE
             }
 
             # set the parameter
-            private$free.pars[[par.name]] = private$model$parameters[[par.name]]
+            private$model$free.pars[[par.name]] = private$model$parameters[[par.name]]
 
             # remove the parameter from the fixed list (in case it was there previously)
-            private$fixed.pars[[par.name]] = NULL
+            private$model$fixed.pars[[par.name]] = NULL
           }
 
           # update parameter names
@@ -553,13 +547,13 @@ ctsmTMB = R6::R6Class(
                                                  upper = par.entry[i,"upper"])
 
             # set or remove a fixed parameter (NA-bounds)
-            private$fixed.pars[[parname]] = NULL
-            private$free.pars[[parname]] = NULL
+            private$model$fixed.pars[[parname]] = NULL
+            private$model$free.pars[[parname]] = NULL
             if(all(is.na(par.entry[i,c("lower","upper")]))){
-              private$fixed.pars[[parname]] = private$model$parameters[[parname]]
-              private$fixed.pars[[parname]][["factor"]] = factor(NA)
+              private$model$fixed.pars[[parname]] = private$model$parameters[[parname]]
+              private$model$fixed.pars[[parname]][["factor"]] = factor(NA)
             } else {
-              private$free.pars[[parname]] = private$model$parameters[[parname]]
+              private$model$free.pars[[parname]] = private$model$parameters[[parname]]
             }
 
             # update parameter names
@@ -576,8 +570,8 @@ ctsmTMB = R6::R6Class(
 
         # update system size
         private$dimensions$pars = length(private$model$parameters)
-        private$dimensions$free.pars = length(private$free.pars)
-        private$dimensions$fixed.pars = length(private$fixed.pars)
+        private$dimensions$free.pars = length(private$model$free.pars)
+        private$dimensions$fixed.pars = length(private$model$fixed.pars)
 
       }
 
@@ -918,15 +912,15 @@ ctsmTMB = R6::R6Class(
         row.names = nms
       )
 
-      if (length(private$fixed.pars) > 0) {
-        fn = names(private$fixed.pars)
+      if (length(private$model$fixed.pars) > 0) {
+        fn = names(private$model$fixed.pars)
         .df[fn, "type"]     = "fixed"
-        .df[fn, "estimate"] = sapply(private$fixed.pars, `[[`, "initial")
+        .df[fn, "estimate"] = sapply(private$model$fixed.pars, `[[`, "initial")
       }
 
       # Assign estimated values for free parameters after a successful fit
       if (!is.null(private$fit$par.fixed)) {
-        fn = names(private$free.pars)
+        fn = names(private$model$free.pars)
         .df[fn, "estimate"] = private$fit$par.fixed[fn]
       }
 
@@ -1697,13 +1691,13 @@ ctsmTMB = R6::R6Class(
       # FREE PARAMETERS
       # if (freepars>0) {
       #   cat("\n\nFree Parameters:\n")
-      #   cat("\t", paste(names(private$free.pars),collapse=", "))
+      #   cat("\t", paste(names(private$model$free.pars),collapse=", "))
       # }
 
       # FIXED PARAMETERS
       if (fixedpars>0) {
         cat("\n\nFixed Parameters:\n")
-        cat("\t", paste(names(private$fixed.pars),collapse=", "))
+        cat("\t", paste(names(private$model$fixed.pars),collapse=", "))
       }
 
       # ALGEBRAICS
@@ -1766,11 +1760,6 @@ ctsmTMB = R6::R6Class(
     rebuild = list(model = FALSE, ad = FALSE, data = FALSE),
     old.data = list(),
 
-    # hidden
-    fixed.pars = NULL,
-    free.pars = NULL,
-    argument.parameters = NULL,
-
     # lengths
     dimensions = NULL,
 
@@ -1793,14 +1782,6 @@ ctsmTMB = R6::R6Class(
     # timers
     timers = NULL,
 
-
-    # function strings
-    rtmb.function.strings.indexed2 = NULL,
-    r.function.strings = NULL,
-    rcpp.function.strings = NULL,
-
-    # rcpp
-    rcpp_function_ptr = NULL,
 
     # unscented transform
     ukf.hyperpars = NULL,
