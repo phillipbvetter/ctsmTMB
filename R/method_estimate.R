@@ -220,9 +220,8 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
   }
 
 
-  # clone private into fit -----------------------------------
-  # no need for deep copy??
-  private$results$fit$private <- self$clone()$.__enclos_env__$private
+  # snapshot only the fields consumed by S3 methods
+  private$results$fit$private <- private$make_private_snapshot()
 
   # set s3 class -----------------------------------
   class(private$results$fit) = "ctsmTMB.fit"

@@ -982,7 +982,7 @@ ctsmTMB = R6::R6Class(
 
       # return
       fit <- private$results$fit
-      fit$private = self$clone()$getPrivate()
+      fit$private = private$make_private_snapshot()
       return(invisible(fit))
     },
 
@@ -2250,6 +2250,20 @@ ctsmTMB = R6::R6Class(
 
       # return
       return(invisible(self))
+    },
+
+    ########################################################################
+    # PRIVATE SNAPSHOT FOR FIT OBJECT
+    ########################################################################
+    make_private_snapshot = function() {
+      list(
+        algo.settings = list(method = private$algo.settings$method),
+        dims          = private$dims,
+        names         = private$names,
+        data          = private$data,
+        nll           = private$nll,
+        modelname     = private$modelname
+      )
     }
 
   )
