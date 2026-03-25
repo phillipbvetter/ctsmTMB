@@ -1961,27 +1961,16 @@ ctsmTMB = R6::R6Class(
       return(invisible(self))
     },
     ########################################################################
-    # SET ODE TIME-STEP
+    # SET TIME-STEP (ODE OR SIMULATION)
     ########################################################################
-    set_ode_timestep = function(dt) {
+    set_timestep = function(type, dt) {
 
       # must be numeric
       if (!is.numeric(dt)) {
         stop("The timestep should be a numeric value.")
       }
 
-      private$algo.settings$ode.timestep = dt
-    },
-    ########################################################################
-    # SET SIMULATION TIME-STEP
-    ########################################################################
-    set_simulation_timestep = function(dt) {
-
-      # must be numeric
-      if (!is.numeric(dt)) {
-        stop("The timestep should be a numeric value.")
-      }
-      private$algo.settings$simulation.timestep = dt
+      private$algo.settings[[paste0(type, ".timestep")]] = dt
     },
 
     ########################################################################
