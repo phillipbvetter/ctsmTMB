@@ -30,8 +30,8 @@ ekf_filter_r = function(parVec, self, private)
   get_ekf_update_functions()
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
   inputMat = as.matrix(private$data[private$names$inputs])
   obsMat = as.matrix(private$data[private$names$obs])
   
@@ -143,8 +143,8 @@ lkf_filter_r = function(parVec, self, private)
   get_ekf_update_functions()
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
   inputMat = as.matrix(private$data[private$names$inputs])
   obsMat = as.matrix(private$data[private$names$obs])
   
@@ -297,8 +297,8 @@ ukf_filter_r = function(parVec, self, private)
   get_ukf_update()
   
   # time-steps
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
   
   ####### STORAGE #######
   xPrior <- pPrior <- xPost <- pPost <- Innovation <- InnovationCovariance <- vector("list",length=nrow(obsMat))

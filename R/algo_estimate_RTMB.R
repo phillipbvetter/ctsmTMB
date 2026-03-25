@@ -39,8 +39,8 @@ makeADFun_ekf_rtmb = function(self, private)
   }
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
   
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
@@ -178,8 +178,8 @@ makeADFun_lkf_rtmb = function(self, private)
   }
   
   # Timesteps, Observations, Inputs and Parameters ----------------------------
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
   
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
@@ -356,8 +356,8 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
   }
   
   # time-steps
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
   
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
@@ -527,8 +527,8 @@ makeADFun_ukf_rtmb = function(self, private)
   }
   
   # time-steps
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
   
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
@@ -671,9 +671,9 @@ makeADFun_laplace_rtmb = function(self, private)
   }
   
   # time-steps
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
-  ode_cumsum_timesteps = private$ode.timesteps.cumsum
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
+  ode_cumsum_timesteps = private$algo.settings$ode.timesteps.cumsum
   
   # indices with non-na observations
   iobs <- private$iobs
@@ -823,9 +823,9 @@ makeADFun_laplace2_rtmb = function(self, private)
   }
   
   # time-steps
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
-  ode_cumsum_timesteps = private$ode.timesteps.cumsum
+  ode_timestep_size = private$algo.settings$ode.timestep.size
+  ode_timesteps = private$algo.settings$ode.timesteps
+  ode_cumsum_timesteps = private$algo.settings$ode.timesteps.cumsum
   
   # indices with non-na observations
   iobs <- private$iobs

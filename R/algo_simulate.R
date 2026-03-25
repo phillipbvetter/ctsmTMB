@@ -15,8 +15,8 @@ ekf_lkf_ukf_simulate_r = function(parVec, self, private, nsims)
   k.ahead <- private$algo.settings$k.ahead
   last.pred.index <- private$algo.settings$last.pred.index
   # time-steps
-  sde_timestep_size <- private$simulation.timestep.size
-  sde_timesteps <- private$simulation.timesteps
+  sde_timestep_size <- private$algo.settings$simulation.timestep.size
+  sde_timesteps <- private$algo.settings$simulation.timesteps
   
   # various utility functions for likelihood calculations ---------------------
   create_state_space_functions_for_filtering()

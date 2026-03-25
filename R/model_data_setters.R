@@ -157,7 +157,7 @@ set_ode_timestep = function(data, self, private){
   # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333
   # down from the set ode.timestep = 1
 
-  ode.timestep <- private$ode.timestep
+  ode.timestep <- private$algo.settings$ode.timestep
 
   # check that ode.timestep has length 1 or at least nrow(data)-1.
   if (length(ode.timestep) == 1) {
@@ -210,9 +210,9 @@ set_ode_timestep = function(data, self, private){
   ode_timestep_size[residual.step.bool] = data.dt[residual.step.bool] / ode.timesteps[residual.step.bool]
 
   # store the calculated step-size, number of steps, and cumulative number of steps
-  private$ode.timestep.size = ode_timestep_size
-  private$ode.timesteps = ode.timesteps
-  private$ode.timesteps.cumsum = c(0,cumsum(private$ode.timesteps)) #this is used in the laplace method
+  private$algo.settings$ode.timestep.size = ode_timestep_size
+  private$algo.settings$ode.timesteps = ode.timesteps
+  private$algo.settings$ode.timesteps.cumsum = c(0,cumsum(private$algo.settings$ode.timesteps)) #this is used in the laplace method
 
   # return
   return(invisible(self))
@@ -252,7 +252,7 @@ set_data_for_laplace_method = function(data, self, private){
   #intermediate points determined by the user-selected ode.timestep variable
   private$tmb.initial.state <- vector("list",length=private$dims$states)
   for(i in seq_along(private$names$states)){
-    private$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$ode.timesteps,1))
+    private$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.timesteps,1))
   }
   names(private$tmb.initial.state) = private$names$states
   private$tmb.initial.state <- as.data.frame(private$tmb.initial.state)
@@ -275,7 +275,7 @@ set_simulation_timestep = function(data, self, private){
   # so we round up the number of steps there i.e. ode.N = [1 , 1 , 3]. The last entry is the important one.
   # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333
   # down from the set ode.timestep = 1
-  simulation.timestep <- private$simulation.timestep
+  simulation.timestep <- private$algo.settings$simulation.timestep
 
   # check that simulation.timestep has length 1 or at least nrow(data)-1.
   if (length(simulation.timestep) == 1) {
@@ -328,8 +328,8 @@ set_simulation_timestep = function(data, self, private){
   simulation_timestep_size[residual.step.bool] = data.dt[residual.step.bool] / simulation.timesteps[residual.step.bool]
 
   # store the calculated step-size, number of steps, and cumulative number of steps
-  private$simulation.timestep.size = simulation_timestep_size
-  private$simulation.timesteps = simulation.timesteps
+  private$algo.settings$simulation.timestep.size = simulation_timestep_size
+  private$algo.settings$simulation.timesteps = simulation.timesteps
 
   # return
   return(invisible(self))

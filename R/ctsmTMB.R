@@ -145,7 +145,14 @@ ctsmTMB = R6::R6Class(
         last.pred.index             = 0,
         seed                        = NULL,
         ukf.hyperpars               = list(),
-        argument.parameters         = NULL
+        argument.parameters         = NULL,
+        ode.timestep                = NULL,
+        ode.timestep.size           = NULL,
+        ode.timesteps               = NULL,
+        ode.timesteps.cumsum        = NULL,
+        simulation.timestep         = NULL,
+        simulation.timestep.size    = NULL,
+        simulation.timesteps        = NULL
       )
       private$names = list(
         states     = NULL,
@@ -1744,14 +1751,6 @@ ctsmTMB = R6::R6Class(
     optim.settings = NULL,
     compile = NULL,
     silent = NULL,
-    ode.timestep = NULL,
-    ode.timestep.size = NULL,
-    ode.timesteps = NULL,
-    ode.timesteps.cumsum = NULL,
-    simulation.timestep = NULL,
-    simulation.timesteps = NULL,
-    simulation.timestep.size = NULL,
-
     # rebuild
     rebuild = list(model = FALSE, ad = FALSE, data = FALSE),
     old.data = list(),
@@ -1971,7 +1970,7 @@ ctsmTMB = R6::R6Class(
         stop("The timestep should be a numeric value.")
       }
 
-      private$ode.timestep = dt
+      private$algo.settings$ode.timestep = dt
     },
     ########################################################################
     # SET SIMULATION TIME-STEP
@@ -1982,7 +1981,7 @@ ctsmTMB = R6::R6Class(
       if (!is.numeric(dt)) {
         stop("The timestep should be a numeric value.")
       }
-      private$simulation.timestep = dt
+      private$algo.settings$simulation.timestep = dt
     },
 
     ########################################################################
