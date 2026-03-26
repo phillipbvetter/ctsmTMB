@@ -15,12 +15,12 @@ perform_filtering = function(self, private, use.cpp){
   comptime <- system.time({
     if(use.cpp){
       
-      if(!private$silent) message("Filtering with C++...")
+      if(!private$algo.settings$silent) message("Filtering with C++...")
       lkf_ekf_ukf_filter_rcpp(private$algo.settings$argument.parameters, self, private)
       
     } else {
       
-      if(!private$silent) message("Filtering with R...")
+      if(!private$algo.settings$silent) message("Filtering with R...")
       lkf_ekf_ukf_filter_r(private$algo.settings$argument.parameters, self, private)
       
     }
@@ -107,7 +107,7 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
   return(invisible(self))
 }
 
-create_filter_results <- function(self, private, laplace.residuals, silent=private$silent){
+create_filter_results <- function(self, private, laplace.residuals, silent=private$algo.settings$silent){
 
   if(!silent) message("Returning results...")
 

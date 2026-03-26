@@ -12,7 +12,7 @@ construct_makeADFun = function(self, private){
   save_settings_for_ad_construct_check(self, private)
   private$rebuild$ad <- FALSE
 
-  if(!private$silent) message("Constructing objective function and derivative tables...")
+  if(!private$algo.settings$silent) message("Constructing objective function and derivative tables...")
 
   comptime <- system.time({
 
@@ -24,7 +24,7 @@ construct_makeADFun = function(self, private){
            lkf.cpp = makeADFun_lkf_tmb(self, private),
            #
            ukf = {
-             if(!private$silent) message("The RTMB UKF implementation may be unstable. You can try the TMB version instead 'method=ukf.cpp'.")
+             if(!private$algo.settings$silent) message("The RTMB UKF implementation may be unstable. You can try the TMB version instead 'method=ukf.cpp'.")
              makeADFun_ukf_rtmb(self, private)
            },
            ukf.cpp = makeADFun_ukf_tmb(self, private),
@@ -46,7 +46,7 @@ construct_makeADFun = function(self, private){
 
 perform_estimation = function(self, private) {
 
-  if(!private$silent) message("Minimizing the negative log-likelihood...")
+  if(!private$algo.settings$silent) message("Minimizing the negative log-likelihood...")
 
   # Parameter Bounds
   initial.parameters <- sapply(private$model$parameters[names(private$model$free.pars)], function(par) par$initial)
@@ -133,7 +133,7 @@ perform_estimation = function(self, private) {
   comp.time = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
 
   # print convergence and timing result
-  if(!private$silent){
+  if(!private$algo.settings$silent){
     # if(outer_mgc > 1){
     # message("BEWARE: THE MAXIMUM GRADIENT COMPONENT APPEARS TO BE LARGE ( > 1 ) - THE FOUND OPTIMUM MIGHT BE INVALID.")
     # }
@@ -151,7 +151,7 @@ perform_estimation = function(self, private) {
   #
   # For TMB method: run sdreport
   if (any(private$algo.settings$method== c("laplace","laplace.thygesen"))) {
-    if(!private$silent) message("Calculating standard deviations...")
+    if(!private$algo.settings$silent) message("Calculating standard deviations...")
     # NOTE: The state covariances can be retrived by inverting sdr$jointPrecision
     # but this takes very long time. Should it be an option?
     private$sdr <- TMB::sdreport(private$nll, getJointPrecision=FALSE)
@@ -167,7 +167,7 @@ perform_estimation = function(self, private) {
 
 create_estimation_return_fit = function(self, private, report, laplace.residuals){
 
-  if(!private$silent) message("Returning results...")
+  if(!private$algo.settings$silent) message("Returning results...")
 
   # Initialization and Clearing -----------------------------------
   if (is.null(private$results$opt)) {
@@ -191,8 +191,8 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
     if(private$algo.settings$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
 
       # Call filter with silenced settings
-      silent.setting <- private$silent
-      on.exit(private$silent <- silent.setting, add=TRUE)
+      silent.setting <- private$algo.settings$silent
+      on.exit(private$algo.settings$silent <- silent.setting, add=TRUE)
 
       # perform filtering
       self$filter(data=private$data,

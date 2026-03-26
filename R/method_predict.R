@@ -20,14 +20,14 @@ perform_prediction <- function(self, private, use.cpp){
       # Predict with Rcpp implementation
       if(use.cpp){
         
-        if(!private$silent) message("Predicting with C++...")
+        if(!private$algo.settings$silent) message("Predicting with C++...")
         
         lkf_ekf_ukf_predict_rcpp(private$algo.settings$argument.parameters, self, private)
         
         # Predict with R implementation
       } else {
         
-        if(!private$silent) message("Predicting with R...")
+        if(!private$algo.settings$silent) message("Predicting with R...")
         
         lkf_ekf_ukf_predict_r(private$algo.settings$argument.parameters, self, private)
         
@@ -131,7 +131,7 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
 #######################################################
 create_return_prediction <- function(reported.dispersion.type, return.k.ahead, self, private){
   
-  if(!private$silent) message("Returning results...")
+  if(!private$algo.settings$silent) message("Returning results...")
   
   # Simlify variable names
   n               <- private$dims$states

@@ -21,7 +21,7 @@ check_and_set_data = function(data, self, private) {
     private$old.data$entry.data <- data
   }
 
-  if(!private$silent) message("Checking data...")
+  if(!private$algo.settings$silent) message("Checking data...")
 
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)

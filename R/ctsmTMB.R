@@ -89,9 +89,6 @@ ctsmTMB = R6::R6Class(
       private$data = NULL
       private$nll = NULL
 
-      private$compile = FALSE
-      private$silent = FALSE
-
       # rebuild
       private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE)
       private$old.data = list()
@@ -119,6 +116,7 @@ ctsmTMB = R6::R6Class(
         rcpp.function.strings  = NULL,
         rcpp_function_ptr      = NULL
       )
+
       # model names
       private$names = list(
         states     = NULL,
@@ -127,6 +125,7 @@ ctsmTMB = R6::R6Class(
         inputs     = "t",
         parameters = NULL
       )
+
       # model dimensions
       private$dims = list(
         states       = 0,
@@ -170,7 +169,9 @@ ctsmTMB = R6::R6Class(
         initial.state               = NULL,
         initial.state.fixed         = NULL,
         tmb.initial.state           = NULL,
-        iobs                        = NULL
+        iobs                        = NULL,
+        compile                     = FALSE,
+        silent                      = FALSE
       )
 
       # storage for various outputs
@@ -1129,7 +1130,7 @@ ctsmTMB = R6::R6Class(
       create_filter_results(self, private, laplace.residuals)
 
       # return
-      if(!private$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$filtration))
     },
 
@@ -1223,7 +1224,7 @@ ctsmTMB = R6::R6Class(
       create_smooth_results(self, private, laplace.residuals)
 
       # return
-      if(!private$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$smooth))
     },
 
@@ -1327,7 +1328,7 @@ ctsmTMB = R6::R6Class(
       create_estimation_return_fit(self, private, report, laplace.residuals)
 
       # return
-      if(!private$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$fit))
     },
 
@@ -1520,7 +1521,7 @@ ctsmTMB = R6::R6Class(
       create_return_prediction(reported.dispersion.type, return.k.ahead, self, private)
 
       # return
-      if(!private$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$prediction))
     },
 
@@ -1632,7 +1633,7 @@ ctsmTMB = R6::R6Class(
       create_return_simulation(return.k.ahead, n.sims, self, private)
 
       # return
-      if(!private$silent) message("Finished.")
+      if(!private$algo.settings$silent) message("Finished.")
       return(invisible(private$results$simulation))
     },
 
@@ -1747,8 +1748,6 @@ ctsmTMB = R6::R6Class(
     # options
     algo.settings = NULL,
     optim.settings = NULL,
-    compile = NULL,
-    silent = NULL,
     # rebuild
     rebuild = list(model = FALSE, ad = FALSE, data = FALSE),
     old.data = list(),
@@ -1880,7 +1879,7 @@ ctsmTMB = R6::R6Class(
       }
 
       # set flag
-      private$compile = bool
+      private$algo.settings$compile = bool
 
       # return
       return(invisible(self))
@@ -1897,7 +1896,7 @@ ctsmTMB = R6::R6Class(
       }
 
       # set flag
-      private$silent = bool
+      private$algo.settings$silent = bool
 
       # return
       return(invisible(self))

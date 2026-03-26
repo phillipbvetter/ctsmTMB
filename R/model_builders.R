@@ -9,7 +9,7 @@ build_model = function(self, private) {
   private$rebuild$ad <- TRUE
 
   # Print
-  if(!private$silent) message("Checking model components...")
+  if(!private$algo.settings$silent) message("Checking model components...")
 
   # basic sanity checks (does not need trans equations)
   basic_model_check(self, private)

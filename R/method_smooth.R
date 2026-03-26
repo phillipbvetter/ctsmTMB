@@ -4,7 +4,7 @@
 
 perform_smoothing = function(self, private){
   
-  if(!private$silent) message("Smoothing...")
+  if(!private$algo.settings$silent) message("Smoothing...")
   
   if(private$algo.settings$method=="lkf"){
     stop("Smoothing with the lkf method is not available. Use the 'filter' method instead.")
