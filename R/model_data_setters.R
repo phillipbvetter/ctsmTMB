@@ -163,32 +163,32 @@ compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
   if (length(dt) == 1) {
     dt <- rep(dt, n)
   } else if (length(dt) > n) {
-    dt <- head(dt, n)
     warning(sprintf("The provided %s.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.", type))
+    dt <- head(dt, n)
   } else if (length(dt) < n) {
-    stop(sprintf("Error: The provided %s.timestep must have length 1 or nrow(data)-1", type))
+    warning(sprintf("The provided %s.timestep was shorter than nrow(data) - 1, only using first entry.", type))
+    dt <- rep(dt[1],n)
   }
 
   # Data time-differences and number of steps to take
   data.dt <- diff(data$t)
   timesteps <- rep(1, n)
+  timestep.size <- data.dt
 
-  # For gaps larger than dt, use dt as step-size; otherwise use the gap directly
-  timestep_size <- data.dt
+  # For gaps larger than dt, use dt as step-size; otherwise use given dt and modify
   bool <- data.dt > dt
-  timestep_size[bool] <- dt[bool]
+  timestep.size[bool] <- dt[bool]
   timesteps[bool] <- data.dt[bool] / dt[bool]
-
-  # Round up where residual exceeds epsilon, round down otherwise
+  # now round up where residual exceeds epsilon, round down otherwise
   residual.bool <- (timesteps %% 1) > epsilon.step
   timesteps[residual.bool]  <- ceiling(timesteps[residual.bool])
   timesteps[!residual.bool] <- floor(timesteps[!residual.bool])
 
-  # Adjust step-size so that timesteps * timestep_size == data.dt exactly
-  timestep_size[residual.bool] <- data.dt[residual.bool] / timesteps[residual.bool]
+  # Adjust step-size so that timesteps * timestep.size == data.dt exactly
+  timestep.size[residual.bool] <- data.dt[residual.bool] / timesteps[residual.bool]
 
   # Store results
-  private$algo.settings[[paste0(type, ".timestep.size")]] <- timestep_size
+  private$algo.settings[[paste0(type, ".timestep.size")]] <- timestep.size
   private$algo.settings[[paste0(type, ".timesteps")]]     <- timesteps
   if (type == "ode") {
     private$algo.settings$ode.timesteps.cumsum <- c(0, cumsum(timesteps))
@@ -196,11 +196,6 @@ compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
 
   return(invisible(self))
 }
-
-#######################################################
-# SETTINGS FOR ODE TIMESTEP
-#######################################################
-
 
 #######################################################
 # IOBS VECTOR FOR LAPLACE TO AVOID USING IS.NA
@@ -217,7 +212,7 @@ set_data_for_laplace_method = function(data, self, private){
     iobs[[i]] = seq_along(data$t)[!is.na(data[[private$names$obs[i]]])]
   }
   names(iobs) = paste("iobs_",private$names$obs,sep="")
-  private$iobs = iobs
+  private$algo.settings$iobs = iobs
 
   # initial guess on random effects  ------------------------------------
 
@@ -225,7 +220,7 @@ set_data_for_laplace_method = function(data, self, private){
   tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$dims$states))
   names(tempdata) <- private$names$states
   for(i in seq_along(private$names$states)){
-    tempdata[i] <- rep(private$initial.state$x0[i], nrow(data))
+    tempdata[i] <- rep(private$algo.settings$initial.state$x0[i], nrow(data))
   }
   # now overwrite if initial guesses were provided in the data
   bool <- private$names$states %in% names(data)
@@ -233,12 +228,12 @@ set_data_for_laplace_method = function(data, self, private){
 
   # next we need to repeat these each of these state values to create
   #intermediate points determined by the user-selected ode.timestep variable
-  private$tmb.initial.state <- vector("list",length=private$dims$states)
+  private$algo.settings$tmb.initial.state <- vector("list",length=private$dims$states)
   for(i in seq_along(private$names$states)){
-    private$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.timesteps,1))
+    private$algo.settings$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.timesteps,1))
   }
-  names(private$tmb.initial.state) = private$names$states
-  private$tmb.initial.state <- as.data.frame(private$tmb.initial.state)
+  names(private$algo.settings$tmb.initial.state) = private$names$states
+  private$algo.settings$tmb.initial.state <- as.data.frame(private$algo.settings$tmb.initial.state)
 
 
   # return
@@ -251,20 +246,6 @@ set_data_for_laplace_method = function(data, self, private){
 set_parameters = function(pars, self, private){
 
   # This function sets the parameters used by estimations, filters etc.
-  #
-  # Base-case (pars = NULL):
-  #   Each parameter is taken from its estimated value if available, else
-  #   its initial value. Free parameters use fit$par.fixed once a fit exists;
-  #   fixed parameters always fall back to their initial value.
-  #
-  # Named pars:
-  #   The supplied vector replaces the corresponding entries in the base
-  #   vector by name. A partial set of names is fine.
-  #
-  # Unnamed pars:
-  #   Must have length equal to all parameters (lp) or only the free
-  #   parameters (lp - fp). Values are inserted in the natural order
-  #   returned by self$getParameters().
 
   lp = length(private$names$parameters)
   fp = length(private$model$fixed.pars)
@@ -279,25 +260,19 @@ set_parameters = function(pars, self, private){
 
   # Apply user-supplied overrides ----------------------------------------
   if (is.null(pars)) {
-
     # Nothing supplied: use base vector as-is
     pars = base.pars
-
   } else if (!is.null(names(pars))) {
-
     # Named vector: replace only the named entries
     base.pars[names(pars)] <- pars
     pars = base.pars
-
   } else {
-
     # Unnamed vector: must be length lp or lp-fp
     if (!any(length(pars) == c(lp, lp - fp))) {
       stop("Incorrect number of parameters supplied (", length(pars), "). ",
            "Please supply either ", lp, " (all) or ", lp - fp,
            " (free only), i.e. with or without fixed parameters.")
     }
-
     if (length(pars) == lp - fp) {
       # Free parameters only: slot them in at the free-parameter positions
       par.type.free = self$getParameters()[, "type"] == "free"
@@ -307,6 +282,7 @@ set_parameters = function(pars, self, private){
     # else length == lp: use pars directly (full vector in natural order)
   }
 
+  # set names and leave
   names(pars) = private$names$parameters
   private$algo.settings$argument.parameters = pars
 

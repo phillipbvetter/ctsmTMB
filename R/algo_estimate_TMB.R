@@ -21,8 +21,8 @@ makeADFun_ekf_tmb = function(self, private){
     inputMat = as.matrix(private$data[private$names$inputs]),
     
     # initial
-    stateVec = private$initial.state$x0,
-    covMat = private$initial.state$p0,
+    stateVec = private$algo.settings$initial.state$x0,
+    covMat = private$algo.settings$initial.state$p0,
     
     # ode
     ode_solver = switch(private$algo.settings$ode.solver, euler=1, rk4=2),
@@ -108,8 +108,8 @@ makeADFun_lkf_tmb = function(self, private){
     inputMat = as.matrix(private$data[private$names$inputs]),
     
     # initial
-    stateVec = private$initial.state$x0,
-    covMat = private$initial.state$p0,
+    stateVec = private$algo.settings$initial.state$x0,
+    covMat = private$algo.settings$initial.state$p0,
     
     # loss function
     loss_type = private$algo.settings$loss$loss,
@@ -190,8 +190,8 @@ makeADFun_ukf_tmb = function(self, private){
     inputMat = as.matrix(private$data[private$names$inputs]),
     
     # initial
-    stateVec = private$initial.state$x0,
-    covMat = private$initial.state$p0,
+    stateVec = private$algo.settings$initial.state$x0,
+    covMat = private$algo.settings$initial.state$p0,
     
     # ode
     ode_solver = switch(private$algo.settings$ode.solver, euler=1, rk4=2),

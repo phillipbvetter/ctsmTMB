@@ -16,8 +16,8 @@ ekf_filter_r = function(parVec, self, private)
   estimate.initial <- private$algo.settings$estimate.initial
   
   # initial
-  stateVec = private$initial.state$x0
-  covMat = private$initial.state$p0
+  stateVec = private$algo.settings$initial.state$x0
+  covMat = private$algo.settings$initial.state$p0
   
   create_state_space_functions_for_filtering()
 
@@ -132,8 +132,8 @@ lkf_filter_r = function(parVec, self, private)
   estimate.initial <- private$algo.settings$estimate.initial
   
   # initial
-  stateVec = private$initial.state$x0
-  covMat = private$initial.state$p0
+  stateVec = private$algo.settings$initial.state$x0
+  covMat = private$algo.settings$initial.state$p0
   
   create_state_space_functions_for_filtering()
 
@@ -279,8 +279,8 @@ ukf_filter_r = function(parVec, self, private)
   get_sys_dims()
   
   # initial
-  stateVec = private$initial.state$x0
-  covMat = private$initial.state$p0
+  stateVec = private$algo.settings$initial.state$x0
+  covMat = private$algo.settings$initial.state$p0
   
   # inputs and observations
   inputMat = as.matrix(private$data[private$names$inputs])

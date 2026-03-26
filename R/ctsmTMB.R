@@ -96,12 +96,7 @@ ctsmTMB = R6::R6Class(
       private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE)
       private$old.data = list()
 
-      private$initial.state = NULL
-      private$initial.state.fixed = NULL
-      private$tmb.initial.state = NULL
-      private$iobs = NULL
-
-      # model equations
+      # model properties
       private$model = list(
         sys.eqs      = NULL,
         obs.eqs      = NULL,
@@ -124,14 +119,33 @@ ctsmTMB = R6::R6Class(
         rcpp.function.strings  = NULL,
         rcpp_function_ptr      = NULL
       )
+      # model names
+      private$names = list(
+        states     = NULL,
+        obs        = NULL,
+        obsvar     = NULL,
+        inputs     = "t",
+        parameters = NULL
+      )
+      # model dimensions
+      private$dims = list(
+        states       = 0,
+        observations = 0,
+        diffusions   = 0,
+        pars         = 0,
+        free.pars    = 0,
+        fixed.pars   = 0,
+        inputs       = 1  # for 't'
+      )
 
-      # options
+      # optimizer options
       private$optim.settings = list(
         use.hessian        = FALSE,
         control.nlminb     = list(),
         unconstrained.optim = NULL
       )
 
+      # algorithm options
       private$algo.settings = list(
         method                      = "ekf",
         loss                        = list(loss=0L, c=3),
@@ -152,26 +166,14 @@ ctsmTMB = R6::R6Class(
         ode.timesteps.cumsum        = NULL,
         simulation.timestep         = NULL,
         simulation.timestep.size    = NULL,
-        simulation.timesteps        = NULL
-      )
-      private$names = list(
-        states     = NULL,
-        obs        = NULL,
-        obsvar     = NULL,
-        inputs     = "t",
-        parameters = NULL
-      )
-      # lengths
-      private$dims = list(
-        states       = 0,
-        observations = 0,
-        diffusions   = 0,
-        pars         = 0,
-        free.pars    = 0,
-        fixed.pars   = 0,
-        inputs       = 1  # for 't'
+        simulation.timesteps        = NULL,
+        initial.state               = NULL,
+        initial.state.fixed         = NULL,
+        tmb.initial.state           = NULL,
+        iobs                        = NULL
       )
 
+      # storage for various outputs
       private$results = list(
         opt            = NULL,
         fit            = NULL,
@@ -887,7 +889,7 @@ ctsmTMB = R6::R6Class(
     #' @description Retrieve initially set state and covariance
     getInitialState = function() {
       # return
-      return(private$initial.state.fixed)
+      return(private$algo.settings$initial.state.fixed)
     },
 
     ########################################################################
@@ -1738,10 +1740,6 @@ ctsmTMB = R6::R6Class(
 
     # model equations
     model = NULL,
-    initial.state = NULL,
-    initial.state.fixed = NULL,
-    tmb.initial.state = NULL,
-    iobs = NULL,
 
     # names
     names = NULL,
@@ -2113,17 +2111,17 @@ ctsmTMB = R6::R6Class(
 
       # if the call was made from setInitialState then just over-write that field and leave
       if(called.by.setInitialState){
-        private$initial.state.fixed <- list(x0=x0, p0=p0)
+        private$algo.settings$initial.state.fixed <- list(x0=x0, p0=p0)
         return(invisible(self))
       }
 
       # Store old initial state and check for AD rebuild if the state changed
       names(initial.state) <- c("x0", "p0")
-      bool <- identical(initial.state, private$initial.state)
+      bool <- identical(initial.state, private$algo.settings$initial.state)
       if(!bool) private$rebuild$ad <- TRUE
 
       # set private field
-      private$initial.state = list(x0=x0, p0=p0)
+      private$algo.settings$initial.state = list(x0=x0, p0=p0)
 
       # return
       return(invisible(self))

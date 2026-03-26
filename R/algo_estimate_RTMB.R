@@ -13,8 +13,8 @@ makeADFun_ekf_rtmb = function(self, private)
   get_sys_dims()
   
   # initial
-  stateVec = private$initial.state$x0
-  covMat = private$initial.state$p0
+  stateVec = private$algo.settings$initial.state$x0
+  covMat = private$algo.settings$initial.state$p0
   
   # input and obs matrix
   inputMat = as.matrix(private$data[private$names$inputs])
@@ -152,8 +152,8 @@ makeADFun_lkf_rtmb = function(self, private)
   get_sys_dims()
   
   # initial
-  stateVec = private$initial.state$x0
-  covMat = private$initial.state$p0
+  stateVec = private$algo.settings$initial.state$x0
+  covMat = private$algo.settings$initial.state$p0
   
   # input and obs matrix
   inputMat = as.matrix(private$data[private$names$inputs])
@@ -326,8 +326,8 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
   get_sys_dims()
   
   # initial
-  stateVec = private$initial.state$x0
-  covMat = private$initial.state$p0
+  stateVec = private$algo.settings$initial.state$x0
+  covMat = private$algo.settings$initial.state$p0
   
   # inputs
   inputMat = as.matrix(private$data[private$names$inputs])
@@ -497,8 +497,8 @@ makeADFun_ukf_rtmb = function(self, private)
   get_sys_dims()
   
   # initial
-  stateVec = private$initial.state$x0
-  covMat = private$initial.state$p0
+  stateVec = private$algo.settings$initial.state$x0
+  covMat = private$algo.settings$initial.state$p0
   
   # inputs
   inputMat = as.matrix(private$data[private$names$inputs])
@@ -650,8 +650,8 @@ makeADFun_laplace_rtmb = function(self, private)
   get_sys_dims()
   
   # initial states and covariance
-  stateVec <- private$initial.state$x0
-  covMat <- private$initial.state$p0
+  stateVec <- private$algo.settings$initial.state$x0
+  covMat <- private$algo.settings$initial.state$p0
   
   # inputs
   inputMat = as.matrix(private$data[private$names$inputs])
@@ -676,7 +676,7 @@ makeADFun_laplace_rtmb = function(self, private)
   ode_cumsum_timesteps = private$algo.settings$ode.timesteps.cumsum
   
   # indices with non-na observations
-  iobs <- private$iobs
+  iobs <- private$algo.settings$iobs
   
   # likelihood function --------------------------------------
   laplace.nll = function(p){
@@ -771,7 +771,7 @@ makeADFun_laplace_rtmb = function(self, private)
   
   parameters <- c(
     lapply(private$model$parameters, function(x) x$initial),
-    private$tmb.initial.state
+    private$algo.settings$tmb.initial.state
   )
   map <- lapply(private$model$fixed.pars, function(x) x$factor)
   nll = RTMB::MakeADFun(func = laplace.nll, 
@@ -801,11 +801,11 @@ makeADFun_laplace2_rtmb = function(self, private)
   
   # Data ----------------------------------------
   get_sys_dims()
-  n.dbs <- nrow(private$tmb.initial.state) - 1
+  n.dbs <- nrow(private$algo.settings$tmb.initial.state) - 1
   
   # initial states and covariance
-  stateVec <- private$initial.state$x0
-  covMat <- private$initial.state$p0
+  stateVec <- private$algo.settings$initial.state$x0
+  covMat <- private$algo.settings$initial.state$p0
   # inputs
   inputMat = as.matrix(private$data[private$names$inputs])
   # observations
@@ -828,7 +828,7 @@ makeADFun_laplace2_rtmb = function(self, private)
   ode_cumsum_timesteps = private$algo.settings$ode.timesteps.cumsum
   
   # indices with non-na observations
-  iobs <- private$iobs
+  iobs <- private$algo.settings$iobs
   
   # likelihood function --------------------------------------
   laplace2.nll = function(p){
@@ -933,7 +933,7 @@ makeADFun_laplace2_rtmb = function(self, private)
   dB = matrix(numeric(n.diffusions * n.dbs), nrow=n.dbs, ncol=n.diffusions)
   parameters = c(
     lapply(private$model$parameters, function(x) x[["initial"]]),
-    private$tmb.initial.state,
+    private$algo.settings$tmb.initial.state,
     dB = list(dB)
   )
   

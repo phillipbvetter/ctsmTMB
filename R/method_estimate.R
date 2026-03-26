@@ -49,8 +49,7 @@ perform_estimation = function(self, private) {
   if(!private$silent) message("Minimizing the negative log-likelihood...")
 
   # Parameter Bounds
-  initial.parameters <- sapply(private$model$parameters[names(private$model$free.pars)],
-                               function(par) par$initial)
+  initial.parameters <- sapply(private$model$parameters[names(private$model$free.pars)], function(par) par$initial)
   lower.parameter.bound <- sapply(private$model$free.pars, function(par) par$lower)
   upper.parameter.bound <- sapply(private$model$free.pars, function(par) par$upper)
 
@@ -60,43 +59,47 @@ perform_estimation = function(self, private) {
     upper.parameter.bound = Inf
   }
 
-  comptime <- system.time(
-    {
+  kalman.methods <- c("lkf","lkf.cpp","ekf","ekf.cpp","ukf","ukf.cpp")
+  laplace.methods <- c("laplace","laplace.thygesen")
 
-      # IF METHOD IS KALMAN FILTER
-      if ( any(private$algo.settings$method == c("lkf","lkf.cpp","ekf","ekf.cpp","ukf","ukf.cpp")) ) {
+  comptime <- system.time({
 
-        # use function, gradient and hessian
-        if (private$optim.settings$use.hessian) {
-          opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
+    # IF METHOD IS KALMAN FILTER
+    if (private$algo.settings$method %in% kalman.methods) {
+
+      # use function, gradient and hessian
+      if (private$optim.settings$use.hessian) {
+        opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                        objective = private$nll$fn,
                                                        gradient = private$nll$gr,
                                                        hessian = private$nll$he,
                                                        lower = lower.parameter.bound,
                                                        upper = upper.parameter.bound,
                                                        control=private$optim.settings$control.nlminb))
-          # or just function and gradient
-        } else {
-          opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
+      } else {
+        # or just function and gradient
+        opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                        objective = private$nll$fn,
                                                        gradient = private$nll$gr,
                                                        lower = lower.parameter.bound,
                                                        upper = upper.parameter.bound,
                                                        control=private$optim.settings$control.nlminb))
-        }
       }
 
-      # IF METHOD IS LAPLACE
-      if ( any(private$algo.settings$method == c("laplace","laplace.thygesen")) ) {
-        opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
+    } else if (private$algo.settings$method %in% laplace.methods) {
+      opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                      objective = private$nll$fn,
                                                      gradient = private$nll$gr,
                                                      lower = lower.parameter.bound,
                                                      upper = upper.parameter.bound,
                                                      control=private$optim.settings$control.nlminb))
-      }
+    } else {
 
-    }, gcFirst = FALSE)
+      stop("No estimation method was recognized.")
+
+    }
+
+  }, gcFirst = FALSE)
 
   # add timer to estimation
   private$timers$estimation <- comptime
@@ -110,10 +113,10 @@ perform_estimation = function(self, private) {
               1. Explore other parameter initial values - watch out of boundaries.
               2. Consider parameter transformations that ensure appropriate domains.
               3. Consider relative parameter values - they should ideally be similar.
-              4. Consider reducing the 'ode.timestep' (also reduces the SDE timestep for the laplace method).
+              4. Consider reducing the 'ode.timestep' (this also reduces the SDE timestep in the laplace methods).
               5. The Kalman filters may benefit from optimization with the hessian i.e. 'use.hessian'
-              6. Try other optimizations using the function handlers from the 'likelihood' method.
-              7. Change the optimization tolerances for 'nlminb' with the 'control' argument.")
+              6. Try using other optimizers by extracting the function handlers via the 'likelihood' method.
+              7. Try changing the optimizer tolerances with the 'control' argument. See ?stats::nlminb for details.")
     }
 
     # exit if optimization failed
@@ -200,7 +203,7 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
                   loss=private$algo.settings$loss$loss,
                   loss_c=private$algo.settings$loss$loss_c,
                   ukf.hyperpars=private$algo.settings$ukf.hyperpars,
-                  initial.state=private$initial.state,
+                  initial.state=private$algo.settings$initial.state,
                   laplace.residuals=laplace.residuals,
                   estimate.initial.state=private$algo.settings$estimate.initial,
                   use.cpp = TRUE,
