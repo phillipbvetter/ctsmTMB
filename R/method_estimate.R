@@ -48,6 +48,8 @@ perform_estimation = function(self, private) {
 
   if(!private$silent) message("Minimizing the negative log-likelihood...")
 
+  if(private$dims$free.pars==0) stop("There are no free parameters to optimize for.")
+
   # Parameter Bounds
   initial.parameters <- sapply(private$model$parameters[names(private$model$free.pars)],
                                function(par) par$initial)
@@ -193,16 +195,17 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
 
       # perform filtering
       self$filter(data=private$data,
+                  # NULL means pars are gonna be the recently estimated parameters
                   pars = NULL,
-                  method=private$algo.settings$method,
-                  ode.solver=private$algo.settings$ode.solver,
-                  ode.timestep=private$ode.timestep,
-                  loss=private$algo.settings$loss$loss,
-                  loss_c=private$algo.settings$loss$loss_c,
-                  ukf.hyperpars=private$algo.settings$ukf.hyperpars,
-                  initial.state=private$initial.state,
-                  laplace.residuals=laplace.residuals,
-                  estimate.initial.state=private$algo.settings$estimate.initial,
+                  method = private$algo.settings$method,
+                  ode.solver = private$algo.settings$ode.solver,
+                  ode.timestep = private$ode.timestep,
+                  loss = private$algo.settings$loss$loss,
+                  loss_c = private$algo.settings$loss$loss_c,
+                  ukf.hyperpars = private$algo.settings$ukf.hyperpars,
+                  initial.state = private$initial.state,
+                  laplace.residuals = laplace.residuals,
+                  estimate.initial.state = private$algo.settings$estimate.initial,
                   use.cpp = TRUE,
                   silent = TRUE)
 

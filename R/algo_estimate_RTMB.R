@@ -5,25 +5,25 @@
 
 makeADFun_ekf_rtmb = function(self, private)
 {
-  
+
   # Tape Configration ----------------------
   configure_ad_tape("RTMB", self, private)
-  
+
   # Data ----------------------------------------
   get_sys_dims()
-  
+
   # initial
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
-  
+
   # input and obs matrix
   inputMat = as.matrix(private$data[private$names$inputs])
   obsMat = as.matrix(private$data[private$names$obs])
-  
+
   # create and load state space functions
   force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
-  
+
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
   get_adjoints()
@@ -31,42 +31,42 @@ makeADFun_ekf_rtmb = function(self, private)
   get_ode_solvers()
   get_initial_state_estimator()
   get_ekf_update_functions()
-  
+
   # use standard kalman update, or no update
   data.update.fun <- kalman.data.update.with.nll
   if(private$algo.settings$train.against.full.prediction){
     data.update.fun <- kalman.no.update.with.nll
   }
-  
+
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
-  
+
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
   E0 <- RTMB::diag(n.obs)
-  
+
   # likelihood function --------------------------------------
   ekf.nll = function(p){
-    
+
     ####### Sometimes necessary to avoid rtmb errors #######
     # "[<-" <- RTMB::ADoverload("[<-")
     # "diag<-" <- RTMB::ADoverload("diag<-")
     # "c" <- RTMB::ADoverload("c")
-    
+
     ####### Parameters into vector #######
     parVec <- do.call(c, p[1:n.pars])
-    
+
     ####### Neg. LogLikelihood #######
     nll <- 0
-    
+
     ####### Stationary Solution #######
     inputVec = inputMat[1,]
     if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
-    
+
     ######## Data Update ########
     obsVec = obsMat[1,]
     obsVec_bool = !is.na(obsVec)
@@ -76,15 +76,20 @@ makeADFun_ekf_rtmb = function(self, private)
       covMat <- data.update[[2]]
       nll <- nll + data.update[[3]]
     }
-    
+
     # STANDARD KALMAN FILTER TRAINING
     ###### Main Loop #######
     for(i in 1:(nrow(obsMat)-1)){
-      
+
       # load input vector
       inputVec = inputMat[i,]
-      dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
-      
+      # zero-order or first-order hold
+      if(private$algo.settings$first.order.input.hold){
+        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+      } else {
+        dinputVec = 0
+      }
+
       ###### time update - ode solve moments #######
       for(j in 1:ode_timesteps[i]){
         sol = ode.integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size[i])
@@ -92,7 +97,7 @@ makeADFun_ekf_rtmb = function(self, private)
         covMat = sol[[2]]
         inputVec = inputVec + dinputVec
       }
-      
+
       ######## data update ########
       inputVec = inputMat[i+1,]
       obsVec = obsMat[i+1,]
@@ -105,11 +110,11 @@ makeADFun_ekf_rtmb = function(self, private)
       }
       # end of main loop
     }
-    
+
     # return
     return(nll)
   }
-  
+
   # construct AD-likelihood function ----------------------------------------
   map <- lapply(private$model$fixed.pars, function(x) x$factor)
   parameters <- lapply(private$model$parameters, function(x) x$initial)
@@ -117,11 +122,11 @@ makeADFun_ekf_rtmb = function(self, private)
                          parameters = parameters,
                          map = map,
                          silent=TRUE)
-  
+
   # save objective function
   private$nll = nll
-  
-  
+
+
   # # MAP Estimation?
   # MAP_bool = 0L
   # if (!is.null(private$algo.settings$map)) {
@@ -132,7 +137,7 @@ makeADFun_ekf_rtmb = function(self, private)
   #   map_ints__ = as.numeric(bool)
   #   sum_map_ints__ = sum(as.numeric(bool))
   # }
-  
+
   # return
   return(invisible(self))
 }
@@ -144,25 +149,25 @@ makeADFun_ekf_rtmb = function(self, private)
 
 makeADFun_lkf_rtmb = function(self, private)
 {
-  
+
   # Tape Configration ----------------------
   configure_ad_tape("RTMB", self, private)
-  
+
   # Data ----------------------------------------
   get_sys_dims()
-  
+
   # initial
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
-  
+
   # input and obs matrix
   inputMat = as.matrix(private$data[private$names$inputs])
   obsMat = as.matrix(private$data[private$names$obs])
-  
+
   # create and load state space functions
   force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
-  
+
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
   get_adjoints()
@@ -176,59 +181,83 @@ makeADFun_lkf_rtmb = function(self, private)
   if(private$algo.settings$train.against.full.prediction){
     data.update.fun <- kalman.no.update.with.nll
   }
-  
+
   # Timesteps, Observations, Inputs and Parameters ----------------------------
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
-  
+
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
   E0 <- RTMB::diag(n.obs)
-  
+
   # detect time-variations etc ----------------------
   constant.time.diff <- FALSE
   if(var(diff(ode_timestep_size)) < 1e-15){
     constant.time.diff <- TRUE
     fixed.timestep.size <- ode_timestep_size[1]
   }
-  
+
   # likelihood function --------------------------------
   lkf.nll = function(p){
-    
+
     "[<-" <- RTMB::ADoverload("[<-")
     # "diag<-" <- RTMB::ADoverload("diag<-")
     # "c" <- RTMB::ADoverload("c")
-    
+
     ####### Parameters into vector #######
     parVec <- do.call(c, p[1:n.pars])
-    
+
     ####### Neg. LogLikelihood #######
     nll <- 0
-    
+
     inputVec <- inputMat[1,]
     ####### Compute Matrix Exponentials for 1-Step Mean and Variance #######
-    # dX = A*X + B*U + G*dB
+    # dX = A*X*dt + B*U*dt + G*dB
     A <- dfdx__(stateVec, parVec, inputVec) #states
     B <- dfdu__(stateVec, parVec, inputVec) #inputs
     G <- g__(stateVec, parVec, inputVec) #diffusions
-    # [A B \\ 0 0]
-    Phi1 <- 0.0 * RTMB::diag(n.states+n.inputs+1)
-    Phi1[1:n.states,1:n.states] <- A
-    Phi1[1:n.states,(n.states+1):ncol(Phi1)] <- B
-    ePhi1 <- as.matrix(Matrix::expm(Phi1 * fixed.timestep.size))
+
+    # first or zero order hold
+
+    if(private$algo.settings$first.order.input.hold){
+      # For FOH we construct the augmented matrix with entries
+      # [ A B 0
+      #   0 0 I
+      #   0 0 0 ]
+      Phi1 <- 0.0 * RTMB::diag(n.states+2*(n.inputs+1))
+      Phi1[1:n.states,1:n.states] <- A
+      Phi1[1:n.states,(n.states+1):(n.states+1+n.inputs)] <- B
+      Phi1[(n.states+1):(n.states+1+n.inputs),(n.states+n.inputs+2):ncol(Phi1)] <- RTMB::diag(n.inputs+1)
+      ePhi1 <- as.matrix(Matrix::expm(Phi1 * fixed.timestep.size))
+      # A, B0 and B1
+      Ahat <- ePhi1[1:n.states, 1:n.states]
+      Ahat_T <- t(Ahat)
+      Bhat <- ePhi1[1:n.states, (n.states+1):(n.states+n.inputs+1)]
+      B1hat <- ePhi1[1:n.states, (n.states+n.inputs+2):ncol(Phi1)]
+    } else {
+      # For ZOH we construct the augmented matrix with entries
+      # [ A B
+      #   0 0 ]
+      # Mean calculations
+      Phi1 <- 0.0 * RTMB::diag(n.states+n.inputs+1)
+      Phi1[1:n.states,1:n.states] <- A
+      Phi1[1:n.states,(n.states+1):ncol(Phi1)] <- B
+      ePhi1 <- as.matrix(Matrix::expm(Phi1 * fixed.timestep.size))
+      #
+      Ahat <- ePhi1[1:n.states, 1:n.states]
+      Ahat_T <- t(Ahat)
+      Bhat <- ePhi1[1:n.states, (n.states+1):ncol(ePhi1)]
+    }
+    # V (for variance)
     # [-A GG^T \\ 0 A^t]
     Phi2 <- rbind(cbind(-A, G %*% t(G)),cbind(0*A,t(A)))
     ePhi2 <- as.matrix(Matrix::expm(Phi2 * fixed.timestep.size))
-    
-    # A and B (for mean calculations)
-    Ahat <- ePhi1[1:n.states, 1:n.states]
-    Ahat_T <- t(Ahat)
-    Bhat <- ePhi1[1:n.states, (n.states+1):ncol(ePhi1)]
-    # V (for variance)
+    #
     Q22 <- ePhi2[(n.states+1):ncol(ePhi2), (n.states+1):ncol(ePhi2)]
     Q12 <- ePhi2[1:n.states, (n.states+1):ncol(ePhi2)]
     Vhat <- t(Q22) %*% Q12
-    
+
+
     # if the time difference is not constant, we can still do good by
     # using the eigen-decomposition:
     # if(constant.time.diff){
@@ -249,14 +278,14 @@ makeADFun_lkf_rtmb = function(self, private)
     # exp_Phi1_dt = Q1 %*% Lambda1^dt %*% Q1inv
     # exp_Phi2_dt = Q2 %*% Lambda2^dt %*% Q2inv
     # }
-    
+
     ####### INITIAL STATE / COVARIANCE #######
     inputVec = inputMat[1,]
     if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
-    
+
     ######## (PRE) DATA UPDATE ########
     # This is done to include the first measurements in the provided data
     # We update the state and covariance based on the "new" measurement
@@ -269,17 +298,30 @@ makeADFun_lkf_rtmb = function(self, private)
       covMat <- data.update[[2]]
       nll <- nll + data.update[[3]]
     }
-    
+
     ###### MAIN LOOP START #######
     for(i in 1:(nrow(obsMat)-1)){
-      
+
       ###### TIME UPDATE #######
-      # augment input vector to account for constant terms in B
+      # augment input vector with 1 to account for the constant terms which appear in first column of B (dfdu).
       inputVec = c(1, inputMat[i,])
+
+      # When using first order hold we need the input slope
+      # Now augment change in input vector with 0 for constants (see above too)
+      if(private$algo.settings$first.order.input.hold){
+        # Note that in contrast to EKF we divide by ode_timestep_size here (actual time-step), not
+        # ode_timesteps (number of steps)
+        dinputVec = c(0, (inputMat[i+1,] - inputMat[i,])/ode_timestep_size[i])
+      }
+
       # Perform one-step prediction of mean and covariance
-      stateVec <- Ahat %*% stateVec + Bhat %*% inputVec
+      if(private$algo.settings$first.order.input.hold){
+        stateVec <- Ahat %*% stateVec + Bhat %*% inputVec + B1hat %*% dinputVec
+      } else {
+        stateVec <- Ahat %*% stateVec + Bhat %*% inputVec
+      }
       covMat <- Ahat %*% covMat %*% Ahat_T + Vhat
-      
+
       ######## DATA UPDATE ########
       # We update the state and covariance based on the "new" measurement
       inputVec = inputMat[i+1,]
@@ -293,193 +335,193 @@ makeADFun_lkf_rtmb = function(self, private)
       }
     }
     ###### MAIN LOOP END #######
-    
+
     # ###### RETURN #######
     return(nll)
   }
-  
+
   ################################################
   # Construct Neg. Log-Likelihood
   ################################################
-  
+
   parameters <- lapply(private$model$parameters, function(x) x[["initial"]])
   nll = RTMB::MakeADFun(func = lkf.nll,
                         parameters = parameters,
                         map = lapply(private$model$fixed.pars, function(x) x$factor),
                         silent=TRUE)
-  
+
   # save objective function
   private$nll = nll
-  
+
   # return
   return(invisible(self))
-  
+
 }
 
-makeadfun_ukf_knudsen_rtmb <- function(self, private)
-{
-  
-  # Tape Configration ----------------------
-  configure_ad_tape("RTMB", self, private)
-  
-  # Data ----------------------------------------
-  get_sys_dims()
-  
-  # initial
-  stateVec = private$initial.state$x0
-  covMat = private$initial.state$p0
-  
-  # inputs
-  inputMat = as.matrix(private$data[private$names$inputs])
-  # observations
-  obsMat = as.matrix(private$data[private$names$obs])
-  
-  # State Space Functions
-  force.ad <- private$algo.settings$advanced.settings$forceAD
-  create_state_space_functions_for_estimation(force.ad)
-  
-  # Weights
-  get_ukf_weights()
-  
-  # various utility functions for likelihood calculations ---------------------
-  # Note - order can be important here
-  get_adjoints()
-  get_loss_function()
-  get_ukf_ode_solvers()
-  if(private$algo.settings$estimate.initial) {
-    get_initial_state_estimator()
-  }
-  get_ukf_update()
-  data.update.fun <- kalman.data.update.with.nll
-  if(private$algo.settings$train.against.full.prediction){
-    data.update.fun <- kalman.no.update.with.nll
-  }
-  
-  # time-steps
-  ode_timestep_size = private$ode.timestep.size
-  ode_timesteps = private$ode.timesteps
-  
-  ####### Pre-Allocated Object #######
-  I0 <- RTMB::diag(n.states)
-  E0 <- RTMB::diag(n.obs)
-  
-  # Sample sigma-points from mean and sqrt-covariance
-  # [X0, X0,...,X0] + sqrt(c) [0, chol(P), -chol(P)]
-  lambda <- 2
-  create.sigmapoints.from.eigen <- function(stateVec, covMat, n.timesteps, dt){
-    
-    # dimensions for state augmented with brownian increments
-    n.brownians <- n.timesteps * n.diffusions
-    n.augmented.states <- n.states + n.brownians
-    n.total <- 2*n.augmented.states+1
-    
-    # Unscented transform weights
-    k <- sqrt(n.total + lambda)
-    w <- c(lambda/k^2, rep(0.5/k^2, 2*n.total))
-    
-    # Construct augmented mean and covariances
-    eigs <- RTMB::eigen(covMat, symmetric = TRUE)
-    Cx <- diag(rep(sqrt(dt), n.augmented.states))
-    Cx[1:n.states,1:n.states] <- eigs$vectors %*% diag(sqrt(eigs$values))
-    Mu <- rep(0,n.augmented.states)
-    Mu[1:n.states] <- stateVec
-    
-    
-    
-    
-  }
-  
-  # likelihood function --------------------------------------
-  ukf.nll = function(p){
-    
-    ####### Parameters into vector #######
-    parVec <- do.call(c, p[1:n.pars])
-    
-    ####### Neg. LogLikelihood #######
-    nll <- 0
-    
-    ####### INITIAL STATE / COVARIANCE #######
-    inputVec = inputMat[1,]
-    if(private$algo.settings$estimate.initial){
-      stateVec <- f.initial.state.newton(c(parVec, inputVec))
-      # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
-    }
-    # Compute sigma points for data update
-    chol.covMat <- t(Matrix::chol(covMat))
-    
-    # chol.covMat <- covMat
-    X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
-    
-    ######## (PRE) DATA UPDATE ########
-    obsVec = obsMat[1,]
-    obsVec_bool = !is.na(obsVec)
-    if(any(obsVec_bool)){
-      data.update <- data.update.fun(X.sigma, stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0)
-      stateVec <- data.update[[1]]
-      covMat <- data.update[[2]]
-      nll <- nll + data.update[[3]]
-    }
-    
-    ###### MAIN LOOP START #######
-    for(i in 1:(nrow(obsMat)-1)){
-      # Compute sigma points
-      chol.covMat <- t(Matrix::chol(covMat))
-      X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
-      
-      # Inputs
-      inputVec = inputMat[i,]
-      dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
-      
-      ###### TIME UPDATE #######
-      # We solve sigma points forward in time
-      for(j in 1:ode_timesteps[i]){
-        X.sigma <- ode.integrator(X.sigma, chol.covMat, parVec, inputVec, dinputVec, ode_timestep_size[i])
-        chol.covMat <- sigma2chol(X.sigma)
-        inputVec = inputVec + dinputVec
-      }
-      # Extract mean and covariance for data update
-      stateVec <- X.sigma[,1]
-      covMat <- chol.covMat %*% t(chol.covMat)
-      
-      ######## DATA UPDATE ########
-      # We update the state and covariance based on the "new" measurement
-      inputVec = inputMat[i+1,]
-      obsVec = obsMat[i+1,]
-      obsVec_bool = !is.na(obsVec)
-      if(any(obsVec_bool)){
-        data.update <- data.update.fun(X.sigma, stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0)
-        stateVec <- data.update[[1]]
-        covMat <- data.update[[2]]
-        nll <- nll + data.update[[3]]
-      }
-    }
-    ###### MAIN LOOP END #######
-    
-    if(!force.ad){
-      RTMB::REPORT(postList)
-      RTMB::REPORT(priorList)
-    }
-    
-    # ###### RETURN #######
-    return(nll)
-  }
-  
-  # construct AD-likelihood function ----------------------------------------
-  
-  # parameters ----------------------------------------
-  map <- lapply(private$model$fixed.pars, function(x) x$factor)
-  parameters <- lapply(private$model$parameters, function(x) x$initial)
-  nll = RTMB::MakeADFun(func = ukf.nll,
-                        parameters=parameters,
-                        map = map,
-                        silent=TRUE)
-  
-  # save objective function
-  private$nll = nll
-  
-  # return
-  return(invisible(self))
-}
+# makeadfun_ukf_knudsen_rtmb <- function(self, private)
+# {
+#
+#   # Tape Configration ----------------------
+#   configure_ad_tape("RTMB", self, private)
+#
+#   # Data ----------------------------------------
+#   get_sys_dims()
+#
+#   # initial
+#   stateVec = private$initial.state$x0
+#   covMat = private$initial.state$p0
+#
+#   # inputs
+#   inputMat = as.matrix(private$data[private$names$inputs])
+#   # observations
+#   obsMat = as.matrix(private$data[private$names$obs])
+#
+#   # State Space Functions
+#   force.ad <- private$algo.settings$advanced.settings$forceAD
+#   create_state_space_functions_for_estimation(force.ad)
+#
+#   # Weights
+#   get_ukf_weights()
+#
+#   # various utility functions for likelihood calculations ---------------------
+#   # Note - order can be important here
+#   get_adjoints()
+#   get_loss_function()
+#   get_ukf_ode_solvers()
+#   if(private$algo.settings$estimate.initial) {
+#     get_initial_state_estimator()
+#   }
+#   get_ukf_update()
+#   data.update.fun <- kalman.data.update.with.nll
+#   if(private$algo.settings$train.against.full.prediction){
+#     data.update.fun <- kalman.no.update.with.nll
+#   }
+#
+#   # time-steps
+#   ode_timestep_size = private$ode.timestep.size
+#   ode_timesteps = private$ode.timesteps
+#
+#   ####### Pre-Allocated Object #######
+#   I0 <- RTMB::diag(n.states)
+#   E0 <- RTMB::diag(n.obs)
+#
+#   # Sample sigma-points from mean and sqrt-covariance
+#   # [X0, X0,...,X0] + sqrt(c) [0, chol(P), -chol(P)]
+#   lambda <- 2
+#   create.sigmapoints.from.eigen <- function(stateVec, covMat, n.timesteps, dt){
+#
+#     # dimensions for state augmented with brownian increments
+#     n.brownians <- n.timesteps * n.diffusions
+#     n.augmented.states <- n.states + n.brownians
+#     n.total <- 2*n.augmented.states+1
+#
+#     # Unscented transform weights
+#     k <- sqrt(n.total + lambda)
+#     w <- c(lambda/k^2, rep(0.5/k^2, 2*n.total))
+#
+#     # Construct augmented mean and covariances
+#     eigs <- RTMB::eigen(covMat, symmetric = TRUE)
+#     Cx <- diag(rep(sqrt(dt), n.augmented.states))
+#     Cx[1:n.states,1:n.states] <- eigs$vectors %*% diag(sqrt(eigs$values))
+#     Mu <- rep(0,n.augmented.states)
+#     Mu[1:n.states] <- stateVec
+#
+#
+#
+#
+#   }
+#
+#   # likelihood function --------------------------------------
+#   ukf.nll = function(p){
+#
+#     ####### Parameters into vector #######
+#     parVec <- do.call(c, p[1:n.pars])
+#
+#     ####### Neg. LogLikelihood #######
+#     nll <- 0
+#
+#     ####### INITIAL STATE / COVARIANCE #######
+#     inputVec = inputMat[1,]
+#     if(private$algo.settings$estimate.initial){
+#       stateVec <- f.initial.state.newton(c(parVec, inputVec))
+#       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+#     }
+#     # Compute sigma points for data update
+#     chol.covMat <- t(Matrix::chol(covMat))
+#
+#     # chol.covMat <- covMat
+#     X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
+#
+#     ######## (PRE) DATA UPDATE ########
+#     obsVec = obsMat[1,]
+#     obsVec_bool = !is.na(obsVec)
+#     if(any(obsVec_bool)){
+#       data.update <- data.update.fun(X.sigma, stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0)
+#       stateVec <- data.update[[1]]
+#       covMat <- data.update[[2]]
+#       nll <- nll + data.update[[3]]
+#     }
+#
+#     ###### MAIN LOOP START #######
+#     for(i in 1:(nrow(obsMat)-1)){
+#       # Compute sigma points
+#       chol.covMat <- t(Matrix::chol(covMat))
+#       X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
+#
+#       # Inputs
+#       inputVec = inputMat[i,]
+#       dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+#
+#       ###### TIME UPDATE #######
+#       # We solve sigma points forward in time
+#       for(j in 1:ode_timesteps[i]){
+#         X.sigma <- ode.integrator(X.sigma, chol.covMat, parVec, inputVec, dinputVec, ode_timestep_size[i])
+#         chol.covMat <- sigma2chol(X.sigma)
+#         inputVec = inputVec + dinputVec
+#       }
+#       # Extract mean and covariance for data update
+#       stateVec <- X.sigma[,1]
+#       covMat <- chol.covMat %*% t(chol.covMat)
+#
+#       ######## DATA UPDATE ########
+#       # We update the state and covariance based on the "new" measurement
+#       inputVec = inputMat[i+1,]
+#       obsVec = obsMat[i+1,]
+#       obsVec_bool = !is.na(obsVec)
+#       if(any(obsVec_bool)){
+#         data.update <- data.update.fun(X.sigma, stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0)
+#         stateVec <- data.update[[1]]
+#         covMat <- data.update[[2]]
+#         nll <- nll + data.update[[3]]
+#       }
+#     }
+#     ###### MAIN LOOP END #######
+#
+#     if(!force.ad){
+#       RTMB::REPORT(postList)
+#       RTMB::REPORT(priorList)
+#     }
+#
+#     # ###### RETURN #######
+#     return(nll)
+#   }
+#
+#   # construct AD-likelihood function ----------------------------------------
+#
+#   # parameters ----------------------------------------
+#   map <- lapply(private$model$fixed.pars, function(x) x$factor)
+#   parameters <- lapply(private$model$parameters, function(x) x$initial)
+#   nll = RTMB::MakeADFun(func = ukf.nll,
+#                         parameters=parameters,
+#                         map = map,
+#                         silent=TRUE)
+#
+#   # save objective function
+#   private$nll = nll
+#
+#   # return
+#   return(invisible(self))
+# }
 
 #######################################################
 #######################################################
@@ -489,29 +531,29 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
 
 makeADFun_ukf_rtmb = function(self, private)
 {
-  
+
   # Tape Configration ----------------------
   configure_ad_tape("RTMB", self, private)
-  
+
   # Data ----------------------------------------
   get_sys_dims()
-  
+
   # initial
   stateVec = private$initial.state$x0
   covMat = private$initial.state$p0
-  
+
   # inputs
   inputMat = as.matrix(private$data[private$names$inputs])
   # observations
   obsMat = as.matrix(private$data[private$names$obs])
-  
+
   # State Space Functions
   force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
-  
+
   # Weights
   get_ukf_weights()
-  
+
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
   get_adjoints()
@@ -525,30 +567,30 @@ makeADFun_ukf_rtmb = function(self, private)
   if(private$algo.settings$train.against.full.prediction){
     data.update.fun <- kalman.no.update.with.nll
   }
-  
+
   # time-steps
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
-  
+
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
   E0 <- RTMB::diag(n.obs)
-  
+
   # likelihood function --------------------------------------
   ukf.nll = function(p){
-    
+
     # "[<-" <- RTMB::ADoverload("[<-")
     # "diag<-" <- RTMB::ADoverload("diag<-")
     # "c" <- RTMB::ADoverload("c")
-    
+
     # if(!force.ad) postList <- priorList <- vector("list",length=nrow(obsMat))
-    
+
     ####### Parameters into vector #######
     parVec <- do.call(c, p[1:n.pars])
-    
+
     ####### Neg. LogLikelihood #######
     nll <- 0
-    
+
     ####### INITIAL STATE / COVARIANCE #######
     inputVec = inputMat[1,]
     if(private$algo.settings$estimate.initial){
@@ -558,10 +600,10 @@ makeADFun_ukf_rtmb = function(self, private)
     # Compute sigma points for data update
     chol.covMat <- t(Matrix::chol(covMat))
     # if(!force.ad) priorList[[1]] <- chol.covMat
-    
+
     # chol.covMat <- covMat
     X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
-    
+
     ######## (PRE) DATA UPDATE ########
     obsVec = obsMat[1,]
     obsVec_bool = !is.na(obsVec)
@@ -572,17 +614,22 @@ makeADFun_ukf_rtmb = function(self, private)
       nll <- nll + data.update[[3]]
     }
     # if(!force.ad) postList[[1]] <- chol.covMat
-    
+
     ###### MAIN LOOP START #######
     for(i in 1:(nrow(obsMat)-1)){
       # Compute sigma points
       chol.covMat <- t(Matrix::chol(covMat))
       X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
-      
+
       # Inputs
       inputVec = inputMat[i,]
-      dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
-      
+      # zero-order or first-order hold
+      if(private$algo.settings$first.order.input.hold){
+        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+      } else {
+        dinputVec = 0
+      }
+
       ###### TIME UPDATE #######
       # We solve sigma points forward in time
       for(j in 1:ode_timesteps[i]){
@@ -594,7 +641,7 @@ makeADFun_ukf_rtmb = function(self, private)
       stateVec <- X.sigma[,1]
       covMat <- chol.covMat %*% t(chol.covMat)
       # if(!force.ad) priorList[[i+1]] <- chol.covMat
-      
+
       ######## DATA UPDATE ########
       # We update the state and covariance based on the "new" measurement
       inputVec = inputMat[i+1,]
@@ -609,18 +656,18 @@ makeADFun_ukf_rtmb = function(self, private)
       # if(!force.ad) postList[[i+1]] <- t(Matrix::chol(covMat))
     }
     ###### MAIN LOOP END #######
-    
+
     # if(!force.ad){
     #   RTMB::REPORT(postList)
     #   RTMB::REPORT(priorList)
     # }
-    
+
     # ###### RETURN #######
     return(nll)
   }
-  
+
   # construct AD-likelihood function ----------------------------------------
-  
+
   # parameters ----------------------------------------
   map <- lapply(private$model$fixed.pars, function(x) x$factor)
   parameters <- lapply(private$model$parameters, function(x) x$initial)
@@ -628,10 +675,10 @@ makeADFun_ukf_rtmb = function(self, private)
                         parameters=parameters,
                         map = map,
                         silent=TRUE)
-  
+
   # save objective function
   private$nll = nll
-  
+
   # return
   return(invisible(self))
 }
@@ -642,90 +689,95 @@ makeADFun_ukf_rtmb = function(self, private)
 
 makeADFun_laplace_rtmb = function(self, private)
 {
-  
+
   # Tape Configration ----------------------
   configure_ad_tape("RTMB", self, private)
-  
+
   # Data ----------------------------------------
   get_sys_dims()
-  
+
   # initial states and covariance
   stateVec <- private$initial.state$x0
   covMat <- private$initial.state$p0
-  
+
   # inputs
   inputMat = as.matrix(private$data[private$names$inputs])
   # observations
   obsMat = as.matrix(private$data[private$names$obs])
-  
+
   # create and load state space functions
   force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
-  
-  
+
+
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
   get_adjoints()
   if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }
-  
+
   # time-steps
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
   ode_cumsum_timesteps = private$ode.timesteps.cumsum
-  
+
   # indices with non-na observations
   iobs <- private$iobs
-  
+
   # likelihood function --------------------------------------
   laplace.nll = function(p){
-    
+
     # "[<-" <- RTMB::ADoverload("[<-")
     # "diag<-" <- RTMB::ADoverload("diag<-")
     # "c" <- RTMB::ADoverload("c")
-    
+
     # set negative log-likelihood
     nll = 0
-    
+
     # small identity matrix
     small_identity = diag(1e-8, nrow=n.states, ncol=n.states)
-    
+
     # fixed effects parameter vector
     parVec <- do.call(c, p[1:n.pars])
-    
+
     inputVec = inputMat[1,]
     if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
-    
+
     # extract state random effects and fix initial condition
     stateMat <- do.call(cbind, p[(n.pars+1):length(p)])
-    
+
     # prior contribution
     z0 <- stateMat[1,] - stateVec
     nll <- nll -  RTMB::dmvnorm(z0, Sigma=covMat, log=TRUE)
-    
+
     ###### TIME LOOP START #######
     for(i in 1:(nrow(obsMat)-1)) {
-      
+
       # Define inputs and use first order input interpolation
       inputVec = inputMat[i,]
-      dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
-      
+      # zero-order or first-order hold
+      if(private$algo.settings$first.order.input.hold){
+        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+      } else {
+        dinputVec = 0
+      }
+
       ###### BETWEEN TIME POINTS LOOP START #######
       for(j in 1:ode_timesteps[i]){
-        
+
         # grab current and next state
         x_now = stateMat[ode_cumsum_timesteps[i]+j,]
         x_next = stateMat[ode_cumsum_timesteps[i]+j+1,]
-        
+
         # compute drift (vector) and diffusion (matrix)
         f = f__(x_now, parVec, inputVec)
         g = g__(x_now, parVec, inputVec)
         inputVec = inputVec + dinputVec
-        
+
         # assume multivariate gauss distribution according to euler-step
         # and calculate the likelihood
         z = x_next - (x_now + f * ode_timestep_size[i])
@@ -735,57 +787,57 @@ makeADFun_laplace_rtmb = function(self, private)
       ###### BETWEEN TIME POINTS LOOP END #######
     }
     ###### TIME LOOP END #######
-    
+
     obsMat = RTMB::OBS(obsMat)
     ###### DATA UPDATE START #######
     for(i in 1:n.obs){
       iobs.vec <- iobs[[i]]
       for(j in 1:length(iobs[[i]])){
-        
+
         # Get index where observation is available
         k <- iobs.vec[[j]]
-        
+
         # Get corresponding input, state and observation
         inputVec = inputMat[k,]
         stateVec = stateMat[ode_cumsum_timesteps[k]+1,]
         # obsScalar = obsMat[[k,i]]
         obsScalar = obsMat[k,i]
-        
+
         # Observation equation and variance
         h_x = h__(stateVec, parVec, inputVec)[[i]]
         hvar_x = hvar__(stateVec, parVec, inputVec)[[i]]
-        
+
         # likelihood contribution
         nll = nll - RTMB::dnorm(obsScalar, mean=h_x, sd=sqrt(hvar_x), log=TRUE)
       }
     }
     ###### DATA UPDATE END #######
-    
+
     # return
     return(nll)
   }
-  
+
   ################################################
   # Construct Neg. Log-Likelihood
   ################################################
-  
+
   parameters <- c(
     lapply(private$model$parameters, function(x) x$initial),
     private$tmb.initial.state
   )
   map <- lapply(private$model$fixed.pars, function(x) x$factor)
-  nll = RTMB::MakeADFun(func = laplace.nll, 
-                        parameters=parameters, 
+  nll = RTMB::MakeADFun(func = laplace.nll,
+                        parameters=parameters,
                         random=private$names$states,
                         map = map,
                         silent=TRUE)
-  
+
   # save objective function
   private$nll = nll
-  
+
   # return
   return(invisible(self))
-  
+
 }
 
 
@@ -795,14 +847,14 @@ makeADFun_laplace_rtmb = function(self, private)
 
 makeADFun_laplace2_rtmb = function(self, private)
 {
-  
+
   # Tape Configration ----------------------
   configure_ad_tape("RTMB", self, private)
-  
+
   # Data ----------------------------------------
   get_sys_dims()
   n.dbs <- nrow(private$tmb.initial.state) - 1
-  
+
   # initial states and covariance
   stateVec <- private$initial.state$x0
   covMat <- private$initial.state$p0
@@ -810,124 +862,128 @@ makeADFun_laplace2_rtmb = function(self, private)
   inputMat = as.matrix(private$data[private$names$inputs])
   # observations
   obsMat = as.matrix(private$data[private$names$obs])
-  
+
   # create and load state space functions
   force.ad <- private$algo.settings$advanced.settings$forceAD
   create_state_space_functions_for_estimation(force.ad)
-  
+
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
   get_adjoints()
   if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }
-  
+
   # time-steps
   ode_timestep_size = private$ode.timestep.size
   ode_timesteps = private$ode.timesteps
   ode_cumsum_timesteps = private$ode.timesteps.cumsum
-  
+
   # indices with non-na observations
   iobs <- private$iobs
-  
+
   # likelihood function --------------------------------------
   laplace2.nll = function(p){
-    
+
     # "[<-" <- RTMB::ADoverload("[<-")
     # "diag<-" <- RTMB::ADoverload("diag<-")
     # "c" <- RTMB::ADoverload("c")
-    
+
     # set negative log-likelihood
     nll = 0
-    
+
     # small identity matrix
     # tiny = diag(1e-8, nrow=n.states, ncol=n.states)
     tiny <- 1e-5 * diag(n.states)
-    
+
     # fixed effects parameter vector
     parVec <- do.call(c, p[1:n.pars])
-    
+
     inputVec = inputMat[1,]
     if(private$algo.settings$estimate.initial){
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
-    
+
     # extract state random effects and fix initial condition
     stateMat <- do.call(cbind, p[(n.pars+1):(length(p)-1)])
     dstateMat <- RTMB::apply(stateMat, 2, diff)
     I0 <- diag(n.diffusions)
-    
+
     # prior contribution
     z0 <- stateMat[1,] - stateVec
     nll <- nll -  RTMB::dmvnorm(z0, Sigma=covMat, log=TRUE)
-    
+
     ###### TIME LOOP START #######
     for(i in 1:(nrow(obsMat)-1)) {
-      
+
       # Define inputs and use first order input interpolation
       inputVec = inputMat[i,]
-      dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
-      
+      # zero-order or first-order hold
+      if(private$algo.settings$first.order.input.hold){
+        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+      } else {
+        dinputVec = 0
+      }
+
       ###### BETWEEN TIME POINTS LOOP START #######
       for(j in 1:ode_timesteps[i]){
-        
+
         # current index in state matrix
         cur.id <- ode_cumsum_timesteps[i]+j
-        
+
         # compute drift (vector) and diffusion (matrix)
         stateVec <- stateMat[cur.id,]
         f = f__(stateVec, parVec, inputVec)
         g = g__(stateVec, parVec, inputVec)
         inputVec = inputVec + dinputVec
-        
+
         # Compute expected dX from Euler Maruyama
         dstateVecPred <- f * ode_timestep_size[i] + g %*% p$dB[cur.id,]
-        
+
         # Likelihood contribution from state difference (diagonal covariance)
         z <- dstateMat[cur.id,] - dstateVecPred
         nll = nll - RTMB::dmvnorm(z, Sigma=tiny, log=TRUE)
-        
+
         # Likelihood contribution from dBs
         nll = nll - RTMB::dmvnorm(p$dB[cur.id,], Sigma=ode_timestep_size[i]*I0, log=TRUE)
       }
       ###### BETWEEN TIME POINTS LOOP END #######
     }
     ###### TIME LOOP END #######
-    
+
     obsMat = RTMB::OBS(obsMat)
     ##### DATA UPDATE START #######
     for(i in 1:n.obs){
       iobs.vec <- iobs[[i]]
       for(j in 1:length(iobs[[i]])){
-        
+
         # Get index where observation is available
         k <- iobs.vec[[j]]
-        
+
         # Get corresponding input, state and observation
         inputVec = inputMat[k,]
         stateVec = stateMat[ode_cumsum_timesteps[k]+1,]
-        # obsScalar = obsMat[[k,i]]
         obsScalar = obsMat[k,i]
-        
+
         # Observation equation and variance
         h_x = h__(stateVec, parVec, inputVec)[[i]]
         hvar_x = hvar__(stateVec, parVec, inputVec)[[i]]
-        
+
         # likelihood contribution
         nll = nll - RTMB::dnorm(obsScalar, mean=h_x, sd=sqrt(hvar_x), log=TRUE)
       }
     }
     ###### DATA UPDATE END #######
-    
+
     # return
     return(nll)
   }
-  
+
   ################################################
   # Construct Neg. Log-Likelihood
   ################################################
-  
+
   # parameters ----------------------------------------
   db.len <- n.diffusions * n.dbs
   dB = matrix(numeric(n.diffusions * n.dbs), nrow=n.dbs, ncol=n.diffusions)
@@ -936,17 +992,17 @@ makeADFun_laplace2_rtmb = function(self, private)
     private$tmb.initial.state,
     dB = list(dB)
   )
-  
-  nll = RTMB::MakeADFun(func = laplace2.nll, 
-                        parameters=parameters, 
+
+  nll = RTMB::MakeADFun(func = laplace2.nll,
+                        parameters=parameters,
                         random=c(private$names$states,"dB"),
                         map = lapply(private$model$fixed.pars, function(x) x$factor),
                         silent=TRUE)
-  
+
   # save objective function
   private$nll = nll
-  
+
   # return
   return(invisible(self))
-  
+
 }

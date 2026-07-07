@@ -1,28 +1,28 @@
 ## roxygen documentation for data objects
 
 #' Sample from a simulated Ornstein-Uhlenbeck process with time-dependent mean
-#' 
+#'
 #' @description
-#' The data was simulated using a standard Euler-Maruyama method. 
-#' 
+#' The data was simulated using a standard Euler-Maruyama method.
+#'
 #' The simulated process is governed by the SDE
 #' #' dx ~ theta * (mu + u - x) * dt + sigma_x * dw
-#' 
+#'
 #' The parameters used for simulation were
 #' theta = 5, mu = 3, sigma_x = 1, sigma_y = 0.1
-#' 
-#' The simulation time-step was 1e-3, and observation time-step 1e-1. 
+#'
+#' The simulation time-step was 1e-3, and observation time-step 1e-1.
 #' The simulation was taken from t = 0..20
-#' 
+#'
 #' The simulated input was given by \code{u.sim = cumsum(rnorm(length(t.sim),sd=0.05))}
 #' where \code{t.sim} is the simulated time vector.
-#' 
+#'
 #' @format
-#' A data frame of 201 rows and 3 columns. The columns represent the 
+#' A data frame of 201 rows and 3 columns. The columns represent the
 #' variables: `t` (time), `y` (observation) and `u` (input).
-#' 
+#'
 #' @usage Ornstein
-#' 
+#'
 #' @name Ornstein
 #' @docType data
 #' @keywords data
@@ -61,9 +61,29 @@
 #' variables: `t` (time), `y1` (observation of x1), `y2` (observation of x2),
 #' and `u` (input).
 #'
-#' @usage Ornstein_augmented
+#' @usage Ornstein2D
 #'
-#' @name Ornstein_augmented
+#' @name Ornstein2D
 #' @docType data
 #' @keywords data
-"Ornstein_augmented"
+"Ornstein2D"
+
+#' A list of outputs generated from calling the \code{filter}, \code{predict} and \code{simulate}
+#' method on the Ornstein2D data.
+#'
+#' @usage OutputReferenceData
+#'
+#' @name OutputReferenceData
+#' @docType data
+#' @keywords data
+"OutputReferenceData"
+
+#' A list of outputs generated from calling the \code{estimate} method with the state reconstruction methods
+#' 'ekf', 'lkf', 'ukf', 'laplace' and 'laplace.thygesen'.
+#'
+#' @usage EstimateReferenceData
+#'
+#' @name EstimateReferenceData
+#' @docType data
+#' @keywords data
+"EstimateReferenceData"

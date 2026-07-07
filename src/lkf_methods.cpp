@@ -19,8 +19,10 @@ List lkf_filter_rcpp(
   Eigen::MatrixXd covMat, 
   Eigen::VectorXd stateVec,
   Eigen::VectorXd ode_timestep_size,
+  Eigen::VectorXd ode_timesteps,
   LogicalVector any_available_obs,
-  List non_na_ids)
+  List non_na_ids,
+  bool first_order_input_hold)
 {
 
   auto h__ = get_funptr<funPtr_vec_const>(funPtrs, "h_const");
@@ -41,42 +43,61 @@ List lkf_filter_rcpp(
   Eigen::VectorXd H, inputVec(ni), dinputVec(ni), obsVec(m), e(m);
   Eigen::MatrixXd C, R, K, E, V, KC, IKC, Hvar, dHdX;
   Eigen::MatrixXd I = Eigen::MatrixXd::Identity(n, n);
+  Eigen::VectorXd inv_ode_timesteps = ode_timesteps.cwiseInverse();
   Eigen::VectorXi obs_ids;
 
   // create matrix exponential
   inputVec = inputMat.row(0);
+  // For the time-step we assume that all are identical - otherwise repeatedly finding the matrix-exponential is expensive
   double dt_timestep = ode_timestep_size(0);
   Eigen::MatrixXd A = dfdx__(stateVec, parVec, inputVec);
   Eigen::MatrixXd B = dfdu__(stateVec, parVec, inputVec);
   Eigen::MatrixXd G = g__(stateVec, parVec, inputVec);
-  // # [A B \\ 0 0]
-  Eigen::MatrixXd Phi1(n+ni+1, n+ni+1);
-  Phi1.setZero();
+
+  int ni1 = ni + 1;
+  // size of augmented matrix depends on whether or not we use first order hold assumption on inputs
+  int size1 = first_order_input_hold ? n + 2*ni1 : n + ni1;
+
+  Eigen::MatrixXd Phi1 = Eigen::MatrixXd::Zero(size1, size1);
   Phi1.block(0, 0, n, n) = A;
-  Phi1.block(0, n, n, ni+1) = B;
+  Phi1.block(0, n, n, ni1) = B;
+  if (first_order_input_hold) {
+    // # [ A B 0 \\ 0 0 I \\ 0 0 0 ]
+    Phi1.block(n, n + ni1, ni1, ni1) = Eigen::MatrixXd::Identity(ni1, ni1);
+  }
+  // else: # [A B \\ 0 0]
+  Eigen::MatrixXd ePhi1 = (Phi1 * dt_timestep).exp();
+  Eigen::MatrixXd Ahat = ePhi1.block(0, 0, n, n);
+  Eigen::MatrixXd Ahat_T = Ahat.transpose();
+  Eigen::MatrixXd Bhat = ePhi1.block(0, n, n, ni1);
+
+  // Must define BhatFOH here - otherwise throws an error in the if-statements later
+  Eigen::MatrixXd BhatFOH = Eigen::MatrixXd::Zero(n, ni1);
+  if(first_order_input_hold){
+    BhatFOH = ePhi1.block(0, ni1, n, ni1);
+  }
+
   // # [-A GG^T \\ 0 A^t]
-  Eigen::MatrixXd Phi2(2*n,2*n);
+  Eigen::MatrixXd Phi2(2*n, 2*n);
   Phi2.setZero();
   Phi2.block(0, 0, n, n)  = -A;
   Phi2.block(0, n, n, n)  = G*G.transpose();
   Phi2.block(n, n, n, n)  = A.transpose();
-  // Calculate matrix exponentials
-  Eigen::MatrixXd ePhi1 = (Phi1 * dt_timestep).exp();
   Eigen::MatrixXd ePhi2 = (Phi2 * dt_timestep).exp();
-  // 
-  Eigen::MatrixXd Ahat = ePhi1.block(0, 0, n, n);
-  Eigen::MatrixXd Ahat_T = Ahat.transpose();
-  Eigen::MatrixXd Bhat = ePhi1.block(0, n, n, ni+1);
   Eigen::MatrixXd Q12 = ePhi2.block(0, n, n, n);
   Eigen::MatrixXd Q22 = ePhi2.block(n, n, n ,n);
   Eigen::MatrixXd Vhat = Q22.transpose() * Q12;
 
-  Eigen::VectorXd constant_and_inputVec(ni+1);
-  constant_and_inputVec(0) = 1.0;
+  Eigen::VectorXd constant_and_inputVec = Eigen::VectorXd::Ones(ni1);
+  Eigen::VectorXd constant_and_dinputVec = Eigen::VectorXd::Zero(ni1);
 
   // storage
   Rcpp::List ode_1step_integration(2);
   Rcpp::List Innovation(tsize), InnovationCovariance(tsize), xPrior(tsize), xPost(tsize), pPrior(tsize), pPost(tsize);
+
+  Eigen::MatrixXd C_Zero = Eigen::MatrixXd::Zero(n,m);
+  Eigen::MatrixXd V_Zero = Eigen::MatrixXd::Zero(m,m);
+  Eigen::VectorXd e_Zero = Eigen::VectorXd::Zero(m);
 
   // store prior
   xPrior(0) = stateVec;
@@ -86,14 +107,14 @@ List lkf_filter_rcpp(
     obsVec = obsMat.row(0);
     obs_ids = Rcpp::as<Eigen::VectorXi>(non_na_ids(0));
     n_available_obs = obs_ids.size();
-    // Calculcate H
+    // Call observation functions
     H = h__(stateVec, parVec, inputVec);
     dHdX = dhdx__(stateVec, parVec, inputVec);
     Hvar = hvar__(stateVec, parVec, inputVec);
-    // Extract to reduce dimensions to fit number of observations
-    C = dHdX.topRows(n_available_obs);
-    V = Hvar.topLeftCorner(n_available_obs, n_available_obs);
-    E = e.head(n_available_obs);
+    // Modify fillers to match number of actual observations
+    C = C_Zero.topRows(n_available_obs);
+    V = V_Zero.topLeftCorner(n_available_obs, n_available_obs);
+    E = e_Zero.head(n_available_obs);
     // Compute innovation and remove rows/cols from dHdX and V
     for(int j=0; j < n_available_obs; j++){
       // Grab indices where obsVec has actual (non-NA) entries
@@ -109,8 +130,6 @@ List lkf_filter_rcpp(
     R = C * covMat * C.transpose() + V;
     Eigen::LLT<Eigen::MatrixXd> llt(R);
     K.transpose() = llt.solve(C * covMat);
-    /*Eigen::LDLT<Eigen::MatrixXd> ldlt(R);
-    K.transpose() = ldlt.solve(C * covMat);*/
     // State Update
     stateVec += K*E;
     // Covariance Update - Joseph Form
@@ -130,6 +149,10 @@ List lkf_filter_rcpp(
     //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
     constant_and_inputVec.tail(ni) = inputMat.row(i);
     stateVec = Ahat * stateVec + Bhat * constant_and_inputVec;
+    if(first_order_input_hold){
+      constant_and_dinputVec.tail(ni) = (inputMat.row(i+1) - inputMat.row(i))/dt_timestep;
+      stateVec += BhatFOH * constant_and_dinputVec;
+    }
     covMat = Ahat * covMat * Ahat_T + Vhat;
     xPrior(i+1) = stateVec;
     pPrior(i+1) = covMat;
@@ -161,8 +184,6 @@ List lkf_filter_rcpp(
       R = C * covMat * C.transpose() + V;
       Eigen::LLT<Eigen::MatrixXd> llt(R);
       K.transpose() = llt.solve(C * covMat);
-      /*Eigen::LDLT<Eigen::MatrixXd> ldlt(R);
-      K.transpose() = ldlt.solve(C * covMat);*/
       // State Update
       stateVec += K*E;
       // Covariance Update - Joseph Form
@@ -186,6 +207,7 @@ List lkf_filter_rcpp(
     Named("InnovationCovariance") = InnovationCovariance,
     Named("Ahat") = Ahat,
     Named("Bhat") = Bhat,
+    Named("BhatFOH") = BhatFOH,
     Named("Vhat") = Vhat
     );
 }
@@ -199,10 +221,12 @@ List lkf_predict_rcpp(
   Eigen::MatrixXd covMat, 
   Eigen::VectorXd stateVec,
   Eigen::VectorXd ode_timestep_size,
+  Eigen::VectorXd ode_timesteps,
   LogicalVector any_available_obs,
   List non_na_ids,
-  const int last_pred_id,
-  const int k_step_ahead)
+  int last_pred_id,
+  int k_step_ahead,
+  bool first_order_input_hold)
 {
   List filt = lkf_filter_rcpp(
     funPtrs,
@@ -212,8 +236,10 @@ List lkf_predict_rcpp(
     covMat, 
     stateVec,
     ode_timestep_size,
+    ode_timesteps,
     any_available_obs,
-    non_na_ids
+    non_na_ids,
+    first_order_input_hold
     );
 
   List xPost = filt["xPost"];
@@ -221,20 +247,21 @@ List lkf_predict_rcpp(
   Eigen::MatrixXd Ahat = filt["Ahat"];
   Eigen::MatrixXd Ahat_T = Ahat.transpose();
   Eigen::MatrixXd Bhat = filt["Bhat"];
+  Eigen::MatrixXd BhatFOH = filt["BhatFOH"];
   Eigen::MatrixXd Vhat = filt["Vhat"];
 
   // constants 
   const int ni = inputMat.row(0).size();
+  const int ni1 = ni+1;
   const int n = stateVec.size();
   const int n_squared = n*n;
+  const double dt_timestep = ode_timestep_size(0);
 
-  // pre-allocate and define
-  Eigen::VectorXd inputVec(ni), dinputVec(ni);
-  Eigen::MatrixXd predMat(k_step_ahead+1, n + n_squared);
-  predMat.setZero();
+  // pre-allocate
   List xk(last_pred_id);
-  Eigen::VectorXd constant_and_inputVec(ni+1);
-  constant_and_inputVec(0) = 1.0;
+  Eigen::MatrixXd predMat = Eigen::MatrixXd::Zero(k_step_ahead+1, n + n_squared);
+  Eigen::VectorXd constant_and_inputVec = Eigen::VectorXd::Ones(ni1); // First element must be 1
+  Eigen::VectorXd constant_and_dinputVec = Eigen::VectorXd::Zero(ni1); // First element must be 0
 
   //////////// MAIN LOOP OVER TIME POINTS ///////////
   for(int i=0 ; i < last_pred_id ; i++){
@@ -246,6 +273,10 @@ List lkf_predict_rcpp(
     for(int k=0 ; k < k_step_ahead ; k++){
       constant_and_inputVec.tail(ni) = inputMat.row(i+k);
       stateVec = Ahat * stateVec + Bhat * constant_and_inputVec;
+      if(first_order_input_hold){
+        constant_and_dinputVec.tail(ni) = (inputMat.row(i+k+1) - inputMat.row(i+k))/dt_timestep;
+        stateVec += BhatFOH * constant_and_dinputVec;
+      }
       covMat = Ahat * covMat * Ahat_T + Vhat;
       predMat.row(k+1).head(n) = stateVec;
       predMat.row(k+1).tail(n_squared) = covMat.reshaped();
@@ -269,6 +300,7 @@ List lkf_simulate_rcpp(
   Eigen::MatrixXd covMat, 
   Eigen::VectorXd stateVec,
   Eigen::VectorXd ode_timestep_size,
+  Eigen::VectorXd ode_timesteps,
   Eigen::VectorXd simulation_timestep_size,
   Eigen::VectorXd simulation_timesteps,
   LogicalVector any_available_obs,
@@ -277,14 +309,12 @@ List lkf_simulate_rcpp(
   int last_pred_id,
   int k_step_ahead,
   int nsims,
-  Nullable<int> seed)
+  Nullable<int> seed,
+  bool first_order_input_hold)
 {
 
   // Set simulating seed if seed is not NULL
   set_simulation_seed(seed, ziggurat_states);
-
-  auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
-  auto g__ = get_funptr<funPtr_mat_const>(funPtrs, "g_const");
 
   List filt = lkf_filter_rcpp(
     funPtrs,
@@ -294,11 +324,16 @@ List lkf_simulate_rcpp(
     covMat, 
     stateVec,
     ode_timestep_size,
+    ode_timesteps,
     any_available_obs,
-    non_na_ids
+    non_na_ids,
+    first_order_input_hold
     );
   List xPost = filt["xPost"];
   List pPost = filt["pPost"];
+
+  auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
+  auto g__ = get_funptr<funPtr_mat_const>(funPtrs, "g_const");
 
   // misc  
   const int n = stateVec.size();
@@ -306,6 +341,7 @@ List lkf_simulate_rcpp(
   VectorXd inputVec(ni), dinputVec(ni);
   MatrixXd stateMat(nsims, n), randN(n, nsims);
   VectorXd simulation_timesteps_inv = simulation_timesteps.cwiseInverse();
+  Eigen::VectorXd dinputVecZero = Eigen::VectorXd::Zero(inputMat.cols());
 
   // storage for predictions
   List outer_simulate_list(last_pred_id);
@@ -334,8 +370,12 @@ List lkf_simulate_rcpp(
     /* For each prediction horizon k: */
     for(int k=0 ; k < k_step_ahead ; k++){
       inputVec = inputMat.row(i+k);
-      dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * simulation_timesteps_inv(i+k);
-
+      if(first_order_input_hold){
+        dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * simulation_timesteps_inv(i+k);
+      } else {
+        dinputVec = dinputVecZero; 
+      }
+      
       for(int j=0 ; j < simulation_timesteps(i+k) ; j++){
         euler_maruyama_simulation_inplace(
           f__, g__, 
@@ -355,12 +395,4 @@ List lkf_simulate_rcpp(
 
   // Return
   return outer_simulate_list;
-}
-
-// [[Rcpp::export]]
-Rcpp::List test_return_list(Eigen::MatrixXd a){
-  Rcpp::List A(3);
-  A(0) = a;
-  A(1) = a;
-  return A;
 }

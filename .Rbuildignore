@@ -18,3 +18,5 @@
 ^dev$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.claude
+^\.gitignore

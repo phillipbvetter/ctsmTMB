@@ -173,7 +173,6 @@ First we create the model as follows:
 ## Load libraries
 library(ctsmTMB)
 library(ggplot2) ## plots
-library(latex2exp) ## LaTeX plot fonts
 
 ## Create model
 model <- newModel()
@@ -257,7 +256,7 @@ ggplot() +
   geom_line(aes(x=t.sim, y=u.sim, color="u_t")) +
   geom_point(aes(x=t.obs, y=u.obs, color="u_k")) +
   scale_color_discrete(
-    labels=unname(TeX(c("$y_{t}$","$y_{k}$","$u_{t}$","$u_{k}$"))),
+    labels=expression(y[t],y[k],u[t],u[k]),
     breaks = c("y_t", "y_k", "u_t", "u_k"),
   ) +
   ctsmTMB:::getggplot2theme() +
@@ -351,8 +350,8 @@ ggplot(data=plot.df) +
   geom_line(aes(x=t, y=x4, color="x4")) +
   geom_point(aes(x=t.obs, y=y.obs, color="y")) +
   scale_color_discrete(
-    labels=unname(TeX(c("$\\theta=1$","$\\theta=10$","$\\theta=50","$\\theta=100$","$y_{k}$"))),
     breaks = c("x1", "x2", "x3", "x4", "y"),
+    labels=expression(theta*"=1",theta*"=10",theta*"=50",theta*"=100",y[k])
   ) +
   ctsmTMB:::getggplot2theme() + 
   theme(legend.text = ggplot2::element_text(size=15)) +

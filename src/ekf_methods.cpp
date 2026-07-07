@@ -17,16 +17,17 @@ zigg::Ziggurat ziggurat_states;
 // [[Rcpp::export]]
 List ekf_filter_rcpp(
   List funPtrs, 
-  const Eigen::MatrixXd & obsMat,
-  const Eigen::MatrixXd & inputMat,
-  const Eigen::VectorXd & parVec,
+  Eigen::MatrixXd obsMat,
+  Eigen::MatrixXd inputMat,
+  Eigen::VectorXd parVec,
   Eigen::MatrixXd covMat, 
   Eigen::VectorXd stateVec,
-  const Eigen::VectorXd & ode_timestep_size,
-  const Eigen::VectorXd & ode_timesteps,
+  Eigen::VectorXd ode_timestep_size,
+  Eigen::VectorXd ode_timesteps,
   LogicalVector any_available_obs,
   List non_na_ids,
-  CharacterVector ode_solver)
+  CharacterVector ode_solver,
+  bool first_order_input_hold)
 {
 
   auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
@@ -47,12 +48,13 @@ List ekf_filter_rcpp(
   const int ODE_solver = choose_solver(ode_solver);
 
   // pre-allocate and define
-  Eigen::VectorXd H, inputVec(ni), dinputVec(ni), obsVec(m), e(m);
+  Eigen::VectorXd H, inputVec(ni), obsVec(m), e(m);
   Eigen::VectorXd E;
   Eigen::MatrixXd C, R, K, V, KC, IKC, Hvar, dHdX;
   Eigen::MatrixXd I = Eigen::MatrixXd::Identity(n, n);
   Eigen::VectorXd inv_ode_timesteps = ode_timesteps.cwiseInverse();
   Eigen::VectorXi obs_ids;
+  Eigen::VectorXd dinputVec = Eigen::VectorXd::Zero(ni);
   // Pre-allocate for ODE solver
   Eigen::VectorXd k1(n), k2(n), k3(n), k4(n);
   Eigen::MatrixXd c1(n,n), c2(n,n), c3(n,n), c4(n,n);
@@ -112,7 +114,9 @@ List ekf_filter_rcpp(
   for(int i=0 ; i < (tsize-1) ; i++){
 
     inputVec = inputMat.row(i);
-    dinputVec = (inputMat.row(i+1) - inputMat.row(i)) * inv_ode_timesteps(i);
+    if(first_order_input_hold){
+      dinputVec = (inputMat.row(i+1) - inputMat.row(i)) * inv_ode_timesteps(i);
+    }
 
     //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
     for(int j=0 ; j < ode_timesteps(i) ; j++){
@@ -195,18 +199,19 @@ List ekf_filter_rcpp(
 // [[Rcpp::export]]
 List ekf_predict_rcpp(
   List funPtrs,
-  const Eigen::MatrixXd & obsMat,
-  const Eigen::MatrixXd & inputMat,
-  const Eigen::VectorXd & parVec,
+  Eigen::MatrixXd obsMat,
+  Eigen::MatrixXd inputMat,
+  Eigen::VectorXd parVec,
   Eigen::MatrixXd covMat, 
   Eigen::VectorXd stateVec,
-  const Eigen::VectorXd & ode_timestep_size,
-  const Eigen::VectorXd & ode_timesteps,
+  Eigen::VectorXd ode_timestep_size,
+  Eigen::VectorXd ode_timesteps,
   Rcpp::LogicalVector any_available_obs,
   List non_na_ids,
   CharacterVector ode_solver,
-  const int last_pred_id,
-  const int k_step_ahead)
+  int last_pred_id,
+  int k_step_ahead,
+  bool first_order_input_hold)
 {
 
   auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
@@ -224,7 +229,8 @@ List ekf_predict_rcpp(
     ode_timesteps,
     any_available_obs,
     non_na_ids,
-    ode_solver
+    ode_solver,
+    first_order_input_hold
     );
   List xPost = filt["xPost"];
   List pPost = filt["pPost"];
@@ -233,11 +239,13 @@ List ekf_predict_rcpp(
   const int n = stateVec.size();
   const int ni = inputMat.row(0).size();
   const int n_squared = n*n;
-  Eigen::VectorXd inputVec(ni), dinputVec(ni);
+  Eigen::VectorXd inputVec(ni);
+  Eigen::VectorXd dinputVec = Eigen::VectorXd::Zero(ni);
   Eigen::MatrixXd predMat(k_step_ahead+1, n + n_squared);
   predMat.setZero();
   Rcpp::List xk(last_pred_id), ode_1step_integration(2);
   Eigen::VectorXd inv_ode_timesteps = ode_timesteps.cwiseInverse();
+  Eigen::VectorXd dinputVecZero = Eigen::VectorXd::Zero(inputMat.cols());
 
   // ODE solver
   const int ODE_solver = choose_solver(ode_solver);
@@ -256,8 +264,11 @@ List ekf_predict_rcpp(
 
     //////////// K-STEP-AHEAD LOOP ///////////
     for(int k=0 ; k < k_step_ahead ; k++){
+
       inputVec = inputMat.row(i+k);
-      dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * inv_ode_timesteps(i+k);
+      if(first_order_input_hold){
+        dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * inv_ode_timesteps(i+k);
+      }
 
       //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
       for(int j=0 ; j < ode_timesteps(i+k) ; j++){
@@ -300,11 +311,12 @@ List ekf_simulate_rcpp(
   Rcpp::LogicalVector any_available_obs,
   List non_na_ids,
   CharacterVector ode_solver,
-  const int last_pred_id,
-  const int k_step_ahead,
-  const int ng,
-  const int nsims,
-  Nullable<int> seed)
+  int last_pred_id,
+  int k_step_ahead,
+  int ng,
+  int nsims,
+  Nullable<int> seed,
+  bool first_order_input_hold)
 {
 
   // Set simulating seed if seed is not NULL
@@ -324,7 +336,8 @@ List ekf_simulate_rcpp(
     ode_timesteps,
     any_available_obs,
     non_na_ids,
-    ode_solver
+    ode_solver,
+    first_order_input_hold
     );
   List xPost = filt["xPost"];
   List pPost = filt["pPost"];
@@ -332,9 +345,11 @@ List ekf_simulate_rcpp(
   // misc  
   const int n = stateVec.size();
   const int ni = inputMat.row(0).size();
-  VectorXd inputVec(ni), dinputVec(ni);
+  VectorXd inputVec(ni);
+  Eigen::VectorXd dinputVec = Eigen::VectorXd::Zero(ni);
   MatrixXd stateMat(nsims, n), randN(n, nsims);
   VectorXd simulation_timesteps_inv = simulation_timesteps.cwiseInverse();
+  Eigen::VectorXd dinputVecZero = Eigen::VectorXd::Zero(inputMat.cols());
 
   // storage for predictions
   List outer_simulate_list(last_pred_id);
@@ -362,10 +377,13 @@ List ekf_simulate_rcpp(
 
     /* For each prediction horizon k: */
     for(int k=0 ; k < k_step_ahead ; k++){
-      inputVec = inputMat.row(i+k);
-      dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * simulation_timesteps_inv(i+k);
 
-      for(int j=0 ; j < simulation_timesteps(i+k) ; j++){
+      inputVec = inputMat.row(i+k);
+      if(first_order_input_hold){
+        dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * simulation_timesteps_inv(i+k);
+      }
+
+      for(int j=0; j < simulation_timesteps(i+k); j++){
         euler_maruyama_simulation_inplace(
           f__, g__, 
           stateMat,

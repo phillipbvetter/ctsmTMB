@@ -145,7 +145,8 @@ ctsmTMB = R6::R6Class(
         last.pred.index             = 0,
         seed                        = NULL,
         ukf.hyperpars               = list(),
-        argument.parameters         = NULL
+        argument.parameters         = NULL,
+        first.order.input.hold      = FALSE
       )
       private$names = list(
         states     = NULL,
@@ -409,6 +410,8 @@ ctsmTMB = R6::R6Class(
 
       # lapply over all parsed inputs
       lapply(args, function(args) {
+
+        if(is.character(args)) args <- as.name(args)
 
         # Check if the equation is valid
         result = check_inputs(args, self, private)
@@ -1055,6 +1058,8 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
+    #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
+    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
     #' @param method character vector specifying the filtering method used for state/likelihood calculations.
     #' Must be one of either "lkf", "ekf", "laplace".
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
@@ -1087,6 +1092,7 @@ ctsmTMB = R6::R6Class(
                       method = "ekf",
                       ode.solver = "rk4",
                       ode.timestep = diff(data$t),
+                      first.order.input.hold = FALSE,
                       loss = "quadratic",
                       loss_c = NULL,
                       ukf.hyperpars = c(1, 0, 3),
@@ -1149,6 +1155,8 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
+    #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
+    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
     #' @param method character vector specifying the filtering method used for state/likelihood calculations.
     #' Must be one of either "lkf", "ekf", "laplace".
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
@@ -1179,6 +1187,7 @@ ctsmTMB = R6::R6Class(
                         method = "laplace",
                         ode.solver = "euler",
                         ode.timestep = diff(data$t),
+                        first.order.input.hold = FALSE,
                         loss = "quadratic",
                         loss_c = NULL,
                         initial.state = self$getInitialState(),
@@ -1226,6 +1235,7 @@ ctsmTMB = R6::R6Class(
     #'
     #' @param data a \code{data.frame} with a time-column (must be named \code{"t"}), observations and
     #' inputs used maximum-likelihood parameter and state estimation. The observations can take \code{NA}-values.
+    #' @param method a \code{character} string specifying the likelihood method used for parameter and state estimation.
     #' @param ode.timestep a \code{numeric} value that determines the ODE solver time step-size. The passed value
     #' is used to calculate the number of steps between time-points in \code{data$t} such that an integer number of
     #' steps are taken. For details see the "Estimation" vignette on the webpage. The step-size is used for solving
@@ -1233,13 +1243,8 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver a \code{character} string to determine the ODE solver scheme for the Kalman methods when solving the
     #' moment differential equations. The methods are either Forward Euler (\code{"euler"}) or 4th order Runge-Kutta (\code{"rk4"})
     #' (default).
-    #' @param method a \code{character} string specifying the likelihood method used for parameter and state estimation.
-    #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
-    #' without any of the parameter bounds specified during \code{setParameter}.
-    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
-    #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
-    #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
-    #' system contains time-varying inputs, the first element of these is used.
+    #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
+    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
     #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
     #' methods). The loss function is per default quadratic in the one-step residuals as is natural
     #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
@@ -1253,11 +1258,17 @@ ctsmTMB = R6::R6Class(
     #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
     #' approximation respectively) for smooth derivatives.
+    #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
+    #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
+    #' without any of the parameter bounds specified during \code{setParameter}.
+    #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
+    #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
+    #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
+    #' system contains time-varying inputs, the first element of these is used.
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param report boolean - whether or not to report filtered states, observations and residuals.
     #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
     #' using the method of \link[TMB]{oneStepPredict}.
-    #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param control list of control parameters parsed to \code{nlminb} as its \code{control} argument.
     #' See \code{?stats::nlminb} for more information
     #' @param use.hessian boolean value. The default (\code{TRUE}) causes the optimization algorithm
@@ -1274,6 +1285,7 @@ ctsmTMB = R6::R6Class(
                         method = "ekf",
                         ode.solver = "rk4",
                         ode.timestep = diff(data$t),
+                        first.order.input.hold = FALSE,
                         loss = "quadratic",
                         loss_c = NULL,
                         ukf.hyperpars = c(1, 0, 3),
@@ -1359,6 +1371,8 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
+    #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
+    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
     #' @param method character vector specifying the filtering method used for state/likelihood calculations.
     #' Must be one of either "lkf", "ekf", "laplace".
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
@@ -1395,6 +1409,7 @@ ctsmTMB = R6::R6Class(
                           method = "ekf",
                           ode.solver = "rk4",
                           ode.timestep = diff(data$t),
+                          first.order.input.hold = FALSE,
                           loss = "quadratic",
                           loss_c = NULL,
                           ukf.hyperpars = c(1, 0, 3),
@@ -1467,6 +1482,8 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
+    #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
+    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
     #' @param method The prediction method
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
@@ -1477,6 +1494,7 @@ ctsmTMB = R6::R6Class(
                        method = "ekf",
                        ode.solver = "rk4",
                        ode.timestep = diff(data$t),
+                       first.order.input.hold = FALSE,
                        k.ahead = nrow(data)-1,
                        return.k.ahead = 0:min(k.ahead, nrow(data)-1),
                        return.variance = c("marginal", "none", "covariance", "correlation"),
@@ -1556,6 +1574,8 @@ ctsmTMB = R6::R6Class(
     #' @param ode.solver Sets the ODE solver used in the Kalman Filter methods for solving the moment
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
+    #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
+    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
     #' @param estimate.initial.state bool - stationary estimation of initial mean and covariance
     #' @param method
     #' 1. The natural TMB-style formulation where latent states are considered random effects
@@ -1589,6 +1609,7 @@ ctsmTMB = R6::R6Class(
                         method = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen"),
                         ode.solver = "rk4",
                         ode.timestep = diff(data$t),
+                        first.order.input.hold = FALSE,
                         simulation.timestep = diff(data$t),
                         k.ahead = nrow(data)-1,
                         return.k.ahead = 0:min(k.ahead, nrow(data)-1),
@@ -2099,6 +2120,22 @@ ctsmTMB = R6::R6Class(
 
       # set solver
       private$algo.settings$ode.solver <- ode.solver
+
+      # return
+      return(invisible(self))
+    },
+
+    ########################################################################
+    # SET ODE SOLVER
+    ########################################################################
+    set_first_order_hold = function(boolean){
+
+      if(!(is.logical(boolean) && length(boolean) == 1)){
+        stop("The argument should be either TRUE or FALSE")
+      }
+
+      # set setting
+      private$algo.settings$first.order.input.hold <- boolean
 
       # return
       return(invisible(self))

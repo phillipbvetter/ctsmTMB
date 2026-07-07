@@ -31,8 +31,8 @@ inline int choose_solver(CharacterVector ode_solver) {
 }
 
 inline Eigen::MatrixXd construct_permutation_matrix(
-  int number_of_available_obs, 
-  int number_of_obs_eqs, 
+  int number_of_available_obs,
+  int number_of_obs_eqs,
   Eigen::VectorXi bool_is_not_na_obsVec)
 {
   Eigen::MatrixXd E(number_of_available_obs, number_of_obs_eqs);
@@ -49,8 +49,8 @@ inline Eigen::MatrixXd construct_permutation_matrix(
 }
 
 inline Eigen::VectorXd remove_NAs(
-  Eigen::VectorXd obsVec, 
-  int number_of_available_obs, 
+  Eigen::VectorXd obsVec,
+  int number_of_available_obs,
   Eigen::VectorXi bool_is_not_na_obsVec)
 {
   // Initialize

@@ -7,6 +7,7 @@ save_settings_for_ad_construct_check <- function(self, private){
 
   private$old.data$method              <- private$algo.settings$method
   private$old.data$ode.solver          <- private$algo.settings$ode.solver
+  private$old.data$first.order.input.hold <- private$algo.settings$first.order.input.hold
   private$old.data$loss                <- private$algo.settings$loss
   private$old.data$estimate.initial    <- private$algo.settings$estimate.initial
   private$old.data$ukf.hyperpars       <- private$algo.settings$ukf.hyperpars
@@ -32,19 +33,9 @@ check_for_data_rebuild <- function(data, self, private){
 
 check_for_ad_rebuild <- function(self, private){
 
-  # We perform checks against the old data on the entries that would
-  # require a new call to RTMB::MakeADFun (i.e. entries that affect the
-  # calculations in the likelihood function)
-  bool <- c(
-    private$rebuild$ad,
-    !identical(private$old.data$method, private$algo.settings$method),
-    !identical(private$old.data$ode.solver, private$algo.settings$ode.solver),
-    !identical(private$old.data$loss, private$algo.settings$loss),
-    !identical(private$old.data$estimate.initial, private$algo.settings$estimate.initial),
-    !identical(private$old.data$ukf.hyperpars, private$algo.settings$ukf.hyperpars)
-  )
-
-  private$rebuild$ad <- any(bool)
+  fields <- c("method", "ode.solver", "loss", "estimate.initial", "ukf.hyperpars", "first.order.input.hold")
+  bool <- unlist(lapply(fields, function(s) !identical(private$old.data[[s]], private$algo.settings[[s]])))
+  private$rebuild$ad <- any(private$rebuild$ad, bool)
 
   return(invisible(self))
 }

@@ -60,132 +60,143 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-ctsmTMB-new}{\code{ctsmTMB$new()}}
-\item \href{#method-ctsmTMB-.private}{\code{ctsmTMB$.private()}}
-\item \href{#method-ctsmTMB-getPrivateFields}{\code{ctsmTMB$getPrivateFields()}}
-\item \href{#method-ctsmTMB-getPrivate}{\code{ctsmTMB$getPrivate()}}
-\item \href{#method-ctsmTMB-setTrainingMethod}{\code{ctsmTMB$setTrainingMethod()}}
-\item \href{#method-ctsmTMB-addSystem}{\code{ctsmTMB$addSystem()}}
-\item \href{#method-ctsmTMB-addObs}{\code{ctsmTMB$addObs()}}
-\item \href{#method-ctsmTMB-setVariance}{\code{ctsmTMB$setVariance()}}
-\item \href{#method-ctsmTMB-addInput}{\code{ctsmTMB$addInput()}}
-\item \href{#method-ctsmTMB-setParameter}{\code{ctsmTMB$setParameter()}}
-\item \href{#method-ctsmTMB-setAlgebraics}{\code{ctsmTMB$setAlgebraics()}}
-\item \href{#method-ctsmTMB-setInitialState}{\code{ctsmTMB$setInitialState()}}
-\item \href{#method-ctsmTMB-setLamperti}{\code{ctsmTMB$setLamperti()}}
-\item \href{#method-ctsmTMB-setModelname}{\code{ctsmTMB$setModelname()}}
-\item \href{#method-ctsmTMB-setMAP}{\code{ctsmTMB$setMAP()}}
-\item \href{#method-ctsmTMB-setAdvancedSettings}{\code{ctsmTMB$setAdvancedSettings()}}
-\item \href{#method-ctsmTMB-getSystems}{\code{ctsmTMB$getSystems()}}
-\item \href{#method-ctsmTMB-getObservations}{\code{ctsmTMB$getObservations()}}
-\item \href{#method-ctsmTMB-getVariances}{\code{ctsmTMB$getVariances()}}
-\item \href{#method-ctsmTMB-getAlgebraics}{\code{ctsmTMB$getAlgebraics()}}
-\item \href{#method-ctsmTMB-getInitialState}{\code{ctsmTMB$getInitialState()}}
-\item \href{#method-ctsmTMB-getParameters}{\code{ctsmTMB$getParameters()}}
-\item \href{#method-ctsmTMB-getTimers}{\code{ctsmTMB$getTimers()}}
-\item \href{#method-ctsmTMB-getEstimate}{\code{ctsmTMB$getEstimate()}}
-\item \href{#method-ctsmTMB-getLikelihood}{\code{ctsmTMB$getLikelihood()}}
-\item \href{#method-ctsmTMB-getPrediction}{\code{ctsmTMB$getPrediction()}}
-\item \href{#method-ctsmTMB-getSimulation}{\code{ctsmTMB$getSimulation()}}
-\item \href{#method-ctsmTMB-filter}{\code{ctsmTMB$filter()}}
-\item \href{#method-ctsmTMB-smoother}{\code{ctsmTMB$smoother()}}
-\item \href{#method-ctsmTMB-estimate}{\code{ctsmTMB$estimate()}}
-\item \href{#method-ctsmTMB-likelihood}{\code{ctsmTMB$likelihood()}}
-\item \href{#method-ctsmTMB-predict}{\code{ctsmTMB$predict()}}
-\item \href{#method-ctsmTMB-simulate}{\code{ctsmTMB$simulate()}}
-\item \href{#method-ctsmTMB-print}{\code{ctsmTMB$print()}}
-\item \href{#method-ctsmTMB-clone}{\code{ctsmTMB$clone()}}
-}
+  \itemize{
+    \item \href{#method-ctsmTMB-initialize}{\code{ctsmTMB$new()}}
+    \item \href{#method-ctsmTMB-.private}{\code{ctsmTMB$.private()}}
+    \item \href{#method-ctsmTMB-getPrivateFields}{\code{ctsmTMB$getPrivateFields()}}
+    \item \href{#method-ctsmTMB-getPrivate}{\code{ctsmTMB$getPrivate()}}
+    \item \href{#method-ctsmTMB-setTrainingMethod}{\code{ctsmTMB$setTrainingMethod()}}
+    \item \href{#method-ctsmTMB-addSystem}{\code{ctsmTMB$addSystem()}}
+    \item \href{#method-ctsmTMB-addObs}{\code{ctsmTMB$addObs()}}
+    \item \href{#method-ctsmTMB-setVariance}{\code{ctsmTMB$setVariance()}}
+    \item \href{#method-ctsmTMB-addInput}{\code{ctsmTMB$addInput()}}
+    \item \href{#method-ctsmTMB-setParameter}{\code{ctsmTMB$setParameter()}}
+    \item \href{#method-ctsmTMB-setAlgebraics}{\code{ctsmTMB$setAlgebraics()}}
+    \item \href{#method-ctsmTMB-setInitialState}{\code{ctsmTMB$setInitialState()}}
+    \item \href{#method-ctsmTMB-setLamperti}{\code{ctsmTMB$setLamperti()}}
+    \item \href{#method-ctsmTMB-setModelname}{\code{ctsmTMB$setModelname()}}
+    \item \href{#method-ctsmTMB-setMAP}{\code{ctsmTMB$setMAP()}}
+    \item \href{#method-ctsmTMB-setAdvancedSettings}{\code{ctsmTMB$setAdvancedSettings()}}
+    \item \href{#method-ctsmTMB-getSystems}{\code{ctsmTMB$getSystems()}}
+    \item \href{#method-ctsmTMB-getObservations}{\code{ctsmTMB$getObservations()}}
+    \item \href{#method-ctsmTMB-getVariances}{\code{ctsmTMB$getVariances()}}
+    \item \href{#method-ctsmTMB-getAlgebraics}{\code{ctsmTMB$getAlgebraics()}}
+    \item \href{#method-ctsmTMB-getInitialState}{\code{ctsmTMB$getInitialState()}}
+    \item \href{#method-ctsmTMB-getParameters}{\code{ctsmTMB$getParameters()}}
+    \item \href{#method-ctsmTMB-getTimers}{\code{ctsmTMB$getTimers()}}
+    \item \href{#method-ctsmTMB-getEstimate}{\code{ctsmTMB$getEstimate()}}
+    \item \href{#method-ctsmTMB-getLikelihood}{\code{ctsmTMB$getLikelihood()}}
+    \item \href{#method-ctsmTMB-getPrediction}{\code{ctsmTMB$getPrediction()}}
+    \item \href{#method-ctsmTMB-getSimulation}{\code{ctsmTMB$getSimulation()}}
+    \item \href{#method-ctsmTMB-filter}{\code{ctsmTMB$filter()}}
+    \item \href{#method-ctsmTMB-smoother}{\code{ctsmTMB$smoother()}}
+    \item \href{#method-ctsmTMB-estimate}{\code{ctsmTMB$estimate()}}
+    \item \href{#method-ctsmTMB-likelihood}{\code{ctsmTMB$likelihood()}}
+    \item \href{#method-ctsmTMB-predict}{\code{ctsmTMB$predict()}}
+    \item \href{#method-ctsmTMB-simulate}{\code{ctsmTMB$simulate()}}
+    \item \href{#method-ctsmTMB-print}{\code{ctsmTMB$print()}}
+    \item \href{#method-ctsmTMB-clone}{\code{ctsmTMB$clone()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-new"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize private fields
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$new()}\if{html}{\out{</div>}}
+\if{html}{\out{<a id="method-ctsmTMB-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-initialize}{}}}
+\subsection{\code{ctsmTMB$new()}}{
+  Initialize private fields
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$new()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-.private"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-.private}{}}}
-\subsection{Method \code{.private()}}{
-Extract the private fields of a ctsmTMB model object.
+\subsection{\code{ctsmTMB$.private()}}{
+  Extract the private fields of a ctsmTMB model object.
 Primarily used for debugging.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$.private()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$.private()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getPrivateFields"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getPrivateFields}{}}}
-\subsection{Method \code{getPrivateFields()}}{
-Extract the private fields of a ctsmTMB model object.
+\subsection{\code{ctsmTMB$getPrivateFields()}}{
+  Extract the private fields of a ctsmTMB model object.
 Primarily used for debugging.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getPrivateFields()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getPrivateFields()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getPrivate"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getPrivate}{}}}
-\subsection{Method \code{getPrivate()}}{
-Extract the private fields of a ctsmTMB model object.
+\subsection{\code{ctsmTMB$getPrivate()}}{
+  Extract the private fields of a ctsmTMB model object.
 Primarily used for debugging.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getPrivate()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getPrivate()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setTrainingMethod"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setTrainingMethod}{}}}
-\subsection{Method \code{setTrainingMethod()}}{
-Set training method
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setTrainingMethod(full.prediction)}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$setTrainingMethod()}}{
+  Set training method
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setTrainingMethod(full.prediction)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{full.prediction}}{boolean whether or not to train against a full prediction
+over the data, rather than 1-step predictions}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{full.prediction}}{boolean whether or not to train against a full prediction
-over the data, rather than 1-step predictions}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-addSystem"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-addSystem}{}}}
-\subsection{Method \code{addSystem()}}{
-Define stochastic differential equation(s) on the form
+\subsection{\code{ctsmTMB$addSystem()}}{
+  Define stochastic differential equation(s) on the form
 
 \code{d<state> ~ f(t,<states>, <inputs>) * dt + g(t, <states>, <inputs>) * dw}
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$addSystem(form, ...)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{form}}{a formula specifying a stochastic differential equation}
-
-\item{\code{...}}{additional formulas similar to \code{form} for specifying
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$addSystem(form, ...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{form}}{a formula specifying a stochastic differential equation}
+      \item{\code{...}}{additional formulas similar to \code{form} for specifying
 multiple equations at once.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-addObs"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-addObs}{}}}
-\subsection{Method \code{addObs()}}{
-Define algebraic observation equations on the form
+\subsection{\code{ctsmTMB$addObs()}}{
+  Define algebraic observation equations on the form
 
 \code{<observation> ~ h(t, <states>, <inputs>) + e)}
 
@@ -193,30 +204,30 @@ where \code{h} is the observation function, and \code{e} is normally
 distributed noise with zero mean.
 
 This function only specifies the observation name, and its mean through \code{h}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$addObs(form, ..., obsnames = NULL)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{form}}{a formula specifying an observation equation}
-
-\item{\code{...}}{additional formulas similar to \code{form} for specifying
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$addObs(form, ..., obsnames = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{form}}{a formula specifying an observation equation}
+      \item{\code{...}}{additional formulas similar to \code{form} for specifying
 multiple equations at once.}
-
-\item{\code{obsnames}}{character vector specifying the name of the observation.
+      \item{\code{obsnames}}{character vector specifying the name of the observation.
 This is used when the left-hand side of \code{form} consists of more than just
 a single variable (of class 'call').}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setVariance"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setVariance}{}}}
-\subsection{Method \code{setVariance()}}{
-Specify the variance of an observation equation.
+\subsection{\code{ctsmTMB$setVariance()}}{
+  Specify the variance of an observation equation.
 
 A defined observation variable \code{y} in e.g. \code{addObs(y ~
 h(t,<states>,<inputs>)} is perturbed by Gaussian noise with zero mean and
@@ -225,50 +236,53 @@ to-be specified using \code{setVariance(y ~ p(t,<states>,<inputs>)}.
 We can for instance declare \code{setVariance(y ~ sigma_x^2}
 where \code{sigma_x} is a fixed effect parameter to be declared through
 \code{setParameter}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setVariance(form, ...)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{form}}{formula class specifying the observation equation to be added
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setVariance(form, ...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{form}}{formula class specifying the observation equation to be added
 to the system.}
-
-\item{\code{...}}{additional formulas identical to \code{form} to specify multiple
+      \item{\code{...}}{additional formulas identical to \code{form} to specify multiple
 observation equations at a time.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-addInput"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-addInput}{}}}
-\subsection{Method \code{addInput()}}{
-Declare variables as data inputs
+\subsection{\code{ctsmTMB$addInput()}}{
+  Declare variables as data inputs
 
 Declare whether a variable contained in system, observation or observation
 variance equations is an input variable. If e.g. the system equation contains
 an input variable \code{u} then it is declared using \code{addInput(u)}.
 The input \code{u} must be contained in the data.frame \code{.data} provided
 when calling the \code{estimate} or \code{predict} methods.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$addInput(...)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$addInput(...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{...}}{variable names that specifies the name of input variables in the defined system.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{variable names that specifies the name of input variables in the defined system.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setParameter"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setParameter}{}}}
-\subsection{Method \code{setParameter()}}{
-Declare which variables that are (fixed effects) parameters in
+\subsection{\code{ctsmTMB$setParameter()}}{
+  Declare which variables that are (fixed effects) parameters in
 the specified model, and specify the initial optimizer guess, as well as
 lower / upper bounds during optimization. There are two ways to declare parameters:
 \enumerate{
@@ -280,23 +294,25 @@ bound and the third value is the upper optimization bound.
 parameters, and the parameter names are provided as rownames of the matrix.
 The columns values corresponds to the description in the vector format above.
 }
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setParameter(...)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setParameter(...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{...}}{a named vector or matrix as described above.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{a named vector or matrix as described above.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setAlgebraics"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setAlgebraics}{}}}
-\subsection{Method \code{setAlgebraics()}}{
-Add algebraic relations.
+\subsection{\code{ctsmTMB$setAlgebraics()}}{
+  Add algebraic relations.
 
 Algebraic relations is a convenient way to transform parameters in your equations.
 In the Ornstein-Uhlenbeck process the rate parameter \code{theta} is always positive, so
@@ -306,42 +322,45 @@ in the system equation one can transform into the log domain using the algebraic
 by \code{exp(logtheta)} when compiling the C++ function. Note that you must provide values
 for \code{logtheta} now instead of \code{theta} when declaring parameters through
 \code{setParameter}
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setAlgebraics(form, ...)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setAlgebraics(form, ...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{form}}{algebraic formula}
+      \item{\code{...}}{additional formulas}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{form}}{algebraic formula}
-
-\item{\code{...}}{additional formulas}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setInitialState"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setInitialState}{}}}
-\subsection{Method \code{setInitialState()}}{
-Declare the initial state values i.e. mean and covariance for the system states.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setInitialState(initial.state)}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$setInitialState()}}{
+  Declare the initial state values i.e. mean and covariance for the system states.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setInitialState(initial.state)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setLamperti"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setLamperti}{}}}
-\subsection{Method \code{setLamperti()}}{
-Set a Lamperti Transformation
+\subsection{\code{ctsmTMB$setLamperti()}}{
+  Set a Lamperti Transformation
 
 If the provided system equations have state dependent diffusion in a few available ways
 then it is advantageous to perform a transformation to remove the state dependence. This
@@ -353,227 +372,254 @@ is currently supported
 \item 'logit' - when the diffusion is proportional to x * (1-x) * dw
 \item 'sqrt-logit' - when the diffusion is proportional to sqrt(x * (1-x)) * dw
 }
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setLamperti(transforms, states = NULL)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setLamperti(transforms, states = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{transforms}}{character vector - one of either "identity, "log", "logit", "sqrt-logit"}
+      \item{\code{states}}{a vector of the state names for which the specified transformations should be applied to.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{transforms}}{character vector - one of either "identity, "log", "logit", "sqrt-logit"}
-
-\item{\code{states}}{a vector of the state names for which the specified transformations should be applied to.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setModelname"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setModelname}{}}}
-\subsection{Method \code{setModelname()}}{
-Set modelname used to create the C++ file for TMB
+\subsection{\code{ctsmTMB$setModelname()}}{
+  Set modelname used to create the C++ file for TMB
 
 When calling \code{TMB::MakeADFun} the (negative log) likelihood function
 is created in the directory specified by the \code{setCppfilesDirectory}
 method with name \code{<modelname>.cpp}
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setModelname(name)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setModelname(name)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{name}}{string defining the model name.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{name}}{string defining the model name.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setMAP"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setMAP}{}}}
-\subsection{Method \code{setMAP()}}{
-Enable maximum a posterior (MAP) estimation.
+\subsection{\code{ctsmTMB$setMAP()}}{
+  Enable maximum a posterior (MAP) estimation.
 
 Adds a maximum a posterior contribution to the (negative log) likelihood
 function by  evaluating the fixed effects parameters in a multivariate Gaussian
 with \code{mean} and \code{covariance} as provided.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setMAP(mean, cov)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setMAP(mean, cov)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{mean}}{mean vector of the Gaussian prior parameter distribution}
+      \item{\code{cov}}{covariance matrix of the Gaussian prior parameter distribution}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{mean}}{mean vector of the Gaussian prior parameter distribution}
-
-\item{\code{cov}}{covariance matrix of the Gaussian prior parameter distribution}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-setAdvancedSettings"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-setAdvancedSettings}{}}}
-\subsection{Method \code{setAdvancedSettings()}}{
-Enable maximum a posterior (MAP) estimation.
+\subsection{\code{ctsmTMB$setAdvancedSettings()}}{
+  Enable maximum a posterior (MAP) estimation.
 
 Adds a maximum a posterior contribution to the (negative log) likelihood
 function by  evaluating the fixed effects parameters in a multivariate Gaussian
 with \code{mean} and \code{covariance} as provided.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$setAdvancedSettings(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$setAdvancedSettings(
   force.ad = TRUE,
   rtmb.tapeconfig = NULL,
   tmb.tapeconfig = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{force.ad}}{a boolean indicating whether to use state space functions that take advantage of the
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{force.ad}}{a boolean indicating whether to use state space functions that take advantage of the
 RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun by 20\%. This breaks
 some functionalities such as REPORT.}
+      \item{\code{rtmb.tapeconfig}}{options to be passed to \link[RTMB]{TapeConfig}.}
+      \item{\code{tmb.tapeconfig}}{options to be passed to \link[TMB]{config}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{rtmb.tapeconfig}}{options to be passed to \link[RTMB]{TapeConfig}.}
-
-\item{\code{tmb.tapeconfig}}{options to be passed to \link[TMB]{config}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getSystems"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getSystems}{}}}
-\subsection{Method \code{getSystems()}}{
-Retrieve system equations.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getSystems()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getSystems()}}{
+  Retrieve system equations.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getSystems()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getObservations"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getObservations}{}}}
-\subsection{Method \code{getObservations()}}{
-Retrieve observation equations.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getObservations()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getObservations()}}{
+  Retrieve observation equations.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getObservations()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getVariances"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getVariances}{}}}
-\subsection{Method \code{getVariances()}}{
-Retrieve observation variances
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getVariances()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getVariances()}}{
+  Retrieve observation variances
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getVariances()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getAlgebraics"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getAlgebraics}{}}}
-\subsection{Method \code{getAlgebraics()}}{
-Retrieve algebraic relations
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getAlgebraics()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getAlgebraics()}}{
+  Retrieve algebraic relations
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getAlgebraics()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getInitialState"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getInitialState}{}}}
-\subsection{Method \code{getInitialState()}}{
-Retrieve initially set state and covariance
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getInitialState()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getInitialState()}}{
+  Retrieve initially set state and covariance
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getInitialState()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getParameters"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getParameters}{}}}
-\subsection{Method \code{getParameters()}}{
-Get initial (and estimated) parameters.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getParameters(type = "all", value = "all")}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{type}}{one of "all", "free" or "fixed" parameters.}
-
-\item{\code{value}}{one of "all", "initial", "estimate", "lower" or "upper".
+\subsection{\code{ctsmTMB$getParameters()}}{
+  Get initial (and estimated) parameters.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getParameters(type = "all", value = "all")}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{type}}{one of "all", "free" or "fixed" parameters.}
+      \item{\code{value}}{one of "all", "initial", "estimate", "lower" or "upper".
 When not "all", a named numeric vector is returned.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getTimers"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getTimers}{}}}
-\subsection{Method \code{getTimers()}}{
-Retrieve initially timers
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getTimers()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getTimers()}}{
+  Retrieve initially timers
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getTimers()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getEstimate"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getEstimate}{}}}
-\subsection{Method \code{getEstimate()}}{
-Retrieve initially set state and covariance
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getEstimate()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getEstimate()}}{
+  Retrieve initially set state and covariance
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getEstimate()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getLikelihood"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getLikelihood}{}}}
-\subsection{Method \code{getLikelihood()}}{
-Retrieve initially set state and covariance
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getLikelihood()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getLikelihood()}}{
+  Retrieve initially set state and covariance
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getLikelihood()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getPrediction"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getPrediction}{}}}
-\subsection{Method \code{getPrediction()}}{
-Retrieve initially set state and covariance
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getPrediction()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getPrediction()}}{
+  Retrieve initially set state and covariance
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getPrediction()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-getSimulation"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getSimulation}{}}}
-\subsection{Method \code{getSimulation()}}{
-Retrieve initially set state and covariance
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$getSimulation()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$getSimulation()}}{
+  Retrieve initially set state and covariance
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$getSimulation()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-filter"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-filter}{}}}
-\subsection{Method \code{filter()}}{
-Perform state filtering (or smoothing for the 'laplace' method)
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$filter(
+\subsection{\code{ctsmTMB$filter()}}{
+  Perform state filtering (or smoothing for the 'laplace' method)
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$filter(
   data,
   pars = NULL,
   method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
+  first.order.input.hold = FALSE,
   loss = "quadratic",
   loss_c = NULL,
   ukf.hyperpars = c(1, 0, 3),
@@ -583,26 +629,22 @@ Perform state filtering (or smoothing for the 'laplace' method)
   use.cpp = TRUE,
   silent = FALSE,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
 can take \code{NA}-values.}
-
-\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+      \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
 parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}}
-
-\item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
+      \item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
 Must be one of either "lkf", "ekf", "laplace".}
-
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+      \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
 4th order Runge Kutta method is available via "rk4".}
-
-\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
+      \item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
 The defined step-size is used to calculate the number of steps between observation time-points as
 defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
 is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
@@ -617,8 +659,9 @@ order moment differential equations.
 scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
-
-\item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
+      \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
+or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+      \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
 distribution is considered too small i.e. outliers are weighted too much, then one
@@ -632,42 +675,37 @@ can choose loss functions that accounts for this. The three available types avai
 The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
 approximation respectively) for smooth derivatives.}
-
-\item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
-
-\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
-
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
+      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+      \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+      \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+      \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
-
-\item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
+      \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the
 system contains time-varying inputs, the first element of these is used.}
-
-\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+      \item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
+      \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+      \item{\code{...}}{additional arguments}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{...}}{additional arguments}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-smoother"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-smoother}{}}}
-\subsection{Method \code{smoother()}}{
-Perform state filtering (or smoothing for the 'laplace' method)
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$smoother(
+\subsection{\code{ctsmTMB$smoother()}}{
+  Perform state filtering (or smoothing for the 'laplace' method)
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$smoother(
   data,
   pars = NULL,
   method = "laplace",
   ode.solver = "euler",
   ode.timestep = diff(data$t),
+  first.order.input.hold = FALSE,
   loss = "quadratic",
   loss_c = NULL,
   initial.state = self$getInitialState(),
@@ -675,26 +713,22 @@ Perform state filtering (or smoothing for the 'laplace' method)
   estimate.initial.state = FALSE,
   silent = FALSE,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
 can take \code{NA}-values.}
-
-\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+      \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
 parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}}
-
-\item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
+      \item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
 Must be one of either "lkf", "ekf", "laplace".}
-
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+      \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
 4th order Runge Kutta method is available via "rk4".}
-
-\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
+      \item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
 The defined step-size is used to calculate the number of steps between observation time-points as
 defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
 is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
@@ -709,8 +743,9 @@ order moment differential equations.
 scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
-
-\item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
+      \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
+or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+      \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
 distribution is considered too small i.e. outliers are weighted too much, then one
@@ -724,37 +759,34 @@ can choose loss functions that accounts for this. The three available types avai
 The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
 approximation respectively) for smooth derivatives.}
-
-\item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
-
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
+      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+      \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+      \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
-
-\item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
+      \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the
 system contains time-varying inputs, the first element of these is used.}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+      \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+      \item{\code{...}}{additional arguments}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{...}}{additional arguments}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-estimate}{}}}
-\subsection{Method \code{estimate()}}{
-Estimate the fixed effects parameters in the specified model.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$estimate(
+\subsection{\code{ctsmTMB$estimate()}}{
+  Estimate the fixed effects parameters in the specified model.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$estimate(
   data,
   method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
+  first.order.input.hold = FALSE,
   loss = "quadratic",
   loss_c = NULL,
   ukf.hyperpars = c(1, 0, 3),
@@ -769,27 +801,25 @@ Estimate the fixed effects parameters in the specified model.
   silent = FALSE,
   compile = FALSE,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data}}{a \code{data.frame} with a time-column (must be named \code{"t"}), observations and
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{a \code{data.frame} with a time-column (must be named \code{"t"}), observations and
 inputs used maximum-likelihood parameter and state estimation. The observations can take \code{NA}-values.}
-
-\item{\code{method}}{a \code{character} string specifying the likelihood method used for parameter and state estimation.}
-
-\item{\code{ode.solver}}{a \code{character} string to determine the ODE solver scheme for the Kalman methods when solving the
+      \item{\code{method}}{a \code{character} string specifying the likelihood method used for parameter and state estimation.}
+      \item{\code{ode.solver}}{a \code{character} string to determine the ODE solver scheme for the Kalman methods when solving the
 moment differential equations. The methods are either Forward Euler (\code{"euler"}) or 4th order Runge-Kutta (\code{"rk4"})
 (default).}
-
-\item{\code{ode.timestep}}{a \code{numeric} value that determines the ODE solver time step-size. The passed value
+      \item{\code{ode.timestep}}{a \code{numeric} value that determines the ODE solver time step-size. The passed value
 is used to calculate the number of steps between time-points in \code{data$t} such that an integer number of
 steps are taken. For details see the "Estimation" vignette on the webpage. The step-size is used for solving
 the moment differential equations (Kalman methods) or for simulating the stochastic SDE path (Laplace methods).}
-
-\item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
+      \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
+or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+      \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
 distribution is considered too small i.e. outliers are weighted too much, then one
@@ -803,62 +833,52 @@ can choose loss functions that accounts for this. The three available types avai
 The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
 approximation respectively) for smooth derivatives.}
-
-\item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
-
-\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
-
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{trace}}{integer passed to \code{control} which determines number of steps between each print-out
+      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+      \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+      \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+      \item{\code{trace}}{integer passed to \code{control} which determines number of steps between each print-out
 during optimization (use 0 to disable tracing print-outs).}
-
-\item{\code{control}}{list of control parameters parsed to \code{nlminb} as its \code{control} argument.
+      \item{\code{control}}{list of control parameters parsed to \code{nlminb} as its \code{control} argument.
 See \code{?stats::nlminb} for more information}
-
-\item{\code{use.hessian}}{boolean value. The default (\code{TRUE}) causes the optimization algorithm
+      \item{\code{use.hessian}}{boolean value. The default (\code{TRUE}) causes the optimization algorithm
 \code{stats::nlminb} to use the fixed effects hessian of the (negative log) likelihood when
 performing the optimization. This feature is only available for the kalman filter methods
 without any random effects.}
-
-\item{\code{report}}{boolean - whether or not to report filtered states, observations and residuals.}
-
-\item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
+      \item{\code{report}}{boolean - whether or not to report filtered states, observations and residuals.}
+      \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
-
-\item{\code{unconstrained.optim}}{boolean value. When TRUE then the optimization is carried out unconstrained i.e.
+      \item{\code{unconstrained.optim}}{boolean value. When TRUE then the optimization is carried out unconstrained i.e.
 without any of the parameter bounds specified during \code{setParameter}.}
-
-\item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
+      \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the
 system contains time-varying inputs, the first element of these is used.}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+      \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
+      \item{\code{compile}}{boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.}
+      \item{\code{...}}{additional arguments}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{compile}}{boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.}
-
-\item{\code{...}}{additional arguments}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-likelihood"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-likelihood}{}}}
-\subsection{Method \code{likelihood()}}{
-Construct and extract function handlers for the negative
+\subsection{\code{ctsmTMB$likelihood()}}{
+  Construct and extract function handlers for the negative
 log likelihood function.
 
 The handlers from \code{TMB}'s \code{MakeADFun} are constructed and returned.
 This enables the user to e.g. choose their own optimization algorithm, or just
 have more control of the optimization workflow.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$likelihood(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$likelihood(
   data,
   method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
+  first.order.input.hold = FALSE,
   loss = "quadratic",
   loss_c = NULL,
   ukf.hyperpars = c(1, 0, 3),
@@ -867,23 +887,20 @@ have more control of the optimization workflow.
   silent = FALSE,
   compile = FALSE,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data}}{a data.frame containing time-vector 't', observations and inputs.
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{a data.frame containing time-vector 't', observations and inputs.
 The observations can take \code{NA}-values.}
-
-\item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
+      \item{\code{method}}{character vector specifying the filtering method used for state/likelihood calculations.
 Must be one of either "lkf", "ekf", "laplace".}
-
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+      \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
 4th order Runge Kutta method is available via "rk4".}
-
-\item{\code{ode.timestep}}{the time-step used in the filtering schemes. The
+      \item{\code{ode.timestep}}{the time-step used in the filtering schemes. The
 time-step has two different uses depending on the chosen method.
 \enumerate{
 \item Kalman Filters: The time-step is used when numerically solving the
@@ -908,8 +925,9 @@ order moment differential equations.
 scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
-
-\item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
+      \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
+or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+      \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
 distribution is considered too small i.e. outliers are weighted too much, then one
@@ -923,50 +941,46 @@ can choose loss functions that accounts for this. The three available types avai
 The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
 approximation respectively) for smooth derivatives.}
-
-\item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
-
-\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
-
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
+      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+      \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+      \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+      \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the
 system contains time-varying inputs, the first element of these is used.}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+      \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
-
-\item{\code{compile}}{boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.}
-
-\item{\code{...}}{additional arguments}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The method retunrns a list which includes function handles for the likelihood function.
+      \item{\code{compile}}{boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.}
+      \item{\code{...}}{additional arguments}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The method retunrns a list which includes function handles for the likelihood function.
 \describe{
 \item{par}{A vector of initial parameter values. This is the expected input size to \code{fn}, \code{gr} and \code{he}.}
 \item{fn}{Negative log-likelihood function.}
 \item{gr}{Negative log-likelihood gradient.}
 \item{he}{Negative log-likelihood hessian.}
 }
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-predict}{}}}
-\subsection{Method \code{predict()}}{
-Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
+\subsection{\code{ctsmTMB$predict()}}{
+  Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
 obtained by solving the moment equations \code{k.ahead} steps forward in time when using the current step posterior
 state estimate as the initial condition.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$predict(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$predict(
   data,
   pars = NULL,
   method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
+  first.order.input.hold = FALSE,
   k.ahead = nrow(data) - 1,
   return.k.ahead = 0:min(k.ahead, nrow(data) - 1),
   return.variance = c("marginal", "none", "covariance", "correlation"),
@@ -976,26 +990,22 @@ state estimate as the initial condition.
   use.cpp = TRUE,
   silent = FALSE,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
 can take \code{NA}-values.}
-
-\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+      \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
 parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
 function has been run, then the default values will be those at the found optimum.}
-
-\item{\code{method}}{The prediction method}
-
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+      \item{\code{method}}{The prediction method}
+      \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
 4th order Runge Kutta method is available via "rk4".}
-
-\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
+      \item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
 The defined step-size is used to calculate the number of steps between observation time-points as
 defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
 is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
@@ -1010,46 +1020,41 @@ order moment differential equations.
 scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
-
-\item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
+      \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
+or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+      \item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
 data updates).}
-
-\item{\code{return.k.ahead}}{numeric vector of integers specifying which k.ahead predictions to that
+      \item{\code{return.k.ahead}}{numeric vector of integers specifying which k.ahead predictions to that
 should be returned.}
-
-\item{\code{return.variance}}{a string to indicate what kind of dispersions should be reported.}
-
-\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
-
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
-
-\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+      \item{\code{return.variance}}{a string to indicate what kind of dispersions should be reported.}
+      \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+      \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+      \item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
+      \item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
+      \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
-
-\item{\code{...}}{additional arguments}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
+      \item{\code{...}}{additional arguments}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
 prior state predictions (\code{k = 1,...,k.ahead}). If \code{return.dispersion = TRUE} then the state covariance/correlation
 matrix is returned, otherwise only the marginal variances are returned.
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-simulate"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-simulate}{}}}
-\subsection{Method \code{simulate()}}{
-Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
+\subsection{\code{ctsmTMB$simulate()}}{
+  Perform prediction/filtration to obtain state mean and covariance estimates. The predictions are
 obtained by solving the moment equations \code{k.ahead} steps forward in time when using the current step posterior
 state estimate as the initial condition.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$simulate(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$simulate(
   data,
   pars = NULL,
   use.cpp = TRUE,
@@ -1057,6 +1062,7 @@ state estimate as the initial condition.
   method = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen"),
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
+  first.order.input.hold = FALSE,
   simulation.timestep = diff(data$t),
   k.ahead = nrow(data) - 1,
   return.k.ahead = 0:min(k.ahead, nrow(data) - 1),
@@ -1066,24 +1072,20 @@ state estimate as the initial condition.
   estimate.initial.state = private$algo.settings$estimate.initial,
   silent = FALSE,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{data.frame containing time-vector 't', observations and inputs. The observations
 can take \code{NA}-values.}
-
-\item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
+      \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
 parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
 function has been run, then the default values will be those at the found optimum.}
-
-\item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
-
-\item{\code{cpp.seeds}}{an integer seed value to control RNG normal draws on the C++ side.}
-
-\item{\code{method}}{\enumerate{
+      \item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
+      \item{\code{cpp.seeds}}{an integer seed value to control RNG normal draws on the C++ side.}
+      \item{\code{method}}{\enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects
 and are integrated out using the Laplace approximation. This method only yields the gradient
 of the (negative log) likelihood function with respect to the fixed effects for optimization.
@@ -1102,12 +1104,10 @@ parameter estimation. In particular, it is straight-forward to obtain k-step-ahe
 with these methods (use the \code{predict} S3 method), and stochastic simulation is also available
 in the cases where long prediction horizons are sought, where the normality assumption will be
 inaccurate}
-
-\item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
+      \item{\code{ode.solver}}{Sets the ODE solver used in the Kalman Filter methods for solving the moment
 differential equations. The default "euler" is the Forward Euler method, alternatively the classical
 4th order Runge Kutta method is available via "rk4".}
-
-\item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
+      \item{\code{ode.timestep}}{numeric value. Sets the time step-size in numerical filtering schemes.
 The defined step-size is used to calculate the number of steps between observation time-points as
 defined by the provided \code{data}. If the calculated number of steps is larger than N.01 where N
 is an integer, then the time-step is reduced such that exactly N+1 steps is taken between observations
@@ -1122,65 +1122,62 @@ order moment differential equations.
 scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
-
-\item{\code{simulation.timestep}}{timestep used in the euler-maruyama scheme}
-
-\item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
+      \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
+or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+      \item{\code{simulation.timestep}}{timestep used in the euler-maruyama scheme}
+      \item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
 data updates).}
-
-\item{\code{return.k.ahead}}{numeric vector of integers specifying which k.ahead predictions to that
+      \item{\code{return.k.ahead}}{numeric vector of integers specifying which k.ahead predictions to that
 should be returned.}
-
-\item{\code{n.sims}}{number of simulations}
-
-\item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
-
-\item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-
-\item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
-
-\item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
+      \item{\code{n.sims}}{number of simulations}
+      \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
+      \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
+      \item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
+      \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
-
-\item{\code{...}}{additional arguments}
-
-\item{\code{return.dispersion}}{boolean value to indicate whether the covariance (instead of the correlation)
+      \item{\code{...}}{additional arguments}
+      \item{\code{return.dispersion}}{boolean value to indicate whether the covariance (instead of the correlation)
 should be returned.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A data.frame that contains for each time step the posterior state estimate at that time.step (\code{k = 0}), and the
 prior state predictions (\code{k = 1,...,k.ahead}). If \code{return.dispersion = TRUE} then the state covariance/correlation
 matrix is returned, otherwise only the marginal variances are returned.
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-print"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-print}{}}}
-\subsection{Method \code{print()}}{
-Function to print the model object
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$print()}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$print()}}{
+  Function to print the model object
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$print()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ctsmTMB-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ctsmTMB$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{ctsmTMB$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ctsmTMB$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

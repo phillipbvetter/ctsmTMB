@@ -12,6 +12,7 @@
   against.obs = NULL,
   ggtheme = getggplot2theme(),
   ylims = c(NA, NA),
+  standardized.residuals = TRUE,
   residual.burnin = 0L,
   residual.vs.obs.and.inputs = FALSE,
   ...
@@ -35,6 +36,9 @@ determining what kind of states to plot.}
 \item{ggtheme}{ggplot2 theme to use for creating the ggplot.}
 
 \item{ylims}{limits on the y-axis for residual time-series plot}
+
+\item{standardized.residuals}{logical whether or not the time-series residual
+plot uses standardized residuals or not.}
 
 \item{residual.burnin}{integer N to remove the first N residuals}
 

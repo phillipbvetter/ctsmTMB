@@ -8,10 +8,10 @@
 #' @examples
 #' library(ctsmTMB)
 #' model <- ctsmTMB$new()
-#' 
+#'
 #' # print empty model
 #' print(model)
-#' 
+#'
 #' # add elements to model and see new print
 #' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
 #' model$addObs(y ~ x)
@@ -29,7 +29,7 @@
 print.ctsmTMB = function(x,...) {
   obj <- x
   output <- obj$print()
-  
+
   return(invisible(output))
 }
 
@@ -39,7 +39,7 @@ print.ctsmTMB = function(x,...) {
 #' @examples
 #' library(ctsmTMB)
 #' model <- ctsmTMB$new()
-#' 
+#'
 #' # create model
 #' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
 #' model$addObs(y ~ x)
@@ -52,10 +52,10 @@ print.ctsmTMB = function(x,...) {
 #'   sigma_y = 1e-2
 #' )
 #' model$setInitialState(list(1,1e-1))
-#' 
+#'
 #' # fit model to data
 #' fit <- model$estimate(Ornstein)
-#' 
+#'
 #' # print fit
 #' print(fit)
 #' @returns Print of ctsmTMB fit object
@@ -71,7 +71,7 @@ print.ctsmTMB.fit = function(x,...) {
   colnames(mat) = c("Estimate","Std. Error","t value","Pr(>|t|)")
   cat("Coefficent Matrix \n")
   stats::printCoefmat(mat)
-  
+
   return(invisible(mat))
 }
 
@@ -83,7 +83,7 @@ print.ctsmTMB.fit = function(x,...) {
 #' @examples
 #' library(ctsmTMB)
 #' model <- ctsmTMB$new()
-#' 
+#'
 #' # create model
 #' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
 #' model$addObs(y ~ x)
@@ -96,24 +96,24 @@ print.ctsmTMB.fit = function(x,...) {
 #'   sigma_y = 1e-2
 #' )
 #' model$setInitialState(list(1,1e-1))
-#' 
+#'
 #' # fit model to data
 #' fit <- model$estimate(Ornstein)
-#' 
+#'
 #' # print model summary
 #' summary(fit, correlation=TRUE)
 #' @returns a summary of the estimated ctsmTMB model fit
 #' @export
-summary.ctsmTMB.fit = function(object, 
+summary.ctsmTMB.fit = function(object,
                                correlation = FALSE,
                                ...) {
-  
+
   fit <- object #method consistency (argument must be called 'object')
-  
+
   if (!is.logical(correlation)) {
     stop("correlation must be logical")
   }
-  
+
   mat = cbind(fit$par.fixed,fit$sd.fixed,fit$tvalue,fit$Pr.tvalue)
   colnames(mat) = c("Estimate","Std. Error","t value","Pr(>|t|)")
   cat("Coefficent Matrix \n")
@@ -130,7 +130,7 @@ summary.ctsmTMB.fit = function(object,
     # cor[!lower.tri(cor)] <- ""
     # print(cor[-1, -(dim(cor)[1]), drop = FALSE], quote = FALSE)
   }
-  
+
   return(invisible(list(parameters=mat)))
 }
 
@@ -149,7 +149,7 @@ summary.ctsmTMB.fit = function(object,
 #' @examples
 #' library(ctsmTMB)
 #' model <- ctsmTMB$new()
-#' 
+#'
 #' # create model
 #' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
 #' model$addObs(y ~ x)
@@ -162,63 +162,63 @@ summary.ctsmTMB.fit = function(object,
 #'   sigma_y = 1e-2
 #' )
 #' model$setInitialState(list(1,1e-1))
-#' 
+#'
 #' # fit model to data
 #' fit <- model$estimate(Ornstein)
-#' 
+#'
 #' # perform moment predictions
 #' pred <- model$predict(Ornstein)
-#' 
+#'
 #' # plot the k.ahead=10 predictions
 #' plot(pred, against="y.data")
-#' 
-#' 
+#'
+#'
 #' # plot filtered states
 #' plot(fit, type="states", against="y")
-#' 
+#'
 #' @returns A plot of predicted states
 #' @export
-plot.ctsmTMB.pred = function(x, 
+plot.ctsmTMB.pred = function(x,
                              y,
                              k.ahead = unique(x$states[,"k.ahead"]),
                              state.name = NULL,
                              type="states",
                              against=NULL,
                              ...) {
-  
+
   # method consistency
   states <- x$states
   obs <- x$observations
-  
+
   # check k.ahead
   if(!any(k.ahead %in% unique(states[,"k.ahead"]))){
     stop("k.ahead not found in the prediction data frame")
   }
-  
+
   # set state name to plot
   if(is.null(state.name)){
     state.name = colnames(states)[6]
   }
-  
+
   # filter and plot
   bool = states[,"k.ahead"] %in% k.ahead
   x = states[bool, "t.j"]
   y = states[bool, state.name]
-  
+
   p <- ggplot2::ggplot()
-  
+
   # draw 95% CI interval if variance was calculated
   if(paste0("var.",state.name) %in% colnames(states)){
     y.sd <- sqrt(states[bool, paste0("var.",state.name)])
     p <- p +
       ggplot2::geom_ribbon(aes(x=x,ymin=y-2*y.sd,ymax=y+2*y.sd),fill="grey",alpha=0.8)
   }
-  
+
   # Draw mean
-  p <- p + 
+  p <- p +
     ggplot2::geom_line(aes(x=x,y=y, color=state.name)) +
     getggplot2theme()
-  
+
   # Add observations and colors
   if(!is.null(against)){
     z = obs[bool, against]
@@ -229,22 +229,22 @@ plot.ctsmTMB.pred = function(x,
     p <- p +
       scale_color_manual(values=c("steelblue"))
   }
-  
+
   # add labels
-  p <- p + 
+  p <- p +
     labs(color="", x="Time", y="", title="Predictions")
-  
+
   # print and return
   print(p)
-  
-  
+
+
   return(invisible(p))
 }
 
 #' This function creates residual plots for an estimated ctsmTMB object
 #' @param x A R6 ctsmTMB fit object
 #' @param print.plot a single integer determining which element out of all
-#' states/observations (depending on the argument to \code{type}). 
+#' states/observations (depending on the argument to \code{type}).
 #' A value of 0 means not to plot anything.
 #' @param type a character vector either 'residuals' or 'states' determining what
 #' to plot.
@@ -253,6 +253,8 @@ plot.ctsmTMB.pred = function(x,
 #' @param against.obs name of an observation to plot state predictions against.
 #' @param ggtheme ggplot2 theme to use for creating the ggplot.
 #' @param ylims limits on the y-axis for residual time-series plot
+#' @param standardized.residuals logical whether or not the time-series residual
+#' plot uses standardized residuals or not.
 #' @param residual.burnin integer N to remove the first N residuals
 #' @param residual.vs.obs.and.inputs the residual plots also include a new window
 #' with time-series plots of residuals, associated observations and inputs
@@ -260,7 +262,7 @@ plot.ctsmTMB.pred = function(x,
 #' @examples
 #' library(ctsmTMB)
 #' model <- ctsmTMB$new()
-#' 
+#'
 #' # create model
 #' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
 #' model$addObs(y ~ x)
@@ -273,14 +275,14 @@ plot.ctsmTMB.pred = function(x,
 #'   sigma_y = 1e-2
 #' )
 #' model$setInitialState(list(1,1e-1))
-#' 
+#'
 #' # fit model to data
 #' fit <- model$estimate(Ornstein)
-#' 
+#'
 #' # plot residuals
 #' \dontrun{plot(fit)}
 #' plot(fit)
-#' 
+#'
 #' # plot filtered states
 #' \dontrun{plot(fit, type="states")}
 #' @returns a (list of) ggplot residual plot(s)
@@ -292,13 +294,14 @@ plot.ctsmTMB.fit = function(x,
                             against.obs=NULL,
                             ggtheme=getggplot2theme(),
                             ylims = c(NA,NA),
+                            standardized.residuals = TRUE,
                             residual.burnin=0L,
                             residual.vs.obs.and.inputs = FALSE,
                             ...) {
-  
+
   fit <- x
   private <- fit$private
-  
+
   if (!(inherits(ggtheme,"theme") & inherits(ggtheme,"gg"))) {
     stop("The provided theme is not a ggtheme")
   }
@@ -308,43 +311,48 @@ plot.ctsmTMB.fit = function(x,
   if(!any(state.type %in% c("prior","posterior","smoothed"))){
     stop("The state.type must be one of 'prior', 'posterior' or 'smoothed'.")
   }
-  
+
   plots <- plots2 <- list()
-  
+
   # residual plots
   ########################################
   if(type=="residuals"){
-    
+
     if(is.null(fit$residuals)){
       if(private$algo.settings$method=="laplace"){
-        stop("No residuals to plot. Did you calculate residuals with argument 'laplace.residuals=TRUE' when calling 'estimate'?")
+        stop("No residuals in the fit object. Did you forget to use 'laplace.residuals=TRUE' when you called 'estimate'?")
       }
-      stop("Error: no residuals were found in the fit object.")
+      stop("No residuals in the fit object.")
     }
-    
+
     mycolor <- "steelblue"
     t <- fit$residuals$residuals[,"t"]
     if(residual.burnin) t <- tail(t,-residual.burnin)
-    
+
     for (i in 1:private$dims$observations) {
-      
+
       e = fit$residuals$normalized[, private$names$obs[i]]
       e0 <- fit$residuals$residuals[, private$names$obs[i]]
       if(residual.burnin){
-        e <- tail(e,-residual.burnin)
-        e0 <- tail(e0,-residual.burnin)
+        e <- tail(e, -residual.burnin)
+        e0 <- tail(e0, -residual.burnin)
       }
       id = !is.na(e)
       e = e[id]
       t = t[id]
       nam = private$names$obs[i]
-      
+
       # time vs residuals
-      plot.res =
-        ggplot2::ggplot(data=data.frame(t,e0)) +
-        ggplot2::geom_line(ggplot2::aes(x=t,y=e0),color=mycolor) +
+      plot.res = ggplot2::ggplot() +
+        {
+          if(standardized.residuals){
+            ggplot2::geom_line(data=data.frame(t,e0), ggplot2::aes(x=t,y=e0),color=mycolor)
+          } else {
+            ggplot2::geom_line(data=data.frame(t,e), ggplot2::aes(x=t,y=e),color=mycolor)
+          }
+        } +
         ggtheme +
-        coord_cartesian(ylim=ylims) + 
+        coord_cartesian(ylim=ylims) +
         ggplot2::labs(
           title = paste("Time Series of Residuals: "),
           y = "",
@@ -408,7 +416,7 @@ plot.ctsmTMB.fit = function(x,
           y = "",
           x = "Lag"
         )
-      
+
       plots[[i]] = patchwork::wrap_plots(plot.res,
                                          plot.hist,
                                          plot.qq,
@@ -418,19 +426,19 @@ plot.ctsmTMB.fit = function(x,
                                          nrow=3) +
         patchwork::plot_annotation(title=paste("Residual Analysis for ", nam),
                                    # subtitle=paste("modelname:", private$modelname),
-                                   theme = ggtheme + 
+                                   theme = ggtheme +
                                      ggplot2::theme(text=ggplot2::element_text(size=12, face="bold"))
         )
-      
+
       if(residual.vs.obs.and.inputs){
-        
+
         y.obs <- private$data[[nam]]
         y <- private$data[[private$names$obs[i]]]
         if(residual.burnin){
           y.obs <- tail(y.obs, -residual.burnin)
           y <- tail(y, -residual.burnin)
         }
-        
+
         # time vs observations
         plot.obs =
           ggplot2::ggplot(data=data.frame(t,y.obs)) +
@@ -455,7 +463,7 @@ plot.ctsmTMB.fit = function(x,
             x = "",
             color=""
           )
-        
+
         # time vs input plots
         # input plots are constant across obs plot index "i"
         if(i==1){
@@ -467,7 +475,7 @@ plot.ctsmTMB.fit = function(x,
             if(residual.burnin){
               y.input <- tail(y.input, -residual.burnin)
             }
-            input.plots[[j]] <- 
+            input.plots[[j]] <-
               ggplot2::ggplot(data=data.frame(t,y.input)) +
               ggplot2::geom_line(ggplot2::aes(x=t,y=y.input),color=mycolor) +
               ggtheme +
@@ -481,11 +489,11 @@ plot.ctsmTMB.fit = function(x,
           input.plots[[1]]$labels$title = "Inputs"
           plot.inputs <- patchwork::wrap_plots(input.plots,ncol=1)
         }
-        
+
         plot.res2 <- plot.res
         plot.res2$labels$x <- ""
         plot.res2$labels$title <- "Residuals"
-        
+
         # save current residual vs input plot
         plots2[[i]] <- patchwork::wrap_plots(plot.res2,
                                              plot.obs,
@@ -494,32 +502,32 @@ plot.ctsmTMB.fit = function(x,
         ) +
           patchwork::plot_annotation(title=paste("Residual vs Inputs for", nam),
                                      subtitle=paste("modelname:", private$modelname),
-                                     theme = ggtheme + 
+                                     theme = ggtheme +
                                        ggplot2::theme(text=ggplot2::element_text(size=12, face="bold")))
       }
     }
-    
-    
+
+
   }
-  
+
   # state plots
   ########################################
   if(type=="states"){
-    
+
     mycolors <- c("steelblue","tomato")
     t <- fit$private$data$t
-    
+
     for (i in 1:private$dims$states) {
       nam <- private$names$states[i]
       y.mean <- fit$states$mean[[state.type]][,nam]
       y.sd <- fit$states$sd[[state.type]][,nam]
       y.lab <- sprintf("%s (%s)", capitalize_first(state.type), nam)
-      
+
       tempdata <- data.frame(t=t, y=y.mean, sd=y.sd)
       plots[[i]] <- ggplot2::ggplot() +
         ggplot2::geom_ribbon(data=tempdata, ggplot2::aes(x=t, ymin=y-2*sd, ymax=y+2*sd), fill="grey", alpha=0.6) +
         ggplot2::geom_line(data=tempdata, ggplot2::aes(x=t, y=y, color=nam)) +
-        { 
+        {
           if(i==print.plot && !is.null(against.obs))
           {
             y.obs <- fit$private$data[[against.obs]]
@@ -542,22 +550,22 @@ plot.ctsmTMB.fit = function(x,
           }
         } +
         getggplot2theme()
-      
+
     }
   }
-  
+
   # print the first plot to the console
   if(print.plot != 0){
     temp.plot <- plots[[print.plot]]
     print(temp.plot)
   }
-  
+
   # print second plot if requested
   if(length(plots2) > 0){
     temp.plot <- plots2[[print.plot]]
     print(temp.plot)
   }
-  
+
   # return plot list
   return(invisible(c(plots, plots2)))
 }
@@ -582,7 +590,7 @@ plot.ctsmTMB.fit = function(x,
 #' @examples
 #' library(ctsmTMB)
 #' model <- ctsmTMB$new()
-#' 
+#'
 #' # create model
 #' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
 #' model$addObs(y ~ x)
@@ -595,10 +603,10 @@ plot.ctsmTMB.fit = function(x,
 #'   sigma_y = 1e-2
 #' )
 #' model$setInitialState(list(1,1e-1))
-#' 
+#'
 #' # fit model to data
 #' fit <- model$estimate(Ornstein)
-#' 
+#'
 #' # calculate profile likelihood
 #' out <- profile(fit,parlist=list(theta=NULL))
 #' @note The implementation was modified from that of
@@ -613,21 +621,21 @@ profile.ctsmTMB.fit = function(fitted,
                                control=list(trace=0,iter.max=1e3,eval.max=1e3),
                                ...
 ){
-  
+
   fit <- fitted
-  
+
   if(missing(fit)){
     stop("Please supply a fit from a ctsmTMB model.")
   }
-  
+
   bool <- !(names(parlist) %in% names(fit$par.fixed))
   if(any(bool)){
     stop("The following parameter name(s) do not exist in the model:\n", paste(names(parlist)[bool],collapse=", "))
   }
-  
+
   # 1. Get likelihood function
   nll <- fit$private$nll
-  
+
   # Create parameter grid
   parnames <- names(parlist)
   id <- names(fit$par.fixed) %in% parnames
@@ -648,37 +656,37 @@ profile.ctsmTMB.fit = function(fitted,
   prof.nll <- numeric(n)
   prof.pars <- vector("list",length=n)
   opt.list <- vector("list",length=n)
-  
+
   # 2. Create parameter filter matrix C that extracts only the
   # non-profiled entries which needs to be optimized over.
   # C maps from length(par.fixed) to length(par.fixed) - length(parnames)
   # by multiplication.
   C <- diag(length(fit$par.fixed))[,!id,drop=F]
-  
+
   # Create optimization function that takes initial guess x0
   # and finds the maximum profile likelihood estimate in the
   # reduced parameter space
   f.optim <- function(x0){
-    
+
     # objective function
     f <- function(x){
       y <- par + as.numeric(C %*% x)
       nll$fn(y)
     }
-    
+
     # gradient
     gr <- function(x){
       y <- par + as.numeric(C %*% x)
       as.numeric(nll$gr(y) %*% C)
     }
-    
+
     # hessian
     he <- function(x){
       y <- par + as.numeric(C %*% x)
       # t(C) %*% nll$he(y)[!id,!id] %*% C
       nll$he(y)[!id,!id]
     }
-    
+
     # optimize
     if(hessian) {
       opt <- stats::nlminb(x0, f, gr, he, control=control)
@@ -687,16 +695,16 @@ profile.ctsmTMB.fit = function(fitted,
     }
     return(opt)
   }
-  
+
   # Robustify f.optim to handle NA cases
   f <- function(x0){
     y <- try_with_warning_recovery(f.optim(x0), silent=TRUE)
     if(inherits(y,"try-error")) y <- NA
     return(y)
   }
-  
+
   names.in.parlist <- names(parlist)
-  
+
   par <- fit$par.fixed
   x0 <- fit$par.fixed[!id]
   par[!id] <- 0
@@ -720,8 +728,8 @@ profile.ctsmTMB.fit = function(fitted,
       X[i,len+1] <- opt$objective
       par.temp[!id] <- opt$par
       prof.pars[[i]] <- par.temp
-      
-      # This next start guess is optimum found 
+
+      # This next start guess is optimum found
       # in the previous iteration
       # This may be bad when parameter grid jumps??
       x0 <- opt$par
@@ -730,12 +738,12 @@ profile.ctsmTMB.fit = function(fitted,
       }
     }
   }
-  
+
   # return -----------------
   # normalize and convert nll into likelihood
   X[,len+1] <- exp(fit$nll - X[,len+1])
   names(X)[ncol(X)] <- "likelihood"
-  
+
   # create return list
   returnlist = list(
     profile.grid.and.likelihood = X,
@@ -746,7 +754,7 @@ profile.ctsmTMB.fit = function(fitted,
   )
   # set class so that S3 methods work
   class(returnlist) <- "ctsmTMB.profile"
-  
+
   return(returnlist)
 }
 
@@ -759,7 +767,7 @@ profile.ctsmTMB.fit = function(fitted,
 #' @examples
 #' library(ctsmTMB)
 #' model <- ctsmTMB$new()
-#' 
+#'
 #' # create model
 #' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
 #' model$addObs(y ~ x)
@@ -772,30 +780,30 @@ profile.ctsmTMB.fit = function(fitted,
 #'   sigma_y = 1e-2
 #' )
 #' model$setInitialState(list(1,1e-1))
-#' 
+#'
 #' # fit model to data
 #' fit <- model$estimate(Ornstein)
-#' 
+#'
 #' # calculate profile likelihood
 #' # out <- profile(fit,parlist=list(theta=NULL))
 #' out <- profile(fit,parlist=list(theta=NULL, mu=NULL))
-#' 
+#'
 #' # plot profile
 # # grDevices::dev.new()
 #' plot(out)
 #' @export
 plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
-  
+
   list <- x
   l <- length(list$parameter.values)
   df <- list$profile.grid.and.likelihood
   par.names <- head(names(df), l)
   opt <- list$full.likelihood.optimum[par.names]
-  
+
   if(l==1L){
-    
+
     threshold <- exp(-qchisq(0.95, df=1)/2)
-    
+
     p <- ggplot2::ggplot() +
       ggplot2::geom_hline(ggplot2::aes(yintercept=threshold, color="Likelihood CI"), lty="dashed") +
       ggplot2::geom_line(ggplot2::aes(x=df[[par.names[1]]],y=df$likelihood)) +
@@ -805,25 +813,25 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
                     y = "",
                     x = par.names[1]) +
       getggplot2theme()
-    
+
   } else if (l==2L){
-    
+
     quants <- c(0.75, 0.90, 0.95, 0.99)
     chisquared_contours <- exp(-qchisq(quants, df=2)/2)
     labelfun <- function(x){
       y <- (1-x) * 100
       y <- paste0(y,"%")
     }
-    
+
     # if (requireNamespace("geomtextpath", quietly = TRUE)) {
     #   # Use geomtextpath if available
     #   p <- ggplot2::ggplot() +
     #     geomtextpath::geom_textcontour(
-    #       data = df, 
+    #       data = df,
     #       ggplot2::aes(
-    #         x = .data[[par.names[1]]], 
-    #         y = .data[[par.names[2]]], 
-    #         z = .data$likelihood, 
+    #         x = .data[[par.names[1]]],
+    #         y = .data[[par.names[2]]],
+    #         z = .data$likelihood,
     #         label = labelfun(after_stat(level)),
     #         color = after_stat(level)
     #       ),
@@ -846,7 +854,7 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
         linewidth = 0.6
       )
     # }
-    
+
     # add labels
     p <- p +
       ggplot2::labs(
@@ -857,21 +865,21 @@ plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
       ) +
       scale_color_continuous(guide="none") +
       getggplot2theme()
-    
+
     if (include.opt) {
       p <- p + ggplot2::geom_point(
-        data = data.frame(x = opt[1], y = opt[2]), 
-        ggplot2::aes(x = x, y = y), 
+        data = data.frame(x = opt[1], y = opt[2]),
+        ggplot2::aes(x = x, y = y),
         size = 1
       )
     }
-    
+
   } else {
-    
+
     stop("Profile likelihood plotting for more than two parameters is not supported.")
-    
+
   }
-  
+
   return(p)
 }
 

@@ -13,6 +13,7 @@ set_flags = function(proc, args, self, private){
     private$set_initial_state_estimation(args$estimate.initial.state)
     private$set_compile(args$compile)
     private$set_initial_state(args$initial.state)
+    private$set_first_order_hold(args$first.order.input.hold)
   }
 
   if(private$procedure == "estimation"){
@@ -28,6 +29,7 @@ set_flags = function(proc, args, self, private){
     private$set_ukf_hyperpars(args$ukf.hyperpars)
     private$set_initial_state_estimation(args$estimate.initial.state)
     private$set_initial_state(args$initial.state)
+    private$set_first_order_hold(args$first.order.input.hold)
   }
 
   if(private$procedure == "filtration"){
@@ -39,6 +41,7 @@ set_flags = function(proc, args, self, private){
     private$set_initial_state_estimation(args$estimate.initial.state)
     private$set_initial_state(args$initial.state)
     private$set_ukf_hyperpars(args$ukf.hyperpars)
+    private$set_first_order_hold(args$first.order.input.hold)
   }
 
   if(private$procedure == "prediction"){
@@ -50,6 +53,7 @@ set_flags = function(proc, args, self, private){
     private$set_initial_state_estimation(args$estimate.initial.state)
     private$set_initial_state(args$initial.state)
     private$set_ukf_hyperpars(args$ukf.hyperpars)
+    private$set_first_order_hold(args$first.order.input.hold)
   }
 
   if(private$procedure == "simulation"){
@@ -62,6 +66,7 @@ set_flags = function(proc, args, self, private){
     private$set_initial_state_estimation(args$estimate.initial.state)
     private$set_cpp_seed(args$cpp.seed)
     private$set_initial_state(args$initial.state)
+    private$set_first_order_hold(args$first.order.input.hold)
   }
 
   if(private$procedure == "smoother"){
@@ -72,6 +77,7 @@ set_flags = function(proc, args, self, private){
     private$set_silence(args$silent)
     private$set_initial_state_estimation(args$estimate.initial.state)
     private$set_initial_state(args$initial.state)
+    # private$set_first_order_hold(args$first.order.input.hold)
   }
 
 }

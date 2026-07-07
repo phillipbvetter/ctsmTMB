@@ -4,6 +4,8 @@
 #' @import ggplot2
 #' @import R6
 #' @import stats
+#' @import grDevices
+#' @import graphics
 # #' @import Rcpp #necessary to avoid cran note/warning?
 # #' @rawNamespace import(Rcpp, except=LdFlags)
 # #' @rawNamespace import(RcppEigen, except=c(fastLmPure, fastLm))

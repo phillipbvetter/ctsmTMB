@@ -26,7 +26,8 @@ List ukf_filter_rcpp (
   Eigen::MatrixXi bool_is_not_na_obsMat,
   Eigen::VectorXi number_of_available_obs,
   Eigen::VectorXd ukf_pars,
-  CharacterVector ode_solver)
+  CharacterVector ode_solver,
+  bool first_order_input_hold)
 {
 
   auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
@@ -50,6 +51,7 @@ List ukf_filter_rcpp (
   MatrixXd Xsigmapoints, sqrt_covMat;;
   MatrixXd E, R, Ri, Sxy, K, V, H, Hvar;
   int n_available_obs;
+  Eigen::VectorXd dinputVecZero = Eigen::VectorXd::Zero(inputMat.cols());
 
   //////////// create weights ///////////
   double ukf_alpha = ukf_pars(0);
@@ -114,7 +116,11 @@ List ukf_filter_rcpp (
     sqrt_covMat = covMat.llt().matrixL();
     Xsigmapoints = create_sigmapoints_from_stateVec(stateVec, sqrt_covMat, sqrt_c, n_states, nn);
     inputVec = inputMat.row(i);
-    dinputVec = (inputMat.row(i+1) - inputMat.row(i))/ode_timesteps(i);
+    if(first_order_input_hold){
+      dinputVec = (inputMat.row(i+1) - inputMat.row(i))/ode_timesteps(i);
+    } else {
+      dinputVec = dinputVecZero; 
+    }
 
     //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
     for(int j=0 ; j < ode_timesteps(i) ; j++){
@@ -181,9 +187,10 @@ List ukf_predict_rcpp(
   Eigen::MatrixXi bool_is_not_na_obsMat,
   Eigen::VectorXi number_of_available_obs,
   Eigen::VectorXd ukf_pars,
-  const int last_pred_id,
-  const int k_step_ahead,
-  CharacterVector ode_solver)
+  int last_pred_id,
+  int k_step_ahead,
+  CharacterVector ode_solver,
+  bool first_order_input_hold)
 {
 
   List filt = ukf_filter_rcpp(
@@ -198,7 +205,8 @@ List ukf_predict_rcpp(
     bool_is_not_na_obsMat,
     number_of_available_obs,
     ukf_pars,
-    ode_solver);
+    ode_solver,
+    first_order_input_hold);
 
   List xPost = filt["xPost"];
   List pPost = filt["pPost"];
@@ -221,6 +229,7 @@ List ukf_predict_rcpp(
   Eigen::MatrixXd predMat(k_step_ahead+1, n_states + n_squared);
   predMat.setZero();
   List xk(last_pred_id);
+  Eigen::VectorXd dinputVecZero = Eigen::VectorXd::Zero(inputMat.cols());
 
   //////////// create weights ///////////
   double ukf_alpha = ukf_pars(0);
@@ -256,7 +265,11 @@ List ukf_predict_rcpp(
     Xsigmapoints = create_sigmapoints_from_stateVec(stateVec, sqrt_covMat, sqrt_c, n_states, nn);
     for(int k=0 ; k < k_step_ahead ; k++){
       inputVec = inputMat.row(i+k);
-      dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k))/ode_timesteps(i+k);
+      if(first_order_input_hold){
+        dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k))/ode_timesteps(i+k);
+      } else {
+        dinputVec = dinputVecZero; 
+      }
 
       //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
       for(int j=0 ; j < ode_timesteps(i+k) ; j++){
@@ -296,12 +309,13 @@ List ukf_simulate_rcpp(
   Eigen::MatrixXi bool_is_not_na_obsMat,
   Eigen::VectorXi number_of_available_obs,
   Eigen::VectorXd ukf_pars,
-  const int ng,
-  const int last_pred_id,
-  const int k_step_ahead,
+  int ng,
+  int last_pred_id,
+  int k_step_ahead,
   CharacterVector ode_solver,
-  const int nsims,
-  Nullable<int> seed)
+  int nsims,
+  Nullable<int> seed,
+  bool first_order_input_hold)
 {
 
   // Set simulating seed if seed is not NULL
@@ -319,7 +333,8 @@ List ukf_simulate_rcpp(
     bool_is_not_na_obsMat,
     number_of_available_obs,
     ukf_pars,
-    ode_solver);
+    ode_solver,
+    first_order_input_hold);
 
   List xPost = filt["xPost"];
   List pPost = filt["pPost"];
@@ -333,6 +348,7 @@ List ukf_simulate_rcpp(
   VectorXd inputVec(ni), dinputVec(ni);
   MatrixXd stateMat(nsims, n), randN(n, nsims);
   VectorXd simulation_timesteps_inv = simulation_timesteps.cwiseInverse();
+  Eigen::VectorXd dinputVecZero = Eigen::VectorXd::Zero(inputMat.cols());
 
   // storage for predictions
   List outer_simulate_list(last_pred_id);
@@ -360,7 +376,11 @@ List ukf_simulate_rcpp(
     /* For each prediction horizon k: */
     for(int k=0 ; k < k_step_ahead ; k++){
       inputVec = inputMat.row(i+k);
-      dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * simulation_timesteps_inv(i+k);
+      if(first_order_input_hold){
+        dinputVec = (inputMat.row(i+k+1) - inputMat.row(i+k)) * simulation_timesteps_inv(i+k);
+      } else {
+        dinputVec = dinputVecZero; 
+      }
 
       for(int j=0 ; j < simulation_timesteps(i+k) ; j++){
         euler_maruyama_simulation_inplace(

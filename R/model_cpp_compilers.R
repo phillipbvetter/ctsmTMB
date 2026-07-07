@@ -2,12 +2,12 @@
 # COMPILE RCPP DRIFT DIFFUSION ETC FUNCTIONS
 #######################################################
 compile_rcpp_functions = function(self, private){
-  
+
   if(!private$silent) message("Compiling C++ function pointers...")
-  
+
   # # Settings
   # .depends <- c("Rcpp", "RcppEigen", "ctsmTMB")
-  # 
+  #
   # # COMMENT:
   # # These .includes should in principle be added via the .depends = 'ctsmTMB'.
   # # This automatically fetches the code in inst/include/ctsmTMB.h
@@ -16,26 +16,26 @@ compile_rcpp_functions = function(self, private){
   #   "double invlogit(double x){return 1/(1 + exp(-x));}",
   #   "const double pi = 3.14159265358979323846;"
   # )
-  # 
+  #
   # # Create XPtr's
   # print(system.time(
-  #   outlist <- lapply(private$model$rcpp.function.strings, 
-  #                     function(s) RcppXPtrUtils::cppXPtr(s, 
-  #                                                        depends=.depends, 
+  #   outlist <- lapply(private$model$rcpp.function.strings,
+  #                     function(s) RcppXPtrUtils::cppXPtr(s,
+  #                                                        depends=.depends,
   #                                                        includes = .includes)
   #   )
   # ))
-  # 
+  #
   # # Add to private fields
   # nams <- c("f","dfdx","g","h","dhdx","hvar","dfdu")
   # names(outlist) <- nams
   # private$model$rcpp_function_ptr[nams] <- outlist[nams]
-  #   
-  
-  
+  #
+
+
   # Read lines from inst/include template
   txt <- readLines(system.file("include/template_user_functions.h", package="ctsmTMB"))
-  
+
   # Insert our created system function strings
   txt[which(txt %in% "// INSERT F_CONST")] <- private$model$rcpp.function.strings$f_const
   txt[which(txt %in% "// INSERT DFDX_CONST")] <- private$model$rcpp.function.strings$dfdx_const
@@ -45,17 +45,39 @@ compile_rcpp_functions = function(self, private){
   txt[which(txt %in% "// INSERT HVAR_CONST")] <- private$model$rcpp.function.strings$hvar_const
   txt[which(txt %in% "// INSERT HVAR_ARRAY_CONST")] <- private$model$rcpp.function.strings$hvar_array_const
   txt[which(txt %in% "// INSERT DFDU_CONST")] <- private$model$rcpp.function.strings$dfdu_const
-  
+
   # We use sourceCpp now instead of RcppXptrUtils - faster, only one compilation
   # We compile using 'code' over 'file' in sourceCpp. This is better because:
   # 1. The caching is automatically handled, so second call is much faster
   # 2. Prevents Rstudio from entering "Source Cpp" tab automatically (annoying for users)
   Rcpp::sourceCpp(code=paste(txt, collapse=" \n "))
   private$model$rcpp_function_ptr <- get_sysfun_cpp_function_ptrs()
-  
+
   # return
   return(invisible(self))
-  
+
+}
+
+#######################################################'
+# CHECK CPP POINTERS (FOR NULL)
+#######################################################
+
+## TODO:
+# This function was needed when saving and retrieving models with saveRDS/readRDS
+# but it seems that this has no advantage with RTMB because the AD tape must be
+# re-taped, which costs the same as the call to MakeADFun.
+
+# The function is still called prior to using C++ filter/predict/simulate calls
+# but not really needed since we don't support this model saving stuff anyway...
+
+check_if_rcpp_pointers_are_valid <- function(self, private){
+  ptrs <- private$model$rcpp_function_ptr
+  bool <- unlist(lapply(names(ptrs), function(s) check_if_funptr_is_null(ptrs[s],s)))
+  if(any(bool)){
+    message("The C++ pointers are no longer valid and needs recompilation.")
+    compile_rcpp_functions(self, private)
+  }
+  return(invisible(self))
 }
 
 #######################################################
@@ -65,36 +87,36 @@ compile_rcpp_functions = function(self, private){
 # This function decides whether to compile the C++ function, and performs
 # reloading of the dynamic library.
 # NOTE::: The manual dyn.unload dyn.load must be performed, otherwise TMB
-# will reuse the old model. This is a TMB bug. 
+# will reuse the old model. This is a TMB bug.
 
 compile_cppfile <- function(self, private) {
-  
+
   # Start Check:
   # - Exit if the method uses RTMB and does not need C++ compilation.
   bool <- any(private$algo.settings$method == c("lkf", "ekf", "ukf", "laplace", "laplace.thygesen"))
   if(bool){
     return(invisible(self))
   }
-  
+
   ############################################################################
   ############################################################################
-  
+
   # If the user requested a compilaton
   if(private$compile){
-    
+
     # Create folder if it doesnt exist
-    # This is necessary because no folder was created if model$setCppfilesDirectory 
-    # was not envoked by the user 
+    # This is necessary because no folder was created if model$setCppfilesDirectory
+    # was not envoked by the user
     if(!dir.exists(private$cppfile.directory)){
       dir.create(private$cppfile.directory, recursive=TRUE)
     }
-    
+
     # Write the C++ file
     write_cppfile(self, private)
-    
+
     # Compile C++ File
     # we need optimization level 1 to avoid compilation errors on windows(?)
-    
+
     comptime <- system.time(
       {
         if (.Platform$OS.type=="windows") {
@@ -105,12 +127,12 @@ compile_cppfile <- function(self, private) {
                          openmp = TRUE),
             error = function(e){
               message("----------------------")
-              message("A compilation error occured with the following error message: \n\t", 
+              message("A compilation error occured with the following error message: \n\t",
                       conditionMessage(e))
               return(e)
             })
         }
-        
+
         # No optimization flag needed on unix
         if (.Platform$OS.type=="unix") {
           out <- tryCatch(
@@ -122,29 +144,29 @@ compile_cppfile <- function(self, private) {
                          openmp = TRUE),
             error = function(e){
               message("----------------------")
-              message("A compilation error occured with the following error message: \n\t", 
+              message("A compilation error occured with the following error message: \n\t",
                       conditionMessage(e))
               return(e)
             })
         }
-        
+
       }, gcFirst = FALSE)
-    
+
     private$timers$cppbuild <- comptime
-    
+
     if(inherits(out,"error")){
       stop("Stopping because compilation failed.")
     }
-    
+
     # reload shared libraries
     # Suppress TMB output 'removing X pointers' with capture.output
     utils::capture.output(try(dyn.unload(TMB::dynlib(private$cppfile.path.with.method)),silent=T))
     utils::capture.output(try(dyn.load(TMB::dynlib(private$cppfile.path.with.method)),silent=T))
   }
-  
+
   # If compilation not requested
   if (!private$compile) {
-    
+
     # Unix/MAC-OS platforms: check that the C++ file exists
     if (.Platform$OS.type=="unix") {
       file.end <- ".so"
@@ -152,10 +174,10 @@ compile_cppfile <- function(self, private) {
     if (.Platform$OS.type=="windows") {
       file.end <- ".dll"
     }
-    
+
     # get the compiled dynamic library file
     model.dyn.path <- paste0(private$cppfile.path.with.method, file.end)
-    
+
     # If the model exists, check that dimensions are correct
     if (file.exists(model.dyn.path)) {
       model.cpp.path <- paste0(private$cppfile.path.with.method, ".cpp")
@@ -173,18 +195,18 @@ compile_cppfile <- function(self, private) {
         compile_cppfile(self, private)
       }
     }
-    
+
     # If the model does not exist, then set compile flag and call function again
     if (!file.exists(model.dyn.path)) {
       private$set_compile(TRUE)
       compile_cppfile(self, private)
     }
-    
+
     # reload shared libraries
     # Suppress TMB output 'removing X pointers' with capture.output
     utils::capture.output(try(dyn.load(TMB::dynlib(private$cppfile.path.with.method)), silent=T))
   }
-  
+
   # return
   return(invisible(self))
 }

@@ -20,8 +20,8 @@ void euler_maruyama_simulation_inplace(
   VectorTypeDef f__,
   MatrixTypeDef g__,
   Eigen::MatrixXd& stateMat,
-  Eigen::VectorXd& parVec, 
-  Eigen::VectorXd& inputVec, 
+  Eigen::VectorXd parVec,
+  Eigen::VectorXd inputVec,
   const double timestep,
   const int nsims,
   const int n,
@@ -63,10 +63,10 @@ void euler_maruyama_simulation_inplace(
 /*inline Eigen::MatrixXd euler_maruyama_simulation(
   funPtr_vec f__,
   funPtr_mat g__,
-  Eigen::MatrixXd stateMat, 
-  Eigen::VectorXd parVec, 
-  Eigen::VectorXd inputVec, 
-  double timestep, 
+  Eigen::MatrixXd stateMat,
+  Eigen::VectorXd parVec,
+  Eigen::VectorXd inputVec,
+  double timestep,
   int nsims,
   int n,
   int ng)
@@ -76,7 +76,7 @@ void euler_maruyama_simulation_inplace(
   Eigen::MatrixXd stateMat_next(nsims, n), G;
   Eigen::VectorXd stateVec, dW(ng), F;
   double sqrt_timestep = sqrt(timestep);
-  
+
   // Perform one-step simulation for each row in stateMat
   for(int i=0; i < nsims; i++){
 

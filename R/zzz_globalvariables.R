@@ -17,10 +17,10 @@
 
 utils::globalVariables(
   c(
-    "f__", 
-    "dfdx__", 
-    "g__", 
-    "dhdx__", 
+    "f__",
+    "dfdx__",
+    "g__",
+    "dhdx__",
     "dfdu__",
     "hvar__matrix",
     "hvar__",

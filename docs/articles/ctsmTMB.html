@@ -6,12 +6,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Getting Started • ctsmTMB</title>
-<!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
-<link rel="apple-touch-icon" type="image/png" sizes="180x180" href="../apple-touch-icon.png">
-<link rel="apple-touch-icon" type="image/png" sizes="120x120" href="../apple-touch-icon-120x120.png">
-<link rel="apple-touch-icon" type="image/png" sizes="76x76" href="../apple-touch-icon-76x76.png">
-<link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_Pro-0.4.10/font.css" rel="stylesheet">
@@ -98,7 +97,7 @@
 modelling time-series data.</p>
 <p>In this example we consider a simple 1D mean-reverting stochastic
 differential equation model, the Ornstein-Uhlenbeck process:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">d</mi><msub><mi>x</mi><mi>t</mi></msub><mo>=</mo><mi>θ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo>−</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><mi>t</mi><mspace width="0.167em"></mspace><mo>+</mo><msub><mi>σ</mi><mi>x</mi></msub><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><msub><mi>b</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex"> 
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">d</mi><msub><mi>x</mi><mi>t</mi></msub><mo>=</mo><mi>θ</mi><mo stretchy="false" form="prefix">(</mo><mi>μ</mi><mo>−</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><mi>t</mi><mspace width="0.167em"></mspace><mo>+</mo><msub><mi>σ</mi><mi>x</mi></msub><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><msub><mi>b</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex"> 
   \mathrm{d}x_{t} = \theta (\mu - x_{t}) \, \mathrm{d}t \, + \sigma_{x} \, \mathrm{d}b_{t} 
   </annotation></semantics></math> Here
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>,
@@ -119,7 +118,7 @@ i.e. the observation equation is
   </annotation></semantics></math></p>
 <p>The residuals are assumed to be Gaussian, and we choose the variance
 as
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>y</mi><mn>2</mn></msubsup><mo>⋅</mo><msub><mi>u</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo>∼</mo><mi>N</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>y</mi><mn>2</mn></msubsup><mo>⋅</mo><msub><mi>u</mi><msub><mi>t</mi><mi>k</mi></msub></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
   \varepsilon_{t_{k}} \sim N(0,\sigma_{y}^{2} \cdot u_{t_{k}})
   </annotation></semantics></math></p>
 <p>Here
@@ -146,7 +145,7 @@ In the remainder of this vignette however, we simply set
 information about it:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## This ctsmTMB model contains:              </span></span>
+<pre><code><span><span class="co">## A ctsmTMB stochastic state space model consisting of:              </span></span>
 <span><span class="co">## States       0</span></span>
 <span><span class="co">## Diffusions   0</span></span>
 <span><span class="co">## Observations 0</span></span>
@@ -230,7 +229,7 @@ to a somewhat arbitrary but reasonable value:</p>
 empty:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## This ctsmTMB model contains:              </span></span>
+<pre><code><span><span class="co">## A ctsmTMB stochastic state space model consisting of:              </span></span>
 <span><span class="co">## States       1</span></span>
 <span><span class="co">## Diffusions   1</span></span>
 <span><span class="co">## Observations 1</span></span>
@@ -325,7 +324,7 @@ likelihood estimation:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">t.obs</span>, y<span class="op">=</span><span class="va">y.obs</span>, color<span class="op">=</span><span class="st">"Observations"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ctsmTMB</span><span class="fu">:::</span><span class="fu">getggplot2theme</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x<span class="op">=</span><span class="st">"t"</span>, y<span class="op">=</span><span class="st">"x"</span>,color<span class="op">=</span><span class="st">""</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ctsmTMB_files/figure-html/unnamed-chunk-12-1.png" alt="The plot shows a simulated trajectory and associated observations sampled from it." width="100%" style="display: block; margin: auto;"></p>
+<p><img src="ctsmTMB_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="The plot shows a simulated trajectory and associated observations sampled from it." width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">
 <h2 id="perform-estimation">Perform estimation<a class="anchor" aria-label="anchor" href="#perform-estimation"></a>
@@ -341,13 +340,13 @@ specified inputs and observations, in this case <code>u</code> and
 <code>y</code>.</em></p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="va">model</span><span class="op">$</span><span class="fu">estimate</span><span class="op">(</span><span class="va">.df</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Checking and setting data...</span></span></code></pre>
+<pre><code><span><span class="co">## Checking data...</span></span></code></pre>
 <pre><code><span><span class="co">## Constructing objective function and derivative tables...</span></span></code></pre>
 <pre><code><span><span class="co">## Minimizing the negative log-likelihood...</span></span></code></pre>
 <pre><code><span><span class="co">##   0:     5612.2514:  5.00000  0.00000 0.100000</span></span>
 <span><span class="co">##  10:    -404.19421:  13.5738 0.919579 0.947386</span></span></code></pre>
 <pre><code><span><span class="co">##   Optimization finished!:</span></span>
-<span><span class="co">##             Elapsed time: 0.013 seconds.</span></span>
+<span><span class="co">##             Elapsed time: 0.011 seconds.</span></span>
 <span><span class="co">##             The objective value is: -4.042684e+02</span></span>
 <span><span class="co">##             The maximum gradient component is: 8.3e-06</span></span>
 <span><span class="co">##             The convergence message is: relative convergence (4)</span></span>
@@ -475,8 +474,10 @@ Filter vignette</a> for more information on the theoretical details.</p>
 posterior states against the observations:</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type<span class="op">=</span><span class="st">"states"</span>,state.type<span class="op">=</span><span class="st">"prior"</span>,against<span class="op">=</span><span class="st">"y"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ctsmTMB_files/figure-html/unnamed-chunk-28-1.png" class="r-plt" alt="The plot shows the prior states against the observations" width="100%" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type<span class="op">=</span><span class="st">"states"</span>,state.type<span class="op">=</span><span class="st">"posterior"</span>,against<span class="op">=</span><span class="st">"y"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ctsmTMB_files/figure-html/unnamed-chunk-29-1.png" class="r-plt" alt="The plot shows a plot of the posterior states against the observations" width="100%" style="display: block; margin: auto;"></p>
 <p><em><strong>Note:</strong> The decrease in variance for the posterior
 state estimate is expected because these states are updated to the
 observations.</em></p>
@@ -503,6 +504,7 @@ time-series of the residuals, a histogram, a quantile-quantile plot,
 auto/partial-correlations and a cumulative periodogram:</p>
 <div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ctsmTMB_files/figure-html/unnamed-chunk-31-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 </div>
 </div>
 <div class="section level2">
@@ -520,7 +522,7 @@ as follows:</p>
 <span><span class="va">b</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">par.fixed</span><span class="op">[</span><span class="st">"theta"</span><span class="op">]</span> <span class="op">+</span> <span class="fl">3</span><span class="op">*</span><span class="va">fit</span><span class="op">$</span><span class="va">sd.fixed</span><span class="op">[</span><span class="st">"theta"</span><span class="op">]</span></span>
 <span><span class="va">prof</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/profile.html" class="external-link">profile</a></span><span class="op">(</span><span class="va">fit</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"theta"</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="va">a</span>,<span class="va">b</span>,length.out<span class="op">=</span><span class="fl">50</span><span class="op">)</span><span class="op">)</span>, silent<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">prof</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ctsmTMB_files/figure-html/unnamed-chunk-32-1.png" alt="The plot shows a profile likelihood of the theta parameter." width="100%" style="display: block; margin: auto;"></p>
+<p><img src="ctsmTMB_files/figure-html/unnamed-chunk-32-1.png" class="r-plt" alt="The plot shows a profile likelihood of the theta parameter." width="100%" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a &lt;- fit$par.fixed["mu"] - 8*fit$sd.fixed["mu"]</span></span>
 <span><span class="co"># b &lt;- fit$par.fixed["mu"] + 8*fit$sd.fixed["mu"]</span></span>
@@ -547,7 +549,7 @@ which must be strictly positive.</p>
 <p><strong>Example</strong> In this model
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
 should be a strictly positive parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\hat{\theta} = \exp(\log\theta)</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>θ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\hat{\theta} = \exp(\log\theta)</annotation></semantics></math>.
 This can be achieved by setting the following algebraic expression:</p>
 <div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">setAlgebraics</span><span class="op">(</span><span class="va">theta</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">logtheta</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -570,7 +572,7 @@ parameter entry to the model object which describes values for
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
