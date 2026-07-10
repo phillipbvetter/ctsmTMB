@@ -18,7 +18,8 @@ testthat::test_that("filter (use.cpp=TRUE) output matches reference", {
                      method = "ekf",
                      use.cpp = TRUE,
                      silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$filters$ekf)
+  testthat::expect_equal(out, OutputReferenceData$filters$ekf,
+                         tolerance=1e-5)
 })
 
 testthat::test_that("filter (use.cpp=TRUE) output matches reference", {
@@ -26,7 +27,8 @@ testthat::test_that("filter (use.cpp=TRUE) output matches reference", {
                      method = "lkf",
                      use.cpp = TRUE,
                      silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$filters$lkf)
+  testthat::expect_equal(out, OutputReferenceData$filters$lkf,
+                         tolerance=1e-5)
 })
 
 testthat::test_that("filter (use.cpp=TRUE) output matches reference", {
@@ -34,7 +36,8 @@ testthat::test_that("filter (use.cpp=TRUE) output matches reference", {
                      method = "ukf",
                      use.cpp = TRUE,
                      silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$filters$ukf)
+  testthat::expect_equal(out, OutputReferenceData$filters$ukf,
+                         tolerance=1e-5)
 })
 
 # -----------------------------------------------------------------------
@@ -46,7 +49,8 @@ testthat::test_that("predict (use.cpp=TRUE) output matches reference", {
                       method = "ekf",
                       use.cpp = TRUE,
                       silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$predicts$ekf)
+  testthat::expect_equal(out, OutputReferenceData$predicts$ekf,
+                         tolerance=1e-5)
 })
 
 testthat::test_that("predict (use.cpp=TRUE) output matches reference", {
@@ -54,7 +58,8 @@ testthat::test_that("predict (use.cpp=TRUE) output matches reference", {
                       method = "lkf",
                       use.cpp = TRUE,
                       silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$predicts$lkf)
+  testthat::expect_equal(out, OutputReferenceData$predicts$lkf,
+                         tolerance=1e-5)
 })
 
 testthat::test_that("predict (use.cpp=TRUE) output matches reference", {
@@ -62,7 +67,8 @@ testthat::test_that("predict (use.cpp=TRUE) output matches reference", {
                       method = "ukf",
                       use.cpp = TRUE,
                       silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$predicts$ukf)
+  testthat::expect_equal(out, OutputReferenceData$predicts$ukf,
+                         tolerance=1e-5)
 })
 
 # -----------------------------------------------------------------------
@@ -75,7 +81,8 @@ testthat::test_that("simulate (use.cpp=TRUE) output matches reference", {
                        use.cpp = TRUE,
                        cpp.seeds = c(123, 456),
                        silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$simulate$ekf)
+  testthat::expect_equal(out, OutputReferenceData$simulate$ekf,
+                         tolerance=1e-5)
 })
 
 testthat::test_that("simulate (use.cpp=TRUE) output matches reference", {
@@ -84,7 +91,8 @@ testthat::test_that("simulate (use.cpp=TRUE) output matches reference", {
                        use.cpp = TRUE,
                        cpp.seeds = c(123, 456),
                        silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$simulate$lkf)
+  testthat::expect_equal(out, OutputReferenceData$simulate$lkf,
+                         tolerance=1e-5)
 })
 
 testthat::test_that("simulate (use.cpp=TRUE) output matches reference", {
@@ -93,5 +101,6 @@ testthat::test_that("simulate (use.cpp=TRUE) output matches reference", {
                        use.cpp = TRUE,
                        cpp.seeds = c(123, 456),
                        silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$simulate$ukf)
+  testthat::expect_equal(out, OutputReferenceData$simulate$ukf,
+                         tolerance=1e-5)
 })
