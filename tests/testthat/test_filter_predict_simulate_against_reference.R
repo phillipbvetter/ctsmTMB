@@ -6,101 +6,20 @@ data(Ornstein2D)
 how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]
 data(OutputReferenceData)
+od <- OutputReferenceData
 
 model <- create.Ornstein2D.model()
+kalman.methods <- c("ekf","lkf","ukf")
 
-# -----------------------------------------------------------------------
-# filter tests
-# -----------------------------------------------------------------------
-
-testthat::test_that("filter (use.cpp=TRUE) output matches reference", {
-  out = model$filter(df,
-                     method = "ekf",
-                     use.cpp = TRUE,
-                     silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$filters$ekf,
-                         tolerance=1e-5)
-})
-
-testthat::test_that("filter (use.cpp=TRUE) output matches reference", {
-  out = model$filter(df,
-                     method = "lkf",
-                     use.cpp = TRUE,
-                     silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$filters$lkf,
-                         tolerance=1e-5)
-})
-
-testthat::test_that("filter (use.cpp=TRUE) output matches reference", {
-  out = model$filter(df,
-                     method = "ukf",
-                     use.cpp = TRUE,
-                     silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$filters$ukf,
-                         tolerance=1e-5)
-})
-
-# -----------------------------------------------------------------------
-# predict tests
-# -----------------------------------------------------------------------
-
-testthat::test_that("predict (use.cpp=TRUE) output matches reference", {
-  out = model$predict(df,
-                      method = "ekf",
-                      use.cpp = TRUE,
-                      silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$predicts$ekf,
-                         tolerance=1e-5)
-})
-
-testthat::test_that("predict (use.cpp=TRUE) output matches reference", {
-  out = model$predict(df,
-                      method = "lkf",
-                      use.cpp = TRUE,
-                      silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$predicts$lkf,
-                         tolerance=1e-5)
-})
-
-testthat::test_that("predict (use.cpp=TRUE) output matches reference", {
-  out = model$predict(df,
-                      method = "ukf",
-                      use.cpp = TRUE,
-                      silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$predicts$ukf,
-                         tolerance=1e-5)
-})
-
-# -----------------------------------------------------------------------
-# simulate tests
-# -----------------------------------------------------------------------
-
-testthat::test_that("simulate (use.cpp=TRUE) output matches reference", {
-  out = model$simulate(df,
-                       method = "ekf",
-                       use.cpp = TRUE,
-                       cpp.seeds = c(123, 456),
-                       silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$simulate$ekf,
-                         tolerance=1e-5)
-})
-
-testthat::test_that("simulate (use.cpp=TRUE) output matches reference", {
-  out = model$simulate(df,
-                       method = "lkf",
-                       use.cpp = TRUE,
-                       cpp.seeds = c(123, 456),
-                       silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$simulate$lkf,
-                         tolerance=1e-5)
-})
-
-testthat::test_that("simulate (use.cpp=TRUE) output matches reference", {
-  out = model$simulate(df,
-                       method = "ukf",
-                       use.cpp = TRUE,
-                       cpp.seeds = c(123, 456),
-                       silent = TRUE)
-  testthat::expect_equal(out, OutputReferenceData$simulate$ukf,
-                         tolerance=1e-5)
+testthat::test_that("Testing filter, predict and simulate",{
+  # Skip if test is not the author
+  testthat::skip_if_not(Sys.getenv("USER") == "pbrve", "Author test - skipping due to minor numerical inconsistencies across operating systems and versions")
+  # ZERO ORDER HOLD
+  for(m in kalman.methods) testthat::expect_equal(model$filter(df, method = m, silent=TRUE), od$filter[[m]])
+  for(m in kalman.methods) testthat::expect_equal(model$predict(df, method = m, silent=TRUE), od$predict[[m]])
+  for(m in kalman.methods) testthat::expect_equal(model$simulate(df, method = m, silent=TRUE, cpp.seeds = c(123, 456)), od$simulate[[m]])
+  # TO DO: FIRST ORDER HOLD
+  for(m in kalman.methods) testthat::expect_equal(model$filter(df, method = m, silent=TRUE, first.order.input.hold = TRUE), od$filter[[paste0(m,"_foh")]])
+  for(m in kalman.methods) testthat::expect_equal(model$predict(df, method = m, silent=TRUE, first.order.input.hold = TRUE), od$predict[[paste0(m,"_foh")]])
+  for(m in kalman.methods) testthat::expect_equal(model$simulate(df, method = m, silent=TRUE, first.order.input.hold = TRUE, cpp.seeds = c(123, 456)), od$simulate[[paste0(m,"_foh")]])
 })

@@ -10,82 +10,18 @@ df <- Ornstein2D[1:how.many.rows,]
 # -----------------------------------------------------------------------
 
 model <- create.Ornstein2D.model()
+kalman.methods <- c("ekf","lkf","ukf")
+OutputReferenceData <- list()
 
-# -----------------------------------------------------------------------
-# Filter Reference outputs
-# -----------------------------------------------------------------------
+# ZERO ORDER HOLD
+for(m in kalman.methods) OutputReferenceData$filter[[m]] <- model$filter(df, method  = m, silent  = TRUE)
+for(m in kalman.methods) OutputReferenceData$predict[[m]] <- model$predict(df, method  = m, silent  = TRUE)
+for(m in kalman.methods) OutputReferenceData$simulate[[m]] <- model$simulate(df, method  = m, silent  = TRUE, cpp.seeds = c(123, 456))
 
-filter.ekf   = model$filter(df,
-                            method  = "ekf",
-                            use.cpp = TRUE,
-                            silent  = TRUE)
-filter.lkf   = model$filter(df,
-                            method  = "lkf",
-                            use.cpp = TRUE,
-                            silent  = TRUE)
-filter.ukf   = model$filter(df,
-                            method  = "ukf",
-                            use.cpp = TRUE,
-                            silent  = TRUE)
-
-# -----------------------------------------------------------------------
-# Predict Reference outputs
-# -----------------------------------------------------------------------
-
-predict.ekf   = model$predict(df,
-                              method  = "ekf",
-                              use.cpp = TRUE,
-                              silent  = TRUE)
-predict.lkf  = model$predict(df,
-                             method  = "lkf",
-                             use.cpp = TRUE,
-                             silent  = TRUE)
-predict.ukf   = model$predict(df,
-                              method  = "ukf",
-                              use.cpp = TRUE,
-                              silent  = TRUE)
-
-# -----------------------------------------------------------------------
-# Simulate Reference outputs
-# -----------------------------------------------------------------------
-
-simulate.ekf   = model$simulate(df,
-                                method  = "ekf",
-                                use.cpp = TRUE,
-                                cpp.seeds = c(123, 456),
-                                silent  = TRUE)
-simulate.lkf   = model$simulate(df,
-                                method  = "lkf",
-                                use.cpp = TRUE,
-                                cpp.seeds = c(123, 456),
-                                silent  = TRUE)
-simulate.ukf   = model$simulate(df,
-                                method  = "ukf",
-                                use.cpp = TRUE,
-                                cpp.seeds = c(123, 456),
-                                silent  = TRUE)
-
-# -----------------------------------------------------------------------
-# Save
-# -----------------------------------------------------------------------
-
-OutputReferenceData = list(
-  filters = list(
-    ekf = filter.ekf,
-    lkf = filter.lkf,
-    ukf = filter.ukf
-  ),
-  predicts = list(
-    ekf = predict.ekf,
-    lkf = predict.lkf,
-    ukf = predict.ukf
-  ),
-  simulate = list(
-    ekf = simulate.ekf,
-    lkf = simulate.lkf,
-    ukf = simulate.ukf
-  )
-)
+# FIRST ORDER HOLD
+for(m in kalman.methods) OutputReferenceData$filter[[paste0(m,"_foh")]] <- model$filter(df, method  = m, silent  = TRUE, first.order.input.hold = TRUE )
+for(m in kalman.methods) OutputReferenceData$predict[[paste0(m,"_foh")]] <- model$predict(df, method  = m, silent  = TRUE, first.order.input.hold = TRUE)
+for(m in kalman.methods) OutputReferenceData$simulate[[paste0(m,"_foh")]] <- model$simulate(df, method  = m, silent  = TRUE, first.order.input.hold = TRUE, cpp.seeds = c(123, 456))
 
 usethis::proj_set("~/github/ctsmTMB")
 usethis::use_data(OutputReferenceData, overwrite = TRUE)

@@ -15,32 +15,19 @@ strip_fit = function(fit) {
   out
 }
 
+model <- create.Ornstein2D.model()
 methods = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen")
 
 EstimateReferenceData = list()
 
 for (m in methods) {
-  tempmodel <- create.Ornstein2D.model()
-  fit   = tempmodel$estimate(df,
-                             method = m,
-                             ode.solver="rk4",
-                             first.order.input.hold = FALSE,
-                             silent = TRUE,
-                             trace = 0)
-  ref      = strip_fit(fit)
-  EstimateReferenceData[[m]] <- ref
+  fit   = model$estimate(df, method = m, silent = TRUE, trace = 0)
+  EstimateReferenceData[[m]] <- strip_fit(fit)
 }
 
 for (m in methods) {
-  tempmodel <- create.Ornstein2D.model()
-  fit   = tempmodel$estimate(df,
-                             method = m,
-                             ode.solver="rk4",
-                             first.order.input.hold = TRUE,
-                             silent = TRUE,
-                             trace = 0)
-  ref      = strip_fit(fit)
-  EstimateReferenceData[[paste0(m,"_foh")]] <- ref
+  fit   = model$estimate(df, method = m, first.order.input.hold = TRUE, silent = TRUE, trace = 0)
+  EstimateReferenceData[[paste0(m,"_foh")]] <- strip_fit(fit)
 }
 
 usethis::proj_set("~/github/ctsmTMB")
