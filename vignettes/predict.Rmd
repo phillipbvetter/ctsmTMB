@@ -320,7 +320,7 @@ head(pred$observations)
 
 We can perform long horizon estimates simply by setting the `k.ahead` argument very large. The default and maximum allowed value is `k.ahead = nrow(.data)-1`. Thus, by default, the `predict` method will generate one single prediction the length of the provided data.
 
-This is useful for instance when searching for good initial guesses for the optimizer before calling the `estimate` method. Consider the example below where we calculate predictions for a series of differnet values of `theta`:
+This is useful for instance when searching for good initial guesses for the optimizer before calling the `estimate` method. Consider the example below where we calculate predictions for a series of different values of `theta`:
 
 ```{r, message=FALSE}
 ## create vectors with different theta's

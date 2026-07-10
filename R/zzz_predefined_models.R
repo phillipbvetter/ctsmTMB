@@ -1,3 +1,7 @@
+#' Create a 1D (1 state, 1 observation) Ornstein-Uhlenbeck model with input-driven mean value. The
+#' state is directly observed.
+#' @returns a ctsmTMB model object
+#' @export
 create.Ornstein1D.model <- function(){
   model <- ctsmTMB$new()
   model$addSystem(dx ~ theta * (mu * u - x) * dt + sigma_x * dw)
@@ -20,7 +24,10 @@ create.Ornstein1D.model <- function(){
   return(model)
 }
 
-# A function for creating a 2D Ornstein Uhlenbeck process with selceted parameter values.
+#' Create a 2D (2 states, 2 observations) Ornstein-Uhlenbeck model with input-driven mean value
+#' in the first state and a lagged second state. The states are directly observed.
+#' @returns a ctsmTMB model object
+#' @export
 create.Ornstein2D.model <- function(){
   m = newModel()
   m$addSystem(

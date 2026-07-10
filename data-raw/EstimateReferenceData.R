@@ -3,7 +3,7 @@
 ## Uses the 2D Ornstein_augmented_NA dataset (10 rows, some NAs).
 ## One reference object per method; the 'private' environment is excluded.
 
-# library(ctsmTMB)
+library(ctsmTMB)
 data(Ornstein2D)
 how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]

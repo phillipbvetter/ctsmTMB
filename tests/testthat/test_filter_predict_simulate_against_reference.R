@@ -1,8 +1,9 @@
 # Tests if the outputs from filter, predict and simulate against the Ornstein2D data, matches
 # the results previously obtained and stored in the OutputReferenceData.
 
+library(ctsmTMB)
 data(Ornstein2D)
-how.many.rows <- 25
+how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]
 data(OutputReferenceData)
 

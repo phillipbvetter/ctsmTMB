@@ -16,7 +16,7 @@
 )
 }
 \arguments{
-\item{fitted}{a ctmsTMB fit object}
+\item{fitted}{a ctsmTMB fit object}
 
 \item{parlist}{a named-list of parameters to profile over. The user can either
 supply grid-values in the list or leave it empty. If the any one list is empty

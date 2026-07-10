@@ -660,7 +660,7 @@ scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
-or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+or zero-order (FALSE) hold on the inputs when integrating between time-points.}
       \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
@@ -744,7 +744,7 @@ scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
-or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+or zero-order (FALSE) hold on the inputs when integrating between time-points.}
       \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
@@ -818,7 +818,7 @@ is used to calculate the number of steps between time-points in \code{data$t} su
 steps are taken. For details see the "Estimation" vignette on the webpage. The step-size is used for solving
 the moment differential equations (Kalman methods) or for simulating the stochastic SDE path (Laplace methods).}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
-or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+or zero-order (FALSE) hold on the inputs when integrating between time-points.}
       \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
@@ -926,7 +926,7 @@ scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
-or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+or zero-order (FALSE) hold on the inputs when integrating between time-points.}
       \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
 methods). The loss function is per default quadratic in the one-step residuals as is natural
 when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
@@ -1021,7 +1021,7 @@ scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
-or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+or zero-order (FALSE) hold on the inputs when integrating between time-points.}
       \item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
 data updates).}
@@ -1123,7 +1123,7 @@ scheme for simulating a sample path of the stochastic differential equation,
 which serves to link together the latent (random effects) states.
 }}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
-or zero-order (FALSE) hold on the inputs when intergrating between time-points.}
+or zero-order (FALSE) hold on the inputs when integrating between time-points.}
       \item{\code{simulation.timestep}}{timestep used in the euler-maruyama scheme}
       \item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without

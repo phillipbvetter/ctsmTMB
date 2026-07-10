@@ -43,7 +43,7 @@ State and parameter inference and forecasting is carried out using the following
 
 1. `likelihood`:
 
-    This method is used to extract the likelihood function handles for the function value, its gradient and hessian, direcly passed back from `RTMB::MakeADFun`. The is useful for e.g. using other optimizers, modifying the likelihood calculations, or adding together derivatives from several data series.
+    This method is used to extract the likelihood function handles for the function value, its gradient and hessian, directly passed back from `RTMB::MakeADFun`. The is useful for e.g. using other optimizers, modifying the likelihood calculations, or adding together derivatives from several data series.
 
 2. `estimate`: 
 

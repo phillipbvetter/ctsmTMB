@@ -571,7 +571,7 @@ plot.ctsmTMB.fit = function(x,
 }
 
 #' Performs full multi-dimensional profile likelihood calculations
-#' @param fitted a ctmsTMB fit object
+#' @param fitted a ctsmTMB fit object
 #' @param ... various arguments (not in use)
 #' @param parlist a named-list of parameters to profile over. The user can either
 #' supply grid-values in the list or leave it empty. If the any one list is empty

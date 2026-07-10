@@ -2,7 +2,7 @@
 
 library(ctsmTMB)
 data(Ornstein2D)
-how.many.rows <- 25
+how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]
 
 # -----------------------------------------------------------------------
@@ -87,4 +87,5 @@ OutputReferenceData = list(
   )
 )
 
+usethis::proj_set("~/github/ctsmTMB")
 usethis::use_data(OutputReferenceData, overwrite = TRUE)

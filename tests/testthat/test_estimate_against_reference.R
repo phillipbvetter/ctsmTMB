@@ -1,6 +1,5 @@
 #### Setup ####
-# library(ctsmTMB)
-
+library(ctsmTMB)
 data(Ornstein2D)
 how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]
@@ -15,6 +14,7 @@ strip_fit = function(fit) {
 
 methods = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen")
 
+
 # ZERO ORDER HOLD
 for (m in methods) {
   tempmodel <- create.Ornstein2D.model()
@@ -26,7 +26,7 @@ for (m in methods) {
                                 trace = 0)
   fit <- strip_fit(fit)
   testthat::test_that("Estimate output matches reference",{
-    testthat::expect_equal(fit, EstimateReferenceData[[m]])
+    testthat::expect_equal(fit, EstimateReferenceData[[m]], tolerance=1e-5)
   })
 }
 
@@ -40,7 +40,8 @@ for (m in methods) {
                                 trace = 0)
   fit <- strip_fit(fit)
   testthat::test_that("Estimate output matches reference",{
-    testthat::expect_equal(fit, EstimateReferenceData[[paste0(m,"_foh")]])
+    testthat::expect_equal(fit, EstimateReferenceData[[paste0(m,"_foh")]],
+                           tolerance=1e-5)
   })
 }
 

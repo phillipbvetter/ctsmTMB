@@ -1059,7 +1059,7 @@ ctsmTMB = R6::R6Class(
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
-    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
+    #' or zero-order (FALSE) hold on the inputs when integrating between time-points.
     #' @param method character vector specifying the filtering method used for state/likelihood calculations.
     #' Must be one of either "lkf", "ekf", "laplace".
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
@@ -1156,7 +1156,7 @@ ctsmTMB = R6::R6Class(
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
-    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
+    #' or zero-order (FALSE) hold on the inputs when integrating between time-points.
     #' @param method character vector specifying the filtering method used for state/likelihood calculations.
     #' Must be one of either "lkf", "ekf", "laplace".
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
@@ -1244,7 +1244,7 @@ ctsmTMB = R6::R6Class(
     #' moment differential equations. The methods are either Forward Euler (\code{"euler"}) or 4th order Runge-Kutta (\code{"rk4"})
     #' (default).
     #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
-    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
+    #' or zero-order (FALSE) hold on the inputs when integrating between time-points.
     #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
     #' methods). The loss function is per default quadratic in the one-step residuals as is natural
     #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
@@ -1372,7 +1372,7 @@ ctsmTMB = R6::R6Class(
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
-    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
+    #' or zero-order (FALSE) hold on the inputs when integrating between time-points.
     #' @param method character vector specifying the filtering method used for state/likelihood calculations.
     #' Must be one of either "lkf", "ekf", "laplace".
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
@@ -1483,7 +1483,7 @@ ctsmTMB = R6::R6Class(
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
-    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
+    #' or zero-order (FALSE) hold on the inputs when integrating between time-points.
     #' @param method The prediction method
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
@@ -1575,7 +1575,7 @@ ctsmTMB = R6::R6Class(
     #' differential equations. The default "euler" is the Forward Euler method, alternatively the classical
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
-    #' or zero-order (FALSE) hold on the inputs when intergrating between time-points.
+    #' or zero-order (FALSE) hold on the inputs when integrating between time-points.
     #' @param estimate.initial.state bool - stationary estimation of initial mean and covariance
     #' @param method
     #' 1. The natural TMB-style formulation where latent states are considered random effects

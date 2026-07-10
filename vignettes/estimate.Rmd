@@ -410,7 +410,7 @@ where $m$ is the number of observation equations.
 
 This argument is a boolean which determines whether or not the likelihood hessian constructed by automatic differentiation from **TMB** is used during the optimization procedure by providing it to the `hessian` argument of `stats::nlminb`. The default is `use.hessian=FALSE`. The argument has no effect if `method=laplace` due to restrictions in **TMB**/**RTMB**.
 
-One advatange of using the hessian is that the optimizer is more robust against parameters being on different scales, and the minimum is typically found in fewer (but more expensive) iterations. It is usually faster just to use the gradient.
+One advantage of using the hessian is that the optimizer is more robust against parameters being on different scales, and the minimum is typically found in fewer (but more expensive) iterations. It is usually faster just to use the gradient.
 
 ---
 
