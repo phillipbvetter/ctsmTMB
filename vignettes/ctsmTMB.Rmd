@@ -141,7 +141,7 @@ The model has now been fully specified, and state and parameter estimation can b
 
 In this particular example we generate some fake data. This can be achieved by simulating a stochastic realization of the stochastic differential equation, and adding some observation noise to it.
 
-We achieve this task using the  `simulate` method of the model object, which perform stochastic simulations based on the [Euler-Maruyama scheme](https://en.wikipedia.org/wiki/Euler–Maruyama_method). The user is referred to the [simulation vignette](https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html) for further details.
+We achieve this task using the  `simulate` method of the model object, which perform stochastic simulations based on the Euler-Maruyama scheme. The user is referred to the [simulation vignette](https://phillipbvetter.github.io/ctsmTMB/articles/simulate.html) for further details.
 
 We choose the true parameters to be
 $$
