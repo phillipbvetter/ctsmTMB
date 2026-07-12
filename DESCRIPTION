@@ -1,8 +1,8 @@
 Type: Package
 Package: ctsmTMB
 Title: Continuous Time Stochastic Modelling using Template Model Builder
-Version: 1.1.0
-Date: 2026-02-01
+Version: 1.1.1
+Date: 2026-12-07
 Authors@R: c(
     person("Phillip", "Vetter", , "pbrve@dtu.dk", role = c("aut", "cre", "cph")),
     person("Jan", "Møller", , "jkmo@dtu.dk", role = "ctb"),

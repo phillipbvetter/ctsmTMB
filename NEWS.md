@@ -1,3 +1,12 @@
+# ctsmTMB 1.1.1 (2026-12-07)
+
+* The methods supports zero and first order input hold for all RTMB methods, via the function argument 'first.order.input.hold'.
+* The plot.ctsmTMB.fit method now shows standardized residuals in the residual plot by default, which may be changed via the 'standardized.residuals' argument.
+* Internal code clean-up and some refactoring, specifically bunching together several private fields i.e. private$model now contains all model equations etc.
+* Added some author-only tests, including data sets and functions for quickly defining 1D and 2D Ornstein Uhlenbeck models.
+* Edited the README.
+
+
 # ctsmTMB 1.1.0 (2026-01-02)
 
 * System C++ functions are now compiled on the first call to a method, and are only recompiled if the model equation changes.

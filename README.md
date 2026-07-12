@@ -12,10 +12,6 @@ status](https://www.r-pkg.org/badges/version/ctsmTMB)](https://CRAN.R-project.or
 [![R-CMD-check](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/phillipbvetter/ctsmTMB/actions/workflows/R-CMD-check.yaml)
 [![](https://cranlogs.r-pkg.org/badges/ctsmTMB?color=brightgreen)](https://CRAN.R-project.org/package=ctsmTMB)
 
-<!-- add white space -->
-
-$~$
-
 <!-- Begin Document -->
 
 # Overview
@@ -27,74 +23,75 @@ the intended successor of (and heavily inspired by) the
 *[CTSM](https://ctsm.info) (Continuous Time Stochastic Modelling)*
 package.
 
-*ctsmTMB* offers a user-friendly tool for inference and forecasting in
-linear and mildly non-linear (multi-dimensional) continuous-discrete
-stochastic state space systems, i.e. systems on the form
+The purpose of *ctsmTMB* is to offer a user-friendly tool for inference
+and forecasting in (linear and mildly non-linear) continuous-discrete
+stochastic state space systems on the form
 
-$$
-dx_{t} = f\left( t, x_t, u_t, \theta \right) \, dt + g\left( t, x_t, u_t, \theta \right) \, dB_{t}
-$$ $$
-y_{t_k} = h\left( t_k, x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{t}
-$$
+$$dx_{t} = f\left( t, x_t, u_t, \theta \right) \, dt + g\left( t, x_t, u_t, \theta \right) \, d\omega_{t}$$
 
-That is, the latent state $x_t$ is a continuous-time process whose
-evolution is governed by an (Itô) stochastic differential equation with
-drift $f$, and diffusion $g$. We may estimate the latent state
-distribution and the fixed effects parameters $p$ of the system through
-likelihood inference using the discrete-time measurements
-$\mathcal{Y}_{k} = \left\{ y_{t_0}, y_{t_1},...,y_{t_k} \right\}$. These
-measurements are related to the latent state through the link function
-$h$ , but they are also contaminated by zero-mean Gaussian measurement
-noise
-$\varepsilon_{t} \sim \mathcal{N} \left(0, \Sigma(t_k, x_{t_k}, u_{t_k}, \theta) \right)$.
+$$y_{t_k} = h\left( t_k, x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{t}$$
+
+The latent state $x_t$ is a continuous-time process whose evolution is
+governed by an Itô stochastic differential equation with drift $f$ and
+diffusion $g$. The state is measured at discrete times $y_{t_k}$ through
+the link function $h$, either directly (in which case $h$ is the
+identity map) or indirectly. These measurements are however also
+contaminated by zero-mean Gaussian noise i.e.
+$$\varepsilon_{t} \sim \mathcal{N} \left(0, \, \Sigma(t_k, x_{t_k}, u_{t_k}, \theta) \right)$$
+
+We estimate the latent state distribution and the fixed effects
+parameters $p$ using maximum likelihood methods based on the collection
+of discrete-time measurements
+$\mathcal{Y}_{k} = \left\{ y_{t_0}, y_{t_1},...,y_{t_k} \right\}$. The
+package implements various approximate Gaussian methods to perform this
+inference, specifically Kalman filtering schemes and via Laplace
+approximations. The inference optimization is carried out using
+automatic differentiation of the likelihood function for its gradient
+and hessian, enabled by the use of the *TMB*/*RTMB* packages due to
+[Kristensen et. al
+(2016)](https://www.jstatsoft.org/article/view/v070i05).
 
 Users interact with the *ctsmTMB* package via the available methods of
 the exported *[R6](https://CRAN.R-project.org/package=R6)* `ctsmTMB`
-class. The most important of these are `addSystem` and
-`addObs`/`setVariance` used to specify the functions $f$, $g$, and $h$,
-$\Sigma$ respectively. The functions are specified indirectly by writing
-symbolic equation expressions, making it relatively easy to do, but
-limiting the allowed operations to compositions of simple mathematical
-functions on scalars.
+class. The primary methods for defining a state space model are
+`addSystem`, `addObs` and `setVariance`. These methods takes as input
+symbolic expressions (*R* formulas) specifying $f$, $g$, $h$ and
+$\Sigma$ respectively. This makes specification relatively easy, but
+limits the allowed operations to compositions of elementary functions on
+scalars. Once a model is created inference and forecasting is performed
+using the following available methods:
 
-State and parameter inference and forecasting is carried out using the
-following available methods:
+1.  `estimate`:
 
-1.  `likelihood`:
+    Performs state and parameter inference by minimizing the (negative
+    log) likelihood using the `stats::nlminb` (quasi-Newton) optimizer.
 
-    This method is used to extract the likelihood function handles for
-    the function value, its gradient and hessian, direcly passed back
-    from `RTMB::MakeADFun`. The is useful for e.g. using other
-    optimizers, modifying the likelihood calculations, or adding
-    together derivatives from several data series.
-
-2.  `estimate`:
-
-    This is the primary work-horse method, which carries out inference
-    by minimizing the (negative log) likelihood using the
-    `stats::nlminb` quasi-Newton optimizer. The resulting object
-    contains the maximum likelihood parameter and state estimates, and
-    associated marginal uncertainties. See the following section for a
-    list of available inference methods.
-
-3.  `filter`:
+2.  `filter`:
 
     Performs state filtration (Kalman filters only).
 
-4.  `smoother`:
+3.  `smoother`:
 
     Performs state smoothing (only available for the Laplace
     approximation methods).
 
-5.  `predict`:
+4.  `predict`:
 
     Performs k-step forecasting of the system mean and variance (Kalman
     filters only).
 
-6.  `simulate`:
+5.  `simulate`:
 
     Performs k-step forecasting through stochastic path simulations
     (Kalman filters only).
+
+6.  `likelihood`:
+
+    Construct the (negative log) likelihood function handles for the
+    function value, gradient and hessian. This is directly passed back
+    from `RTMB::MakeADFun`. This method allows for the use of other
+    optimizers, modifying the likelihood calculations, or combining
+    several data series.
 
 <!-- Estimation Methods -->
 
@@ -112,8 +109,8 @@ The following state reconstruction algorithms are currently available:
 
 ## Kalman Filters
 
-The package is currently mostly tailored towards the Kalman Filter. The
-advantages of the methods are:
+The package is currently mostly tailored towards the Kalman filter
+methods. The advantages of the methods are:
 
 1.  The hessian of the likelihood function (w.r.t the fixed parameters
     $\theta$) is available.
@@ -132,14 +129,14 @@ The state-reconstructions based on the `laplace` method are *smoothed*
 estimates, meaning that states are optimized jointly conditioned on all
 observations. The Laplace approximation is natively built-into and
 completely handled by **TMB**. The additional method `laplace.thygesen`
-is an implementation of the the stability-improved Laplace approximation
-for state-dependent diffusion due to [Thygesen,
+is an implementation of the stability-improved Laplace approximation for
+state-dependent diffusion due to [Thygesen,
 2025](https://arxiv.org/abs/2503.21358).
 
-A distinct advantage of the laplace methods over the Kalman filters is
-the possibility for unimodal non-Gaussian observation densities to
-accommodate the need for e.g. heavier distribution tails (not yet
-supported in the package though).
+While not yet supported in the package, a distinct advantage of the
+Laplace methods is the possibility for (unimodal) non-Gaussian
+observation densities to accommodate the need for e.g. heavier tails in
+the underlying distribution.
 
 <!-- Installation -->
 
@@ -217,17 +214,13 @@ homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 We consider estimating the parameters of the modified Ornstein-Uhlenbeck
 process
 
-$$
-dx_{t} = \theta \left( \mu + u_t - x_t \right) dt + \sigma_x dB_{t}
-$$
+$$dx_{t} = \theta \left( \mu + u_t - x_t \right) dt + \sigma_x d\omega_{t}$$
 
 where the stationary mean $\mu$ has been augmented with the addition of
 a time-varying input $u_{t}$. The observations remain linear and
 Gaussian:
 
-$$
-y_{k} = x_{t_k} + \varepsilon_{t} \qquad \varepsilon_{t} \sim \mathcal{N}\left(0, \sigma_{y}^2 \right)
-$$
+$$y_{k} = x_{t_k} + \varepsilon_{t} \qquad \varepsilon_{t} \sim \mathcal{N}\left(0, \sigma_{y}^2 \right)$$
 
 The code chunk below simulates data from this process using an
 Euler-Maruyama scheme, generates an appropriate `ctsmTMB` model object,
@@ -272,7 +265,7 @@ model$setParameter(
 )
 
 # Set initial state mean and covariance
-initial.state <- list(x0=3,p0=0.01 * diag(1))
+initial.state <- list(x0=3, p0=0.01*diag(1))
 model$setInitialState(initial.state)
 
 ############################################################
@@ -285,14 +278,14 @@ set.seed(r.seed)
 true.pars = c(theta=10, mu=1, sigma_x=1, sigma_y=0.1)
 dt.sim = 1e-2
 t.sim = seq(0, 5, by=dt.sim)
-u.sim = cumsum(rnorm(length(t.sim),sd=0.05))
+u.sim = cumsum(rnorm(length(t.sim),sd=0.05)) # Create arbitrary input signal
 df.obs <- data.frame(
   t = t.sim,
   u = u.sim,
   y = NA
 )
 
-# set seed for simulate c++. The first seed is brownian motion rng,
+# set seeds for simulation. The first seed is brownian motion rng,
 # the second is for observations noise rng
 cpp.seeds <- c(20,20)
 sim <- model$simulate(data=df.obs,
@@ -309,8 +302,6 @@ sim <- model$simulate(data=df.obs,
 
 # store simulated observations in the data.frame
 df.obs$y <- sim$observations$y$i0
-
-# Now we are ready to see if we can estimate the parameters
 
 ############################################################
 # Model estimation
@@ -363,6 +354,10 @@ p2 <- plot(fit)
 ```
 
 ## Bibliography
+
+- Kristensen, K. (2016) “TMB: Automatic Differentiation and Laplace
+  Approximation”, In: [Journal of Statistical Software, 70(5),
+  pp. 1–21](https://www.jstatsoft.org/article/view/v070i05)
 
 - U. H. Thygesen and K. Kristensen (2025), *“Inference in stochastic
   differential equations using the Laplace approximation: Demonstration
