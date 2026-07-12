@@ -123,7 +123,7 @@ makeADFun_ekf_rtmb = function(self, private)
                          map = map,
                          silent=TRUE)
 
-  # save objective function
+  # save objective function.
   private$nll = nll
 
 
