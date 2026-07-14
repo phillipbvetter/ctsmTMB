@@ -70,7 +70,7 @@ using the following available methods:
 
     Performs state filtration (Kalman filters only).
 
-3.  `smoother`:
+3.  `smooth`:
 
     Performs state smoothing (only available for the Laplace
     approximation methods).

@@ -53,8 +53,8 @@ my_expect_no_error <- function(object, ..., message = NULL, class = NULL){
   suppressWarnings(testthat::expect_no_error(object=object,...,message=message,class=class))
 }
 
-caller <- "estimate"
-methods <- c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen")
+caller <- "smooth"
+methods <- c("laplace", "laplace.thygesen")
 
 testthat::test_that("Checking for 'estimate' errors in 1/1 model",{
   # 1 / 1

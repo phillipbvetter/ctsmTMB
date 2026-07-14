@@ -69,7 +69,7 @@ set_flags = function(proc, args, self, private){
     private$set_first_order_hold(args$first.order.input.hold)
   }
 
-  if(private$procedure == "smoother"){
+  if(private$procedure == "smoothing"){
     private$set_method(args$method)
     private$set_ode_solver(args$ode.solver)
     private$set_ode_timestep(args$ode.timestep)

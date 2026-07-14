@@ -95,10 +95,6 @@ List lkf_filter_rcpp(
   Rcpp::List ode_1step_integration(2);
   Rcpp::List Innovation(tsize), InnovationCovariance(tsize), xPrior(tsize), xPost(tsize), pPrior(tsize), pPost(tsize);
 
-  Eigen::MatrixXd C_Zero = Eigen::MatrixXd::Zero(n,m);
-  Eigen::MatrixXd V_Zero = Eigen::MatrixXd::Zero(m,m);
-  Eigen::VectorXd e_Zero = Eigen::VectorXd::Zero(m);
-
   // store prior
   xPrior(0) = stateVec;
   pPrior(0) = covMat;
@@ -112,9 +108,9 @@ List lkf_filter_rcpp(
     dHdX = dhdx__(stateVec, parVec, inputVec);
     Hvar = hvar__(stateVec, parVec, inputVec);
     // Modify fillers to match number of actual observations
-    C = C_Zero.topRows(n_available_obs);
-    V = V_Zero.topLeftCorner(n_available_obs, n_available_obs);
-    E = e_Zero.head(n_available_obs);
+    C = dHdX.topRows(n_available_obs);
+    V = Hvar.topLeftCorner(n_available_obs, n_available_obs);
+    E = e.head(n_available_obs);
     // Compute innovation and remove rows/cols from dHdX and V
     for(int j=0; j < n_available_obs; j++){
       // Grab indices where obsVec has actual (non-NA) entries

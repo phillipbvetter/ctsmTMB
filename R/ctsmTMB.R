@@ -542,8 +542,8 @@ ctsmTMB = R6::R6Class(
 
             # store in parameter list
             private$model$parameters[[parname]] = list(initial = par.entry[i,"initial"],
-                                                 lower = par.entry[i,"lower"],
-                                                 upper = par.entry[i,"upper"])
+                                                       lower = par.entry[i,"lower"],
+                                                       upper = par.entry[i,"upper"])
 
             # set or remove a fixed parameter (NA-bounds)
             private$model$fixed.pars[[parname]] = NULL
@@ -1182,22 +1182,22 @@ ctsmTMB = R6::R6Class(
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param ... additional arguments
-    smoother = function(data,
-                        pars = NULL,
-                        method = "laplace",
-                        ode.solver = "euler",
-                        ode.timestep = diff(data$t),
-                        first.order.input.hold = FALSE,
-                        loss = "quadratic",
-                        loss_c = NULL,
-                        initial.state = self$getInitialState(),
-                        laplace.residuals = FALSE,
-                        estimate.initial.state = FALSE,
-                        silent = FALSE,
-                        ...){
+    smooth = function(data,
+                      pars = NULL,
+                      method = "laplace",
+                      ode.solver = "euler",
+                      ode.timestep = diff(data$t),
+                      first.order.input.hold = FALSE,
+                      loss = "quadratic",
+                      loss_c = NULL,
+                      initial.state = self$getInitialState(),
+                      laplace.residuals = FALSE,
+                      estimate.initial.state = FALSE,
+                      silent = FALSE,
+                      ...){
 
       args <- as.list(environment())[names(formals())]
-      set_flags("smoother", args, self, private)
+      set_flags("smoothing", args, self, private)
 
       # build model
       build_model(self, private)
@@ -1882,7 +1882,7 @@ ctsmTMB = R6::R6Class(
       # set flag
       switch(str,
              filtration = {private$procedure <- "filtration"},
-             smoother = {private$procedure <- "smoother"},
+             smoothing = {private$procedure <- "smoothing"},
              estimation = {private$procedure <- "estimation"},
              likelihood = {private$procedure <- "likelihood"},
              prediction = {private$procedure <- "prediction"},

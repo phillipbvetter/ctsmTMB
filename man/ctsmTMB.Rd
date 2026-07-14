@@ -89,7 +89,7 @@ sim <- model$simulate(data=Ornstein, n.sims=10)
     \item \href{#method-ctsmTMB-getPrediction}{\code{ctsmTMB$getPrediction()}}
     \item \href{#method-ctsmTMB-getSimulation}{\code{ctsmTMB$getSimulation()}}
     \item \href{#method-ctsmTMB-filter}{\code{ctsmTMB$filter()}}
-    \item \href{#method-ctsmTMB-smoother}{\code{ctsmTMB$smoother()}}
+    \item \href{#method-ctsmTMB-smooth}{\code{ctsmTMB$smooth()}}
     \item \href{#method-ctsmTMB-estimate}{\code{ctsmTMB$estimate()}}
     \item \href{#method-ctsmTMB-likelihood}{\code{ctsmTMB$likelihood()}}
     \item \href{#method-ctsmTMB-predict}{\code{ctsmTMB$predict()}}
@@ -693,13 +693,13 @@ system contains time-varying inputs, the first element of these is used.}
 }
 
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ctsmTMB-smoother"></a>}}
-\if{latex}{\out{\hypertarget{method-ctsmTMB-smoother}{}}}
-\subsection{\code{ctsmTMB$smoother()}}{
+\if{html}{\out{<a id="method-ctsmTMB-smooth"></a>}}
+\if{latex}{\out{\hypertarget{method-ctsmTMB-smooth}{}}}
+\subsection{\code{ctsmTMB$smooth()}}{
   Perform state filtering (or smoothing for the 'laplace' method)
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{ctsmTMB$smoother(
+    \preformatted{ctsmTMB$smooth(
   data,
   pars = NULL,
   method = "laplace",
