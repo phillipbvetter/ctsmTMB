@@ -24,9 +24,10 @@ inline int choose_solver(CharacterVector ode_solver) {
     return 2;
   } else if (y3){
     // implicit euler method requires a newton's solver, and AD for drift function f(stateVec<AD>, parVec, inputVec)
+    Rcpp::stop("The implicit euler solver is not implemented");
     return 3;
   } else {
-    Rcpp::stop("The implicit euler solver is not implemented");
+    Rcpp::stop("No ODE solver selected.");
   }
 }
 
