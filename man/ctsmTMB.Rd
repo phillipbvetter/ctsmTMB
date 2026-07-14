@@ -448,7 +448,8 @@ with \code{mean} and \code{covariance} as provided.
     \preformatted{ctsmTMB$setAdvancedSettings(
   force.ad = TRUE,
   rtmb.tapeconfig = NULL,
-  tmb.tapeconfig = NULL
+  tmb.tapeconfig = NULL,
+  nllreport = FALSE
 )}
     \if{html}{\out{</div>}}
   }
@@ -460,6 +461,7 @@ RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun b
 some functionalities such as REPORT.}
       \item{\code{rtmb.tapeconfig}}{options to be passed to \link[RTMB]{TapeConfig}.}
       \item{\code{tmb.tapeconfig}}{options to be passed to \link[TMB]{config}.}
+      \item{\code{nllreport}}{a boolean to disable / enable REPORT quantities out of the likelihood function, such as states and residuals.}
     }
     \if{html}{\out{</div>}}
   }

@@ -22,6 +22,7 @@ makeADFun_ekf_rtmb = function(self, private)
 
   # create and load state space functions
   force.ad <- private$algo.settings$advanced.settings$forceAD
+  nllreport <- private$algo.settings$advanced.settings$nllreport
   create_state_space_functions_for_estimation(force.ad)
 
   # various utility functions for likelihood calculations ---------------------
@@ -53,6 +54,9 @@ makeADFun_ekf_rtmb = function(self, private)
     # "[<-" <- RTMB::ADoverload("[<-")
     # "diag<-" <- RTMB::ADoverload("diag<-")
     # "c" <- RTMB::ADoverload("c")
+
+    if(nllreport)
+      Innov <- InnovCov <- vector("list",length=nrow(obsMat))
 
     ####### Parameters into vector #######
     parVec <- do.call(c, p[1:n.pars])
@@ -107,8 +111,17 @@ makeADFun_ekf_rtmb = function(self, private)
         stateVec <- data.update[[1]]
         covMat <- data.update[[2]]
         nll <- nll + data.update[[3]]
+        if (nllreport) {
+          Innov[[i]] <- data.update[[4]]
+          InnovCov[[i]] <- data.update[[5]]
+        }
       }
       # end of main loop
+    }
+
+    if (nllreport) {
+      RTMB::REPORT(Innov)
+      RTMB::REPORT(InnovCov)
     }
 
     # return

@@ -1,8 +1,8 @@
 
 get_ekf_update_functions <- function(.envir = parent.frame()){
-  
+
   list2env(as.list(.envir), envir = environment())
-  
+
   kalman.data.update <- function(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
     # Remove NA's from obsVec
     y = obsVec[obsVec_bool]
@@ -27,7 +27,7 @@ get_ekf_update_functions <- function(.envir = parent.frame()){
     # Return
     return(list(stateVec, covMat, e, R))
   }
-  
+
   kalman.no.update.with.nll <- function(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
     # Remove NA's from obsVec
     y = obsVec[obsVec_bool]
@@ -49,7 +49,7 @@ get_ekf_update_functions <- function(.envir = parent.frame()){
     # Return
     return(list(stateVec, covMat, nll))
   }
-  
+
   kalman.data.update.with.nll <- function(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
     # Remove NA's from obsVec
     # Obs Jacobian
@@ -69,9 +69,9 @@ get_ekf_update_functions <- function(.envir = parent.frame()){
     # Likelihood
     nll <- loss.function(e,R)
     # Return
-    return(list(stateVec, covMat, nll))
+    return(list(stateVec, covMat, nll, e, R))
   }
-  
+
   assign("kalman.data.update", kalman.data.update, envir = .envir)
   assign("kalman.data.update.with.nll", kalman.data.update.with.nll, envir = .envir)
   assign("kalman.no.update.with.nll", kalman.no.update.with.nll, envir = .envir)
@@ -81,9 +81,9 @@ get_ekf_update_functions <- function(.envir = parent.frame()){
 
 
 get_ukf_update <- function(.envir = parent.frame()){
-  
+
   list2env(as.list(.envir), envir = environment())
-  
+
   kalman.data.update <- function(X.sigma, stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
     # observations
     y = obsVec[obsVec_bool]
@@ -110,7 +110,7 @@ get_ukf_update <- function(.envir = parent.frame()){
     # covMat <- covMat - K %*% R %*% t(K)
     return(list(stateVec, covMat, e, R))
   }
-  
+
   kalman.data.update.with.nll <- function(X.sigma, stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
     # observations
     y = obsVec[obsVec_bool]
@@ -140,7 +140,7 @@ get_ukf_update <- function(.envir = parent.frame()){
     # Return
     return(list(stateVec, covMat, nll))
   }
-  
+
   kalman.no.update.with.nll <- function(X.sigma, stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0){
     # observations
     y = obsVec[obsVec_bool]
@@ -161,18 +161,18 @@ get_ukf_update <- function(.envir = parent.frame()){
     # Return
     return(list(stateVec, covMat, nll))
   }
-  
+
   assign("kalman.data.update", kalman.data.update, envir = .envir)
   assign("kalman.data.update.with.nll", kalman.data.update.with.nll, envir = .envir)
   assign("kalman.no.update.with.nll", kalman.no.update.with.nll, envir = .envir)
-  
+
   return(NULL)
 }
 
 get_simulate_functions <- function(.envir = parent.frame()){
-  
+
   list2env(as.list(.envir), envir = environment())
-  
+
   euler.maruyama.simulation <- function(stateMat, parVec, inputVec, sim.dt){
     # We need to perform an euler maruyama step for each column in the stateMat,
     # Each column is f(stateVec)
@@ -186,8 +186,8 @@ get_simulate_functions <- function(.envir = parent.frame()){
     # Produce euler-maruyama step for all states simultaneously
     return(stateMat + .F * sim.dt + GdB * sqrt(sim.dt))
   }
-  
+
   assign("euler.maruyama.simulation", euler.maruyama.simulation, envir = .envir)
-  
+
 }
 

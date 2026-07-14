@@ -139,7 +139,7 @@ ctsmTMB = R6::R6Class(
         ode.solver                  = NULL,
         estimate.initial            = FALSE,
         map                         = NULL,
-        advanced.settings           = list(forceAD = TRUE, rtmb.tapeconfig = NULL, tmb.tapeconfig = NULL),
+        advanced.settings           = list(forceAD = TRUE, rtmb.tapeconfig = NULL, tmb.tapeconfig = NULL, nllreport=FALSE),
         train.against.full.prediction = FALSE,
         k.ahead                     = 0,
         last.pred.index             = 0,
@@ -795,15 +795,27 @@ ctsmTMB = R6::R6Class(
     #' @param force.ad a boolean indicating whether to use state space functions that take advantage of the
     #' RTMB::AD(...,force=TRUE) hack which reduces compilation time call to MakeADFun by 20%. This breaks
     #' some functionalities such as REPORT.
+    #' @param nllreport a boolean to disable / enable REPORT quantities out of the likelihood function, such as states and residuals.
     #' @param rtmb.tapeconfig options to be passed to \link[RTMB]{TapeConfig}.
     #' @param tmb.tapeconfig options to be passed to \link[TMB]{config}.
-    setAdvancedSettings = function(force.ad = TRUE, rtmb.tapeconfig = NULL, tmb.tapeconfig = NULL) {
+    setAdvancedSettings = function(force.ad = TRUE, rtmb.tapeconfig = NULL, tmb.tapeconfig = NULL, nllreport=FALSE) {
+
+      if (nllreport) {
+        if(!force.ad) force.ad <- FALSE
+        message("You requested nll reporting so I must set force.ad=FALSE (20% longer compile time).")
+      }
 
       # force AD mechanism
       if(!identical(private$algo.settings$advanced.settings$forceAD, force.ad)){
         private$rebuild$ad <- TRUE
       }
       private$algo.settings$advanced.settings$forceAD <- force.ad
+
+      # report mechanism
+      if(!identical(private$algo.settings$advanced.settings$nllreport, nllreport)){
+        private$rebuild$ad <- TRUE
+      }
+      private$algo.settings$advanced.settings$nllreport <- nllreport
 
       # TapeConfig for RTMB models
       if(!identical(private$algo.settings$advanced.settings$rtmb.tapeconfig, rtmb.tapeconfig)){
