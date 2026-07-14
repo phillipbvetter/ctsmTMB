@@ -20,29 +20,14 @@ total likelihood optimizer in the plot.}
 Plot a profile likelihood ctsmTMB object
 }
 \examples{
-library(ctsmTMB)
-model <- ctsmTMB$new()
-
-# create model
-model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-model$addObs(y ~ x)
-model$setVariance(y ~ sigma_y^2)
-model$addInput(u)
-model$setParameter(
-  theta   = c(initial = 1, lower=1e-5, upper=50),
-  mu      = c(initial=1.5, lower=0, upper=5),
-  sigma_x = c(initial=1, lower=1e-10, upper=30),
-  sigma_y = 1e-2
-)
-model$setInitialState(list(1,1e-1))
-
-# fit model to data
+\dontrun{
+# Given a model fit produced by
 fit <- model$estimate(Ornstein)
 
-# calculate profile likelihood
-# out <- profile(fit,parlist=list(theta=NULL))
-out <- profile(fit,parlist=list(theta=NULL, mu=NULL))
+# We calculate the profile likelihood
+prof <- profile(fit, parlist=list(theta=NULL))
 
-# plot profile
-plot(out)
+# And then simply call plot on that object
+plot(prof)
+}
 }

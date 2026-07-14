@@ -121,7 +121,7 @@ methods. The advantages of the methods are:
     to compute.
 
 The Unscented Kalman Filter implementation is based on *Algorithm 4.7*
-in [S. Särkkä, 2007](https://ieeexplore.ieee.org/document/4303242).
+in S. Särkkä, 2007.
 
 ## Laplace Smoother
 
@@ -365,6 +365,5 @@ p2 <- plot(fit)
   [arXiv:2503.21358v2](https://arxiv.org/abs/2503.21358).
 
 - S. Särkkä, *“On Unscented Kalman Filtering for State Estimation of
-  Continuous-Time Nonlinear Systems”*. In: [IEEE Transactions on
-  Automatic Control, 52(9),
-  1631-1641](https://ieeexplore.ieee.org/document/4303242).
+  Continuous-Time Nonlinear Systems”*. In: IEEE Transactions on
+  Automatic Control, 52(9), 1631-1641.

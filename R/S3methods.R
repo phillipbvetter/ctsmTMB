@@ -5,25 +5,7 @@
 #' Basic print of ctsmTMB objects
 #' @param x  an object of class 'ctsmTMB'
 #' @param ... additional arguments (not in use)
-#' @examples
-#' library(ctsmTMB)
-#' model <- ctsmTMB$new()
 #'
-#' # print empty model
-#' print(model)
-#'
-#' # add elements to model and see new print
-#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-#' model$addObs(y ~ x)
-#' model$setVariance(y ~ sigma_y^2)
-#' model$addInput(u)
-#' model$setParameter(
-#'   theta   = c(initial = 1, lower=1e-5, upper=50),
-#'   mu      = c(initial=1.5, lower=0, upper=5),
-#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
-#'   sigma_y = 1e-2
-#' )
-#' print(model)
 #' @returns Print of ctsmTMB model object
 #' @export
 print.ctsmTMB = function(x,...) {
@@ -36,28 +18,7 @@ print.ctsmTMB = function(x,...) {
 #' Basic print of objects ctsmTMB fit objects
 #' @param x a ctsmTMB fit object
 #' @param ... additional arguments
-#' @examples
-#' library(ctsmTMB)
-#' model <- ctsmTMB$new()
 #'
-#' # create model
-#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-#' model$addObs(y ~ x)
-#' model$setVariance(y ~ sigma_y^2)
-#' model$addInput(u)
-#' model$setParameter(
-#'   theta   = c(initial = 1, lower=1e-5, upper=50),
-#'   mu      = c(initial=1.5, lower=0, upper=5),
-#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
-#'   sigma_y = 1e-2
-#' )
-#' model$setInitialState(list(1,1e-1))
-#'
-#' # fit model to data
-#' fit <- model$estimate(Ornstein)
-#'
-#' # print fit
-#' print(fit)
 #' @returns Print of ctsmTMB fit object
 #' @export
 print.ctsmTMB.fit = function(x,...) {
@@ -80,28 +41,6 @@ print.ctsmTMB.fit = function(x,...) {
 #' @param correlation boolean indicating whether or not to display the
 #' parameter correlation structure
 #' @param ... additional arguments
-#' @examples
-#' library(ctsmTMB)
-#' model <- ctsmTMB$new()
-#'
-#' # create model
-#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-#' model$addObs(y ~ x)
-#' model$setVariance(y ~ sigma_y^2)
-#' model$addInput(u)
-#' model$setParameter(
-#'   theta   = c(initial = 1, lower=1e-5, upper=50),
-#'   mu      = c(initial=1.5, lower=0, upper=5),
-#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
-#'   sigma_y = 1e-2
-#' )
-#' model$setInitialState(list(1,1e-1))
-#'
-#' # fit model to data
-#' fit <- model$estimate(Ornstein)
-#'
-#' # print model summary
-#' summary(fit, correlation=TRUE)
 #' @returns a summary of the estimated ctsmTMB model fit
 #' @export
 summary.ctsmTMB.fit = function(object,
@@ -144,38 +83,28 @@ summary.ctsmTMB.fit = function(object,
 #' @param k.ahead an integer indicating which k-ahead predictions to plot
 #' @param state.name a string indicating which states to plot
 #' @param type one of 'states' or 'observations', to plot
-#' @param against name of an observations to plot predictions against
+#' @param against.obs name of an observations to plot predictions against
 #' @param ... additional arguments
 #' @examples
-#' library(ctsmTMB)
-#' model <- ctsmTMB$new()
+#' \dontrun{
+#' # Given a prediction
+#' pred <- model$predict(data, k.ahead=10)
 #'
-#' # create model
-#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-#' model$addObs(y ~ x)
-#' model$setVariance(y ~ sigma_y^2)
-#' model$addInput(u)
-#' model$setParameter(
-#'   theta   = c(initial = 1, lower=1e-5, upper=50),
-#'   mu      = c(initial=1.5, lower=0, upper=5),
-#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
-#'   sigma_y = 1e-2
-#' )
-#' model$setInitialState(list(1,1e-1))
+#' # We can plot the all k.head predictions in the same plot
+#' plot(pred)
 #'
-#' # fit model to data
-#' fit <- model$estimate(Ornstein)
+#' # This is usually messy. We can instead set a specific horizon
+#' plot(pred, k.ahead=10)
 #'
-#' # perform moment predictions
-#' pred <- model$predict(Ornstein)
+#' # We can select among all states using the 'state.name' argument
+#' plot(pred, k.ahead=10, state.name="x")
 #'
-#' # plot the k.ahead=10 predictions
-#' plot(pred, against="y.data")
+#' # We can also plot against some observations using the 'against' argument
+#' plot(pred, k.ahead=10, state.name="x", against="y")
 #'
-#'
-#' # plot filtered states
-#' plot(fit, type="states", against="y")
-#'
+#' # We can also show observations on that plot
+#' plot(fit, type="states", state.type="prior", against.obs="y")
+#' }
 #' @returns A plot of predicted states
 #' @export
 plot.ctsmTMB.pred = function(x,
@@ -183,7 +112,7 @@ plot.ctsmTMB.pred = function(x,
                              k.ahead = unique(x$states[,"k.ahead"]),
                              state.name = NULL,
                              type="states",
-                             against=NULL,
+                             against.obs=NULL,
                              ...) {
 
   # method consistency
@@ -192,7 +121,7 @@ plot.ctsmTMB.pred = function(x,
 
   # check k.ahead
   if(!any(k.ahead %in% unique(states[,"k.ahead"]))){
-    stop("k.ahead not found in the prediction data frame")
+    stop("The selected k.ahead prediction is not present in the input.")
   }
 
   # set state name to plot
@@ -220,10 +149,10 @@ plot.ctsmTMB.pred = function(x,
     getggplot2theme()
 
   # Add observations and colors
-  if(!is.null(against)){
-    z = obs[bool, against]
+  if(!is.null(against.obs)){
+    z = obs[bool, against.obs]
     p <- p +
-      ggplot2::geom_point(aes(x=x,y=z,col=against), size=1) +
+      ggplot2::geom_point(aes(x=x,y=z,col=against.obs), size=1) +
       scale_color_manual(values=c("steelblue","tomato"))
   } else {
     p <- p +
@@ -260,31 +189,27 @@ plot.ctsmTMB.pred = function(x,
 #' with time-series plots of residuals, associated observations and inputs
 #' @param ... additional arguments
 #' @examples
-#' library(ctsmTMB)
-#' model <- ctsmTMB$new()
+#' \dontrun{
+#' # Given a fit from estimate i.e.
+#' fit <- model$estimate(data)
 #'
-#' # create model
-#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-#' model$addObs(y ~ x)
-#' model$setVariance(y ~ sigma_y^2)
-#' model$addInput(u)
-#' model$setParameter(
-#'   theta   = c(initial = 1, lower=1e-5, upper=50),
-#'   mu      = c(initial=1.5, lower=0, upper=5),
-#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
-#'   sigma_y = 1e-2
-#' )
-#' model$setInitialState(list(1,1e-1))
-#'
-#' # fit model to data
-#' fit <- model$estimate(Ornstein)
-#'
-#' # plot residuals
-#' \dontrun{plot(fit)}
+#' # We can generate a standard residual analysis plot by
 #' plot(fit)
 #'
-#' # plot filtered states
-#' \dontrun{plot(fit, type="states")}
+#' # We can remove the first say 10 residuals of the series if they are off due
+#' # to a bad initial prior state
+#' plot(fit, residual.burnin=10)
+#'
+#' # We can also plot residuals against inputs and observations instead
+#' plot(fit, residual.vs.obs.and.inputs=TRUE)
+#'
+#' # We can also plot the prior or posterior states using the 'type' and
+#' # 'state.type' arguments.
+#' plot(fit, type="states", state.type="prior")
+#'
+#' # We can also show observations on that plot
+#' plot(fit, type="states", state.type="prior", against.obs="y")
+#' }
 #' @returns a (list of) ggplot residual plot(s)
 #' @export
 plot.ctsmTMB.fit = function(x,
@@ -588,27 +513,13 @@ plot.ctsmTMB.fit = function(x,
 #' the \code{control} argument.
 #' @param control a list of optimization output controls (see \link[stats]{nlminb})
 #' @examples
-#' library(ctsmTMB)
-#' model <- ctsmTMB$new()
-#'
-#' # create model
-#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-#' model$addObs(y ~ x)
-#' model$setVariance(y ~ sigma_y^2)
-#' model$addInput(u)
-#' model$setParameter(
-#'   theta   = c(initial = 1, lower=1e-5, upper=50),
-#'   mu      = c(initial=1.5, lower=0, upper=5),
-#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
-#'   sigma_y = 1e-2
-#' )
-#' model$setInitialState(list(1,1e-1))
-#'
-#' # fit model to data
+#' \dontrun{
+#' # Given a model fit produced by
 #' fit <- model$estimate(Ornstein)
 #'
-#' # calculate profile likelihood
-#' out <- profile(fit,parlist=list(theta=NULL))
+#' # We call profile with theta=NULL to use the standard range theta +- 3 std. devs.
+#' prof <- profile(fit, parlist=list(theta=NULL))
+#' }
 #' @note The implementation was modified from that of
 #' https://github.com/kaskr/adcomp/blob/master/TMB/R/tmbprofile.R
 #' @export
@@ -765,32 +676,16 @@ profile.ctsmTMB.fit = function(fitted,
 #' total likelihood optimizer in the plot.
 #' @param ... additional arguments
 #' @examples
-#' library(ctsmTMB)
-#' model <- ctsmTMB$new()
-#'
-#' # create model
-#' model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-#' model$addObs(y ~ x)
-#' model$setVariance(y ~ sigma_y^2)
-#' model$addInput(u)
-#' model$setParameter(
-#'   theta   = c(initial = 1, lower=1e-5, upper=50),
-#'   mu      = c(initial=1.5, lower=0, upper=5),
-#'   sigma_x = c(initial=1, lower=1e-10, upper=30),
-#'   sigma_y = 1e-2
-#' )
-#' model$setInitialState(list(1,1e-1))
-#'
-#' # fit model to data
+#' \dontrun{
+#' # Given a model fit produced by
 #' fit <- model$estimate(Ornstein)
 #'
-#' # calculate profile likelihood
-#' # out <- profile(fit,parlist=list(theta=NULL))
-#' out <- profile(fit,parlist=list(theta=NULL, mu=NULL))
+#' # We calculate the profile likelihood
+#' prof <- profile(fit, parlist=list(theta=NULL))
 #'
-#' # plot profile
-# # grDevices::dev.new()
-#' plot(out)
+#' # And then simply call plot on that object
+#' plot(prof)
+#' }
 #' @export
 plot.ctsmTMB.profile = function(x, y, include.opt=TRUE,...){
 

@@ -10,7 +10,7 @@
   k.ahead = unique(x$states[, "k.ahead"]),
   state.name = NULL,
   type = "states",
-  against = NULL,
+  against.obs = NULL,
   ...
 )
 }
@@ -25,7 +25,7 @@
 
 \item{type}{one of 'states' or 'observations', to plot}
 
-\item{against}{name of an observations to plot predictions against}
+\item{against.obs}{name of an observations to plot predictions against}
 
 \item{...}{additional arguments}
 }
@@ -36,33 +36,23 @@ A plot of predicted states
 Plot of k-step predictions from a ctsmTMB prediction object
 }
 \examples{
-library(ctsmTMB)
-model <- ctsmTMB$new()
+\dontrun{
+# Given a prediction
+pred <- model$predict(data, k.ahead=10)
 
-# create model
-model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-model$addObs(y ~ x)
-model$setVariance(y ~ sigma_y^2)
-model$addInput(u)
-model$setParameter(
-  theta   = c(initial = 1, lower=1e-5, upper=50),
-  mu      = c(initial=1.5, lower=0, upper=5),
-  sigma_x = c(initial=1, lower=1e-10, upper=30),
-  sigma_y = 1e-2
-)
-model$setInitialState(list(1,1e-1))
+# We can plot the all k.head predictions in the same plot
+plot(pred)
 
-# fit model to data
-fit <- model$estimate(Ornstein)
+# This is usually messy. We can instead set a specific horizon
+plot(pred, k.ahead=10)
 
-# perform moment predictions
-pred <- model$predict(Ornstein)
+# We can select among all states using the 'state.name' argument
+plot(pred, k.ahead=10, state.name="x")
 
-# plot the k.ahead=10 predictions
-plot(pred, against="y.data")
+# We can also plot against some observations using the 'against' argument
+plot(pred, k.ahead=10, state.name="x", against="y")
 
-
-# plot filtered states
-plot(fit, type="states", against="y")
-
+# We can also show observations on that plot
+plot(fit, type="states", state.type="prior", against.obs="y")
+}
 }

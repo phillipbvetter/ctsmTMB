@@ -15,49 +15,6 @@ system, consisting of a set of stochastic differential equations (SDEs), and one
 equations (AOEs). The AOEs are used to infer information about the value of the (latent) states governed by the SDEs, and
 thus must be functions of at least one state.
 }
-\examples{
-library(ctsmTMB)
-model <- ctsmTMB$new()
-
-# adding a single system equations
-model$addSystem(dx ~ theta * (mu+u-x) * dt + sigma_x*dw)
-
-# adding an observation equation and setting variance
-model$addObs(y ~ x)
-model$setVariance(y ~ sigma_y^2)
-
-# add model input
-model$addInput(u)
-
-# add parameters
-model$setParameter(
-  theta   = c(initial = 1, lower=1e-5, upper=50),
-  mu      = c(initial=1.5, lower=0, upper=5),
-  sigma_x = c(initial=1, lower=1e-10, upper=30),
-  sigma_y = 1e-2
-)
-
-# set the model initial state
-model$setInitialState(list(1,1e-1))
-
-# extract the likelihood handlers
-nll <- model$likelihood(data=Ornstein)
-
-# calculate likelihood, gradient and hessian w.r.t parameters
-nll$fn(nll$par)
-nll$gr(nll$par)
-nll$he(nll$par)
-
-# estimate the parameters using an extended kalman filter
-fit <- model$estimate(data=Ornstein)
-
-# perform moment predictions
-pred <- model$predict(data=Ornstein)
-
-# perform stochatic simulations
-sim <- model$simulate(data=Ornstein, n.sims=10)
-
-}
 \section{Methods}{
 \subsection{Public methods}{
   \itemize{
