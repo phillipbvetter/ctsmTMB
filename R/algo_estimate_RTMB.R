@@ -51,9 +51,9 @@ makeADFun_ekf_rtmb = function(self, private)
   ekf.nll = function(p){
 
     ####### Sometimes necessary to avoid rtmb errors #######
-    # "[<-" <- RTMB::ADoverload("[<-")
-    # "diag<-" <- RTMB::ADoverload("diag<-")
-    # "c" <- RTMB::ADoverload("c")
+    "[<-" <- RTMB::ADoverload("[<-")
+    "diag<-" <- RTMB::ADoverload("diag<-")
+    "c" <- RTMB::ADoverload("c")
 
     if(nllreport)
       Innov <- InnovCov <- vector("list",length=nrow(obsMat))
@@ -213,9 +213,10 @@ makeADFun_lkf_rtmb = function(self, private)
   # likelihood function --------------------------------
   lkf.nll = function(p){
 
+    ####### Sometimes necessary to avoid rtmb errors #######
     "[<-" <- RTMB::ADoverload("[<-")
-    # "diag<-" <- RTMB::ADoverload("diag<-")
-    # "c" <- RTMB::ADoverload("c")
+    "diag<-" <- RTMB::ADoverload("diag<-")
+    "c" <- RTMB::ADoverload("c")
 
     ####### Parameters into vector #######
     parVec <- do.call(c, p[1:n.pars])
@@ -592,9 +593,9 @@ makeADFun_ukf_rtmb = function(self, private)
   # likelihood function --------------------------------------
   ukf.nll = function(p){
 
-    # "[<-" <- RTMB::ADoverload("[<-")
-    # "diag<-" <- RTMB::ADoverload("diag<-")
-    # "c" <- RTMB::ADoverload("c")
+    "[<-" <- RTMB::ADoverload("[<-")
+    "diag<-" <- RTMB::ADoverload("diag<-")
+    "c" <- RTMB::ADoverload("c")
 
     # if(!force.ad) postList <- priorList <- vector("list",length=nrow(obsMat))
 
@@ -702,6 +703,11 @@ makeADFun_ukf_rtmb = function(self, private)
 
 makeADFun_laplace_rtmb = function(self, private)
 {
+
+  ####### Sometimes necessary to avoid rtmb errors #######
+  "[<-" <- RTMB::ADoverload("[<-")
+  "diag<-" <- RTMB::ADoverload("diag<-")
+  "c" <- RTMB::ADoverload("c")
 
   # Tape Configration ----------------------
   configure_ad_tape("RTMB", self, private)
@@ -858,8 +864,13 @@ makeADFun_laplace_rtmb = function(self, private)
 # CONSTRUCT LAPLACE (UFFE TINY FORMULATION) MAKEADFUN WITH RTMB
 #######################################################
 
-makeADFun_laplace2_rtmb = function(self, private)
+makeADFun_laplace_thygesen_rtmb = function(self, private)
 {
+
+  ####### Sometimes necessary to avoid rtmb errors #######
+  "[<-" <- RTMB::ADoverload("[<-")
+  "diag<-" <- RTMB::ADoverload("diag<-")
+  "c" <- RTMB::ADoverload("c")
 
   # Tape Configration ----------------------
   configure_ad_tape("RTMB", self, private)

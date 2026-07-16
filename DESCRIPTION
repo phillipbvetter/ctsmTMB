@@ -40,10 +40,10 @@ Imports:
     R6,
     Rcpp,
     rlang,
-    RTMB (>= 1.7),
+    RTMB (>= 1.9),
     stats,
     stringr,
-    TMB,
+    TMB (>= 1.9),
     utils
 Suggests:
     knitr,

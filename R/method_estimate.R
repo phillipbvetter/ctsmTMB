@@ -30,7 +30,7 @@ construct_makeADFun = function(self, private){
            ukf.cpp = makeADFun_ukf_tmb(self, private),
            #
            laplace = makeADFun_laplace_rtmb(self, private),
-           laplace.thygesen = makeADFun_laplace2_rtmb(self, private)
+           laplace.thygesen = makeADFun_laplace_thygesen_rtmb(self, private)
     )
 
   }, gcFirst = FALSE)
