@@ -2,7 +2,7 @@
 # MAIN CONSTRUCT MAKEADFUN FUNCTION THAT CALL OTHERS
 #######################################################
 
-construct_makeADFun = function(self, private){
+create_ad_likelihood_fun = function(self, private){
 
   # TMB::openmp(n=1, autopar=TRUE, DLL=private$modelname.with.method)
 
@@ -19,10 +19,8 @@ construct_makeADFun = function(self, private){
     switch(private$algo.settings$method,
            ekf = makeADFun_ekf_rtmb(self, private),
            ekf.cpp = makeADFun_ekf_tmb(self, private),
-           #
            lkf = makeADFun_lkf_rtmb(self, private),
            lkf.cpp = makeADFun_lkf_tmb(self, private),
-           #
            ukf = {
              if(!private$algo.settings$silent) message("The RTMB UKF implementation may be unstable. You can try the TMB version instead 'method=ukf.cpp'.")
              makeADFun_ukf_rtmb(self, private)
@@ -165,7 +163,7 @@ perform_estimation = function(self, private) {
 # MAIN RETURN FIT FUNCTION THAT CALL OTHERS
 #######################################################
 
-create_estimation_return_fit = function(self, private, report, laplace.residuals){
+create_estimation_return_fit2 <- function(self, private, report, laplace.residuals){
 
   if(!private$algo.settings$silent) message("Returning results...")
 
@@ -222,6 +220,69 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
 
   }
 
+
+  # snapshot only the fields consumed by S3 methods
+  private$results$fit$private <- private$make_private_snapshot()
+
+  # set s3 class -----------------------------------
+  class(private$results$fit) = "ctsmTMB.fit"
+
+  # return -----------------------------------
+  return(invisible(self))
+}
+
+#######################################################
+# SUGGESTED REPLACEMENT: bypasses the public filter API
+#######################################################
+
+create_estimation_return_fit = function(self, private, report, laplace.residuals){
+
+  if(!private$algo.settings$silent) message("Returning results...")
+
+  # Initialization and Clearing -----------------------------------
+  if (is.null(private$results$opt)) {
+    return(NULL)
+  }
+
+  # clear fit
+  private$results$fit = NULL
+
+  # get convergence
+  private$results$fit$convergence = private$results$opt$convergence
+
+  # Fit Info -----------------------------------
+  compute_mle_gradient_and_hessian(self, private)
+
+  # Parameters and Uncertainties -----------------------------------
+  # NOTE: populates private$results$fit$par.fixed, used by set_parameters below
+  compute_mle_parameters_and_std_errors(self, private)
+
+  if(report){
+
+    if(private$algo.settings$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
+
+      # Set argument.parameters to MLE values — no public API re-entry needed.
+      # set_parameters(NULL,...) picks up MLE values because fit$par.fixed is now populated.
+      set_parameters(NULL, self, private)
+
+      # Run the filter worker directly, bypassing set_flags/build_model/set_data.
+      perform_filtering(self, private, use.cpp = TRUE)
+
+      # Package the raw filter output into private$results$filtration.
+      create_filter_results(self, private, laplace.residuals, silent = TRUE)
+
+      # Merge filter results into fit
+      private$results$fit = c(private$results$fit, private$results$filtration)
+
+    }
+
+    if(private$algo.settings$method %in% c("laplace","laplace.thygesen")) {
+
+      laplace_report(self, private, laplace.residuals)
+
+    }
+
+  }
 
   # snapshot only the fields consumed by S3 methods
   private$results$fit$private <- private$make_private_snapshot()

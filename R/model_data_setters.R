@@ -1,27 +1,55 @@
-###############################################################
-# TOP-LAYER FUNCTION CALLING ALL OTHERS DEFINED IN THIS SCRIPT
-###############################################################
+check_and_set_all_data <- function(data, self, private){
 
-check_and_set_data = function(data, self, private) {
+  # NOTE: we must check data first, because it will lead to changes in the other fields!
+  # check/set data
+  compute_data_entry_by_name(data, "data", self, private)
 
-  # AD-Check: Did data change or can we re-use old nll
-  if(private$procedure %in% c("estimation", "likelihood")){
+  # check/set ode timestep
+  compute_data_entry_by_name(NULL, "ode.dt", self, private)
 
-    # check if we need to rebuild the ad graph due to data changes
-    check_for_data_rebuild(data, self, private)
+  # check/set simulation timestep
+  compute_data_entry_by_name(NULL, "sim.dt", self, private)
 
-    # Exit if data is unchanged
-    if(!private$rebuild$data){
-      return(invisible(self))
+  # set loss (so computationally inexpensive that we dont bother checking)
+  set_loss_value(self, private)
+
+  return(invisible(self))
+}
+
+compute_data_entry_by_name <- function(data=NULL, str, self, private){
+
+  # check for changes in the relevant field
+  bool <- switch(str,
+         data = any(private$rebuild$data, !identical(private$old.data$entry.data, data)),
+         ode.dt = any(private$rebuild$ode.dt, !identical(private$old.data$ode.timestep, private$algo.settings$ode.timestep)),
+         sim.dt = any(private$rebuild$sim.dt, !identical(private$old.data$simulation.timestep, private$algo.settings$simulation.timestep))
+  )
+
+  # set the relevant field and update old field, if any changes
+  if (bool) {
+
+    if (str=="data") {
+      compute_data(data, self, private)
+      private$old.data$entry.data <- data
     }
-
-    # If new data: revert flags and store for check next time
-    private$rebuild$data <- FALSE
-    private$rebuild$ad <- TRUE
-    private$old.data$entry.data <- data
+    if(str=="ode.dt") {
+      compute_timestep("ode", private$data, self, private)
+      private$old.data$ode.timestep <- private$algo.settings$ode.timestep
+    }
+    if(str=="sim.dt") {
+      compute_timestep("simulation", private$data, self, private)
+      private$old.data$simulation.timestep <- private$algo.settings$simulation.timestep
+    }
+    # finally switch the rebuild switches
+    flick_data_rebuild_switches(str, self, private)
   }
 
-  if(!private$algo.settings$silent) message("Checking data...")
+  return(invisible(self))
+}
+
+compute_data <- function(data, self, private) {
+
+  if(!private$algo.settings$silent) message("Setting data...")
 
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)
@@ -32,27 +60,27 @@ check_and_set_data = function(data, self, private) {
   # save data
   # only store the obs.names, not the parsed data
   # example: if we have obs eq log(y) ~ x with name log_y, then we store log_y, but not y itself.
-  private$data = data[c(private$names$obs, private$names$inputs)]
+  private$data <- data[c(private$names$obs, private$names$inputs)]
 
-  # set timesteps
-  compute_timestep("ode", data, self, private)
-  compute_timestep("simulation", data, self, private)
-
-  # various calculations for laplace method
-  set_data_for_laplace_method(data, self, private)
+  # data entries for the laplace methods
+  set_data_for_laplace_method(private$data, self, private)
 
   # Return
   return(invisible(self))
 }
 
-#######################################################
-#######################################################
-#######################################################
-#######################################################
-#######################################################
-#######################################################
-#######################################################
-#######################################################
+set_loss_value <- function(self, private, conf.level = 0.95) {
+
+  loss.c <- private$algo.settings$loss$c
+  if(is.null(loss.c)){
+    loss.c <- stats::qchisq(conf.level, df=private$dims$observations)
+  }
+
+  # override the user-provided value
+  private$algo.settings$loss$c <- loss.c
+
+  return(invisible(self))
+}
 
 #######################################################
 # CHECK AND SET DATA BEFORE OPTIMIZATION
@@ -103,10 +131,10 @@ basic_data_check = function(data, self, private) {
 
 calculate_complex_observation_lefthandsides = function(data, self, private){
 
-  # The class of the quote(log(x)) is 'call' whereas quote(x) is 'name', so complex
-  # observation equations can be identified as being class 'call'
+  # The class of the quote(log(x)) is 'call' whereas quote(x) is 'name', so
+  # non trivial observation equations can be identified as being class 'call'
 
-  # detect the complex obs lhs
+  # detect the obs lhs
   bool = as.vector(unlist(lapply(private$model$obs.eqs.trans, function(ls) inherits(ls$lhs, "call"))))
 
   # if there are none, return
@@ -144,10 +172,55 @@ calculate_complex_observation_lefthandsides = function(data, self, private){
 }
 
 #######################################################
+# IOBS VECTOR FOR LAPLACE TO AVOID USING IS.NA
+#######################################################
+
+# The reason we want to avoid using is.na is probably that it enables us
+# to use the one-step-residual function from TMB...???
+
+set_data_for_laplace_method = function(data, self, private){
+
+  # create iobs vector  ------------------------------------
+  iobs = list()
+  for (i in seq_along(private$names$obs)) {
+    iobs[[i]] = seq_along(data$t)[!is.na(data[[private$names$obs[i]]])]
+  }
+  names(iobs) = paste("iobs_",private$names$obs,sep="")
+  private$algo.settings$iobs = iobs
+
+  # initial guess on random effects  ------------------------------------
+
+  # set state values using only initial guess
+  tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$dims$states))
+  names(tempdata) <- private$names$states
+  for(i in seq_along(private$names$states)){
+    tempdata[i] <- rep(private$algo.settings$initial.state$x0[i], nrow(data))
+  }
+  # now overwrite if initial guesses were provided in the data
+  bool <- private$names$states %in% names(data)
+  tempdata[private$names$states[bool]] <- data[private$names$states[bool]]
+
+  # next we need to repeat these each of these state values to create
+  #intermediate points determined by the user-selected ode.timestep variable
+  private$algo.settings$tmb.initial.state <- vector("list",length=private$dims$states)
+  for(i in seq_along(private$names$states)){
+    private$algo.settings$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.timesteps,1))
+  }
+  names(private$algo.settings$tmb.initial.state) = private$names$states
+  private$algo.settings$tmb.initial.state <- as.data.frame(private$algo.settings$tmb.initial.state)
+
+
+  # return
+  return(invisible(self))
+}
+
+#######################################################
 # SETTINGS FOR ODE TIMESTEP
 #######################################################
 
 compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
+
+  if(!private$algo.settings$silent) message(paste0("Setting ",type, " timestep..."))
 
   # If the required number of steps is N + epsilon or larger (e.g. 3+0.01) then increase step by 1, and reduce timestep there.
   # :::::EXAMPLE:::::
@@ -194,49 +267,6 @@ compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
     private$algo.settings$ode.timesteps.cumsum <- c(0, cumsum(timesteps))
   }
 
-  return(invisible(self))
-}
-
-#######################################################
-# IOBS VECTOR FOR LAPLACE TO AVOID USING IS.NA
-#######################################################
-
-# The reason we want to avoid using is.na is probably that it enables us
-# to use the one-step-residual function from TMB...???
-
-set_data_for_laplace_method = function(data, self, private){
-
-  # create iobs vector  ------------------------------------
-  iobs = list()
-  for (i in seq_along(private$names$obs)) {
-    iobs[[i]] = seq_along(data$t)[!is.na(data[[private$names$obs[i]]])]
-  }
-  names(iobs) = paste("iobs_",private$names$obs,sep="")
-  private$algo.settings$iobs = iobs
-
-  # initial guess on random effects  ------------------------------------
-
-  # set state values using only initial guess
-  tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$dims$states))
-  names(tempdata) <- private$names$states
-  for(i in seq_along(private$names$states)){
-    tempdata[i] <- rep(private$algo.settings$initial.state$x0[i], nrow(data))
-  }
-  # now overwrite if initial guesses were provided in the data
-  bool <- private$names$states %in% names(data)
-  tempdata[private$names$states[bool]] <- data[private$names$states[bool]]
-
-  # next we need to repeat these each of these state values to create
-  #intermediate points determined by the user-selected ode.timestep variable
-  private$algo.settings$tmb.initial.state <- vector("list",length=private$dims$states)
-  for(i in seq_along(private$names$states)){
-    private$algo.settings$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.timesteps,1))
-  }
-  names(private$algo.settings$tmb.initial.state) = private$names$states
-  private$algo.settings$tmb.initial.state <- as.data.frame(private$algo.settings$tmb.initial.state)
-
-
-  # return
   return(invisible(self))
 }
 
