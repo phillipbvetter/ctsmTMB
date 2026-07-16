@@ -12,7 +12,7 @@ construct_makeADFun = function(self, private){
   save_settings_for_ad_construct_check(self, private)
   private$rebuild$ad <- FALSE
 
-  if(!private$silent) message("Constructing objective function and derivative tables...")
+  if(!private$algo.settings$silent) message("Constructing objective function and derivative tables...")
 
   comptime <- system.time({
 
@@ -24,7 +24,7 @@ construct_makeADFun = function(self, private){
            lkf.cpp = makeADFun_lkf_tmb(self, private),
            #
            ukf = {
-             if(!private$silent) message("The RTMB UKF implementation may be unstable. You can try the TMB version instead 'method=ukf.cpp'.")
+             if(!private$algo.settings$silent) message("The RTMB UKF implementation may be unstable. You can try the TMB version instead 'method=ukf.cpp'.")
              makeADFun_ukf_rtmb(self, private)
            },
            ukf.cpp = makeADFun_ukf_tmb(self, private),
@@ -46,13 +46,12 @@ construct_makeADFun = function(self, private){
 
 perform_estimation = function(self, private) {
 
-  if(!private$silent) message("Minimizing the negative log-likelihood...")
+  if(!private$algo.settings$silent) message("Minimizing the negative log-likelihood...")
 
   if(private$dims$free.pars==0) stop("There are no free parameters to optimize for.")
 
   # Parameter Bounds
-  initial.parameters <- sapply(private$model$parameters[names(private$model$free.pars)],
-                               function(par) par$initial)
+  initial.parameters <- sapply(private$model$parameters[names(private$model$free.pars)], function(par) par$initial)
   lower.parameter.bound <- sapply(private$model$free.pars, function(par) par$lower)
   upper.parameter.bound <- sapply(private$model$free.pars, function(par) par$upper)
 
@@ -62,43 +61,47 @@ perform_estimation = function(self, private) {
     upper.parameter.bound = Inf
   }
 
-  comptime <- system.time(
-    {
+  kalman.methods <- c("lkf","lkf.cpp","ekf","ekf.cpp","ukf","ukf.cpp")
+  laplace.methods <- c("laplace","laplace.thygesen")
 
-      # IF METHOD IS KALMAN FILTER
-      if ( any(private$algo.settings$method == c("lkf","lkf.cpp","ekf","ekf.cpp","ukf","ukf.cpp")) ) {
+  comptime <- system.time({
 
-        # use function, gradient and hessian
-        if (private$optim.settings$use.hessian) {
-          opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
+    # IF METHOD IS KALMAN FILTER
+    if (private$algo.settings$method %in% kalman.methods) {
+
+      # use function, gradient and hessian
+      if (private$optim.settings$use.hessian) {
+        opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                        objective = private$nll$fn,
                                                        gradient = private$nll$gr,
                                                        hessian = private$nll$he,
                                                        lower = lower.parameter.bound,
                                                        upper = upper.parameter.bound,
                                                        control=private$optim.settings$control.nlminb))
-          # or just function and gradient
-        } else {
-          opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
+      } else {
+        # or just function and gradient
+        opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                        objective = private$nll$fn,
                                                        gradient = private$nll$gr,
                                                        lower = lower.parameter.bound,
                                                        upper = upper.parameter.bound,
                                                        control=private$optim.settings$control.nlminb))
-        }
       }
 
-      # IF METHOD IS LAPLACE
-      if ( any(private$algo.settings$method == c("laplace","laplace.thygesen")) ) {
-        opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
+    } else if (private$algo.settings$method %in% laplace.methods) {
+      opt <- try_with_warning_recovery(stats::nlminb(start = initial.parameters,
                                                      objective = private$nll$fn,
                                                      gradient = private$nll$gr,
                                                      lower = lower.parameter.bound,
                                                      upper = upper.parameter.bound,
                                                      control=private$optim.settings$control.nlminb))
-      }
+    } else {
 
-    }, gcFirst = FALSE)
+      stop("No estimation method was recognized.")
+
+    }
+
+  }, gcFirst = FALSE)
 
   # add timer to estimation
   private$timers$estimation <- comptime
@@ -112,10 +115,10 @@ perform_estimation = function(self, private) {
               1. Explore other parameter initial values - watch out of boundaries.
               2. Consider parameter transformations that ensure appropriate domains.
               3. Consider relative parameter values - they should ideally be similar.
-              4. Consider reducing the 'ode.timestep' (also reduces the SDE timestep for the laplace method).
+              4. Consider reducing the 'ode.timestep' (this also reduces the SDE timestep in the laplace methods).
               5. The Kalman filters may benefit from optimization with the hessian i.e. 'use.hessian'
-              6. Try other optimizations using the function handlers from the 'likelihood' method.
-              7. Change the optimization tolerances for 'nlminb' with the 'control' argument.")
+              6. Try using other optimizers by extracting the function handlers via the 'likelihood' method.
+              7. Try changing the optimizer tolerances with the 'control' argument. See ?stats::nlminb for details.")
     }
 
     # exit if optimization failed
@@ -132,7 +135,7 @@ perform_estimation = function(self, private) {
   comp.time = format(round(as.numeric(comptime["elapsed"])*1e4)/1e4,digits=5,scientific=F)
 
   # print convergence and timing result
-  if(!private$silent){
+  if(!private$algo.settings$silent){
     # if(outer_mgc > 1){
     # message("BEWARE: THE MAXIMUM GRADIENT COMPONENT APPEARS TO BE LARGE ( > 1 ) - THE FOUND OPTIMUM MIGHT BE INVALID.")
     # }
@@ -150,7 +153,7 @@ perform_estimation = function(self, private) {
   #
   # For TMB method: run sdreport
   if (any(private$algo.settings$method== c("laplace","laplace.thygesen"))) {
-    if(!private$silent) message("Calculating standard deviations...")
+    if(!private$algo.settings$silent) message("Calculating standard deviations...")
     # NOTE: The state covariances can be retrived by inverting sdr$jointPrecision
     # but this takes very long time. Should it be an option?
     private$sdr <- TMB::sdreport(private$nll, getJointPrecision=FALSE)
@@ -166,7 +169,7 @@ perform_estimation = function(self, private) {
 
 create_estimation_return_fit = function(self, private, report, laplace.residuals){
 
-  if(!private$silent) message("Returning results...")
+  if(!private$algo.settings$silent) message("Returning results...")
 
   # Initialization and Clearing -----------------------------------
   if (is.null(private$results$opt)) {
@@ -190,22 +193,24 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
     if(private$algo.settings$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
 
       # Call filter with silenced settings
-      silent.setting <- private$silent
-      on.exit(private$silent <- silent.setting, add=TRUE)
+      silent.setting <- private$algo.settings$silent
+      on.exit(private$algo.settings$silent <- silent.setting, add=TRUE)
 
       # perform filtering
       self$filter(data=private$data,
                   # NULL means pars are gonna be the recently estimated parameters
                   pars = NULL,
-                  method = private$algo.settings$method,
-                  ode.solver = private$algo.settings$ode.solver,
-                  ode.timestep = private$ode.timestep,
-                  loss = private$algo.settings$loss$loss,
-                  loss_c = private$algo.settings$loss$loss_c,
-                  ukf.hyperpars = private$algo.settings$ukf.hyperpars,
-                  initial.state = private$initial.state,
-                  laplace.residuals = laplace.residuals,
-                  estimate.initial.state = private$algo.settings$estimate.initial,
+                  method=private$algo.settings$method,
+                  ode.solver=private$algo.settings$ode.solver,
+                  ode.timestep=private$algo.settings$ode.timestep,
+                  loss=private$algo.settings$loss$loss,
+                  loss_c=private$algo.settings$loss$loss_c,
+                  ukf.hyperpars=private$algo.settings$ukf.hyperpars,
+                  initial.state=private$algo.settings$initial.state,
+                  laplace.residuals=laplace.residuals,
+                  estimate.initial.state=private$algo.settings$estimate.initial,
+                  # TODO
+                  # add first.order.input.hold
                   use.cpp = TRUE,
                   silent = TRUE)
 
@@ -223,9 +228,8 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
   }
 
 
-  # clone private into fit -----------------------------------
-  # no need for deep copy??
-  private$results$fit$private <- self$clone()$.__enclos_env__$private
+  # snapshot only the fields consumed by S3 methods
+  private$results$fit$private <- private$make_private_snapshot()
 
   # set s3 class -----------------------------------
   class(private$results$fit) = "ctsmTMB.fit"

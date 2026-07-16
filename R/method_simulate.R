@@ -16,15 +16,13 @@ perform_simulation <- function(self, private, use.cpp, n.sims){
       # Predict with Rcpp implementation
       if(use.cpp){
 
-        if(!private$silent) message("Simulating with C++...")
-
+        if(!private$algo.settings$silent) message("Simulating with C++...")
         lkf_ekf_ukf_simulate_rcpp(private$algo.settings$argument.parameters, self, private, n.sims)
 
         # Predict with R implementation
       } else {
 
-        if(!private$silent) message("Simulating with R...")
-
+        if(!private$algo.settings$silent) message("Simulating with R...")
         ekf_lkf_ukf_simulate_r(private$algo.settings$argument.parameters, self, private, n.sims)
 
       }
@@ -62,12 +60,12 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
                                 obsMat,
                                 inputMat,
                                 pars,
-                                private$initial.state$p0,
-                                private$initial.state$x0,
-                                private$ode.timestep.size,
-                                private$ode.timesteps,
-                                private$simulation.timestep.size,
-                                private$simulation.timesteps,
+                                private$algo.settings$initial.state$p0,
+                                private$algo.settings$initial.state$x0,
+                                private$algo.settings$ode.timestep.size,
+                                private$algo.settings$ode.timesteps,
+                                private$algo.settings$simulation.timestep.size,
+                                private$algo.settings$simulation.timesteps,
                                 any_available_obs,
                                 non_na_ids,
                                 private$dims$diffusions,
@@ -82,12 +80,12 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
                                 obsMat,
                                 inputMat,
                                 pars,
-                                private$initial.state$p0,
-                                private$initial.state$x0,
-                                private$ode.timestep.size,
-                                private$ode.timesteps,
-                                private$simulation.timestep.size,
-                                private$simulation.timesteps,
+                                private$algo.settings$initial.state$p0,
+                                private$algo.settings$initial.state$x0,
+                                private$algo.settings$ode.timestep.size,
+                                private$algo.settings$ode.timesteps,
+                                private$algo.settings$simulation.timestep.size,
+                                private$algo.settings$simulation.timesteps,
                                 any_available_obs,
                                 non_na_ids,
                                 private$algo.settings$ode.solver,
@@ -103,12 +101,12 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
                                 obsMat,
                                 inputMat,
                                 pars,
-                                private$initial.state$p0,
-                                private$initial.state$x0,
-                                private$ode.timestep.size,
-                                private$ode.timesteps,
-                                private$simulation.timestep.size,
-                                private$simulation.timesteps,
+                                private$algo.settings$initial.state$p0,
+                                private$algo.settings$initial.state$x0,
+                                private$algo.settings$ode.timestep.size,
+                                private$algo.settings$ode.timesteps,
+                                private$algo.settings$simulation.timestep.size,
+                                private$algo.settings$simulation.timesteps,
                                 numeric_is_not_na_obsMat,
                                 number_of_available_obs,
                                 private$algo.settings$ukf.hyperpars,
@@ -129,9 +127,15 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
 
 # This function returns simulation results to the user
 create_return_simulation <- function(return.k.ahead, n.sims, self, private){
+  <<<<<<< HEAD
 
   if(!private$silent) message("Returning results...")
 
+  =======
+
+    if(!private$algo.settings$silent) message("Returning results...")
+
+  >>>>>>> feature/private-consolidation
   # create names for inner list
   inner.names <- paste0("i", 0:(private$algo.settings$last.pred.index-1))
 

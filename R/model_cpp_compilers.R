@@ -3,7 +3,7 @@
 #######################################################
 compile_rcpp_functions = function(self, private){
 
-  if(!private$silent) message("Compiling C++ function pointers...")
+  if(!private$algo.settings$silent) message("Compiling C++ function pointers...")
 
   # # Settings
   # .depends <- c("Rcpp", "RcppEigen", "ctsmTMB")
@@ -102,7 +102,8 @@ compile_cppfile <- function(self, private) {
   ############################################################################
 
   # If the user requested a compilaton
-  if(private$compile){
+
+  if(private$algo.settings$compile){
 
     # Create folder if it doesnt exist
     # This is necessary because no folder was created if model$setCppfilesDirectory
@@ -165,7 +166,7 @@ compile_cppfile <- function(self, private) {
   }
 
   # If compilation not requested
-  if (!private$compile) {
+  if (!private$algo.settings$compile) {
 
     # Unix/MAC-OS platforms: check that the C++ file exists
     if (.Platform$OS.type=="unix") {

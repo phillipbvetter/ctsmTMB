@@ -21,7 +21,7 @@ check_and_set_data = function(data, self, private) {
     private$old.data$entry.data <- data
   }
 
-  if(!private$silent) message("Checking data...")
+  if(!private$algo.settings$silent) message("Checking data...")
 
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)
@@ -35,8 +35,8 @@ check_and_set_data = function(data, self, private) {
   private$data = data[c(private$names$obs, private$names$inputs)]
 
   # set timesteps
-  set_ode_timestep(data, self, private)
-  set_simulation_timestep(data, self, private)
+  compute_timestep("ode", data, self, private)
+  compute_timestep("simulation", data, self, private)
 
   # various calculations for laplace method
   set_data_for_laplace_method(data, self, private)
@@ -147,77 +147,55 @@ calculate_complex_observation_lefthandsides = function(data, self, private){
 # SETTINGS FOR ODE TIMESTEP
 #######################################################
 
-set_ode_timestep = function(data, self, private){
+compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
 
   # If the required number of steps is N + epsilon or larger (e.g. 3+0.01) then increase step by 1, and reduce timestep there.
   # :::::EXAMPLE:::::
   # data$t = [0 , 1 , 2, 4.5], so data.dt = [1,1,2.5]
-  # ode.timestep = 1. There are therefore [1, 1, 2.5] steps required. The last (2.5) has residual larger than 0.05 so (2.5 %% 1 = 0.5 > 0.05)
-  # so we round up the number of steps there i.e. ode.N = [1 , 1 , 3]. The last entry is the important one.
-  # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333
-  # down from the set ode.timestep = 1
+  # timestep = 1. There are therefore [1, 1, 2.5] steps required. The last (2.5) has residual larger than epsilon so (2.5 %% 1 = 0.5 > epsilon)
+  # so we round up the number of steps there i.e. N = [1, 1, 3]. The last entry is the important one.
+  # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / N[3] = 2.5 / 3 = 0.88883333
 
-  ode.timestep <- private$ode.timestep
+  n <- nrow(data) - 1
+  dt <- private$algo.settings[[paste0(type, ".timestep")]]
 
-  # check that ode.timestep has length 1 or at least nrow(data)-1.
-  if (length(ode.timestep) == 1) {
-
-    # Recycle to correct length
-    ode.timestep = rep(ode.timestep, nrow(data)-1)
-
-  }  else if (length(ode.timestep) == nrow(data) -1) {
-
-    # do nothing
-
-  } else if (length(ode.timestep) > nrow(data) - 1 ) {
-
-    # trim if it is larger than nrow(data)-1
-    ode.timestep = head(ode.timestep, nrow(data)-1)
-    warning("The provided ode.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.")
-
-  } else {
-
-    # throw error
-    stop("Error: The provided ode.timestep must have length 1 or nrow(data)-1")
+  # check that dt has length 1 or nrow(data)-1
+  if (length(dt) == 1) {
+    dt <- rep(dt, n)
+  } else if (length(dt) > n) {
+    warning(sprintf("The provided %s.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.", type))
+    dt <- head(dt, n)
+  } else if (length(dt) < n) {
+    warning(sprintf("The provided %s.timestep was shorter than nrow(data) - 1, only using first entry.", type))
+    dt <- rep(dt[1],n)
   }
 
+  # Data time-differences and number of steps to take
+  data.dt <- diff(data$t)
+  timesteps <- rep(1, n)
+  timestep.size <- data.dt
 
-  # Data time-difference, and ode.timesteps (number of steps to take)
-  data.dt = diff(data$t)
-  ode.timesteps = rep(1,length(data.dt))
+  # For gaps larger than dt, use dt as step-size; otherwise use given dt and modify
+  bool <- data.dt > dt
+  timestep.size[bool] <- dt[bool]
+  timesteps[bool] <- data.dt[bool] / dt[bool]
+  # now round up where residual exceeds epsilon, round down otherwise
+  residual.bool <- (timesteps %% 1) > epsilon.step
+  timesteps[residual.bool]  <- ceiling(timesteps[residual.bool])
+  timesteps[!residual.bool] <- floor(timesteps[!residual.bool])
 
-  # For the data time-gaps larger than ode.timestep, we set the time-step to the requested ode.timestep
-  # For all others just take a timestep equal to the time-gap in the data (which will be smaller than ode.timestep)
-  ode_timestep_size = data.dt
-  bool = data.dt > ode.timestep
-  ode_timestep_size[bool] = ode.timestep[bool]
+  # Adjust step-size so that timesteps * timestep.size == data.dt exactly
+  timestep.size[residual.bool] <- data.dt[residual.bool] / timesteps[residual.bool]
 
-  # where data.dt > ode.timestep, calculate the required number of steps using ode.timestep
-  ode.timesteps[bool] = data.dt[bool] / ode.timestep[bool]
+  # Store results
+  private$algo.settings[[paste0(type, ".timestep.size")]] <- timestep.size
+  private$algo.settings[[paste0(type, ".timesteps")]]     <- timesteps
+  if (type == "ode") {
+    private$algo.settings$ode.timesteps.cumsum <- c(0, cumsum(timesteps))
+  }
 
-  # Find those indices where the number of steps must increase
-  epsilon.step  = 1e-3
-  residual.step.bool = (ode.timesteps %% 1) > epsilon.step
-
-  # increment these steps from N to N+1
-  ode.timesteps[residual.step.bool] = ceiling(ode.timesteps[residual.step.bool])
-
-  # round other steps down (e.g. any number less than N+epsilon becomes N)
-  ode.timesteps[!residual.step.bool] = floor(ode.timesteps[!residual.step.bool])
-
-  # now reduce the timestep at these locations to match the integer number of steps such that ode.timesteps * ode.timestep = data.dt
-  # e.g. ode.timestep = data.dt / ode.timesteps
-  ode_timestep_size[residual.step.bool] = data.dt[residual.step.bool] / ode.timesteps[residual.step.bool]
-
-  # store the calculated step-size, number of steps, and cumulative number of steps
-  private$ode.timestep.size = ode_timestep_size
-  private$ode.timesteps = ode.timesteps
-  private$ode.timesteps.cumsum = c(0,cumsum(private$ode.timesteps)) #this is used in the laplace method
-
-  # return
   return(invisible(self))
 }
-
 
 #######################################################
 # IOBS VECTOR FOR LAPLACE TO AVOID USING IS.NA
@@ -234,7 +212,7 @@ set_data_for_laplace_method = function(data, self, private){
     iobs[[i]] = seq_along(data$t)[!is.na(data[[private$names$obs[i]]])]
   }
   names(iobs) = paste("iobs_",private$names$obs,sep="")
-  private$iobs = iobs
+  private$algo.settings$iobs = iobs
 
   # initial guess on random effects  ------------------------------------
 
@@ -242,7 +220,7 @@ set_data_for_laplace_method = function(data, self, private){
   tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$dims$states))
   names(tempdata) <- private$names$states
   for(i in seq_along(private$names$states)){
-    tempdata[i] <- rep(private$initial.state$x0[i], nrow(data))
+    tempdata[i] <- rep(private$algo.settings$initial.state$x0[i], nrow(data))
   }
   # now overwrite if initial guesses were provided in the data
   bool <- private$names$states %in% names(data)
@@ -250,86 +228,13 @@ set_data_for_laplace_method = function(data, self, private){
 
   # next we need to repeat these each of these state values to create
   #intermediate points determined by the user-selected ode.timestep variable
-  private$tmb.initial.state <- vector("list",length=private$dims$states)
+  private$algo.settings$tmb.initial.state <- vector("list",length=private$dims$states)
   for(i in seq_along(private$names$states)){
-    private$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$ode.timesteps,1))
+    private$algo.settings$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.timesteps,1))
   }
-  names(private$tmb.initial.state) = private$names$states
-  private$tmb.initial.state <- as.data.frame(private$tmb.initial.state)
+  names(private$algo.settings$tmb.initial.state) = private$names$states
+  private$algo.settings$tmb.initial.state <- as.data.frame(private$algo.settings$tmb.initial.state)
 
-
-  # return
-  return(invisible(self))
-}
-
-#######################################################
-# SETTINGS FOR ODE TIMESTEP
-#######################################################
-
-set_simulation_timestep = function(data, self, private){
-
-  # If the required number of steps is N + epsilon or larger (e.g. 3+0.01) then increase step by 1, and reduce timestep there.
-  # :::::EXAMPLE:::::
-  # data$t = [0 , 1 , 2, 4.5], so data.dt = [1,1,2.5]
-  # ode.timestep = 1. There are therefore [1, 1, 2.5] steps required. The last (2.5) has residual larger than 0.05 so (2.5 %% 1 = 0.5 > 0.05)
-  # so we round up the number of steps there i.e. ode.N = [1 , 1 , 3]. The last entry is the important one.
-  # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / ode.N[3] = 2.5 / 3  = 0.88883333
-  # down from the set ode.timestep = 1
-  simulation.timestep <- private$simulation.timestep
-
-  # check that simulation.timestep has length 1 or at least nrow(data)-1.
-  if (length(simulation.timestep) == 1) {
-
-    # Recycle to correct length
-    simulation.timestep = rep(simulation.timestep, nrow(data)-1)
-
-  }  else if (length(simulation.timestep) == nrow(data) - 1) {
-
-    # do nothing
-
-  } else if (length(simulation.timestep) > nrow(data) - 1 ) {
-
-    # trim if it is larger than nrow(data)-1
-    simulation.timestep = head(simulation.timestep, nrow(data)-1)
-    # warning("The provided simulation.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.")
-
-  } else {
-
-    # throw error
-    stop("Error: The provided simulation.timestep must have length 1 or nrow(data)-1")
-  }
-
-
-  # Data time-difference, and simulation.timesteps (number of steps to take)
-  data.dt = diff(data$t)
-  simulation.timesteps = rep(1,length(data.dt))
-
-  # For the data time-gaps larger than ode.timestep, we set the time-step to the requested ode.timestep
-  # For all others just take a timestep equal to the time-gap in the data (which will be smaller than ode.timestep)
-  simulation_timestep_size = data.dt
-  bool = data.dt > simulation.timestep
-  simulation_timestep_size[bool] = simulation.timestep[bool]
-
-  # where data.dt > ode.timestep, calculate the required number of steps using ode.timestep
-  simulation.timesteps[bool] = data.dt[bool] / simulation.timestep[bool]
-
-  # Find those indices where the number of steps must increase
-  epsilon.step  = 1e-2
-  residual.step.bool = (simulation.timesteps %% 1) > epsilon.step
-
-  # increment these steps from N to N+1
-  simulation.timesteps[residual.step.bool] = ceiling(simulation.timesteps[residual.step.bool])
-
-  # round other steps down (e.g. any number less than N+epsilon becomes N)
-  simulation.timesteps[!residual.step.bool] = floor(simulation.timesteps[!residual.step.bool])
-
-  # now reduce the timestep at these locations to match the integer number of steps such that simulation.timesteps * ode.timestep = data.dt
-  # e.g. ode.timestep = data.dt / simulation.timesteps
-  simulation_timestep_size[residual.step.bool] = data.dt[residual.step.bool] / simulation.timesteps[residual.step.bool]
-
-  # store the calculated step-size, number of steps, and cumulative number of steps
-  private$simulation.timestep.size = simulation_timestep_size
-  private$simulation.timesteps = simulation.timesteps
 
   # return
   return(invisible(self))
@@ -341,20 +246,6 @@ set_simulation_timestep = function(data, self, private){
 set_parameters = function(pars, self, private){
 
   # This function sets the parameters used by estimations, filters etc.
-  #
-  # Base-case (pars = NULL):
-  #   Each parameter is taken from its estimated value if available, else
-  #   its initial value. Free parameters use fit$par.fixed once a fit exists;
-  #   fixed parameters always fall back to their initial value.
-  #
-  # Named pars:
-  #   The supplied vector replaces the corresponding entries in the base
-  #   vector by name. A partial set of names is fine.
-  #
-  # Unnamed pars:
-  #   Must have length equal to all parameters (lp) or only the free
-  #   parameters (lp - fp). Values are inserted in the natural order
-  #   returned by self$getParameters().
 
   lp = length(private$names$parameters)
   fp = length(private$model$fixed.pars)
@@ -369,25 +260,19 @@ set_parameters = function(pars, self, private){
 
   # Apply user-supplied overrides ----------------------------------------
   if (is.null(pars)) {
-
     # Nothing supplied: use base vector as-is
     pars = base.pars
-
   } else if (!is.null(names(pars))) {
-
     # Named vector: replace only the named entries
     base.pars[names(pars)] <- pars
     pars = base.pars
-
   } else {
-
     # Unnamed vector: must be length lp or lp-fp
     if (!any(length(pars) == c(lp, lp - fp))) {
       stop("Incorrect number of parameters supplied (", length(pars), "). ",
            "Please supply either ", lp, " (all) or ", lp - fp,
            " (free only), i.e. with or without fixed parameters.")
     }
-
     if (length(pars) == lp - fp) {
       # Free parameters only: slot them in at the free-parameter positions
       par.type.free = self$getParameters()[, "type"] == "free"
@@ -397,6 +282,7 @@ set_parameters = function(pars, self, private){
     # else length == lp: use pars directly (full vector in natural order)
   }
 
+  # set names and leave
   names(pars) = private$names$parameters
   private$algo.settings$argument.parameters = pars
 

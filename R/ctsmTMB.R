@@ -46,19 +46,11 @@ ctsmTMB = R6::R6Class(
       private$data = NULL
       private$nll = NULL
 
-      private$compile = FALSE
-      private$silent = FALSE
-
       # rebuild
       private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE)
       private$old.data = list()
 
-      private$initial.state = NULL
-      private$initial.state.fixed = NULL
-      private$tmb.initial.state = NULL
-      private$iobs = NULL
-
-      # model equations
+      # model properties
       private$model = list(
         sys.eqs      = NULL,
         obs.eqs      = NULL,
@@ -82,13 +74,34 @@ ctsmTMB = R6::R6Class(
         rcpp_function_ptr      = NULL
       )
 
-      # options
+      # model names
+      private$names = list(
+        states     = NULL,
+        obs        = NULL,
+        obsvar     = NULL,
+        inputs     = "t",
+        parameters = NULL
+      )
+
+      # model dimensions
+      private$dims = list(
+        states       = 0,
+        observations = 0,
+        diffusions   = 0,
+        pars         = 0,
+        free.pars    = 0,
+        fixed.pars   = 0,
+        inputs       = 1  # for 't'
+      )
+
+      # optimizer options
       private$optim.settings = list(
         use.hessian        = FALSE,
         control.nlminb     = list(),
         unconstrained.optim = NULL
       )
 
+      # algorithm options
       private$algo.settings = list(
         method                      = "ekf",
         loss                        = list(loss=0L, c=3),
@@ -103,8 +116,23 @@ ctsmTMB = R6::R6Class(
         seed                        = NULL,
         ukf.hyperpars               = list(),
         argument.parameters         = NULL,
+        ode.timestep                = NULL,
+        ode.timestep.size           = NULL,
+        ode.timesteps               = NULL,
+        ode.timesteps.cumsum        = NULL,
+        simulation.timestep         = NULL,
+        simulation.timestep.size    = NULL,
+        simulation.timesteps        = NULL,
+        initial.state               = NULL,
+        initial.state.fixed         = NULL,
+        tmb.initial.state           = NULL,
+        iobs                        = NULL,
+        compile                     = FALSE,
+        silent                      = FALSE
         first.order.input.hold      = FALSE
       )
+
+      # names
       private$names = list(
         states     = NULL,
         obs        = NULL,
@@ -112,6 +140,7 @@ ctsmTMB = R6::R6Class(
         inputs     = "t",
         parameters = NULL
       )
+
       # lengths
       private$dims = list(
         states       = 0,
@@ -123,6 +152,7 @@ ctsmTMB = R6::R6Class(
         inputs       = 1  # for 't'
       )
 
+      # storage for various outputs
       private$results = list(
         opt            = NULL,
         fit            = NULL,
@@ -852,7 +882,7 @@ ctsmTMB = R6::R6Class(
     #' @description Retrieve initially set state and covariance
     getInitialState = function() {
       # return
-      return(private$initial.state.fixed)
+      return(private$algo.settings$initial.state.fixed)
     },
 
     ########################################################################
@@ -947,7 +977,7 @@ ctsmTMB = R6::R6Class(
 
       # return
       fit <- private$results$fit
-      fit$private = self$clone()$getPrivate()
+      fit$private = private$make_private_snapshot()
       return(invisible(fit))
     },
 
@@ -1095,7 +1125,7 @@ ctsmTMB = R6::R6Class(
       create_filter_results(self, private, laplace.residuals)
 
       # return
-      if(!private$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$filtration))
     },
 
@@ -1192,7 +1222,7 @@ ctsmTMB = R6::R6Class(
       create_smooth_results(self, private, laplace.residuals)
 
       # return
-      if(!private$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$smooth))
     },
 
@@ -1299,7 +1329,7 @@ ctsmTMB = R6::R6Class(
       create_estimation_return_fit(self, private, report, laplace.residuals)
 
       # return
-      if(!private$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$fit))
     },
 
@@ -1498,7 +1528,7 @@ ctsmTMB = R6::R6Class(
       create_return_prediction(reported.dispersion.type, return.k.ahead, self, private)
 
       # return
-      if(!private$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$prediction))
     },
 
@@ -1613,7 +1643,7 @@ ctsmTMB = R6::R6Class(
       create_return_simulation(return.k.ahead, n.sims, self, private)
 
       # return
-      if(!private$silent) message("Finished.")
+      if(!private$algo.settings$silent) message("Finished.")
       return(invisible(private$results$simulation))
     },
 
@@ -1721,10 +1751,6 @@ ctsmTMB = R6::R6Class(
 
     # model equations
     model = NULL,
-    initial.state = NULL,
-    initial.state.fixed = NULL,
-    tmb.initial.state = NULL,
-    iobs = NULL,
 
     # names
     names = NULL,
@@ -1732,16 +1758,6 @@ ctsmTMB = R6::R6Class(
     # options
     algo.settings = NULL,
     optim.settings = NULL,
-    compile = NULL,
-    silent = NULL,
-    ode.timestep = NULL,
-    ode.timestep.size = NULL,
-    ode.timesteps = NULL,
-    ode.timesteps.cumsum = NULL,
-    simulation.timestep = NULL,
-    simulation.timesteps = NULL,
-    simulation.timestep.size = NULL,
-
     # rebuild
     rebuild = list(model = FALSE, ad = FALSE, data = FALSE),
     old.data = list(),
@@ -1873,7 +1889,7 @@ ctsmTMB = R6::R6Class(
       }
 
       # set flag
-      private$compile = bool
+      private$algo.settings$compile = bool
 
       # return
       return(invisible(self))
@@ -1890,7 +1906,7 @@ ctsmTMB = R6::R6Class(
       }
 
       # set flag
-      private$silent = bool
+      private$algo.settings$silent = bool
 
       # return
       return(invisible(self))
@@ -1952,27 +1968,16 @@ ctsmTMB = R6::R6Class(
       return(invisible(self))
     },
     ########################################################################
-    # SET ODE TIME-STEP
+    # SET TIME-STEP (ODE OR SIMULATION)
     ########################################################################
-    set_ode_timestep = function(dt) {
+    set_timestep = function(type, dt) {
 
       # must be numeric
       if (!is.numeric(dt)) {
         stop("The timestep should be a numeric value.")
       }
 
-      private$ode.timestep = dt
-    },
-    ########################################################################
-    # SET SIMULATION TIME-STEP
-    ########################################################################
-    set_simulation_timestep = function(dt) {
-
-      # must be numeric
-      if (!is.numeric(dt)) {
-        stop("The timestep should be a numeric value.")
-      }
-      private$simulation.timestep = dt
+      private$algo.settings[[paste0(type, ".timestep")]] = dt
     },
 
     ########################################################################
@@ -2131,17 +2136,17 @@ ctsmTMB = R6::R6Class(
 
       # if the call was made from setInitialState then just over-write that field and leave
       if(called.by.setInitialState){
-        private$initial.state.fixed <- list(x0=x0, p0=p0)
+        private$algo.settings$initial.state.fixed <- list(x0=x0, p0=p0)
         return(invisible(self))
       }
 
       # Store old initial state and check for AD rebuild if the state changed
       names(initial.state) <- c("x0", "p0")
-      bool <- identical(initial.state, private$initial.state)
+      bool <- identical(initial.state, private$algo.settings$initial.state)
       if(!bool) private$rebuild$ad <- TRUE
 
       # set private field
-      private$initial.state = list(x0=x0, p0=p0)
+      private$algo.settings$initial.state = list(x0=x0, p0=p0)
 
       # return
       return(invisible(self))
@@ -2268,6 +2273,20 @@ ctsmTMB = R6::R6Class(
 
       # return
       return(invisible(self))
+    },
+
+    ########################################################################
+    # PRIVATE SNAPSHOT FOR FIT OBJECT
+    ########################################################################
+    make_private_snapshot = function() {
+      list(
+        algo.settings = list(method = private$algo.settings$method),
+        dims          = private$dims,
+        names         = private$names,
+        data          = private$data,
+        nll           = private$nll,
+        modelname     = private$modelname
+      )
     }
 
   )

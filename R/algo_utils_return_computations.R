@@ -215,7 +215,7 @@ laplace_report <- function(self, private, laplace.residuals){
   }
   
   ############ states ############
-  random.ids <- private$ode.timesteps.cumsum+1
+  random.ids <- private$algo.settings$ode.timesteps.cumsum+1
   if(private$algo.settings$method %in% c("laplace")){
     
     # Smoothed States -----------------------------------
@@ -276,7 +276,7 @@ laplace_states <- function(self, private){
   
   ############ LAPLACE ############
   
-  random.ids <- private$ode.timesteps.cumsum+1
+  random.ids <- private$algo.settings$ode.timesteps.cumsum+1
   
   if(private$algo.settings$method %in% c("laplace")){
     

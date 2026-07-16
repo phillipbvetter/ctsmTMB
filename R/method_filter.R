@@ -13,16 +13,14 @@ perform_filtering = function(self, private, use.cpp){
   }
 
   comptime <- system.time({
-    if(use.cpp){
-
-      if(!private$silent) message("Filtering with C++...")
+    if (use.cpp) {
+      if (!private$algo.settings$silent)
+        message("Filtering with C++...")
       lkf_ekf_ukf_filter_rcpp(private$algo.settings$argument.parameters, self, private)
-
     } else {
-
-      if(!private$silent) message("Filtering with R...")
+      if (!private$algo.settings$silent)
+        message("Filtering with R...")
       lkf_ekf_ukf_filter_r(private$algo.settings$argument.parameters, self, private)
-
     }
   }, gcFirst = FALSE)
 
@@ -67,42 +65,42 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
     number_of_available_obs = apply(numeric_is_not_na_obsMat, 1, sum)
 
     filt <- switch(private$algo.settings$method,
-      lkf = lkf_filter_rcpp(private$model$rcpp_function_ptr,
-                            obsMat,
-                            inputMat,
-                            pars,
-                            private$initial.state$p0,
-                            private$initial.state$x0,
-                            private$ode.timestep.size,
-                            private$ode.timesteps,
-                            any_available_obs,
-                            non_na_ids,
-                            private$algo.settings$first.order.input.hold),
-      ekf = ekf_filter_rcpp(private$model$rcpp_function_ptr,
-                            obsMat,
-                            inputMat,
-                            pars,
-                            private$initial.state$p0,
-                            private$initial.state$x0,
-                            private$ode.timestep.size,
-                            private$ode.timesteps,
-                            any_available_obs,
-                            non_na_ids,
-                            private$algo.settings$ode.solver,
-                            private$algo.settings$first.order.input.hold),
-      ukf = ukf_filter_rcpp(private$model$rcpp_function_ptr,
-                            obsMat,
-                            inputMat,
-                            pars,
-                            private$initial.state$p0,
-                            private$initial.state$x0,
-                            private$ode.timestep.size,
-                            private$ode.timesteps,
-                            numeric_is_not_na_obsMat,
-                            number_of_available_obs,
-                            private$algo.settings$ukf.hyperpars,
-                            private$algo.settings$ode.solver,
-                            private$algo.settings$first.order.input.hold)
+                   lkf = lkf_filter_rcpp(private$model$rcpp_function_ptr,
+                                         obsMat,
+                                         inputMat,
+                                         pars,
+                                         private$algo.settings$initial.state$p0,
+                                         private$algo.settings$initial.state$x0,
+                                         private$algo.settings$ode.timestep.size,
+                                         private$algo.settings$ode.timesteps,
+                                         any_available_obs,
+                                         non_na_ids,
+                                         private$algo.settings$first.order.input.hold),
+                   ekf = ekf_filter_rcpp(private$model$rcpp_function_ptr,
+                                         obsMat,
+                                         inputMat,
+                                         pars,
+                                         private$algo.settings$initial.state$p0,
+                                         private$algo.settings$initial.state$x0,
+                                         private$algo.settings$ode.timestep.size,
+                                         private$algo.settings$ode.timesteps,
+                                         any_available_obs,
+                                         non_na_ids,
+                                         private$algo.settings$ode.solver,
+                                         private$algo.settings$first.order.input.hold),
+                   ukf = ukf_filter_rcpp(private$model$rcpp_function_ptr,
+                                         obsMat,
+                                         inputMat,
+                                         pars,
+                                         private$algo.settings$initial.state$p0,
+                                         private$algo.settings$initial.state$x0,
+                                         private$algo.settings$ode.timestep.size,
+                                         private$algo.settings$ode.timesteps,
+                                         numeric_is_not_na_obsMat,
+                                         number_of_available_obs,
+                                         private$algo.settings$ukf.hyperpars,
+                                         private$algo.settings$ode.solver,
+                                         private$algo.settings$first.order.input.hold)
     )
   }
   if(private$algo.settings$method %in% c("lkf.cpp","ekf.cpp","ukf.cpp")){
@@ -114,7 +112,7 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
   return(invisible(self))
 }
 
-create_filter_results <- function(self, private, laplace.residuals, silent=private$silent){
+create_filter_results <- function(self, private, laplace.residuals, silent=private$algo.settings$silent){
 
   if(!silent) message("Returning results...")
 

@@ -20,15 +20,13 @@ perform_prediction <- function(self, private, use.cpp){
       # Predict with Rcpp implementation
       if(use.cpp){
 
-        if(!private$silent) message("Predicting with C++...")
-
+        if(!private$algo.settings$silent) message("Predicting with C++...")
         lkf_ekf_ukf_predict_rcpp(private$algo.settings$argument.parameters, self, private)
 
         # Predict with R implementation
       } else {
 
-        if(!private$silent) message("Predicting with R...")
-
+        if(!private$algo.settings$silent) message("Predicting with R...")
         lkf_ekf_ukf_predict_r(private$algo.settings$argument.parameters, self, private)
 
       }
@@ -81,10 +79,10 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
                                obsMat,
                                inputMat,
                                pars,
-                               private$initial.state$p0,
-                               private$initial.state$x0,
-                               private$ode.timestep.size,
-                               private$ode.timesteps,
+                               private$algo.settings$initial.state$p0,
+                               private$algo.settings$initial.state$x0,
+                               private$algo.settings$ode.timestep.size,
+                               private$algo.settings$ode.timesteps,
                                any_available_obs,
                                non_na_ids,
                                private$algo.settings$last.pred.index,
@@ -96,10 +94,10 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
                                obsMat,
                                inputMat,
                                pars,
-                               private$initial.state$p0,
-                               private$initial.state$x0,
-                               private$ode.timestep.size,
-                               private$ode.timesteps,
+                               private$algo.settings$initial.state$p0,
+                               private$algo.settings$initial.state$x0,
+                               private$algo.settings$ode.timestep.size,
+                               private$algo.settings$ode.timesteps,
                                any_available_obs,
                                non_na_ids,
                                private$algo.settings$ode.solver,
@@ -112,10 +110,10 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
                                obsMat,
                                inputMat,
                                pars,
-                               private$initial.state$p0,
-                               private$initial.state$x0,
-                               private$ode.timestep.size,
-                               private$ode.timesteps,
+                               private$algo.settings$initial.state$p0,
+                               private$algo.settings$initial.state$x0,
+                               private$algo.settings$ode.timestep.size,
+                               private$algo.settings$ode.timesteps,
                                numeric_is_not_na_obsMat,
                                number_of_available_obs,
                                private$algo.settings$ukf.hyperpars,
@@ -138,7 +136,7 @@ lkf_ekf_ukf_predict_rcpp <- function(pars, self, private){
 #######################################################
 create_return_prediction <- function(reported.dispersion.type, return.k.ahead, self, private){
 
-  if(!private$silent) message("Returning results...")
+  if (!private$algo.settings$silent) message("Returning results...")
 
   # Simlify variable names
   n               <- private$dims$states

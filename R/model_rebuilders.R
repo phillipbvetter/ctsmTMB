@@ -11,8 +11,8 @@ save_settings_for_ad_construct_check <- function(self, private){
   private$old.data$loss                <- private$algo.settings$loss
   private$old.data$estimate.initial    <- private$algo.settings$estimate.initial
   private$old.data$ukf.hyperpars       <- private$algo.settings$ukf.hyperpars
-  private$old.data$ode.timestep        <- private$ode.timestep
-  private$old.data$simulation.timestep <- private$simulation.timestep
+  private$old.data$ode.timestep        <- private$algo.settings$ode.timestep
+  private$old.data$simulation.timestep <- private$algo.settings$simulation.timestep
 
   return(invisible(self))
 }
@@ -23,8 +23,8 @@ check_for_data_rebuild <- function(data, self, private){
   bool <- c(
     private$rebuild$data,
     !identical(private$old.data$entry.data, data),
-    !identical(private$old.data$ode.timestep, private$ode.timestep),
-    !identical(private$old.data$simulation.timestep, private$simulation.timestep)
+    !identical(private$old.data$ode.timestep, private$algo.settings$ode.timestep),
+    !identical(private$old.data$simulation.timestep, private$algo.settings$simulation.timestep)
   )
   private$rebuild$data <- any(bool)
 
