@@ -32,6 +32,7 @@ ctsmTMB = R6::R6Class(
     #' @description
     #' Initialize private fields
     initialize = function() {
+
       # modelname, directory and path (directory+name)
       private$modelname = "ctsmTMB_model"
       private$cppfile.directory = normalizePath(file.path(getwd(),"ctsmTMB_cppfiles"), mustWork=FALSE, winslash = "/")
@@ -46,11 +47,11 @@ ctsmTMB = R6::R6Class(
       private$data = NULL
       private$nll = NULL
 
-      # rebuild
-      private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE)
+      # fields for AD rebuilding
+      private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE, ode.dt=TRUE, sim.dt=TRUE)
       private$old.data = list()
 
-      # model properties
+      # model fields
       private$model = list(
         sys.eqs      = NULL,
         obs.eqs      = NULL,
@@ -74,7 +75,7 @@ ctsmTMB = R6::R6Class(
         rcpp_function_ptr      = NULL
       )
 
-      # model names
+      # model fields - names
       private$names = list(
         states     = NULL,
         obs        = NULL,
@@ -83,7 +84,7 @@ ctsmTMB = R6::R6Class(
         parameters = NULL
       )
 
-      # model dimensions
+      # model fields - dimensions
       private$dims = list(
         states       = 0,
         observations = 0,
@@ -104,7 +105,7 @@ ctsmTMB = R6::R6Class(
       # algorithm options
       private$algo.settings = list(
         method                      = "ekf",
-        loss                        = list(loss=0L, c=3),
+        loss                        = list(loss="quadratic", c=3),
         tukey.pars                  = rep(0, 6),
         ode.solver                  = NULL,
         estimate.initial            = FALSE,
@@ -1110,10 +1111,7 @@ ctsmTMB = R6::R6Class(
       build_model(self, private)
 
       # check and set data
-      check_and_set_data(data, self, private)
-
-      # set loss function (depends on data)
-      private$set_loss(loss, loss_c)
+      check_and_set_all_data(data, self, private)
 
       # set parameters
       set_parameters(pars, self, private)
@@ -1202,17 +1200,14 @@ ctsmTMB = R6::R6Class(
       build_model(self, private)
 
       # check and set data
-      check_and_set_data(data, self, private)
-
-      # set loss function (depends on data)
-      private$set_loss(loss, loss_c)
+      check_and_set_all_data(data, self, private)
 
       # set parameters
       set_parameters(pars, self, private)
 
       # construct nll AD function if the method is laplace
       if(any(private$algo.settings$method==c("laplace","laplace.thygesen"))){
-        construct_makeADFun(self, private)
+        create_ad_likelihood_fun(self, private)
       }
 
       # smooth
@@ -1308,14 +1303,11 @@ ctsmTMB = R6::R6Class(
       build_model(self, private)
 
       # check and set data
-      check_and_set_data(data, self, private)
-
-      # set loss function (depends on data)
-      private$set_loss(loss, loss_c)
+      check_and_set_all_data(data, self, private)
 
       # construct nll AD function
       compile_cppfile(self, private)
-      construct_makeADFun(self, private)
+      create_ad_likelihood_fun(self, private)
 
       # estimate
       perform_estimation(self, private)
@@ -1426,14 +1418,14 @@ ctsmTMB = R6::R6Class(
       build_model(self, private)
 
       # check and set data
-      check_and_set_data(data, self, private)
+      check_and_set_all_data(data, self, private)
 
       # set loss function (depends on data)
-      private$set_loss(loss, loss_c)
+      # private$set_loss(loss, loss_c)
 
       # construct nll AD function
       compile_cppfile(self, private)
-      construct_makeADFun(self, private)
+      create_ad_likelihood_fun(self, private)
 
       # return
       if(!silent) message("Finished!")
@@ -1515,7 +1507,7 @@ ctsmTMB = R6::R6Class(
       build_model(self, private)
 
       # set data
-      check_and_set_data(data, self, private)
+      check_and_set_all_data(data, self, private)
 
       # set parameters
       set_parameters(pars, self, private)
@@ -1629,8 +1621,8 @@ ctsmTMB = R6::R6Class(
       # build model
       build_model(self, private)
 
-      # check data
-      check_and_set_data(data, self, private)
+      # check and set data
+      check_and_set_all_data(data, self, private)
 
       # set parameters
       set_k_ahead(k.ahead, self, private)
@@ -2153,9 +2145,8 @@ ctsmTMB = R6::R6Class(
     },
 
     ########################################################################
-    # SET LOSS FUNCTION
+    # SET LIKELIHOOD LOSS
     ########################################################################
-    # SET LOSS FUNCTION
     set_loss = function(loss, loss_c) {
 
       # check for string
@@ -2172,12 +2163,11 @@ ctsmTMB = R6::R6Class(
              3. 'tukey' - quadratic-constant tukey loss")
       }
 
-      if(is.null(loss_c)){
-        loss_c <- stats::qchisq(0.95, df=private$dims$observations)
-      }
-
-      if(loss_c <= 0){
-        stop("The loss threshold must be positive")
+      # check if loss_c is a null, or a positive numeric
+      if(!is.null(loss_c)){
+        if(!(is.numeric(loss_c) & loss_c >= 0)){
+          stop("The loss threshold must be a 'numeric' positive scalar")
+        }
       }
 
       # set flag
