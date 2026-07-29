@@ -57,7 +57,7 @@ ctsmTMB = R6::R6Class(
         obs.eqs      = NULL,
         obs.var      = NULL,
         alg.eqs      = NULL,
-        inputs       = list(t=quote(t)),
+        inputs       = alist(t=t),
         parameters   = NULL,
         sys.eqs.trans  = NULL,
         obs.eqs.trans  = NULL,
@@ -129,7 +129,7 @@ ctsmTMB = R6::R6Class(
         tmb.initial.state           = NULL,
         iobs                        = NULL,
         compile                     = FALSE,
-        silent                      = FALSE
+        silent                      = FALSE,
         first.order.input.hold      = FALSE
       )
 
@@ -966,7 +966,7 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # GET ESTIMATION
     ########################################################################
-    #' @description Retrieve initially set state and covariance
+    #' @description Retrieve estimation fit
     getEstimate = function() {
 
 
@@ -986,7 +986,7 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # GET NEG LOG LIKE (MakeADFUN)
     ########################################################################
-    #' @description Retrieve initially set state and covariance
+    #' @description Retrieve likelihood function handlers
     getLikelihood = function() {
 
 
@@ -1003,7 +1003,7 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # GET PREDICTION
     ########################################################################
-    #' @description Retrieve initially set state and covariance
+    #' @description Retrieve predictions
     getPrediction = function() {
 
 
@@ -1020,7 +1020,7 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # GET SIMULATION
     ########################################################################
-    #' @description Retrieve initially set state and covariance
+    #' @description Retrieve simulations
     getSimulation = function() {
 
 
@@ -1067,22 +1067,8 @@ ctsmTMB = R6::R6Class(
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
     #' system contains time-varying inputs, the first element of these is used.
-    #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
-    #' methods). The loss function is per default quadratic in the one-step residuals as is natural
-    #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
-    #' distribution is considered too small i.e. outliers are weighted too much, then one
-    #' can choose loss functions that accounts for this. The three available types available:
-    #'
-    #' 1. Quadratic loss (\code{quadratic}).
-    #' 2. Quadratic-Linear (\code{huber})
-    #' 3. Quadratic-Constant (\code{tukey})
-    #'
-    #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
-    #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
-    #' approximation respectively) for smooth derivatives.
     #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
     #' using the method of \link[TMB]{oneStepPredict}.
-    #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
@@ -1093,8 +1079,6 @@ ctsmTMB = R6::R6Class(
                       ode.solver = "rk4",
                       ode.timestep = diff(data$t),
                       first.order.input.hold = FALSE,
-                      loss = "quadratic",
-                      loss_c = NULL,
                       ukf.hyperpars = c(1, 0, 3),
                       initial.state = self$getInitialState(),
                       laplace.residuals = FALSE,
@@ -1105,6 +1089,7 @@ ctsmTMB = R6::R6Class(
 
       # set flags
       args <- as.list(environment())[names(formals())]
+      # method.call <- match.call()[[1]]
       set_flags("filtration", args, self, private)
 
       # build model
@@ -1160,22 +1145,8 @@ ctsmTMB = R6::R6Class(
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
     #' system contains time-varying inputs, the first element of these is used.
-    #' @param loss character vector. Sets the loss function type (only implemented for the kalman filter
-    #' methods). The loss function is per default quadratic in the one-step residuals as is natural
-    #' when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
-    #' distribution is considered too small i.e. outliers are weighted too much, then one
-    #' can choose loss functions that accounts for this. The three available types available:
-    #'
-    #' 1. Quadratic loss (\code{quadratic}).
-    #' 2. Quadratic-Linear (\code{huber})
-    #' 3. Quadratic-Constant (\code{tukey})
-    #'
-    #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
-    #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
-    #' approximation respectively) for smooth derivatives.
     #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
     #' using the method of \link[TMB]{oneStepPredict}.
-    #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param ... additional arguments
@@ -1185,8 +1156,6 @@ ctsmTMB = R6::R6Class(
                       ode.solver = "euler",
                       ode.timestep = diff(data$t),
                       first.order.input.hold = FALSE,
-                      loss = "quadratic",
-                      loss_c = NULL,
                       initial.state = self$getInitialState(),
                       laplace.residuals = FALSE,
                       estimate.initial.state = FALSE,
@@ -1252,7 +1221,8 @@ ctsmTMB = R6::R6Class(
     #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
     #' approximation respectively) for smooth derivatives.
-    #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
+    #' @param loss_c cutoff value for huber and tukey loss functions. When unspecified i.e. \code{NULL} the value is chosen
+    #' as the 0.95 percentile of the chi-squared distribution with degrees of freedom equal to the number of observations in the model
     #' @param unconstrained.optim boolean value. When TRUE then the optimization is carried out unconstrained i.e.
     #' without any of the parameter bounds specified during \code{setParameter}.
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
@@ -1319,6 +1289,7 @@ ctsmTMB = R6::R6Class(
 
       # create return fit
       create_estimation_return_fit(self, private, report, laplace.residuals)
+      # create_estimation_return_fit2(self, private, report, laplace.residuals)
 
       # return
       if(!private$algo.settings$silent) message("Finished!")
@@ -1380,7 +1351,8 @@ ctsmTMB = R6::R6Class(
     #' The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
     #' parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
     #' approximation respectively) for smooth derivatives.
-    #' @param loss_c cutoff value for huber and tukey loss functions. Defaults to \code{c=3}
+    #' @param loss_c cutoff value for huber and tukey loss functions. When unspecified i.e. \code{NULL} the value is chosen
+    #' as the 0.95 percentile of the chi-squared distribution with degrees of freedom equal to the number of observations in the model
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean value. When TRUE the initial state and covariance matrices are
     #' estimated as the stationary solution of the linearized mean and covariance differential equations. When the
@@ -1419,9 +1391,6 @@ ctsmTMB = R6::R6Class(
 
       # check and set data
       check_and_set_all_data(data, self, private)
-
-      # set loss function (depends on data)
-      # private$set_loss(loss, loss_c)
 
       # construct nll AD function
       compile_cppfile(self, private)
@@ -2170,6 +2139,10 @@ ctsmTMB = R6::R6Class(
         }
       }
 
+      # The threshold value is determined by a X^2 distribution
+      conf.level <- 0.95
+      if (is.null(loss_c)) loss_c <- stats::qchisq(p=conf.level, df=private$dims$observations)
+
       # set flag
       private$algo.settings$loss = list(loss=loss, c=loss_c)
 
@@ -2269,14 +2242,12 @@ ctsmTMB = R6::R6Class(
     # PRIVATE SNAPSHOT FOR FIT OBJECT
     ########################################################################
     make_private_snapshot = function() {
-      list(
-        algo.settings = list(method = private$algo.settings$method),
-        dims          = private$dims,
-        names         = private$names,
-        data          = private$data,
-        nll           = private$nll,
-        modelname     = private$modelname
-      )
+
+      extract.fields <- c("dims", "names","data","nll","modelname")
+      snaplist <- mget(extract.fields, private)
+      snaplist["method"] <- private$algo.settings$method
+
+      return(snaplist)
     }
 
   )

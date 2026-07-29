@@ -4,7 +4,7 @@
 #######################################################
 #######################################################
 
-makeADFun_ekf_tmb = function(self, private){
+MakeADFun_EKF_TMB = function(self, private){
   
   # Tape Configration ----------------------
   configure_ad_tape("TMB", self, private)
@@ -91,7 +91,7 @@ makeADFun_ekf_tmb = function(self, private){
 #######################################################
 #######################################################
 
-makeADFun_lkf_tmb = function(self, private){
+MakeADFun_LKF_TMB = function(self, private){
   
   # Tape Configration ----------------------
   configure_ad_tape("TMB", self, private)
@@ -173,7 +173,7 @@ makeADFun_lkf_tmb = function(self, private){
 #######################################################
 #######################################################
 
-makeADFun_ukf_tmb = function(self, private){
+MakeADFun_UKF_TMB = function(self, private){
   
   # Tape Configration ----------------------
   configure_ad_tape("TMB", self, private)

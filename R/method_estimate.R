@@ -1,42 +1,42 @@
-#######################################################
-# MAIN CONSTRUCT MAKEADFUN FUNCTION THAT CALL OTHERS
-#######################################################
-
 create_ad_likelihood_fun = function(self, private){
 
   # TMB::openmp(n=1, autopar=TRUE, DLL=private$modelname.with.method)
 
-  # Check for AD rebuild
-  check_for_ad_rebuild(self, private)
-  if(!private$rebuild$ad) return(invisible(self))
-  save_settings_for_ad_construct_check(self, private)
-  private$rebuild$ad <- FALSE
+  # Check for rebuild - exit or continue
+  check_or_save_for_ad_rebuild("check", self, private)
+  if (!private$rebuild$ad)
+    return(invisible(self))
 
-  if(!private$algo.settings$silent) message("Constructing objective function and derivative tables...")
+  # Rebuild needed - save settings for next time and compile nll fun
+  check_or_save_for_ad_rebuild("save", self, private)
 
+  if (!private$algo.settings$silent)
+    message("Compiling objective function...")
+
+  if (private$algo.settings$method == "ukf" && !private$algo.settings$silent)
+    message("This UKF implementation may be unstable - alternativly try 'method = ukf.cpp'.")
+
+  # We call the precompiled list of
   comptime <- system.time({
-
-    switch(private$algo.settings$method,
-           ekf = makeADFun_ekf_rtmb(self, private),
-           ekf.cpp = makeADFun_ekf_tmb(self, private),
-           lkf = makeADFun_lkf_rtmb(self, private),
-           lkf.cpp = makeADFun_lkf_tmb(self, private),
-           ukf = {
-             if(!private$algo.settings$silent) message("The RTMB UKF implementation may be unstable. You can try the TMB version instead 'method=ukf.cpp'.")
-             makeADFun_ukf_rtmb(self, private)
-           },
-           ukf.cpp = makeADFun_ukf_tmb(self, private),
-           #
-           laplace = makeADFun_laplace_rtmb(self, private),
-           laplace.thygesen = makeADFun_laplace_thygesen_rtmb(self, private)
-    )
-
+    .List_of_MakeADFuns[[private$algo.settings$method]](self, private)
   }, gcFirst = FALSE)
 
   private$timers$construct_adfun <- comptime
 
   return(invisible(self))
 }
+
+# List of callable MakeADFun functions for the different methods
+.List_of_MakeADFuns <- list(
+  ekf = MakeADFun_EKF,
+  ekf.cpp = MakeADFun_EKF_TMB,
+  lkf = MakeADFun_LKF,
+  lkf.cpp = MakeADFun_LKF_TMB,
+  ukf = MakeADFun_UKF,
+  ukf.cpp = MakeADFun_UKF_TMB,
+  laplace = MakeADFun_Laplace,
+  laplace.thygesen = MakeADFun_Laplace_thygesen
+)
 
 #######################################################
 # OPTIMISE AD FUN
@@ -161,86 +161,7 @@ perform_estimation = function(self, private) {
   return(invisible(self))
 }
 
-#######################################################
-# MAIN RETURN FIT FUNCTION THAT CALL OTHERS
-#######################################################
-
-create_estimation_return_fit2 <- function(self, private, report, laplace.residuals){
-
-  if(!private$algo.settings$silent) message("Returning results...")
-
-  # Initialization and Clearing -----------------------------------
-  if (is.null(private$results$opt)) {
-    return(NULL)
-  }
-
-  # clear fit
-  private$results$fit = NULL
-
-  # get convergence
-  private$results$fit$convergence = private$results$opt$convergence
-
-  # Fit Info -----------------------------------
-  compute_mle_gradient_and_hessian(self, private)
-
-  # Parameters and Uncertainties -----------------------------------
-  compute_mle_parameters_and_std_errors(self, private)
-
-  if(report){
-
-    if(private$algo.settings$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
-
-      # Call filter with silenced settings
-      silent.setting <- private$algo.settings$silent
-      on.exit(private$algo.settings$silent <- silent.setting, add=TRUE)
-
-      # perform filtering
-      self$filter(data=private$data,
-                  # NULL means pars are gonna be the recently estimated parameters
-                  pars = NULL,
-                  method=private$algo.settings$method,
-                  ode.solver=private$algo.settings$ode.solver,
-                  ode.timestep=private$algo.settings$ode.timestep,
-                  loss=private$algo.settings$loss$loss,
-                  loss_c=private$algo.settings$loss$loss_c,
-                  ukf.hyperpars=private$algo.settings$ukf.hyperpars,
-                  initial.state=private$algo.settings$initial.state,
-                  laplace.residuals=laplace.residuals,
-                  estimate.initial.state=private$algo.settings$estimate.initial,
-                  # TODO
-                  # add first.order.input.hold
-                  use.cpp = TRUE,
-                  silent = TRUE)
-
-      # add filtered results to fit
-      private$results$fit = c(private$results$fit, private$results$filtration)
-
-    }
-
-    if(private$algo.settings$method %in% c("laplace","laplace.thygesen")) {
-
-      laplace_report(self, private, laplace.residuals)
-
-    }
-
-  }
-
-
-  # snapshot only the fields consumed by S3 methods
-  private$results$fit$private <- private$make_private_snapshot()
-
-  # set s3 class -----------------------------------
-  class(private$results$fit) = "ctsmTMB.fit"
-
-  # return -----------------------------------
-  return(invisible(self))
-}
-
-#######################################################
-# SUGGESTED REPLACEMENT: bypasses the public filter API
-#######################################################
-
-create_estimation_return_fit = function(self, private, report, laplace.residuals){
+create_estimation_return_fit <- function(self, private, report, laplace.residuals){
 
   if(!private$algo.settings$silent) message("Returning results...")
 
@@ -266,12 +187,34 @@ create_estimation_return_fit = function(self, private, report, laplace.residuals
 
     if(private$algo.settings$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
 
-      # Set argument.parameters to MLE values — no public API re-entry needed.
-      # set_parameters(NULL,...) picks up MLE values because fit$par.fixed is now populated.
+      # NULL finds the MLE parameters from estimate
       set_parameters(NULL, self, private)
 
-      # Run the filter worker directly, bypassing set_flags/build_model/set_data.
+      # Old version
+      # ----------------------------------------------------------------------
+      # silent.setting <- private$algo.settings$silent
+      # on.exit(private$algo.settings$silent <- silent.setting, add=TRUE)
+      # self$filter(data=private$data,
+      #             pars = NULL,
+      #             method=private$algo.settings$method,
+      #             ode.solver=private$algo.settings$ode.solver,
+      #             ode.timestep=private$algo.settings$ode.timestep,
+      #             loss=private$algo.settings$loss$loss,
+      #             loss_c=private$algo.settings$loss$loss_c,
+      #             ukf.hyperpars=private$algo.settings$ukf.hyperpars,
+      #             initial.state=private$algo.settings$initial.state,
+      #             laplace.residuals=laplace.residuals,
+      #             estimate.initial.state=private$algo.settings$estimate.initial,
+      #             first.order.input.hold=private$algo.settings$first.order.input.hold,
+      #             use.cpp = TRUE,
+      #             silent = TRUE)
+      # ----------------------------------------------------------------------
+
+      # New version
+      # We run the filter function directly bypassing build, set flags etc
+      # ----------------------------------------------------------------------
       perform_filtering(self, private, use.cpp = TRUE)
+      # ----------------------------------------------------------------------
 
       # Package the raw filter output into private$results$filtration.
       create_filter_results(self, private, laplace.residuals, silent = TRUE)

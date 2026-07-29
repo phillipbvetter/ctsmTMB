@@ -1,50 +1,50 @@
 
-create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.frame()){
-  
+create_state_space_functions_for_estimation <- function(force.ad, .envir=parent.frame()){
+
   list2env(as.list(.envir), envir = environment())
-  
+
   # This "hack" where zero-matrices/vectors are created globally rather than inside the state space functions
-  # reduces MakeADFun compilation time by roughly 20%. We must use force=TRUE to force the variables into ad 
+  # reduces MakeADFun compilation time by roughly 20%. We must use force=TRUE to force the variables into ad
   # context. This works for the estimation, but breaks the report functionality.
-  if(forceAD) {
-    
+  if(force.ad) {
+
     if(private$algo.settings$method == "ekf"){
-      
+
       stateVec <- RTMB::AD(stateVec, force=TRUE)
       covMat <- RTMB::AD(covMat, force=TRUE)
       assign("stateVec", stateVec, envir = .envir)
       assign("covMat", covMat, envir = .envir)
-      
+
       inputMat <- RTMB::AD(inputMat,force=TRUE)
       assign("inputMat", inputMat, envir = .envir)
-      
+
     }
-    
+
     if(private$algo.settings$method == "lkf") {
-      
+
       stateVec <- RTMB::AD(stateVec, force=TRUE)
       covMat <- RTMB::AD(covMat, force=TRUE)
       assign("stateVec", stateVec, envir = .envir)
       assign("covMat", covMat, envir = .envir)
-      
+
     }
-    
+
     if(private$algo.settings$method == "ukf"){
       stateVec <- RTMB::AD(stateVec, force=TRUE)
       covMat <- RTMB::AD(covMat, force=TRUE)
       assign("stateVec", stateVec, envir = .envir)
       assign("covMat", covMat, envir = .envir)
-      
+
       inputMat <- RTMB::AD(inputMat,force=TRUE)
       assign("inputMat", inputMat, envir = .envir)
-      
+
       Fsigma <- array(list(),c(1,n.sigmapoints))
       Hsigma <- array(list(),c(1,n.sigmapoints))
       assign("Fsigma", Fsigma, envir = .envir)
       assign("Hsigma", Hsigma, envir = .envir)
-      
+
     }
-    
+
     # State space functions
     f_vec <- RTMB::AD(numeric(n.states), force=TRUE)
     dfdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.states, ncol=n.states), force=TRUE)
@@ -54,7 +54,7 @@ create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.f
     hvar_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.obs), force=TRUE)
     dfdu_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.states, ncol=n.inputs+1), force=TRUE)
     hvar_vec <- RTMB::AD(numeric(n.obs), force=TRUE)
-    
+
     assign("f_vec", f_vec, envir = .envir)
     assign("dfdx_mat", dfdx_mat, envir = .envir)
     assign("g_mat", g_mat, envir = .envir)
@@ -63,7 +63,7 @@ create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.f
     assign("hvar_mat", hvar_mat, envir = .envir)
     assign("hvar_vec", hvar_vec, envir = .envir)
     assign("dfdu_mat", dfdu_mat, envir = .envir)
-    
+
     create_function_from_string_body("f__", "f_vec", private$model$rtmb.function.strings.indexed2$f, .envir=.envir)
     create_function_from_string_body("dfdx__", "dfdx_mat", private$model$rtmb.function.strings.indexed2$dfdx, .envir=.envir)
     create_function_from_string_body("g__",  "g_mat", private$model$rtmb.function.strings.indexed2$g, .envir=.envir)
@@ -72,9 +72,9 @@ create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.f
     create_function_from_string_body("hvar__matrix", "hvar_mat", private$model$rtmb.function.strings.indexed2$hvar__matrix, .envir=.envir)
     create_function_from_string_body("dfdu__", "dfdu_mat", private$model$rtmb.function.strings.indexed2$dfdu, .envir=.envir)
     create_function_from_string_body("hvar__", "hvar_vec", private$model$rtmb.function.strings.indexed2$hvar, .envir=.envir)
-    
+
   } else {
-    
+
     # UKF related
     if(private$algo.settings$method=="ukf"){
       Fsigma <- array(list(), c(1,n.sigmapoints))
@@ -82,7 +82,7 @@ create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.f
       assign("Fsigma", Fsigma, envir = .envir)
       assign("Hsigma", Hsigma, envir = .envir)
     }
-    
+
     create_function_from_string_body("f__", "ans", private$model$r.function.strings$f, .envir=.envir)
     create_function_from_string_body("dfdx__", "ans", private$model$r.function.strings$dfdx, .envir=.envir)
     create_function_from_string_body("g__",  "ans", private$model$r.function.strings$g, .envir=.envir)
@@ -91,17 +91,17 @@ create_state_space_functions_for_estimation <- function(forceAD, .envir=parent.f
     create_function_from_string_body("hvar__matrix", "ans", private$model$r.function.strings$hvar__matrix, .envir=.envir)
     create_function_from_string_body("dfdu__", "ans", private$model$r.function.strings$dfdu, .envir=.envir)
     create_function_from_string_body("hvar__", "ans", private$model$r.function.strings$hvar, .envir=.envir)
-    
+
   }
-  
+
   return(invisible(NULL))
 }
 
 
 create_state_space_functions_for_filtering <- function(.envir=parent.frame()){
-  
+
   list2env(as.list(.envir), envir = environment())
-  
+
   # UKF related
   if(private$algo.settings$method=="ukf"){
     Fsigma <- array(list(), c(1,n.sigmapoints))
@@ -109,7 +109,7 @@ create_state_space_functions_for_filtering <- function(.envir=parent.frame()){
     assign("Fsigma", Fsigma, envir = .envir)
     assign("Hsigma", Hsigma, envir = .envir)
   }
-  
+
   create_function_from_string_body("f__", "ans", private$model$r.function.strings$f, .envir=.envir)
   create_function_from_string_body("dfdx__", "ans", private$model$r.function.strings$dfdx, .envir=.envir)
   create_function_from_string_body("g__",  "ans", private$model$r.function.strings$g, .envir=.envir)
@@ -118,7 +118,7 @@ create_state_space_functions_for_filtering <- function(.envir=parent.frame()){
   create_function_from_string_body("hvar__matrix", "ans", private$model$r.function.strings$hvar__matrix, .envir=.envir)
   create_function_from_string_body("dfdu__", "ans", private$model$r.function.strings$dfdu, .envir=.envir)
   create_function_from_string_body("hvar__", "ans", private$model$r.function.strings$hvar, .envir=.envir)
-  
+
   return(invisible(NULL))
 }
 
@@ -131,7 +131,7 @@ create_function_from_string_body <- function(fun.name, return.name, body.string,
 
 create_state_space_function_strings = function(self, private)
 {
-  
+
   obsList = lapply(seq_along(private$names$obs), function(id) substitute(obsVec[[i]],list(i=as.numeric(id))))
   parList = lapply(seq_along(private$names$parameters), function(id) substitute(parVec[[i]],list(i=as.numeric(id))))
   stateList = lapply(seq_along(private$names$states), function(id) substitute(stateVec[[i]],list(i=as.numeric(id))))
@@ -141,7 +141,7 @@ create_state_space_function_strings = function(self, private)
   names(stateList) = private$names$states
   names(inputList) = private$names$inputs
   subsList = c(obsList, parList, stateList, inputList)
-  
+
   ##################################################
   # drift
   ##################################################
@@ -162,7 +162,7 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$f = paste(f.elements,collapse="; ")
   private$model$r.function.strings$f <- paste("ans <- c(",paste(f.elements2,collapse=", "),")")
-  
+
   ##################################################
   # drift jacobian
   ##################################################
@@ -186,7 +186,7 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$dfdx = paste(f.elements, collapse=";")
   private$model$r.function.strings$dfdx <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
-  
+
   ##################################################
   # diffusion
   ##################################################
@@ -210,7 +210,7 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$g = paste(f.elements,collapse=";")
   private$model$r.function.strings$g <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
-  
+
   ##################################################
   # observation
   ##################################################
@@ -233,11 +233,11 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$h = paste(f.elements, collapse=";")
   private$model$r.function.strings$h <- paste("ans <- c(",paste(f.elements2,collapse=", "),")")
-  
+
   ##################################################
   # observation jacobian
   ##################################################
-  
+
   # calculate all the terms and substitute variables
   f.elements = c()
   f.elements2 <- matrix(0, private$dims$observations, private$dims$states)
@@ -259,11 +259,11 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$dhdx = paste(f.elements,collapse=";")
   private$model$r.function.strings$dhdx <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), ncol=n.states)")
-  
+
   ##################################################
   # observation variance
   ##################################################
-  
+
   f.elements <- c()
   f2.elements <- numeric(private$dims$observations)
   for(i in seq_along(private$names$obs)){
@@ -283,7 +283,7 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$hvar = paste(f.elements,collapse=";")
   private$model$r.function.strings$hvar <- paste("ans <- c(",paste(c(f.elements2),collapse=", "),")")
-  
+
   ### MATRIX FORM ### (for kalman)
   f.elements <- c()
   f.elements2 <- numeric(private$dims$observations)
@@ -303,11 +303,11 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$hvar__matrix = paste(f.elements,collapse=";")
   private$model$r.function.strings$hvar__matrix <- paste("ans <- RTMB::diag(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.obs)")
-  
+
   ##################################################
   # derivative w.r.t inputs (for linear kalman filter)
   ##################################################
-  
+
   # This derivative is concerned with the linear system
   # dX = (A*X + B*U) dt + G dW
   # We need to find B. The vector U = [1, u1(t), u2(t),...]
@@ -316,7 +316,7 @@ create_state_space_function_strings = function(self, private)
   # then B = [theta*mu, 0, theta]
   # and U = Transpose([1, t, u(t)])
   # Therefore: For each system equation - find all constants, and derivatives w.r.t inputs
-  
+
   # 1. We first find constant terms
   # this corresponds to an input that is always 1 (first element of U)
   zero.list <- as.list(numeric(private$dims$inputs + private$dims$states))
@@ -330,7 +330,7 @@ create_state_space_function_strings = function(self, private)
   if(inherits(constant.terms, "try-error")){
     constant.terms <- rep(0, private$dims$states)
   }
-  
+
   f.elements <- c()
   # f.elements2 <- matrix(0, private$dims$states, private$dims$inputs+1)
   f.elements2 <- matrix("RTMB::AD(0)", private$dims$states, private$dims$inputs+1)
@@ -338,18 +338,18 @@ create_state_space_function_strings = function(self, private)
   for(i in seq_along(private$names$states)){
     #its inputs + 1 below because the first element is for constants
     for(j in 1:(private$dims$inputs+1)){
-      
+
       if(j==1){
         term <- constant.terms[i]
       } else {
         tempterm <- ctsmTMB_Deriv(f=private$model$sys.eqs.trans[[i]]$diff.dt, x=private$names$inputs[j-1])
         term <- deparse1(do.call(substitute, list(tempterm, subsList)))
       }
-      
+
       # skip if zero
       if(term=="0") next
       f.elements2[i,j] <- term
-      
+
       # check for direct numerical assignments e.g. stateVec[[1]] <- 5 which throws lost AD error
       # so wrap in RTMB::AD
       out <- suppressWarnings(as.numeric(term))
@@ -362,7 +362,7 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$dfdu = paste(f.elements,collapse=";")
   private$model$r.function.strings$dfdu <- paste("ans <- RTMB::matrix(c(",paste(c(f.elements2),collapse=", "),"), nrow=n.states)")
-  
+
   return(invisible(NULL))
 }
 
@@ -375,7 +375,7 @@ create_state_space_function_strings = function(self, private)
 ##########################################################
 
 create_rcpp_state_space_function_strings = function(self, private){
-  
+
   # Create substitution translation list
   obsList = lapply(seq_along(private$names$obs), function(id) substitute(obsVec(i),list(i=as.numeric(id-1))))
   parList = lapply(seq_along(private$names$parameters), function(id) substitute(parVec(i),list(i=as.numeric(id-1))))
@@ -387,12 +387,12 @@ create_rcpp_state_space_function_strings = function(self, private){
   names(inputList) = private$names$inputs
   subsList = c(obsList, parList, stateList, inputList)
   # subsList <- get_substitution_list(self, private)
-  
-  
+
+
   #################################################
   # drift
   ##################################################
-  
+
   # Perform substitution of parameters, inputs and states
   f = sapply( seq_along(private$names$states),
               function(i){
@@ -400,22 +400,22 @@ create_rcpp_state_space_function_strings = function(self, private){
                 new.drift.term = do.call(substitute, list(drift.term, subsList))
                 sprintf("f(%i) = %s;",i-1,deparse1(new.drift.term))
               })
-  
+
   code = sprintf("Eigen::VectorXd f(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
                  Eigen::VectorXd f(%s);
                  %s
                  return f;
                  }",private$dims$states, paste(f,collapse=""))
-  
+
   private$model$rcpp.function.strings$f = code
-  
+
   code = sprintf("Eigen::VectorXd f_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::VectorXd f(%s);
                  %s
                  return f;
                  }",private$dims$states, paste(f,collapse="\n "))
   private$model$rcpp.function.strings$f_const = code
-  
+
   f = sapply( seq_along(private$names$states),
               function(i){
                 drift.term = hat2pow(private$model$diff.terms[[i]]$dt)
@@ -426,11 +426,11 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  }", paste(f, collapse="\n "))
   private$model$rcpp.function.strings$f_prealoc = code
-  
+
   ##################################################
   # drift jacobian
   ##################################################
-  
+
   # calculate all the terms and substitute variables
   dfdx = c()
   for(i in seq_along(private$names$states)){
@@ -445,16 +445,16 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return dfdx;
                  }",private$dims$states, private$dims$states, paste(dfdx,collapse=""))
-  
+
   private$model$rcpp.function.strings$dfdx = code
-  
+
   code = sprintf("Eigen::MatrixXd dfdx_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd dfdx(%s,%s);
                  %s
                  return dfdx;
                  }",private$dims$states, private$dims$states, paste(dfdx,collapse=""))
   private$model$rcpp.function.strings$dfdx_const = code
-  
+
   dfdx = c()
   for(i in seq_along(private$names$states)){
     for(j in seq_along(private$names$states)){
@@ -467,11 +467,11 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  }", paste(dfdx,collapse=""))
   private$model$rcpp.function.strings$dfdx_prealoc = code
-  
+
   ##################################################
   # diffusion
   ##################################################
-  
+
   # calculate all the terms and substitute variables
   g = c()
   for(i in seq_along(private$names$states)){
@@ -486,16 +486,16 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  return g;
                  }",private$dims$states, private$dims$diffusions, paste(g,collapse=""))
-  
+
   private$model$rcpp.function.strings$g = code
-  
+
   code = sprintf("Eigen::MatrixXd g_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd g(%s,%s);
                  %s
                  return g;
                  }",private$dims$states, private$dims$diffusions, paste(g,collapse=""))
   private$model$rcpp.function.strings$g_const = code
-  
+
   g = c()
   for(i in seq_along(private$names$states)){
     for(j in seq_along(private$model$diff.processes[-1])){
@@ -507,49 +507,49 @@ create_rcpp_state_space_function_strings = function(self, private){
   code = sprintf("void g_prealoc(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec, Eigen::MatrixXd& out) {
                  %s
                  }", paste(g,collapse="\n "))
-  
+
   private$model$rcpp.function.strings$g_prealoc = code
-  
+
   ##################################################
   # observation
   ##################################################
-  
+
   # calculate all the terms and substitute variables
-  h = sapply(seq_along(private$names$obs), 
+  h = sapply(seq_along(private$names$obs),
              function(i){
                term = hat2pow(private$model$obs.eqs.trans[[i]]$rhs)
                new.term = do.call(substitute, list(term, subsList))
                sprintf("h(%s) = %s;",i-1, deparse1(new.term))
-             }) 
+             })
   code = sprintf("Eigen::VectorXd h(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
                  Eigen::VectorXd h(%s);
                  %s
                  return h;
                  }",private$dims$observations, paste(h,collapse=""))
   private$model$rcpp.function.strings$h = code
-  
+
   code = sprintf("Eigen::VectorXd h_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::VectorXd h(%s);
                  %s
                  return h;
                  }",private$dims$observations, paste(h,collapse=""))
   private$model$rcpp.function.strings$h_const = code
-  
-  h = sapply(seq_along(private$names$obs), 
+
+  h = sapply(seq_along(private$names$obs),
              function(i){
                term = hat2pow(private$model$obs.eqs.trans[[i]]$rhs)
                new.term = do.call(substitute, list(term, subsList))
                sprintf("out(%s) = %s;",i-1, deparse1(new.term))
-             }) 
+             })
   code = sprintf("void h_prealoc(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec, Eigen::VectorXd& out) {
                  %s
                  }", paste(h,collapse="\n "))
   private$model$rcpp.function.strings$h_prealoc = code
-  
+
   ##################################################
   # observation jacobian
   ##################################################
-  
+
   # calculate all the terms and substitute variables
   dhdx = c()
   for(i in seq_along(private$names$obs)){
@@ -565,14 +565,14 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return dhdx;
                  }", private$dims$observations, private$dims$states, paste(dhdx,collapse=""))
   private$model$rcpp.function.strings$dhdx = code
-  
+
   code = sprintf("Eigen::MatrixXd dhdx_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd dhdx(%s,%s);
                  %s
                  return dhdx;
                  }", private$dims$observations, private$dims$states, paste(dhdx,collapse=""))
   private$model$rcpp.function.strings$dhdx_const = code
-  
+
   dhdx = c()
   for(i in seq_along(private$names$obs)){
     for(j in seq_along(private$names$states)){
@@ -589,8 +589,8 @@ create_rcpp_state_space_function_strings = function(self, private){
   ##################################################
   # observation variance
   ##################################################
-  
-  hvar = lapply(seq_along(private$model$obs.var.trans), 
+
+  hvar = lapply(seq_along(private$model$obs.var.trans),
                 function(i) {
                   term = hat2pow(private$model$obs.var.trans[[i]]$rhs)
                   new.term = do.call(substitute, list(term, subsList))
@@ -603,7 +603,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return hvar;
                  }", private$dims$observations, private$dims$observations, paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar = code
-  
+
   code = sprintf("Eigen::MatrixXd hvar_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd hvar(%s,%s);
                  hvar.setZero();
@@ -611,8 +611,8 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return hvar;
                  }", private$dims$observations, private$dims$observations, paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar_const = code
-  
-  hvar = lapply(seq_along(private$model$obs.var.trans), 
+
+  hvar = lapply(seq_along(private$model$obs.var.trans),
                 function(i) {
                   term = hat2pow(private$model$obs.var.trans[[i]]$rhs)
                   new.term = do.call(substitute, list(term, subsList))
@@ -623,12 +623,12 @@ create_rcpp_state_space_function_strings = function(self, private){
                  %s
                  }", paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar_prealoc = code
-  
+
   ##################################################
   # observation variance vector form
   ##################################################
-  
-  hvar = lapply(seq_along(private$model$obs.var.trans), 
+
+  hvar = lapply(seq_along(private$model$obs.var.trans),
                 function(i) {
                   term = hat2pow(private$model$obs.var.trans[[i]]$rhs)
                   new.term = do.call(substitute, list(term, subsList))
@@ -641,7 +641,7 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return hvar;
                  }", private$dims$observations, paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar_array = code
-  
+
   code = sprintf("Eigen::ArrayXd hvar_array_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::ArrayXd hvar(%s);
                  hvar.setZero();
@@ -649,11 +649,11 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return hvar;
                  }", private$dims$observations, paste(hvar,collapse=""))
   private$model$rcpp.function.strings$hvar_array_const = code
-  
+
   ##################################################
   # derivative w.r.t inputs (for linear kalman filter)
   ##################################################
-  
+
   # We first find constant terms
   # this corresponds to an input that is always 1 (first element of U)
   zero.list <- as.list(numeric(private$dims$inputs + private$dims$states))
@@ -662,7 +662,7 @@ create_rcpp_state_space_function_strings = function(self, private){
   if(inherits(constant.terms, "try-error")){
     constant.terms <- rep(0, private$dims$states)
   }
-  
+
   jac.f.wrt.u = c()
   # 2. Now we find input-terms by differentiation
   for(i in seq_along(private$names$states)){
@@ -680,16 +680,16 @@ create_rcpp_state_space_function_strings = function(self, private){
       jac.f.wrt.u = c(jac.f.wrt.u, sprintf("ans(%s, %s) = %s;", i-1, j-1, deparse1(new.term)))
     }
   }
-  
+
   code = sprintf("Eigen::MatrixXd dfdu(Eigen::VectorXd stateVec, Eigen::VectorXd parVec, Eigen::VectorXd inputVec) {
                  Eigen::MatrixXd ans(%s,%s);
                  ans.setZero();
                  %s
                  return ans;
                  }", private$dims$states, private$dims$inputs+1, paste(jac.f.wrt.u, collapse=""))
-  
+
   private$model$rcpp.function.strings$dfdu = code
-  
+
   code = sprintf("Eigen::MatrixXd dfdu_const(const Eigen::VectorXd& stateVec, const Eigen::VectorXd& parVec, const Eigen::VectorXd& inputVec){
                  Eigen::MatrixXd ans(%s,%s);
                  ans.setZero();
@@ -697,6 +697,6 @@ create_rcpp_state_space_function_strings = function(self, private){
                  return ans;
                  }", private$dims$states, private$dims$inputs+1, paste(jac.f.wrt.u, collapse=""))
   private$model$rcpp.function.strings$dfdu_const = code
-  
-  
+
+
 }

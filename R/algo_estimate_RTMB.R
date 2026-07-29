@@ -3,7 +3,7 @@
 #######################################################
 
 
-makeADFun_ekf_rtmb = function(self, private)
+MakeADFun_EKF = function(self, private)
 {
 
   # Tape Configration ----------------------
@@ -23,7 +23,7 @@ makeADFun_ekf_rtmb = function(self, private)
   # create and load state space functions
   force.ad <- private$algo.settings$advanced.settings$forceAD
   nllreport <- private$algo.settings$advanced.settings$nllreport
-  create_state_space_functions_for_estimation(force.ad)
+  create_state_space_functions_for_estimation(force.ad=force.ad)
 
   # various utility functions for likelihood calculations ---------------------
   # Note - order can be important here
@@ -67,15 +67,18 @@ makeADFun_ekf_rtmb = function(self, private)
 
     ####### Stationary Solution #######
     inputVec = inputMat[1,]
-    if(private$algo.settings$estimate.initial){
+    if (private$algo.settings$estimate.initial) {
       stateVec <- f.initial.state.newton(c(parVec, inputVec))
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
+    }
+    if (nllreport) {
+      RTMB::REPORT(stateVec)
     }
 
     ######## Data Update ########
     obsVec = obsMat[1,]
     obsVec_bool = !is.na(obsVec)
-    if(any(obsVec_bool)){
+    if (any(obsVec_bool)) {
       data.update <- data.update.fun(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0)
       stateVec <- data.update[[1]]
       covMat <- data.update[[2]]
@@ -89,14 +92,14 @@ makeADFun_ekf_rtmb = function(self, private)
       # load input vector
       inputVec = inputMat[i,]
       # zero-order or first-order hold
-      if(private$algo.settings$first.order.input.hold){
+      if (private$algo.settings$first.order.input.hold) {
         dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
       } else {
         dinputVec = 0
       }
 
       ###### time update - ode solve moments #######
-      for(j in 1:ode_timesteps[i]){
+      for (j in 1:ode_timesteps[i]) {
         sol = ode.integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size[i])
         stateVec = sol[[1]]
         covMat = sol[[2]]
@@ -107,7 +110,7 @@ makeADFun_ekf_rtmb = function(self, private)
       inputVec = inputMat[i+1,]
       obsVec = obsMat[i+1,]
       obsVec_bool = !is.na(obsVec)
-      if(any(obsVec_bool)){
+      if (any(obsVec_bool)) {
         data.update <- data.update.fun(stateVec, covMat, parVec, inputVec, obsVec, obsVec_bool, E0, I0)
         stateVec <- data.update[[1]]
         covMat <- data.update[[2]]
@@ -161,7 +164,7 @@ makeADFun_ekf_rtmb = function(self, private)
 # LINEAR KALMAN FILTER # LINEAR KALMAN FILTER
 #######################################################
 
-makeADFun_lkf_rtmb = function(self, private)
+MakeADFun_LKF = function(self, private)
 {
 
   # Tape Configration ----------------------
@@ -544,7 +547,7 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
 #######################################################
 #######################################################
 
-makeADFun_ukf_rtmb = function(self, private)
+MakeADFun_UKF = function(self, private)
 {
 
   # Tape Configration ----------------------
@@ -702,7 +705,7 @@ makeADFun_ukf_rtmb = function(self, private)
 # CONSTRUCT LAPLACE MAKEADFUN WITH RTMB
 #######################################################
 
-makeADFun_laplace_rtmb = function(self, private)
+MakeADFun_Laplace = function(self, private)
 {
 
   ####### Sometimes necessary to avoid rtmb errors #######
@@ -863,7 +866,7 @@ makeADFun_laplace_rtmb = function(self, private)
 # CONSTRUCT LAPLACE (UFFE TINY FORMULATION) MAKEADFUN WITH RTMB
 #######################################################
 
-makeADFun_laplace_thygesen_rtmb = function(self, private)
+MakeADFun_Laplace_thygesen = function(self, private)
 {
 
   ####### Sometimes necessary to avoid rtmb errors #######

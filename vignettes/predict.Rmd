@@ -171,7 +171,8 @@ First we create the model as follows:
 
 ```{r}
 ## Load libraries
-library(ctsmTMB)
+# library(ctsmTMB)
+devtools::load_all("~/github/ctsmTMB")
 library(ggplot2) ## plots
 
 ## Create model
@@ -277,6 +278,8 @@ df.temp$y[1] <- NA
 pred <- model$predict(data=df.temp,
                       pars=true.pars,
                       k.ahead=nrow(df.temp)-1)
+private <- model$getPrivate()
+private$algo.settings$ode.timestep.size %>% length
 ```
 
 

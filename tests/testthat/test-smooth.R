@@ -1,4 +1,3 @@
-library(ctsmTMB)
 
 # In this script we run the estimate function on four different models with
 # number of states and observations as follows:

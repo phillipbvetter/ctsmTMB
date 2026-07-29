@@ -27,12 +27,14 @@ set_flags = function(proc, args, self, private){
   # ----------------------------------- #
   if (proc == "likelihood") {
     private$set_compile(args$compile)
+    private$set_loss(args$loss, args$loss_c)
   }
 
   # estimate
   # ----------------------------------- #
   if (proc == "estimation") {
     private$set_compile(args$compile)
+    private$set_loss(args$loss, args$loss_c)
     private$set_control(args$control)
     private$use_hessian(args$use.hessian)
     private$set_unconstrained_optim(args$unconstrained.optim)
@@ -46,7 +48,7 @@ set_flags = function(proc, args, self, private){
 
   # not smoother
   # ----------------------------------- #
-  if (proc != "smoother") {
+  if (proc != "smoothing") {
     private$set_ukf_hyperpars(args$ukf.hyperpars)
   }
 

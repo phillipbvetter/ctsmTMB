@@ -127,15 +127,9 @@ lkf_ekf_ukf_simulate_rcpp <- function(pars, self, private, n.sims){
 
 # This function returns simulation results to the user
 create_return_simulation <- function(return.k.ahead, n.sims, self, private){
-  <<<<<<< HEAD
 
-  if(!private$silent) message("Returning results...")
+  if(!private$algo.settings$silent) message("Returning results...")
 
-  =======
-
-    if(!private$algo.settings$silent) message("Returning results...")
-
-  >>>>>>> feature/private-consolidation
   # create names for inner list
   inner.names <- paste0("i", 0:(private$algo.settings$last.pred.index-1))
 

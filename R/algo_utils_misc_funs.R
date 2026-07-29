@@ -57,7 +57,8 @@ configure_ad_tape <- function(context, self, private){
 
   return(invisible(self))
 }
-get_sys_dims <- function(private, .envir=parent.frame()){
+
+get_sys_dims <- function(.envir=parent.frame()){
 
   list2env(as.list(.envir), envir = environment())
 
@@ -83,6 +84,8 @@ get_adjoints <- function(.envir=parent.frame()){
   list2env(as.list(.envir), envir = environment())
 
   # adjoints ----------------------------------------
+  # f(X(p)) = log det (X(p))
+  # df = Tr[X^{-1} dX]
   logdet <- RTMB::ADjoint(
     function(x) {
       dim(x) <- rep(sqrt(length(x)), 2)

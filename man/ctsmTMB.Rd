@@ -521,7 +521,7 @@ When not "all", a named numeric vector is returned.}
 \if{html}{\out{<a id="method-ctsmTMB-getEstimate"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getEstimate}{}}}
 \subsection{\code{ctsmTMB$getEstimate()}}{
-  Retrieve initially set state and covariance
+  Retrieve estimation fit
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{ctsmTMB$getEstimate()}
@@ -533,7 +533,7 @@ When not "all", a named numeric vector is returned.}
 \if{html}{\out{<a id="method-ctsmTMB-getLikelihood"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getLikelihood}{}}}
 \subsection{\code{ctsmTMB$getLikelihood()}}{
-  Retrieve initially set state and covariance
+  Retrieve likelihood function handlers
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{ctsmTMB$getLikelihood()}
@@ -545,7 +545,7 @@ When not "all", a named numeric vector is returned.}
 \if{html}{\out{<a id="method-ctsmTMB-getPrediction"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getPrediction}{}}}
 \subsection{\code{ctsmTMB$getPrediction()}}{
-  Retrieve initially set state and covariance
+  Retrieve predictions
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{ctsmTMB$getPrediction()}
@@ -557,7 +557,7 @@ When not "all", a named numeric vector is returned.}
 \if{html}{\out{<a id="method-ctsmTMB-getSimulation"></a>}}
 \if{latex}{\out{\hypertarget{method-ctsmTMB-getSimulation}{}}}
 \subsection{\code{ctsmTMB$getSimulation()}}{
-  Retrieve initially set state and covariance
+  Retrieve simulations
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{ctsmTMB$getSimulation()}
@@ -579,8 +579,6 @@ When not "all", a named numeric vector is returned.}
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   first.order.input.hold = FALSE,
-  loss = "quadratic",
-  loss_c = NULL,
   ukf.hyperpars = c(1, 0, 3),
   initial.state = self$getInitialState(),
   laplace.residuals = FALSE,
@@ -620,21 +618,6 @@ which serves to link together the latent (random effects) states.
 }}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
 or zero-order (FALSE) hold on the inputs when integrating between time-points.}
-      \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
-methods). The loss function is per default quadratic in the one-step residuals as is natural
-when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
-distribution is considered too small i.e. outliers are weighted too much, then one
-can choose loss functions that accounts for this. The three available types available:
-\enumerate{
-\item Quadratic loss (\code{quadratic}).
-\item Quadratic-Linear (\code{huber})
-\item Quadratic-Constant (\code{tukey})
-}
-
-The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
-parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
-approximation respectively) for smooth derivatives.}
-      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
       \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
       \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
@@ -665,8 +648,6 @@ system contains time-varying inputs, the first element of these is used.}
   ode.solver = "euler",
   ode.timestep = diff(data$t),
   first.order.input.hold = FALSE,
-  loss = "quadratic",
-  loss_c = NULL,
   initial.state = self$getInitialState(),
   laplace.residuals = FALSE,
   estimate.initial.state = FALSE,
@@ -704,21 +685,6 @@ which serves to link together the latent (random effects) states.
 }}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
 or zero-order (FALSE) hold on the inputs when integrating between time-points.}
-      \item{\code{loss}}{character vector. Sets the loss function type (only implemented for the kalman filter
-methods). The loss function is per default quadratic in the one-step residuals as is natural
-when the Gaussian (negative log) likelihood is evaluated, but if the tails of the
-distribution is considered too small i.e. outliers are weighted too much, then one
-can choose loss functions that accounts for this. The three available types available:
-\enumerate{
-\item Quadratic loss (\code{quadratic}).
-\item Quadratic-Linear (\code{huber})
-\item Quadratic-Constant (\code{tukey})
-}
-
-The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
-parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
-approximation respectively) for smooth derivatives.}
-      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
       \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
@@ -792,7 +758,8 @@ can choose loss functions that accounts for this. The three available types avai
 The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
 approximation respectively) for smooth derivatives.}
-      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. When unspecified i.e. \code{NULL} the value is chosen
+as the 0.95 percentile of the chi-squared distribution with degrees of freedom equal to the number of observations in the model}
       \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
       \item{\code{trace}}{integer passed to \code{control} which determines number of steps between each print-out
@@ -900,7 +867,8 @@ can choose loss functions that accounts for this. The three available types avai
 The cutoff for the Huber and Tukey loss functions are determined from a provided cutoff
 parameter \code{loss_c}. The implementations of these losses are approximations (pseudo-huber and sigmoid
 approximation respectively) for smooth derivatives.}
-      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. Defaults to \code{c=3}}
+      \item{\code{loss_c}}{cutoff value for huber and tukey loss functions. When unspecified i.e. \code{NULL} the value is chosen
+as the 0.95 percentile of the chi-squared distribution with degrees of freedom equal to the number of observations in the model}
       \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
       \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are

@@ -1,28 +1,20 @@
 check_and_set_all_data <- function(data, self, private){
 
   # NOTE: we must check data first, because it will lead to changes in the other fields!
-  # check/set data
-  compute_data_entry_by_name(data, "data", self, private)
-
-  # check/set ode timestep
-  compute_data_entry_by_name(NULL, "ode.dt", self, private)
-
-  # check/set simulation timestep
-  compute_data_entry_by_name(NULL, "sim.dt", self, private)
-
-  # set loss (so computationally inexpensive that we dont bother checking)
-  set_loss_value(self, private)
+  check_and_set_data_entry_by_name(data, "data", self, private)
+  check_and_set_data_entry_by_name(NULL, "ode.dt", self, private)
+  check_and_set_data_entry_by_name(NULL, "sim.dt", self, private)
 
   return(invisible(self))
 }
 
-compute_data_entry_by_name <- function(data=NULL, str, self, private){
+check_and_set_data_entry_by_name <- function(data=NULL, str, self, private){
 
   # check for changes in the relevant field
   bool <- switch(str,
-         data = any(private$rebuild$data, !identical(private$old.data$entry.data, data)),
-         ode.dt = any(private$rebuild$ode.dt, !identical(private$old.data$ode.timestep, private$algo.settings$ode.timestep)),
-         sim.dt = any(private$rebuild$sim.dt, !identical(private$old.data$simulation.timestep, private$algo.settings$simulation.timestep))
+                 data = any(private$rebuild$data, !identical(private$old.data$entry.data, data)),
+                 ode.dt = any(private$rebuild$ode.dt, !identical(private$old.data$ode.dt, private$algo.settings$ode.timestep)),
+                 sim.dt = any(private$rebuild$sim.dt, !identical(private$old.data$simulation.timestep, private$algo.settings$simulation.timestep))
   )
 
   # set the relevant field and update old field, if any changes
@@ -32,16 +24,21 @@ compute_data_entry_by_name <- function(data=NULL, str, self, private){
       compute_data(data, self, private)
       private$old.data$entry.data <- data
     }
-    if(str=="ode.dt") {
+
+    if (str=="ode.dt") {
       compute_timestep("ode", private$data, self, private)
-      private$old.data$ode.timestep <- private$algo.settings$ode.timestep
+      compute_laplace_initial_state_guess_and_iobs(private$data, self, private)
+      private$old.data$ode.dt <- private$algo.settings$ode.timestep
     }
-    if(str=="sim.dt") {
+
+    if (str=="sim.dt") {
       compute_timestep("simulation", private$data, self, private)
       private$old.data$simulation.timestep <- private$algo.settings$simulation.timestep
     }
+
     # finally switch the rebuild switches
     flick_data_rebuild_switches(str, self, private)
+
   }
 
   return(invisible(self))
@@ -49,7 +46,7 @@ compute_data_entry_by_name <- function(data=NULL, str, self, private){
 
 compute_data <- function(data, self, private) {
 
-  if(!private$algo.settings$silent) message("Setting data...")
+  if(!private$algo.settings$silent) message("Checking data...")
 
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)
@@ -62,23 +59,7 @@ compute_data <- function(data, self, private) {
   # example: if we have obs eq log(y) ~ x with name log_y, then we store log_y, but not y itself.
   private$data <- data[c(private$names$obs, private$names$inputs)]
 
-  # data entries for the laplace methods
-  set_data_for_laplace_method(private$data, self, private)
-
   # Return
-  return(invisible(self))
-}
-
-set_loss_value <- function(self, private, conf.level = 0.95) {
-
-  loss.c <- private$algo.settings$loss$c
-  if(is.null(loss.c)){
-    loss.c <- stats::qchisq(conf.level, df=private$dims$observations)
-  }
-
-  # override the user-provided value
-  private$algo.settings$loss$c <- loss.c
-
   return(invisible(self))
 }
 
@@ -178,7 +159,7 @@ calculate_complex_observation_lefthandsides = function(data, self, private){
 # The reason we want to avoid using is.na is probably that it enables us
 # to use the one-step-residual function from TMB...???
 
-set_data_for_laplace_method = function(data, self, private){
+compute_laplace_initial_state_guess_and_iobs = function(data, self, private){
 
   # create iobs vector  ------------------------------------
   iobs = list()
@@ -202,8 +183,8 @@ set_data_for_laplace_method = function(data, self, private){
 
   # next we need to repeat these each of these state values to create
   #intermediate points determined by the user-selected ode.timestep variable
-  private$algo.settings$tmb.initial.state <- vector("list",length=private$dims$states)
-  for(i in seq_along(private$names$states)){
+  private$algo.settings$tmb.initial.state <- vector("list", length=private$dims$states)
+  for (i in seq_along(private$names$states)) {
     private$algo.settings$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.timesteps,1))
   }
   names(private$algo.settings$tmb.initial.state) = private$names$states
@@ -220,7 +201,7 @@ set_data_for_laplace_method = function(data, self, private){
 
 compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
 
-  if(!private$algo.settings$silent) message(paste0("Setting ",type, " timestep..."))
+  # if(!private$algo.settings$silent) message(paste0("Setting ",type, " timestep..."))
 
   # If the required number of steps is N + epsilon or larger (e.g. 3+0.01) then increase step by 1, and reduce timestep there.
   # :::::EXAMPLE:::::

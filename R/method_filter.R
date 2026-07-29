@@ -14,13 +14,15 @@ perform_filtering = function(self, private, use.cpp){
 
   comptime <- system.time({
     if (use.cpp) {
-      if (!private$algo.settings$silent)
-        message("Filtering with C++...")
+
+      if (!private$algo.settings$silent) message("Filtering with C++...")
       lkf_ekf_ukf_filter_rcpp(private$algo.settings$argument.parameters, self, private)
+
     } else {
-      if (!private$algo.settings$silent)
-        message("Filtering with R...")
+
+      if (!private$algo.settings$silent) message("Filtering with R...")
       lkf_ekf_ukf_filter_r(private$algo.settings$argument.parameters, self, private)
+
     }
   }, gcFirst = FALSE)
 
@@ -103,6 +105,7 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                                          private$algo.settings$first.order.input.hold)
     )
   }
+
   if(private$algo.settings$method %in% c("lkf.cpp","ekf.cpp","ukf.cpp")){
     filt <- private$nll$report(pars)
   }

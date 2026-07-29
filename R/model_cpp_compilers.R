@@ -3,7 +3,7 @@
 #######################################################
 compile_rcpp_functions = function(self, private){
 
-  if(!private$algo.settings$silent) message("Compiling C++ function pointers...")
+  if(!private$algo.settings$silent) message("Compiling function pointers...")
 
   # # Settings
   # .depends <- c("Rcpp", "RcppEigen", "ctsmTMB")
