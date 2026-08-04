@@ -189,7 +189,6 @@ MakeADFun_LKF = function(self, private)
   # Note - order can be important here
   get_adjoints()
   get_loss_function()
-  # get_ode_solvers()
   if(private$algo.settings$estimate.initial) {
     get_initial_state_estimator()
   }

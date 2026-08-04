@@ -171,8 +171,7 @@ First we create the model as follows:
 
 ```{r}
 ## Load libraries
-# library(ctsmTMB)
-devtools::load_all("~/github/ctsmTMB")
+library(ctsmTMB)
 library(ggplot2) ## plots
 
 ## Create model

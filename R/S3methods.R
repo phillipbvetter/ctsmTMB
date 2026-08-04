@@ -271,9 +271,9 @@ plot.ctsmTMB.fit = function(x,
       plot.res = ggplot2::ggplot() +
         {
           if(standardized.residuals){
-            ggplot2::geom_line(data=data.frame(t,e0), ggplot2::aes(x=t,y=e0),color=mycolor)
-          } else {
             ggplot2::geom_line(data=data.frame(t,e), ggplot2::aes(x=t,y=e),color=mycolor)
+          } else {
+            ggplot2::geom_line(data=data.frame(t,e0), ggplot2::aes(x=t,y=e0),color=mycolor)
           }
         } +
         ggtheme +

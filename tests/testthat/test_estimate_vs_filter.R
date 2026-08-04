@@ -14,7 +14,7 @@ testthat::test_that("Check if estimation filter matches filter (ZOH)",{
   for(m in methods){
     fit <- model$estimate(df, method=m, silent=T, trace=0, first.order.input.hold = FALSE)
     rfit <- fit[c("states","residuals","observations")]
-    filt <- model$filter(df, method=m, silent=T, pars=fit$par.fixed)
+    filt <- model$filter(df, method=m, silent=T, pars=fit$par.fixed, first.order.input.hold = FALSE)
     testthat::expect_equal(rfit, filt)
   }
 })
