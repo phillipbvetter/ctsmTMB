@@ -277,8 +277,6 @@ df.temp$y[1] <- NA
 pred <- model$predict(data=df.temp,
                       pars=true.pars,
                       k.ahead=nrow(df.temp)-1)
-private <- model$getPrivate()
-private$algo.settings$ode.timestep.size %>% length
 ```
 
 
