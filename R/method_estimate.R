@@ -1,4 +1,4 @@
-create_ad_likelihood_fun = function(self, private){
+create_ad_likelihood_fun <- function(self, private){
 
   # TMB::openmp(n=1, autopar=TRUE, DLL=private$modelname.with.method)
 
@@ -190,10 +190,13 @@ create_estimation_return_fit <- function(self, private, report, laplace.residual
       # NULL finds the MLE parameters from estimate
       set_parameters(NULL, self, private)
 
+      # Temporarily silence filtering printouts...
+      silent.setting <- private$algo.settings$silent
+      on.exit(private$algo.settings$silent <- silent.setting, add=TRUE)
+      private$algo.settings$silent <- TRUE
+
       # Old version
       # ----------------------------------------------------------------------
-      # silent.setting <- private$algo.settings$silent
-      # on.exit(private$algo.settings$silent <- silent.setting, add=TRUE)
       # self$filter(data=private$data,
       #             pars = NULL,
       #             method=private$algo.settings$method,

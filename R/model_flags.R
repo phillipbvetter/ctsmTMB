@@ -15,10 +15,6 @@ set_flags = function(proc, args, self, private){
   private$set_ode_solver(args$ode.solver)
   private$set_first_order_hold(args$first.order.input.hold)
   private$set_timestep("ode", args$ode.timestep)
-  # TODO
-  # We only need this for simulate, right?
-  sim.dt <- if (proc == "simulation") args$simulation.timestep else args$ode.timestep
-  private$set_timestep("simulation", sim.dt)
 
   # Utilities
   private$set_silence(args$silent)
@@ -32,7 +28,7 @@ set_flags = function(proc, args, self, private){
 
   # estimate
   # ----------------------------------- #
-  if (proc == "estimation") {
+  if (proc == "estimate") {
     private$set_compile(args$compile)
     private$set_loss(args$loss, args$loss_c)
     private$set_control(args$control)
@@ -42,13 +38,14 @@ set_flags = function(proc, args, self, private){
 
   # simulate
   # ----------------------------------- #
-  if (proc == "simulation") {
+  if (proc == "simulate") {
+    private$set_timestep("sim", args$sim.timestep)
     private$set_cpp_seed(args$cpp.seed)
   }
 
   # not smoother
   # ----------------------------------- #
-  if (proc != "smoothing") {
+  if (proc != "smooth") {
     private$set_ukf_hyperpars(args$ukf.hyperpars)
   }
 

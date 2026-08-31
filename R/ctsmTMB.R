@@ -48,7 +48,7 @@ ctsmTMB = R6::R6Class(
       private$nll = NULL
 
       # fields for AD rebuilding
-      private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE, ode.dt=TRUE, sim.dt=TRUE)
+      private$rebuild = list(model = TRUE, ad = TRUE, data = TRUE, ode.timestep=TRUE, sim.timestep=TRUE)
       private$old.data = list()
 
       # model fields
@@ -118,12 +118,12 @@ ctsmTMB = R6::R6Class(
         ukf.hyperpars               = list(),
         argument.parameters         = NULL,
         ode.timestep                = NULL,
-        ode.timestep.size           = NULL,
-        ode.timesteps               = NULL,
-        ode.timesteps.cumsum        = NULL,
-        simulation.timestep         = NULL,
-        simulation.timestep.size    = NULL,
-        simulation.timesteps        = NULL,
+        ode.stepsizes               = NULL,
+        ode.number.of.steps         = NULL,
+        ode.number.of.steps.cumsum  = NULL,
+        sim.timestep                = NULL,
+        sim.stepsizes               = NULL,
+        sim.number.of.steps         = NULL,
         initial.state               = NULL,
         initial.state.fixed         = NULL,
         tmb.initial.state           = NULL,
@@ -1089,17 +1089,13 @@ ctsmTMB = R6::R6Class(
 
       # set flags
       args <- as.list(environment())[names(formals())]
-      # method.call <- match.call()[[1]]
-      set_flags("filtration", args, self, private)
+      set_flags("filter", args, self, private)
 
       # build model
       build_model(self, private)
 
       # check and set data
-      check_and_set_all_data(data, self, private)
-
-      # set parameters
-      set_parameters(pars, self, private)
+      check_and_set_data(data, pars, k.ahead=NULL, self, private)
 
       # filter
       perform_filtering(self, private, use.cpp)
@@ -1163,21 +1159,17 @@ ctsmTMB = R6::R6Class(
                       ...){
 
       args <- as.list(environment())[names(formals())]
-      set_flags("smoothing", args, self, private)
+      set_flags("smooth", args, self, private)
 
       # build model
       build_model(self, private)
 
       # check and set data
-      check_and_set_all_data(data, self, private)
+      check_and_set_data(data, pars, k.ahead=NULL, self, private)
 
-      # set parameters
-      set_parameters(pars, self, private)
-
-      # construct nll AD function if the method is laplace
-      if(any(private$algo.settings$method==c("laplace","laplace.thygesen"))){
+      # For the Laplace methods we need to construct the ad graph to perform the smoothing
+      if (private$algo.settings$method %in% c("laplace","laplace.thygesen"))
         create_ad_likelihood_fun(self, private)
-      }
 
       # smooth
       perform_smoothing(self, private)
@@ -1267,13 +1259,13 @@ ctsmTMB = R6::R6Class(
 
       # Grab all argument values into a named list
       args <- as.list(environment())[names(formals())]
-      set_flags("estimation", args, self, private)
+      set_flags("estimate", args, self, private)
 
       # build model
       build_model(self, private)
 
       # check and set data
-      check_and_set_all_data(data, self, private)
+      check_and_set_data(data, pars=NULL, k.ahead=NULL, self, private)
 
       # construct nll AD function
       compile_cppfile(self, private)
@@ -1390,7 +1382,7 @@ ctsmTMB = R6::R6Class(
       build_model(self, private)
 
       # check and set data
-      check_and_set_all_data(data, self, private)
+      check_and_set_data(data, pars=NULL, k.ahead=NULL, self, private)
 
       # construct nll AD function
       compile_cppfile(self, private)
@@ -1470,17 +1462,13 @@ ctsmTMB = R6::R6Class(
 
       # set flags
       args <- as.list(environment())[names(formals())]
-      set_flags("prediction", args, self, private)
+      set_flags("predict", args, self, private)
 
       # build model
       build_model(self, private)
 
       # set data
-      check_and_set_all_data(data, self, private)
-
-      # set parameters
-      set_parameters(pars, self, private)
-      set_k_ahead(k.ahead, self, private)
+      check_and_set_data(data, pars, k.ahead, self, private)
 
       # estimate
       perform_prediction(self, private, use.cpp)
@@ -1558,7 +1546,7 @@ ctsmTMB = R6::R6Class(
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param n.sims number of simulations
-    #' @param simulation.timestep timestep used in the euler-maruyama scheme
+    #' @param sim.timestep timestep used in the euler-maruyama scheme
     #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
     #' @param cpp.seeds an integer seed value to control RNG normal draws on the C++ side.
     #' @param ... additional arguments
@@ -1570,7 +1558,7 @@ ctsmTMB = R6::R6Class(
                         ode.solver = "rk4",
                         ode.timestep = diff(data$t),
                         first.order.input.hold = FALSE,
-                        simulation.timestep = diff(data$t),
+                        sim.timestep = diff(data$t),
                         k.ahead = nrow(data)-1,
                         return.k.ahead = 0:min(k.ahead, nrow(data)-1),
                         n.sims = 100,
@@ -1585,17 +1573,13 @@ ctsmTMB = R6::R6Class(
 
       # set flags
       args <- as.list(environment())[names(formals())]
-      set_flags("simulation", args, self, private)
+      set_flags("simulate", args, self, private)
 
       # build model
       build_model(self, private)
 
       # check and set data
-      check_and_set_all_data(data, self, private)
-
-      # set parameters
-      set_k_ahead(k.ahead, self, private)
-      set_parameters(pars, self, private)
+      check_and_set_data(data, pars, k.ahead, self, private)
 
       # estimate
       perform_simulation(self, private, use.cpp, n.sims)
@@ -1822,17 +1806,17 @@ ctsmTMB = R6::R6Class(
 
       # check logical
       if (!is.character(str)) {
-        stop("The procedure must be a string - estimation / prediction / simulation")
+        stop("The procedure must be a string")
       }
 
       # set flag
       switch(str,
-             filtration = {private$procedure <- "filtration"},
-             smoothing = {private$procedure <- "smoothing"},
-             estimation = {private$procedure <- "estimation"},
+             filter = {private$procedure <- "filter"},
+             smooth = {private$procedure <- "smooth"},
+             estimate = {private$procedure <- "estimate"},
              likelihood = {private$procedure <- "likelihood"},
-             prediction = {private$procedure <- "prediction"},
-             simulation = {private$procedure <- "simulation"}
+             predict = {private$procedure <- "predict"},
+             simulate = {private$procedure <- "simulate"}
       )
 
       # return
@@ -1935,7 +1919,7 @@ ctsmTMB = R6::R6Class(
 
       # must be numeric
       if (!is.numeric(dt)) {
-        stop("The timestep should be a numeric value.")
+        stop("The timestep should be numeric.")
       }
 
       private$algo.settings[[paste0(type, ".timestep")]] = dt

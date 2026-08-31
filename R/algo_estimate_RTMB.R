@@ -41,8 +41,8 @@ MakeADFun_EKF = function(self, private)
 
   # Timesteps, Observations, Inputs and Parameters ----------------------------
 
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
+  ode.stepsizes = private$algo.settings$ode.stepsizes
+  ode.number.of.steps = private$algo.settings$ode.number.of.steps
 
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
@@ -85,7 +85,6 @@ MakeADFun_EKF = function(self, private)
       nll <- nll + data.update[[3]]
     }
 
-    # STANDARD KALMAN FILTER TRAINING
     ###### Main Loop #######
     for(i in 1:(nrow(obsMat)-1)){
 
@@ -93,14 +92,14 @@ MakeADFun_EKF = function(self, private)
       inputVec = inputMat[i,]
       # zero-order or first-order hold
       if (private$algo.settings$first.order.input.hold) {
-        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode.number.of.steps[i]
       } else {
         dinputVec = 0
       }
 
       ###### time update - ode solve moments #######
-      for (j in 1:ode_timesteps[i]) {
-        sol = ode.integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size[i])
+      for (j in 1:ode.number.of.steps[i]) {
+        sol = ode.integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode.stepsizes[i])
         stateVec = sol[[1]]
         covMat = sol[[2]]
         inputVec = inputVec + dinputVec
@@ -199,8 +198,7 @@ MakeADFun_LKF = function(self, private)
   }
 
   # Timesteps, Observations, Inputs and Parameters ----------------------------
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
+  ode.stepsizes = private$algo.settings$ode.stepsizes
 
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
@@ -208,9 +206,9 @@ MakeADFun_LKF = function(self, private)
 
   # detect time-variations etc ----------------------
   constant.time.diff <- FALSE
-  if(var(diff(ode_timestep_size)) < 1e-15){
+  if(var(diff(ode.stepsizes)) < 1e-15){
     constant.time.diff <- TRUE
-    fixed.timestep.size <- ode_timestep_size[1]
+    fixed.timestep.size <- ode.stepsizes[1]
   }
 
   # likelihood function --------------------------------
@@ -326,9 +324,9 @@ MakeADFun_LKF = function(self, private)
       # When using first order hold we need the input slope
       # Now augment change in input vector with 0 for constants (see above too)
       if(private$algo.settings$first.order.input.hold){
-        # Note that in contrast to EKF we divide by ode_timestep_size here (actual time-step), not
+        # Note that in contrast to EKF we divide by ode.stepsizes here (actual time-step), not
         # ode_timesteps (number of steps)
-        dinputVec = c(0, (inputMat[i+1,] - inputMat[i,])/ode_timestep_size[i])
+        dinputVec = c(0, (inputMat[i+1,] - inputMat[i,])/ode.stepsizes[i])
       }
 
       # Perform one-step prediction of mean and covariance
@@ -415,8 +413,8 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
   }
 
   # time-steps
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
+  ode.stepsizes = private$algo.settings$ode.stepsizes
+  ode.number.of.steps = private$algo.settings$ode.number.of.steps
 
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
@@ -492,7 +490,7 @@ makeadfun_ukf_knudsen_rtmb <- function(self, private)
       ###### TIME UPDATE #######
       # We solve sigma points forward in time
       for(j in 1:ode_timesteps[i]){
-        X.sigma <- ode.integrator(X.sigma, chol.covMat, parVec, inputVec, dinputVec, ode_timestep_size[i])
+        X.sigma <- ode.integrator(X.sigma, chol.covMat, parVec, inputVec, dinputVec, ode.stepsizes[i])
         chol.covMat <- sigma2chol(X.sigma)
         inputVec = inputVec + dinputVec
       }
@@ -586,8 +584,8 @@ MakeADFun_UKF = function(self, private)
   }
 
   # time-steps
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
+  ode.stepsizes = private$algo.settings$ode.stepsizes
+  ode.number.of.steps = private$algo.settings$ode.number.of.steps
 
   ####### Pre-Allocated Object #######
   I0 <- RTMB::diag(n.states)
@@ -642,15 +640,15 @@ MakeADFun_UKF = function(self, private)
       inputVec = inputMat[i,]
       # zero-order or first-order hold
       if(private$algo.settings$first.order.input.hold){
-        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode.number.of.steps[i]
       } else {
         dinputVec = 0
       }
 
       ###### TIME UPDATE #######
       # We solve sigma points forward in time
-      for(j in 1:ode_timesteps[i]){
-        X.sigma <- ode.integrator(X.sigma, chol.covMat, parVec, inputVec, dinputVec, ode_timestep_size[i])
+      for(j in 1:ode.number.of.steps[i]){
+        X.sigma <- ode.integrator(X.sigma, chol.covMat, parVec, inputVec, dinputVec, ode.stepsizes[i])
         chol.covMat <- sigma2chol(X.sigma)
         inputVec = inputVec + dinputVec
       }
@@ -740,9 +738,9 @@ MakeADFun_Laplace = function(self, private)
   }
 
   # time-steps
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
-  ode_cumsum_timesteps = private$algo.settings$ode.timesteps.cumsum
+  ode.stepsizes = private$algo.settings$ode.stepsizes
+  ode.number.of.steps = private$algo.settings$ode.number.of.steps
+  ode_cumsum_timesteps = private$algo.settings$ode.number.of.steps.cumsum
   iobs <- private$algo.settings$iobs # indices with non-na observations
 
   # likelihood function --------------------------------------
@@ -781,13 +779,13 @@ MakeADFun_Laplace = function(self, private)
       inputVec = inputMat[i,]
       # zero-order or first-order hold
       if(private$algo.settings$first.order.input.hold){
-        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode.number.of.steps[i]
       } else {
         dinputVec = 0
       }
 
       ###### BETWEEN TIME POINTS LOOP START #######
-      for(j in 1:ode_timesteps[i]){
+      for(j in 1:ode.number.of.steps[i]){
 
         # grab current and next state
         x_now = stateMat[ode_cumsum_timesteps[i]+j,]
@@ -800,8 +798,8 @@ MakeADFun_Laplace = function(self, private)
 
         # assume multivariate gauss distribution according to euler-step
         # and calculate the likelihood
-        z = x_next - (x_now + f * ode_timestep_size[i])
-        v = (g %*% t(g) + small_identity) * ode_timestep_size[i]
+        z = x_next - (x_now + f * ode.stepsizes[i])
+        v = (g %*% t(g) + small_identity) * ode.stepsizes[i]
         nll = nll - RTMB::dmvnorm(z, Sigma=v, log=TRUE)
       }
       ###### BETWEEN TIME POINTS LOOP END #######
@@ -810,6 +808,7 @@ MakeADFun_Laplace = function(self, private)
 
     obsMat = RTMB::OBS(obsMat)
     ###### DATA UPDATE START #######
+
     for(i in 1:n.obs){
       iobs.vec <- iobs[[i]]
       for(j in 1:length(iobs[[i]])){
@@ -900,9 +899,9 @@ MakeADFun_Laplace_thygesen = function(self, private)
   }
 
   # time-steps
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
-  ode_cumsum_timesteps = private$algo.settings$ode.timesteps.cumsum
+  ode.stepsizes = private$algo.settings$ode.stepsizes
+  ode.number.of.steps = private$algo.settings$ode.number.of.steps
+  ode_cumsum_timesteps = private$algo.settings$ode.number.of.steps.cumsum
   iobs <- private$algo.settings$iobs # indices with non-na observations
 
   # likelihood function --------------------------------------
@@ -944,13 +943,13 @@ MakeADFun_Laplace_thygesen = function(self, private)
       inputVec = inputMat[i,]
       # zero-order or first-order hold
       if(private$algo.settings$first.order.input.hold){
-        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
+        dinputVec = (inputMat[i+1,] - inputMat[i,])/ode.number.of.steps[i]
       } else {
         dinputVec = 0
       }
 
       ###### BETWEEN TIME POINTS LOOP START #######
-      for(j in 1:ode_timesteps[i]){
+      for(j in 1:ode.number.of.steps[i]){
 
         # current index in state matrix
         cur.id <- ode_cumsum_timesteps[i]+j
@@ -962,14 +961,14 @@ MakeADFun_Laplace_thygesen = function(self, private)
         inputVec = inputVec + dinputVec
 
         # Compute expected dX from Euler Maruyama
-        dstateVecPred <- f * ode_timestep_size[i] + g %*% p$dB[cur.id,]
+        dstateVecPred <- f * ode.stepsizes[i] + g %*% p$dB[cur.id,]
 
         # Likelihood contribution from state difference (diagonal covariance)
         z <- dstateMat[cur.id,] - dstateVecPred
         nll = nll - RTMB::dmvnorm(z, Sigma=tiny, log=TRUE)
 
         # Likelihood contribution from dBs
-        nll = nll - RTMB::dmvnorm(p$dB[cur.id,], Sigma=ode_timestep_size[i]*I0, log=TRUE)
+        nll = nll - RTMB::dmvnorm(p$dB[cur.id,], Sigma=ode.stepsizes[i]*I0, log=TRUE)
       }
       ###### BETWEEN TIME POINTS LOOP END #######
     }

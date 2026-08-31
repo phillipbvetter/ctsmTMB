@@ -377,7 +377,7 @@ model$simulate(data,
                method = "ekf",
                ode.solver = "rk4",
                ode.timestep = diff(data$t),
-               simulation.timestep = diff(data$t),
+               sim.timestep = diff(data$t),
                k.ahead = nrow(data)-1,
                return.k.ahead = 0:min(k.ahead, nrow(data)-1),
                n.sims = 100,
@@ -441,7 +441,7 @@ vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
 
 ---
 
-### `simulation.timestep`
+### `sim.timestep`
 
 The number of intermediate time-steps taken between time-points in the provided
 data for the Euler-Maruyama method.

@@ -1,20 +1,28 @@
-check_and_set_all_data <- function(data, self, private){
+check_and_set_data <- function(data, pars, k.ahead, self, private){
 
-  # NOTE: we must check data first, because it will lead to changes in the other fields!
-  check_and_set_data_entry_by_name(data, "data", self, private)
-  check_and_set_data_entry_by_name(NULL, "ode.dt", self, private)
-  check_and_set_data_entry_by_name(NULL, "sim.dt", self, private)
+  if(!private$algo.settings$silent) message("Checking & setting data...")
+
+  # Order is important
+  check_data_entries("data", self, private, data)
+  check_data_entries("ode", self, private)
+  check_data_entries("sim", self, private)
+
+  if (private$procedure %in% c("filter","smooth","predict", "simulate"))
+    set_parameters(pars, self, private)
+
+  if (private$procedure %in% c("predict", "simulate"))
+    set_k_ahead(k.ahead, self, private)
 
   return(invisible(self))
 }
 
-check_and_set_data_entry_by_name <- function(data=NULL, str, self, private){
+check_data_entries <- function(str, self, private, data=NULL){
 
   # check for changes in the relevant field
   bool <- switch(str,
                  data = any(private$rebuild$data, !identical(private$old.data$entry.data, data)),
-                 ode.dt = any(private$rebuild$ode.dt, !identical(private$old.data$ode.dt, private$algo.settings$ode.timestep)),
-                 sim.dt = any(private$rebuild$sim.dt, !identical(private$old.data$simulation.timestep, private$algo.settings$simulation.timestep))
+                 ode = any(private$rebuild$ode.timestep, !identical(private$old.data$ode.timestep, private$algo.settings$ode.timestep)),
+                 sim = any(private$rebuild$sim.timestep, !identical(private$old.data$sim.timestep, private$algo.settings$sim.timestep))
   )
 
   # set the relevant field and update old field, if any changes
@@ -25,15 +33,15 @@ check_and_set_data_entry_by_name <- function(data=NULL, str, self, private){
       private$old.data$entry.data <- data
     }
 
-    if (str=="ode.dt") {
+    if (str=="ode") {
       compute_timestep("ode", private$data, self, private)
       compute_laplace_initial_state_guess_and_iobs(private$data, self, private)
-      private$old.data$ode.dt <- private$algo.settings$ode.timestep
+      private$old.data$ode.timestep <- private$algo.settings$ode.timestep
     }
 
-    if (str=="sim.dt") {
-      compute_timestep("simulation", private$data, self, private)
-      private$old.data$simulation.timestep <- private$algo.settings$simulation.timestep
+    if (str=="sim") {
+      compute_timestep("sim", private$data, self, private)
+      private$old.data$sim.timestep <- private$algo.settings$sim.timestep
     }
 
     # finally switch the rebuild switches
@@ -45,8 +53,6 @@ check_and_set_data_entry_by_name <- function(data=NULL, str, self, private){
 }
 
 compute_data <- function(data, self, private) {
-
-  if(!private$algo.settings$silent) message("Checking data...")
 
   # Check that inputs, and observations are there
   basic_data_check(data, self, private)
@@ -76,7 +82,7 @@ basic_data_check = function(data, self, private) {
 
   # check if all inputs are in the data
   bool = private$names$inputs %in% names(data)
-  if (any(!bool)){
+  if (any(!bool)) {
     stop("The following required inputs were not provided in the data:
          ", paste(private$names$inputs[!bool],collapse=", "))
   }
@@ -86,7 +92,7 @@ basic_data_check = function(data, self, private) {
   # due to the ability to say e.g. log(y) ~ ..., obsname=log(y)
   required.obs = unique(unlist(sapply(private$model$obs.eqs.trans, function(ls) all.vars(ls$lhs))))
   bool = required.obs %in% names(data)
-  if (any(!bool)){
+  if (any(!bool)) {
     stop("The following required observations were not provided in the data:
          ", required.obs[!bool])
   }
@@ -125,7 +131,7 @@ calculate_complex_observation_lefthandsides = function(data, self, private){
 
   # otherwise, calculate these variables using data variables
   temp.data = list()
-  for(i in seq_along(private$model$obs.eqs.trans)[bool]){
+  for (i in seq_along(private$model$obs.eqs.trans)[bool]) {
 
     # get name and lhs
     lhs = private$model$obs.eqs.trans[[i]]$lhs
@@ -133,7 +139,7 @@ calculate_complex_observation_lefthandsides = function(data, self, private){
 
     # Check if the variables are available in data
     bool = all.vars(lhs) %in% names(data)
-    if(!all(bool)){
+    if (!all(bool)) {
       stop("Unable to compute the observation ",name," because the following variable(s) are not in the provided data:
            ",all.vars(lhs)[!bool])
     }
@@ -150,6 +156,70 @@ calculate_complex_observation_lefthandsides = function(data, self, private){
 
   # return
   return(newdata)
+}
+
+#######################################################
+# SETTINGS FOR ODE TIMESTEP
+#######################################################
+
+# This function computes the number and sizes of ode and sde solver steps by rounding up
+# to match the user-requested stepsize.
+
+# :::::EXAMPLE:::::
+# If the required number of steps is N + epsilon or larger (e.g. 3+0.01) then increase step by 1, and reduce timestep there.
+# data$t = [0 , 1 , 2, 4.5], so data.dt = [1, 1, 2.5]
+# timestep = 1. There are therefore [1, 1, 2.5] steps required. The last (2.5) has residual larger than epsilon so (2.5 %% 1 = 0.5 > epsilon)
+# so we round up the number of steps there i.e. N = [1, 1, 3]. The last entry is the important one.
+# We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / N[3] = 2.5 / 3 = 0.88883333
+
+compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
+
+  n <- nrow(data) - 1
+  if (type=="ode") dt <- private$algo.settings$ode.timestep
+  if (type=="sim") dt <- private$algo.settings$sim.timestep
+
+  if (is.null(dt)) return(invisible(self))
+
+  # check that dt has length 1 or nrow(data)-1
+  if (length(dt) == 1) {
+    dt <- rep(dt, n)
+  } else if (length(dt) > n) {
+    warning(sprintf("The provided %s.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.", type))
+    dt <- head(dt, n)
+  } else if (length(dt) < n) {
+    warning(sprintf("The provided %s.timestep was shorter than nrow(data) - 1, only using first entry.", type))
+    dt <- rep(dt[1],n)
+  }
+
+  # Data time-differences and number of steps to take
+  data.dt <- diff(data$t)
+  timesteps <- rep(1, n)
+  timestep.size <- data.dt
+
+  # For gaps larger than dt, use dt as step-size; otherwise use given dt and modify
+  bool <- data.dt > dt
+  timestep.size[bool] <- dt[bool]
+  timesteps[bool] <- data.dt[bool] / dt[bool]
+  # now round up where residual exceeds epsilon, round down otherwise
+  residual.bool <- (timesteps %% 1) > epsilon.step
+  timesteps[residual.bool]  <- ceiling(timesteps[residual.bool])
+  timesteps[!residual.bool] <- floor(timesteps[!residual.bool])
+
+  # Adjust step-size so that timesteps * timestep.size == data.dt exactly
+  timestep.size[residual.bool] <- data.dt[residual.bool] / timesteps[residual.bool]
+
+  # Store results
+  if (type == "ode") {
+    private$algo.settings$ode.number.of.steps <- timesteps
+    private$algo.settings$ode.stepsizes <- timestep.size
+    private$algo.settings$ode.number.of.steps.cumsum <- c(0, cumsum(timesteps))
+  }
+  if (type=="sim") {
+    private$algo.settings$sim.number.of.steps <- timesteps
+    private$algo.settings$sim.stepsizes <- timestep.size
+  }
+
+  return(invisible(self))
 }
 
 #######################################################
@@ -185,7 +255,7 @@ compute_laplace_initial_state_guess_and_iobs = function(data, self, private){
   #intermediate points determined by the user-selected ode.timestep variable
   private$algo.settings$tmb.initial.state <- vector("list", length=private$dims$states)
   for (i in seq_along(private$names$states)) {
-    private$algo.settings$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.timesteps,1))
+    private$algo.settings$tmb.initial.state[[i]] <- rep(tempdata[[i]], times=c(private$algo.settings$ode.number.of.steps,1))
   }
   names(private$algo.settings$tmb.initial.state) = private$names$states
   private$algo.settings$tmb.initial.state <- as.data.frame(private$algo.settings$tmb.initial.state)
@@ -195,66 +265,10 @@ compute_laplace_initial_state_guess_and_iobs = function(data, self, private){
   return(invisible(self))
 }
 
-#######################################################
-# SETTINGS FOR ODE TIMESTEP
-#######################################################
-
-compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
-
-  # if(!private$algo.settings$silent) message(paste0("Setting ",type, " timestep..."))
-
-  # If the required number of steps is N + epsilon or larger (e.g. 3+0.01) then increase step by 1, and reduce timestep there.
-  # :::::EXAMPLE:::::
-  # data$t = [0 , 1 , 2, 4.5], so data.dt = [1,1,2.5]
-  # timestep = 1. There are therefore [1, 1, 2.5] steps required. The last (2.5) has residual larger than epsilon so (2.5 %% 1 = 0.5 > epsilon)
-  # so we round up the number of steps there i.e. N = [1, 1, 3]. The last entry is the important one.
-  # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / N[3] = 2.5 / 3 = 0.88883333
-
-  n <- nrow(data) - 1
-  dt <- private$algo.settings[[paste0(type, ".timestep")]]
-
-  # check that dt has length 1 or nrow(data)-1
-  if (length(dt) == 1) {
-    dt <- rep(dt, n)
-  } else if (length(dt) > n) {
-    warning(sprintf("The provided %s.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.", type))
-    dt <- head(dt, n)
-  } else if (length(dt) < n) {
-    warning(sprintf("The provided %s.timestep was shorter than nrow(data) - 1, only using first entry.", type))
-    dt <- rep(dt[1],n)
-  }
-
-  # Data time-differences and number of steps to take
-  data.dt <- diff(data$t)
-  timesteps <- rep(1, n)
-  timestep.size <- data.dt
-
-  # For gaps larger than dt, use dt as step-size; otherwise use given dt and modify
-  bool <- data.dt > dt
-  timestep.size[bool] <- dt[bool]
-  timesteps[bool] <- data.dt[bool] / dt[bool]
-  # now round up where residual exceeds epsilon, round down otherwise
-  residual.bool <- (timesteps %% 1) > epsilon.step
-  timesteps[residual.bool]  <- ceiling(timesteps[residual.bool])
-  timesteps[!residual.bool] <- floor(timesteps[!residual.bool])
-
-  # Adjust step-size so that timesteps * timestep.size == data.dt exactly
-  timestep.size[residual.bool] <- data.dt[residual.bool] / timesteps[residual.bool]
-
-  # Store results
-  private$algo.settings[[paste0(type, ".timestep.size")]] <- timestep.size
-  private$algo.settings[[paste0(type, ".timesteps")]]     <- timesteps
-  if (type == "ode") {
-    private$algo.settings$ode.timesteps.cumsum <- c(0, cumsum(timesteps))
-  }
-
-  return(invisible(self))
-}
-
 ########################################################################
 # SET PARAMETERS (NEW VERSION - FOR TESTING BEFORE REPLACING ABOVE)
 ########################################################################
-set_parameters = function(pars, self, private){
+set_parameters <- function(pars, self, private){
 
   # This function sets the parameters used by estimations, filters etc.
 
@@ -303,7 +317,7 @@ set_parameters = function(pars, self, private){
 ########################################################################
 # SET K STEP AHEAD (DEPENDS ON PRIVATE$DATA)
 ########################################################################
-set_k_ahead = function(k.ahead, self, private) {
+set_k_ahead <- function(k.ahead, self, private) {
 
   # check if k.ahead is positive with length 1
   if (!(is.numeric(k.ahead)) | !(length(k.ahead==1)) | !(k.ahead >= 0)) {
@@ -317,7 +331,7 @@ set_k_ahead = function(k.ahead, self, private) {
     k.ahead <- nrow(private$data) - 1
   }
 
-  # Find last prediction index to avoid exciting boundary
+  # Find last prediction index to avoid out of bounds indices
   last.pred.index = nrow(private$data) - k.ahead
   if(last.pred.index < 1){
     k.ahead = nrow(private$data) - 1

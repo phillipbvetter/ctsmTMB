@@ -3,7 +3,9 @@
 # If they have changed we must rebuild the AD likelihood function via RTMB::MakeADFun.
 check_or_save_for_ad_rebuild <- function(type, self, private){
 
-  # These are the fields that require an AD-fun rebuild
+  # All fields that causes changes in the likelihood function will require a
+  # full AD re-compilation.
+  # NOTE: ODE-timestep fields are checked in the data-setting procedure earlier.
   fields <- c(
     "method",
     "ode.solver",
@@ -34,16 +36,16 @@ flick_data_rebuild_switches <- function(str, self, private){
 
   if(str=="data"){
     private$rebuild$data <- FALSE
-    private$rebuild$ode.dt <- TRUE
-    private$rebuild$sim.dt <- TRUE
+    private$rebuild$ode.timestep <- TRUE
+    private$rebuild$sim.timestep <- TRUE
   }
 
-  if(str=="ode.dt"){
-    private$rebuild$ode.dt <- FALSE
+  if(str=="ode"){
+    private$rebuild$ode.timestep <- FALSE
   }
 
-  if(str=="sim.dt"){
-    private$rebuild$sim.dt <- FALSE
+  if(str=="sim"){
+    private$rebuild$sim.timestep <- FALSE
   }
 
   # We must always rebuild the ad graph when these change

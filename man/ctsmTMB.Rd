@@ -990,7 +990,7 @@ state estimate as the initial condition.
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   first.order.input.hold = FALSE,
-  simulation.timestep = diff(data$t),
+  sim.timestep = diff(data$t),
   k.ahead = nrow(data) - 1,
   return.k.ahead = 0:min(k.ahead, nrow(data) - 1),
   n.sims = 100,
@@ -1051,7 +1051,7 @@ which serves to link together the latent (random effects) states.
 }}
       \item{\code{first.order.input.hold}}{logical which determines whether the moment equations are solved using first-order (TRUE)
 or zero-order (FALSE) hold on the inputs when integrating between time-points.}
-      \item{\code{simulation.timestep}}{timestep used in the euler-maruyama scheme}
+      \item{\code{sim.timestep}}{timestep used in the euler-maruyama scheme}
       \item{\code{k.ahead}}{integer specifying the desired number of time-steps (as determined by the provided
 data time-vector) for which predictions are made (integrating the moment ODEs forward in time without
 data updates).}

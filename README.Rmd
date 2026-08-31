@@ -228,7 +228,7 @@ sim <- model$simulate(data=df.obs,
                       # ekf method is default
                       method="ekf", 
                       # use a smaller stepsize than diff(df.obs$t)
-                      simulation.timestep = 1e-3,
+                      sim.timestep = 1e-3,
                       # we only need 1 simulation
                       n.sims = 1,
                       # apply rng seeds

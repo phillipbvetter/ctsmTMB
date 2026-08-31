@@ -2,14 +2,14 @@
 # This function call all others in this script to check / build a model object
 build_model = function(self, private) {
 
-  # Check if model is already built else set flags
+  # Check if model is already built else set rebuild flags
   if(!private$rebuild$model) return(invisible(self))
   private$rebuild$model <- FALSE
   private$rebuild$data <- TRUE
   private$rebuild$ad <- TRUE
 
   # Print
-  if(!private$algo.settings$silent) message("Checking model...")
+  if(!private$algo.settings$silent) message("Compiling model...")
 
   # basic sanity checks (does not need trans equations)
   basic_model_check(self, private)

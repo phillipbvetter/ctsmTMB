@@ -6,7 +6,7 @@
 
 ekf_filter_r = function(parVec, self, private)
 {
-  
+
   # Data ----------------------------------------
   n.states <- private$dims$states
   n.obs <- private$dims$observations
@@ -14,11 +14,11 @@ ekf_filter_r = function(parVec, self, private)
   n.diffusions <- private$dims$diffusions
   n.inputs <- private$dims$inputs
   estimate.initial <- private$algo.settings$estimate.initial
-  
+
   # initial
   stateVec = private$algo.settings$initial.state$x0
   covMat = private$algo.settings$initial.state$p0
-  
+
   create_state_space_functions_for_filtering()
 
   # various utility functions for likelihood calculations ---------------------
@@ -28,23 +28,23 @@ ekf_filter_r = function(parVec, self, private)
     get_initial_state_estimator()
   }
   get_ekf_update_functions()
-  
+
   # Timesteps, Observations, Inputs and Parameters ----------------------------
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
+  ode.stepsizes = private$algo.settings$ode.stepsizes
+  ode_timesteps = private$algo.settings$ode.number.of.steps
   inputMat = as.matrix(private$data[private$names$inputs])
   obsMat = as.matrix(private$data[private$names$obs])
-  
+
   ####### STORAGE #######
   xPrior <- pPrior <- xPost <- pPost <- Innovation <- InnovationCovariance <- vector("list",length=nrow(obsMat))
-  
+
   ####### Neg. LogLikelihood #######
   nll <- 0
-  
+
   ####### Pre-Allocated Object #######
   I0 <- diag(n.states)
   E0 <- diag(n.obs)
-  
+
   ####### INITIAL STATE / COVARIANCE #######
   inputVec = inputMat[1,]
   if(estimate.initial){
@@ -53,7 +53,7 @@ ekf_filter_r = function(parVec, self, private)
   }
   xPrior[[1]] <- stateVec
   pPrior[[1]] <- covMat
-  
+
   ######## (PRE) DATA UPDATE ########
   # This is done to include the first measurements in the provided data
   # We update the state and covariance based on the "new" measurement
@@ -68,24 +68,24 @@ ekf_filter_r = function(parVec, self, private)
   }
   xPost[[1]] <- stateVec
   pPost[[1]] <- covMat
-  
+
   ###### MAIN LOOP START #######
   for(i in 1:(nrow(obsMat)-1)){
-    
+
     inputVec = inputMat[i,]
     dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
-    
+
     ###### TIME UPDATE #######
     # We solve the first two moments forward in time
     for(j in 1:ode_timesteps[i]){
-      sol = ode.integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode_timestep_size[i])
+      sol = ode.integrator(covMat, stateVec, parVec, inputVec, dinputVec, ode.stepsizes[i])
       stateVec = sol[[1]]
       covMat = sol[[2]]
       inputVec = inputVec + dinputVec
     }
     xPrior[[i+1]] = stateVec
     pPrior[[i+1]] = covMat
-    
+
     ######## DATA UPDATE ########
     # We update the state and covariance based on the "new" measurement
     inputVec = inputMat[i+1,]
@@ -102,7 +102,7 @@ ekf_filter_r = function(parVec, self, private)
     pPost[[i+1]] = covMat
   }
   ###### MAIN LOOP END #######
-  
+
   ####### RETURN #######
   returnlist <- list(xPost = lapply(xPost,c),
                      pPost = pPost,
@@ -110,7 +110,7 @@ ekf_filter_r = function(parVec, self, private)
                      pPrior = pPrior,
                      Innovation = lapply(Innovation,c),
                      InnovationCovariance = InnovationCovariance)
-  
+
   return(invisible(returnlist))
 }
 
@@ -122,7 +122,7 @@ ekf_filter_r = function(parVec, self, private)
 #######################################################
 lkf_filter_r = function(parVec, self, private)
 {
-  
+
   # Data ----------------------------------------
   n.states <- private$dims$states
   n.obs <- private$dims$observations
@@ -130,41 +130,41 @@ lkf_filter_r = function(parVec, self, private)
   n.diffusions <- private$dims$diffusions
   n.inputs <- private$dims$inputs
   estimate.initial <- private$algo.settings$estimate.initial
-  
+
   # initial
   stateVec = private$algo.settings$initial.state$x0
   covMat = private$algo.settings$initial.state$p0
-  
+
   create_state_space_functions_for_filtering()
 
   if(estimate.initial) {
     get_initial_state_estimator()
   }
   get_ekf_update_functions()
-  
+
   # Timesteps, Observations, Inputs and Parameters ----------------------------
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
+  ode_timestep_size = private$algo.settings$ode.stepsizes
+  ode_timesteps = private$algo.settings$ode.number.of.steps
   inputMat = as.matrix(private$data[private$names$inputs])
   obsMat = as.matrix(private$data[private$names$obs])
-  
+
   # detect time-variations etc ----------------------
   constant.time.diff <- FALSE
   if(var(diff(ode_timestep_size)) < 1e-15){
     constant.time.diff <- TRUE
     fixed.timestep.size <- ode_timestep_size[1]
   }
-  
+
   ####### STORAGE #######
   xPrior <- pPrior <- xPost <- pPost <- Innovation <- InnovationCovariance <- vector("list",length=nrow(obsMat))
-  
+
   ####### Neg. LogLikelihood #######
   # nll <- 0
-  
+
   ####### Pre-Allocated Object #######
   I0 <- diag(n.states)
   E0 <- diag(n.obs)
-  
+
   ####### Compute Matrix Exponentials for 1-Step Mean and Variance #######
   # dX = A*X + B*U + G*dB
   inputVec <-  inputMat[1,]
@@ -173,7 +173,7 @@ lkf_filter_r = function(parVec, self, private)
   G <- g__(stateVec, parVec, inputVec) #diffusions
   H <- dhdx__(stateVec,parVec, inputVec) #observation
   V0 <- hvar__matrix(stateVec, parVec, inputVec) #observation variance
-  
+
   # [A B \\ 0 0]
   Phi1 <- 0.0 * diag(n.states+n.inputs+1)
   Phi1[1:n.states,1:n.states] <- A
@@ -182,7 +182,7 @@ lkf_filter_r = function(parVec, self, private)
   Phi2 <- rbind(cbind(-A,G %*% t(G)),cbind(0*A,t(A)))
   ePhi1 <- as.matrix(Matrix::expm(Phi1 * fixed.timestep.size))
   ePhi2 <- as.matrix(Matrix::expm(Phi2 * fixed.timestep.size))
-  
+
   # A and B (for mean calculations)
   Ahat <- ePhi1[1:n.states,1:n.states]
   Ahat_T <- t(Ahat)
@@ -191,7 +191,7 @@ lkf_filter_r = function(parVec, self, private)
   Q22 <- ePhi2[(n.states+1):ncol(ePhi2), (n.states+1):ncol(ePhi2)]
   Q12 <- ePhi2[1:n.states, (n.states+1):ncol(ePhi2)]
   Vhat <- t(Q22) %*% Q12
-  
+
   ####### INITIAL STATE / COVARIANCE #######
   # The state/covariance is either given by user or obtained from solving the
   # stationary mean, and then solving for the covariance.
@@ -204,7 +204,7 @@ lkf_filter_r = function(parVec, self, private)
   }
   xPrior[[1]] <- stateVec
   pPrior[[1]] <- covMat
-  
+
   ######## (PRE) DATA UPDATE ########
   # This is done to include the first measurements in the provided data
   # We update the state and covariance based on the "new" measurement
@@ -219,11 +219,11 @@ lkf_filter_r = function(parVec, self, private)
   }
   xPost[[1]] <- stateVec
   pPost[[1]] <- covMat
-  
-  
+
+
   ###### MAIN LOOP START #######
   for(i in 1:(nrow(obsMat)-1)){
-    
+
     ###### TIME UPDATE #######
     # augment input vector to account for constant terms in B
     inputVec = c(1,inputMat[i,])
@@ -233,7 +233,7 @@ lkf_filter_r = function(parVec, self, private)
     # Store prior predictions
     xPrior[[i+1]] = stateVec
     pPrior[[i+1]] = covMat
-    
+
     ######## DATA UPDATE ########
     # We update the state and covariance based on the "new" measurement
     inputVec = inputMat[i+1,]
@@ -250,7 +250,7 @@ lkf_filter_r = function(parVec, self, private)
     pPost[[i+1]] = covMat
   }
   ###### MAIN LOOP END #######
-  
+
   ####### RETURN #######
   returnlist <- list(
     # nll=nll,
@@ -261,7 +261,7 @@ lkf_filter_r = function(parVec, self, private)
     Innovation = lapply(Innovation,c),
     InnovationCovariance = InnovationCovariance
   )
-  
+
   return(invisible(returnlist))
 }
 
@@ -273,19 +273,19 @@ lkf_filter_r = function(parVec, self, private)
 
 ukf_filter_r = function(parVec, self, private)
 {
-  
+
   # Data ----------------------------------------
   estimate.initial <- private$algo.settings$estimate.initial
   get_sys_dims()
-  
+
   # initial
   stateVec = private$algo.settings$initial.state$x0
   covMat = private$algo.settings$initial.state$p0
-  
+
   # inputs and observations
   inputMat = as.matrix(private$data[private$names$inputs])
   obsMat = as.matrix(private$data[private$names$obs])
-  
+
   create_state_space_functions_for_filtering()
   # Fsigma <- array(list(),c(1,n.sigmapoints))
   # Hsigma <- array(list(),c(1,n.sigmapoints))
@@ -295,21 +295,21 @@ ukf_filter_r = function(parVec, self, private)
     get_initial_state_estimator()
   }
   get_ukf_update()
-  
+
   # time-steps
-  ode_timestep_size = private$algo.settings$ode.timestep.size
-  ode_timesteps = private$algo.settings$ode.timesteps
-  
+  ode_timestep_size = private$algo.settings$ode.stepsizes
+  ode_timesteps = private$algo.settings$ode.number.of.steps
+
   ####### STORAGE #######
   xPrior <- pPrior <- xPost <- pPost <- Innovation <- InnovationCovariance <- vector("list",length=nrow(obsMat))
-  
+
   ####### Neg. LogLikelihood #######
   nll <- 0
-  
+
   ####### Pre-Allocated Object #######
   I0 <- diag(n.states)
   E0 <- diag(n.obs)
-  
+
   ####### INITIAL STATE / COVARIANCE #######
   inputVec = inputMat[1,]
   if(private$algo.settings$estimate.initial){
@@ -321,7 +321,7 @@ ukf_filter_r = function(parVec, self, private)
   # Compute sigma points for data update
   chol.covMat <- t(Matrix::chol(covMat))
   X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
-  
+
   ######## (PRE) DATA UPDATE ########
   obsVec = obsMat[1,]
   obsVec_bool = !is.na(obsVec)
@@ -334,18 +334,18 @@ ukf_filter_r = function(parVec, self, private)
   }
   xPost[[1]] <- stateVec
   pPost[[1]] <- covMat
-  
+
   ###### MAIN LOOP START #######
   for(i in 1:(nrow(obsMat)-1)){
-    
+
     # Compute cholesky factorization
     chol.covMat <- t(Matrix::chol(covMat))
     X.sigma <- create.sigmaPoints(stateVec, chol.covMat)
-    
+
     # Inputs
     inputVec = inputMat[i,]
     dinputVec = (inputMat[i+1,] - inputMat[i,])/ode_timesteps[i]
-    
+
     ###### TIME UPDATE #######
     # We solve sigma points forward in time
     for(j in 1:ode_timesteps[i]){
@@ -358,7 +358,7 @@ ukf_filter_r = function(parVec, self, private)
     covMat <- chol.covMat %*% t(chol.covMat)
     xPrior[[i+1]] = stateVec
     pPrior[[i+1]] = covMat
-    
+
     ######## DATA UPDATE ########
     # We update the state and covariance based on the "new" measurement
     inputVec = inputMat[i+1,]
@@ -375,7 +375,7 @@ ukf_filter_r = function(parVec, self, private)
     pPost[[i+1]] = covMat
   }
   ###### MAIN LOOP END #######
-  
+
   ####### RETURN #######
   returnlist <- list(xPost = lapply(xPost,c),
                      pPost = pPost,
@@ -384,6 +384,6 @@ ukf_filter_r = function(parVec, self, private)
                      Innovation = lapply(Innovation,c),
                      InnovationCovariance = InnovationCovariance
   )
-  
+
   return(invisible(returnlist))
 }

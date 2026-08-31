@@ -26,8 +26,8 @@ MakeADFun_EKF_TMB = function(self, private){
     
     # ode
     ode_solver = switch(private$algo.settings$ode.solver, euler=1, rk4=2),
-    ode_timestep_size = private$algo.settings$ode.timestep.size,
-    ode_timesteps = private$algo.settings$ode.timesteps,
+    ode_timestep_size = private$algo.settings$ode.stepsizes,
+    ode_timesteps = private$algo.settings$ode.number.of.steps,
     
     # loss function
     loss_type = private$algo.settings$loss$loss,
@@ -195,8 +195,8 @@ MakeADFun_UKF_TMB = function(self, private){
     
     # ode
     ode_solver = switch(private$algo.settings$ode.solver, euler=1, rk4=2),
-    ode_timestep_size = private$algo.settings$ode.timestep.size,
-    ode_timesteps = private$algo.settings$ode.timesteps,
+    ode_timestep_size = private$algo.settings$ode.stepsizes,
+    ode_timesteps = private$algo.settings$ode.number.of.steps,
     
     # loss function
     loss_type = private$algo.settings$loss$loss,

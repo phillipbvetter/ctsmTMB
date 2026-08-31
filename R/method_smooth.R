@@ -45,7 +45,7 @@ create_smooth_results <- function(self, private, laplace.residuals){
 
   if(any(private$algo.settings$method == c("laplace","laplace.thygesen"))){
 
-    random.effects.ids <- private$algo.settings$ode.timesteps.cumsum + 1
+    random.effects.ids <- private$algo.settings$ode.number.of.steps.cumsum + 1
 
     # States (Smoothed) -----------------------------------
     temp.states <- matrix(private$sdr$par.random, ncol=private$dims$states)[random.effects.ids, ]

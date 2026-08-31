@@ -2,7 +2,7 @@
 # MAIN CONSTRUCT MAKEADFUN FUNCTION THAT CALL OTHERS
 #######################################################
 
-perform_filtering = function(self, private, use.cpp){
+perform_filtering <- function(self, private, use.cpp){
 
   if(private$algo.settings$method == c("laplace")){
     stop("The Laplace method is a smoothing method. Use 'smooth' method instead.")
@@ -73,8 +73,8 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                                          pars,
                                          private$algo.settings$initial.state$p0,
                                          private$algo.settings$initial.state$x0,
-                                         private$algo.settings$ode.timestep.size,
-                                         private$algo.settings$ode.timesteps,
+                                         private$algo.settings$ode.stepsizes,
+                                         private$algo.settings$ode.number.of.steps,
                                          any_available_obs,
                                          non_na_ids,
                                          private$algo.settings$first.order.input.hold),
@@ -84,8 +84,8 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                                          pars,
                                          private$algo.settings$initial.state$p0,
                                          private$algo.settings$initial.state$x0,
-                                         private$algo.settings$ode.timestep.size,
-                                         private$algo.settings$ode.timesteps,
+                                         private$algo.settings$ode.stepsizes,
+                                         private$algo.settings$ode.number.of.steps,
                                          any_available_obs,
                                          non_na_ids,
                                          private$algo.settings$ode.solver,
@@ -96,8 +96,8 @@ lkf_ekf_ukf_filter_rcpp <- function(pars, self, private){
                                          pars,
                                          private$algo.settings$initial.state$p0,
                                          private$algo.settings$initial.state$x0,
-                                         private$algo.settings$ode.timestep.size,
-                                         private$algo.settings$ode.timesteps,
+                                         private$algo.settings$ode.stepsizes,
+                                         private$algo.settings$ode.number.of.steps,
                                          numeric_is_not_na_obsMat,
                                          number_of_available_obs,
                                          private$algo.settings$ukf.hyperpars,
