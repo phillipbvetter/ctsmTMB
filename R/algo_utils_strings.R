@@ -1,3 +1,58 @@
+apply_forceAD_to_some_variables <- function(force.ad, .envir=parent.frame()) {
+
+  list2env(as.list(.envir), envir = environment())
+
+  # UKF related
+  if(private$algo.settings$method=="ukf"){
+    Fsigma <- array(list(), c(1,n.sigmapoints))
+    Hsigma <- array(list(),c(1,n.sigmapoints))
+
+    assign("Fsigma", Fsigma, envir = .envir)
+    assign("Hsigma", Hsigma, envir = .envir)
+  }
+
+  # This "hack" where zero-matrices/vectors are created globally rather than inside the state space functions
+  # reduces MakeADFun compilation time by roughly 20%. We must use force=TRUE to force the variables into ad
+  # context. This works for the estimation, but breaks the report functionality.
+  if(force.ad) {
+
+    if(private$algo.settings$method == "ekf"){
+      stateVec <- RTMB::AD(stateVec, force=TRUE)
+      covMat <- RTMB::AD(covMat, force=TRUE)
+      inputMat <- RTMB::AD(inputMat,force=TRUE)
+
+      assign("stateVec", stateVec, envir = .envir)
+      assign("covMat", covMat, envir = .envir)
+      assign("inputMat", inputMat, envir = .envir)
+    }
+
+    if(private$algo.settings$method == "lkf") {
+      stateVec <- RTMB::AD(stateVec, force=TRUE)
+      covMat <- RTMB::AD(covMat, force=TRUE)
+
+      assign("stateVec", stateVec, envir = .envir)
+      assign("covMat", covMat, envir = .envir)
+    }
+
+    if(private$algo.settings$method == "ukf"){
+      stateVec <- RTMB::AD(stateVec, force=TRUE)
+      covMat <- RTMB::AD(covMat, force=TRUE)
+      inputMat <- RTMB::AD(inputMat,force=TRUE)
+      Fsigma <- array(list(),c(1,n.sigmapoints))
+      Hsigma <- array(list(),c(1,n.sigmapoints))
+
+      assign("stateVec", stateVec, envir = .envir)
+      assign("covMat", covMat, envir = .envir)
+      assign("inputMat", inputMat, envir = .envir)
+      assign("Fsigma", Fsigma, envir = .envir)
+      assign("Hsigma", Hsigma, envir = .envir)
+    }
+
+  }
+
+  return(invisible(NULL))
+
+}
 
 create_state_space_functions_for_estimation <- function(force.ad, .envir=parent.frame()){
 
@@ -7,43 +62,6 @@ create_state_space_functions_for_estimation <- function(force.ad, .envir=parent.
   # reduces MakeADFun compilation time by roughly 20%. We must use force=TRUE to force the variables into ad
   # context. This works for the estimation, but breaks the report functionality.
   if(force.ad) {
-
-    if(private$algo.settings$method == "ekf"){
-
-      stateVec <- RTMB::AD(stateVec, force=TRUE)
-      covMat <- RTMB::AD(covMat, force=TRUE)
-      assign("stateVec", stateVec, envir = .envir)
-      assign("covMat", covMat, envir = .envir)
-
-      inputMat <- RTMB::AD(inputMat,force=TRUE)
-      assign("inputMat", inputMat, envir = .envir)
-
-    }
-
-    if(private$algo.settings$method == "lkf") {
-
-      stateVec <- RTMB::AD(stateVec, force=TRUE)
-      covMat <- RTMB::AD(covMat, force=TRUE)
-      assign("stateVec", stateVec, envir = .envir)
-      assign("covMat", covMat, envir = .envir)
-
-    }
-
-    if(private$algo.settings$method == "ukf"){
-      stateVec <- RTMB::AD(stateVec, force=TRUE)
-      covMat <- RTMB::AD(covMat, force=TRUE)
-      assign("stateVec", stateVec, envir = .envir)
-      assign("covMat", covMat, envir = .envir)
-
-      inputMat <- RTMB::AD(inputMat,force=TRUE)
-      assign("inputMat", inputMat, envir = .envir)
-
-      Fsigma <- array(list(),c(1,n.sigmapoints))
-      Hsigma <- array(list(),c(1,n.sigmapoints))
-      assign("Fsigma", Fsigma, envir = .envir)
-      assign("Hsigma", Hsigma, envir = .envir)
-
-    }
 
     # State space functions
     f_vec <- RTMB::AD(numeric(n.states), force=TRUE)
@@ -74,14 +92,6 @@ create_state_space_functions_for_estimation <- function(force.ad, .envir=parent.
     create_function_from_string_body("hvar__", "hvar_vec", private$model$rtmb.function.strings.indexed2$hvar, .envir=.envir)
 
   } else {
-
-    # UKF related
-    if(private$algo.settings$method=="ukf"){
-      Fsigma <- array(list(), c(1,n.sigmapoints))
-      Hsigma <- array(list(),c(1,n.sigmapoints))
-      assign("Fsigma", Fsigma, envir = .envir)
-      assign("Hsigma", Hsigma, envir = .envir)
-    }
 
     create_function_from_string_body("f__", "ans", private$model$r.function.strings$f, .envir=.envir)
     create_function_from_string_body("dfdx__", "ans", private$model$r.function.strings$dfdx, .envir=.envir)

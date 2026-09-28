@@ -611,7 +611,18 @@ ctsmTMB = R6::R6Class(
     #'
     setInitialState = function(initial.state) {
 
-      private$set_initial_state(initial.state, called.by.setInitialState=TRUE)
+      check_initial_state(initial.state, self, private)
+
+      x0 <- initial.state[[1]]
+      p0 <- initial.state[[2]]
+
+      # # convert scalar to matrix
+      if(!is.matrix(p0) & is.numeric(p0) & length(p0)==1){
+        p0 <- p0 * diag(1)
+      }
+
+      # set private field
+      private$algo.settings$initial.state.fixed <- list(x0=x0, p0=p0)
 
       return(invisible(self))
     },
@@ -882,8 +893,11 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     #' @description Retrieve initially set state and covariance
     getInitialState = function() {
+
+      initial.state <- private$algo.settings$initial.state.fixed
+
       # return
-      return(private$algo.settings$initial.state.fixed)
+      return(initial.state)
     },
 
     ########################################################################
@@ -1087,24 +1101,20 @@ ctsmTMB = R6::R6Class(
                       silent = FALSE,
                       ...){
 
-      # set flags
+      proc <- "filter"
       args <- as.list(environment())[names(formals())]
-      set_flags("filter", args, self, private)
 
-      # build model
-      build_model(self, private)
-
-      # check and set data
-      check_and_set_data(data, pars, k.ahead=NULL, self, private)
+      # set arguments, build model, check and set data...
+      standard_procedure(args, proc, data, pars, k.ahead=NULL, self, private)
 
       # filter
-      perform_filtering(self, private, use.cpp)
+      filter_predict_simulate_smooth(self, private, proc=proc)
 
       # create return fit
       create_filter_results(self, private, laplace.residuals)
 
       # return
-      if(!private$algo.settings$silent) message("Finished!")
+      # if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$filtration))
     },
 
@@ -1148,7 +1158,7 @@ ctsmTMB = R6::R6Class(
     #' @param ... additional arguments
     smooth = function(data,
                       pars = NULL,
-                      method = "laplace",
+                      method = "ekf",
                       ode.solver = "euler",
                       ode.timestep = diff(data$t),
                       first.order.input.hold = FALSE,
@@ -1158,27 +1168,25 @@ ctsmTMB = R6::R6Class(
                       silent = FALSE,
                       ...){
 
+      proc <- "smooth"
       args <- as.list(environment())[names(formals())]
-      set_flags("smooth", args, self, private)
 
-      # build model
-      build_model(self, private)
-
-      # check and set data
-      check_and_set_data(data, pars, k.ahead=NULL, self, private)
+      # set arguments, build model, check and set data...
+      standard_procedure(args, proc, data, pars, k.ahead=NULL, self, private)
 
       # For the Laplace methods we need to construct the ad graph to perform the smoothing
       if (private$algo.settings$method %in% c("laplace","laplace.thygesen"))
         create_ad_likelihood_fun(self, private)
 
       # smooth
-      perform_smoothing(self, private)
+      # perform_smoothing(self, private)
+      filter_predict_simulate_smooth(self, private, "smooth", n.sims=NULL)
 
       # create return fit
       create_smooth_results(self, private, laplace.residuals)
 
       # return
-      if(!private$algo.settings$silent) message("Finished!")
+      # if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$smooth))
     },
 
@@ -1257,15 +1265,11 @@ ctsmTMB = R6::R6Class(
                         compile = FALSE,
                         ...){
 
-      # Grab all argument values into a named list
+      proc <- "estimate"
       args <- as.list(environment())[names(formals())]
-      set_flags("estimate", args, self, private)
 
-      # build model
-      build_model(self, private)
-
-      # check and set data
-      check_and_set_data(data, pars=NULL, k.ahead=NULL, self, private)
+      # set arguments, build model, check and set data...
+      standard_procedure(args, proc, data, pars, k.ahead=NULL, self, private)
 
       # construct nll AD function
       compile_cppfile(self, private)
@@ -1284,7 +1288,7 @@ ctsmTMB = R6::R6Class(
       # create_estimation_return_fit2(self, private, report, laplace.residuals)
 
       # return
-      if(!private$algo.settings$silent) message("Finished!")
+      # if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$fit))
     },
 
@@ -1374,22 +1378,18 @@ ctsmTMB = R6::R6Class(
                           compile = FALSE,
                           ...){
 
-      # set flags
+      proc <- "likelihood"
       args <- as.list(environment())[names(formals())]
-      set_flags("likelihood", args, self, private)
 
-      # build model
-      build_model(self, private)
-
-      # check and set data
-      check_and_set_data(data, pars=NULL, k.ahead=NULL, self, private)
+      # set arguments, build model, check and set data...
+      standard_procedure(args, proc, data, pars, k.ahead=NULL, self, private)
 
       # construct nll AD function
       compile_cppfile(self, private)
       create_ad_likelihood_fun(self, private)
 
       # return
-      if(!silent) message("Finished!")
+      # if(!silent) message("Finished!")
       return(invisible(private$nll))
     },
 
@@ -1457,27 +1457,21 @@ ctsmTMB = R6::R6Class(
                        silent = FALSE,
                        ...){
 
-      # match arguments
+      proc <- "predict"
       reported.dispersion.type <- match.arg(return.variance)
-
-      # set flags
       args <- as.list(environment())[names(formals())]
-      set_flags("predict", args, self, private)
 
-      # build model
-      build_model(self, private)
+      # set arguments, build model, check and set data...
+      standard_procedure(args, proc, data, pars, k.ahead, self, private)
 
-      # set data
-      check_and_set_data(data, pars, k.ahead, self, private)
-
-      # estimate
-      perform_prediction(self, private, use.cpp)
+      # call method
+      filter_predict_simulate_smooth(self, private, proc=proc)
 
       # return
       create_return_prediction(reported.dispersion.type, return.k.ahead, self, private)
 
       # return
-      if(!private$algo.settings$silent) message("Finished!")
+      # if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$prediction))
     },
 
@@ -1554,7 +1548,8 @@ ctsmTMB = R6::R6Class(
                         pars = NULL,
                         use.cpp = TRUE,
                         cpp.seeds = NULL,
-                        method = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen"),
+                        # method = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen"),
+                        method = "ekf",
                         ode.solver = "rk4",
                         ode.timestep = diff(data$t),
                         first.order.input.hold = FALSE,
@@ -1568,27 +1563,21 @@ ctsmTMB = R6::R6Class(
                         silent = FALSE,
                         ...){
 
-      # match arguments
-      method <- match.arg(method)
+      proc <- "simulate"
+      args <- as.list(environment())[names(formals())]
 
       # set flags
-      args <- as.list(environment())[names(formals())]
-      set_flags("simulate", args, self, private)
-
-      # build model
-      build_model(self, private)
-
-      # check and set data
-      check_and_set_data(data, pars, k.ahead, self, private)
+      standard_procedure(args, proc, data, pars, k.ahead, self, private)
 
       # estimate
-      perform_simulation(self, private, use.cpp, n.sims)
+      filter_predict_simulate_smooth(self, private, proc=proc, n.sims=n.sims)
 
       # return
       create_return_simulation(return.k.ahead, n.sims, self, private)
 
       # return
-      if(!private$algo.settings$silent) message("Finished.")
+      # if(!private$algo.settings$silent) message("Finished!")
+
       return(invisible(private$results$simulation))
     },
 
@@ -1917,8 +1906,9 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     set_timestep = function(type, dt) {
 
-      # must be numeric
-      if (!is.numeric(dt)) {
+      # bool <- is.null(dt) || is.numeric(dt)
+      bool <- is.numeric(dt)
+      if (!bool) {
         stop("The timestep should be numeric.")
       }
 
@@ -2030,7 +2020,8 @@ ctsmTMB = R6::R6Class(
       }
 
       # check input
-      available.ode.solvers <- c("euler","rk4", "implicit_euler")
+      # available.ode.solvers <- c("euler","rk4", "implicit_euler")
+      available.ode.solvers <- c("euler","rk4")
       bool = ode.solver %in% available.ode.solvers
       if(!bool){
         stop("You must choose one of the following ode solvers:\n\t",
@@ -2063,35 +2054,20 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # SET INITIAL PREDICTION STATE / COVARIANCE
     ########################################################################
-    set_initial_state = function(initial.state, called.by.setInitialState=FALSE) {
+    set_initial_state = function(initial.state) {
 
-      if (!is.list(initial.state) || length(initial.state)!=2) {
-        stop("Please provide a list of length 2!")
-      }
+      check_initial_state(initial.state, self, private)
 
       x0 <- initial.state[[1]]
       p0 <- initial.state[[2]]
-
-      check_initial_state(x0, p0, self, private)
 
       # # convert scalar to matrix
       if(!is.matrix(p0) & is.numeric(p0) & length(p0)==1){
         p0 <- p0 * diag(1)
       }
 
-      # if the call was made from setInitialState then just over-write that field and leave
-      if(called.by.setInitialState){
-        private$algo.settings$initial.state.fixed <- list(x0=x0, p0=p0)
-        return(invisible(self))
-      }
-
-      # Store old initial state and check for AD rebuild if the state changed
-      names(initial.state) <- c("x0", "p0")
-      bool <- identical(initial.state, private$algo.settings$initial.state)
-      if(!bool) private$rebuild$ad <- TRUE
-
       # set private field
-      private$algo.settings$initial.state = list(x0=x0, p0=p0)
+      private$algo.settings$initial.state <- list(x0=x0, p0=p0)
 
       # return
       return(invisible(self))
@@ -2160,11 +2136,6 @@ ctsmTMB = R6::R6Class(
         stop("The initial state estimation must be TRUE or FALSE.")
       }
 
-      # if(bool){
-      #   bool <- !bool
-      #   message("Estimating the initial condition is currently disabled due to a bug.")
-      # }
-
       private$algo.settings$estimate.initial = bool
       return(invisible(NULL))
     },
@@ -2172,25 +2143,17 @@ ctsmTMB = R6::R6Class(
     ########################################################################
     # SET UNSCENTED TRANSFORMATION HYPERPARAMAETERS
     ########################################################################
-    set_ukf_hyperpars = function(par.vector) {
+    set_ukf_hyperpars = function(par.vec) {
 
-      if(is.null(names(par.vector))) {
-        names(par.vector) <- c("alpha","beta","kappa")
+      if(is.null(names(par.vec))) {
+        names(par.vec) <- c("alpha","beta","kappa")
       }
 
-      # check if entries are numerics
-      if (!is.numeric(par.vector[["alpha"]])){
-        stop("'alpha' must be a numeric")
-      }
-      if (!is.numeric(par.vector[["beta"]])){
-        stop("'beta' must be a numeric")
-      }
-      if (!is.numeric(par.vector[["kappa"]])){
-        stop("'kappa' must be a numeric")
-      }
+      if (!is.numeric(par.vec))
+        stop("The vector contain numerics")
 
       # set parameters
-      private$algo.settings$ukf.hyperpars = par.vector
+      private$algo.settings$ukf.hyperpars = par.vec
 
       # return
       return(invisible(self))

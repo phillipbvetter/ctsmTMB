@@ -1,5 +1,13 @@
+standard_procedure <- function(args, proc, data, par.vec, k.ahead, self, private){
 
-set_flags = function(proc, args, self, private){
+  set_flags(proc, args, self, private)
+  build_model(self, private)
+  check_and_set_main_data(data, self, private)
+  check_and_set_misc_data_and_arguments(self, private, par.vec, k.ahead)
+
+}
+
+set_flags <- function(proc, args, self, private){
 
   # Procedure is "estimation", "filtration", "simulation" etc...
   private$set_procedure(proc)

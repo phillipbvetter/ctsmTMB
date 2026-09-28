@@ -3,15 +3,16 @@ create_ad_likelihood_fun <- function(self, private){
   # TMB::openmp(n=1, autopar=TRUE, DLL=private$modelname.with.method)
 
   # Check for rebuild - exit or continue
-  check_or_save_for_ad_rebuild("check", self, private)
-  if (!private$rebuild$ad)
-    return(invisible(self))
+  # check_or_save_for_ad_rebuild("check", self, private)
+  check_for_ad_rebuild(self, private)
+  if (!private$rebuild$ad) return(invisible(self))
 
   # Rebuild needed - save settings for next time and compile nll fun
-  check_or_save_for_ad_rebuild("save", self, private)
+  # check_or_save_for_ad_rebuild("save", self, private)
+  save_ad_rebuild_fields(self, private)
 
   if (!private$algo.settings$silent)
-    message("Compiling objective function...")
+    message("Compiling automatic-differentiation graph...")
 
   if (private$algo.settings$method == "ukf" && !private$algo.settings$silent)
     message("This UKF implementation may be unstable - alternativly try 'method = ukf.cpp'.")
@@ -44,9 +45,13 @@ create_ad_likelihood_fun <- function(self, private){
 
 perform_estimation = function(self, private) {
 
-  if(!private$algo.settings$silent) message("Minimizing the negative log-likelihood...")
+  if(private$dims$free.pars==0)
+    stop("Estimation aborted - there are no (fixed effects) parameters in the model.")
 
-  if(private$dims$free.pars==0) stop("There are no free parameters to optimize for.")
+  # if(!private$algo.settings$silent)
+  #   message("Minimizing the negative log-likelihood...")
+  if(!private$algo.settings$silent)
+    message("Estimating...")
 
   # Parameter Bounds
   initial.parameters <- sapply(private$model$parameters[names(private$model$free.pars)], function(par) par$initial)
@@ -137,14 +142,16 @@ perform_estimation = function(self, private) {
     # if(outer_mgc > 1){
     # message("BEWARE: THE MAXIMUM GRADIENT COMPONENT APPEARS TO BE LARGE ( > 1 ) - THE FOUND OPTIMUM MIGHT BE INVALID.")
     # }
-    message("\t Optimization finished!:
-            Elapsed time: ", comp.time, " seconds.
-            The objective value is: ",format(opt$objective,scientific=T),"
-            The maximum gradient component is: ",format(outer_mgc,digits=2,scientific=T),"
-            The convergence message is: ", opt$message,"
-            Iterations: ",opt$iterations,"
-            Evaluations: Fun: ",opt$evaluations["function"]," Grad: ",opt$evaluations[["gradient"]],"
-            See stats::nlminb for available tolerance/control arguments."
+
+    message(
+      sprintf("Estimation results:\n\n"),
+      sprintf("  %-30s %s seconds\n", "Elapsed time:", comp.time),
+      sprintf("  %-30s %s\n", "Objective value:", format(opt$objective, scientific = TRUE)),
+      sprintf("  %-30s %s\n", "Max gradient component:", format(outer_mgc, digits = 2, scientific = TRUE)),
+      sprintf("  %-30s %s\n", "Convergence message:", opt$message),
+      sprintf("  %-30s %s\n", "Iterations:", opt$iterations),
+      sprintf("  %-30s Fun: %s  Grad: %s\n", "Evaluations:", opt$evaluations["function"], opt$evaluations[["gradient"]]),
+      "\n  See stats::nlminb for available tolerance/control arguments.\n"
     )
   }
 
@@ -195,43 +202,17 @@ create_estimation_return_fit <- function(self, private, report, laplace.residual
       on.exit(private$algo.settings$silent <- silent.setting, add=TRUE)
       private$algo.settings$silent <- TRUE
 
-      # Old version
-      # ----------------------------------------------------------------------
-      # self$filter(data=private$data,
-      #             pars = NULL,
-      #             method=private$algo.settings$method,
-      #             ode.solver=private$algo.settings$ode.solver,
-      #             ode.timestep=private$algo.settings$ode.timestep,
-      #             loss=private$algo.settings$loss$loss,
-      #             loss_c=private$algo.settings$loss$loss_c,
-      #             ukf.hyperpars=private$algo.settings$ukf.hyperpars,
-      #             initial.state=private$algo.settings$initial.state,
-      #             laplace.residuals=laplace.residuals,
-      #             estimate.initial.state=private$algo.settings$estimate.initial,
-      #             first.order.input.hold=private$algo.settings$first.order.input.hold,
-      #             use.cpp = TRUE,
-      #             silent = TRUE)
-      # ----------------------------------------------------------------------
-
-      # New version
       # We run the filter function directly bypassing build, set flags etc
-      # ----------------------------------------------------------------------
-      perform_filtering(self, private, use.cpp = TRUE)
-      # ----------------------------------------------------------------------
-
-      # Package the raw filter output into private$results$filtration.
-      create_filter_results(self, private, laplace.residuals, silent = TRUE)
+      filter_predict_simulate_smooth(self, private, proc="filter")
+      create_filter_results(self, private, laplace.residuals)
 
       # Merge filter results into fit
       private$results$fit = c(private$results$fit, private$results$filtration)
 
     }
 
-    if(private$algo.settings$method %in% c("laplace","laplace.thygesen")) {
-
+    if (private$algo.settings$method %in% c("laplace","laplace.thygesen"))
       laplace_report(self, private, laplace.residuals)
-
-    }
 
   }
 

@@ -1,10 +1,14 @@
 # These functions are helper functions used when calling the ctsmrTMB method
 
 
-# Applies algebraics, lamperti transformation and diff terms
-apply_algebraics_and_lamperti <- function(self, private){
+# Applies algebraic equations to the system equations
+apply_algebraic_equations <- function(self, private) {
   apply_algebraics_and_define_trans_equations(self, private)
   calculate_diff_terms(self, private)
+}
+
+# Apply lamperti transformation to system equations
+apply_lamperti_transform <- function(self, private){
   apply_lamperti(self, private)
   calculate_diff_terms(self, private)
 }

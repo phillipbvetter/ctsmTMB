@@ -1,6 +1,6 @@
 configure_ad_tape <- function(context, self, private){
 
-  if(context=="RTMB"){
+  if (context=="RTMB"){
     if(is.null(private$algo.settings$advanced.settings$rtmb.tapeconfig)){
       # Default settings
       # atomic: disabling yields 7x optimization speed
@@ -17,19 +17,21 @@ configure_ad_tape <- function(context, self, private){
   }
 
   if(context=="TMB"){
-    tmb.config.names <- c("trace.atomic",
-                          "trace.optimize",
-                          "nthreads",
-                          "trace.parallel",
-                          "tmbad.atomic_sparse_log_determinant",
-                          "tmbad_deterministic_hash",
-                          "tape.parallel",
-                          "optimize.parallel",
-                          "autopar",
-                          "optimize.instantly",
-                          "debug.getListElement",
-                          "tmbad.sparse_hessian_compress")
-    if(is.null(private$algo.settings$advanced.settings$tmb.tapeconfig)){
+    tmb.config.names <- c(
+      "trace.atomic",
+      "trace.optimize",
+      "nthreads",
+      "trace.parallel",
+      "tmbad.atomic_sparse_log_determinant",
+      "tmbad_deterministic_hash",
+      "tape.parallel",
+      "optimize.parallel",
+      "autopar",
+      "optimize.instantly",
+      "debug.getListElement",
+      "tmbad.sparse_hessian_compress"
+    )
+    if (is.null(private$algo.settings$advanced.settings$tmb.tapeconfig)) {
       # Default settings
       x <- list(
         trace.atomic = 1,
@@ -97,49 +99,7 @@ get_adjoints <- function(.envir=parent.frame()){
     },
     name = "logdet")
 
-  kron.left <- RTMB::ADjoint(
-    function(x) {
-      dim(x) <- rep(sqrt(length(x)), 2)
-      i <- diag(sqrt(length(x)))
-      kronecker(x,i)
-    },
-    function(x, y, dy) {
-      n <- sqrt(length(x))
-      out <- matrix(0,nrow=n,ncol=n)
-      for(i in 1:n){
-        for(j in 1:n){
-          id.seq <- 1+(j-1)*n + (n^2+1) * (1:n-1)
-          id.seq <- id.seq + (i-1) * n^3
-          out[[i,j]] <- sum(dy[id.seq])
-        }
-      }
-      return(out)
-    },
-    name = "kron.left")
-
-  kron.right <- RTMB::ADjoint(
-    function(x) {
-      dim(x) <- rep(sqrt(length(x)), 2)
-      i <- diag(sqrt(length(x)))
-      kronecker(i,x)
-    },
-    function(x, y, dy) {
-      n <- sqrt(length(x))
-      out <- matrix(0,nrow=n,ncol=n)
-      for(i in 1:n){
-        for(j in 1:n){
-          id.seq <- j + (n^3+n) * (1:n-1)
-          id.seq <- id.seq + (i-1) * n^2
-          out[[i,j]] <- sum(dy[id.seq])
-        }
-      }
-      return(out)
-    },
-    name = "kron.right")
-
   assign("logdet", logdet, envir = .envir)
-  assign("kron.left", kron.left, envir = .envir)
-  assign("kron.right", kron.right, envir = .envir)
 
   return(invisible(NULL))
 }
@@ -355,13 +315,45 @@ get_ode_solvers <- function(.envir=parent.frame()){
   return(NULL)
 }
 
+get_initial_state_estimator_fixed_inputs <- function(inputVec, .envir=parent.frame()){
+
+  # unpack objects from parent
+  list2env(as.list(.envir), envir = environment())
+
+  ###################################################
+  # STATIONARY SOLVER FOR THE MEAN
+  ###################################################
+
+  # id helpers
+  sizes <- c(n.states, n.pars)
+  n.total <- sum(sizes)
+  id.end <- cumsum(sizes)
+  id.start <- c(1, head(id.end,-1) + 1)
+  ids <- mapply(function(s,e) s:e, id.start, id.end)
+
+
+  # maketape function
+  initial.state.newton <- function(x){
+    stateVec <- x[ids[[1]]]
+    parVec <- x[ids[[2]]]
+    y <- f__(stateVec, parVec, inputVec)
+    sum(y*y)
+  }
+  # create the tape and perform newton
+  f.initial.state.newton0 <- RTMB::MakeTape(initial.state.newton, numeric(n.total))
+  f.initial.state.newton <- f.initial.state.newton0$newton(1:n.states, grad_tol=1e-20)
+
+  assign("f.initial.state.newton_fixed_input", f.initial.state.newton, envir=.envir)
+}
+
 get_initial_state_estimator <- function(.envir=parent.frame()){
 
   # unpack objects from parent
   list2env(as.list(.envir), envir = environment())
 
-  ######## Function 1
-  ######## Mean Stationary Solver
+  ###################################################
+  # STATIONARY SOLVER FOR THE MEAN
+  ###################################################
 
   # id helpers
   sizes <- c(n.states, n.pars, n.inputs)
@@ -374,35 +366,40 @@ get_initial_state_estimator <- function(.envir=parent.frame()){
     stateVec_rootfind <- x[sub.ids[[1]]]
     parVec <- x[sub.ids[[2]]]
     inputVec <- x[sub.ids[[3]]]
-
-    # Root-find drift function (stationary 1st moment ODE solution)
-    X1 <- f__(stateVec_rootfind, parVec, inputVec)
-
-    cost <- sum(X1*X1)
-    return(cost)
+    dx <- f__(stateVec_rootfind, parVec, inputVec)
+    sum(dx*dx)
   }
 
   # create the tape and perform newton
   f.initial.state.newton0 <- RTMB::MakeTape(initial.state.newton, rep(1,sum(sizes)))
-  f.initial.state.newton <- f.initial.state.newton0$newton(1:n.states)
+  f.initial.state.newton <- f.initial.state.newton0$newton(1:n.states, grad_tol=1e-20)
+
+  ###################################################
+  # STATIONARY SOLVER FOR THE COVARIANCE
+  ###################################################
 
   ######## Function 2
   ######## Covariance Stationary Solve
   # TODO: Can we implement Bartels–Stewart algorithm with eigen?
-  f.initial.covar.solve <- function(stateVec, parVec, inputVec){
-    A <- dfdx__(stateVec, parVec, inputVec)
-    G <- g__(stateVec, parVec, inputVec)
-    Q <- G %*% t(G)
-    # this line below causes hessian to NaN because of the RTMB::ADjoints
-    # kron.left and kron.right may be wrongly specified? not sure
-    P <- kron.left(A) + kron.right(A)
-    X <- -RTMB::solve(P, as.numeric(Q))
-    covMat <- RTMB::matrix(X, nrow=n.states)
-    return(covMat)
-  }
+  # f.initial.covar.solve <- function(stateVec, parVec, inputVec){
+  #   A <- dfdx__(stateVec, parVec, inputVec)
+  #   G <- g__(stateVec, parVec, inputVec)
+  #   Q <- G %*% t(G)
+  #   # this line below causes hessian to NaN because of the RTMB::ADjoints
+  #   # kron.left and kron.right may be wrongly specified? not sure
+  #   P <- kron.left(A) + kron.right(A)
+  #   X <- -RTMB::solve(P, as.numeric(Q))
+  #   covMat <- RTMB::matrix(X, nrow=n.states)
+  #   return(covMat)
+  # }
+
+
+  ###################################################
+  # ASSIGN TO CALLING ENVIRONMENT
+  ###################################################
 
   assign("f.initial.state.newton", f.initial.state.newton, envir=.envir)
-  assign("f.initial.covar.solve", f.initial.covar.solve, envir=.envir)
+  # assign("f.initial.covar.solve", f.initial.covar.solve, envir=.envir)
 
   return(NULL)
 }
@@ -640,5 +637,21 @@ get_ukf_weights <- function(.envir=parent.frame()){
 #   return(NULL)
 # }
 
+compute_initial_state_estimate <- function(pars, inputvec, self, private) {
+  get_sys_dims()
+  apply_forceAD_to_some_variables(force.ad=FALSE)
+  create_state_space_functions_for_estimation(force.ad=FALSE)
+  get_initial_state_estimator()
+  state.vec <- f.initial.state.newton(c(pars, inputvec))
 
+  # stateVec <- try_withWarningRecovery(
+  #   f.initial.state.newton(c(pars, inputvec))
+  # )
+  # if (inherits(stateVec, "try-error")) {
+  #   message("The intial state estimation failed - using initial guess.")
+  #   stateVec <- private$algo.settings$initial.state$x0
+  # }
+
+  state.vec
+}
 

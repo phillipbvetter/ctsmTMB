@@ -1,14 +1,37 @@
-check_and_set_data <- function(data, pars, k.ahead, self, private){
+check_and_set_main_data <- function(data, self, private) {
 
-  if(!private$algo.settings$silent) message("Checking & setting data...")
+  bool = any(private$rebuild$data, !identical(private$old.data$entry.data, data))
 
-  # Order is important
-  check_data_entries("data", self, private, data)
-  check_data_entries("ode", self, private)
-  check_data_entries("sim", self, private)
+  # This check only passes if the data is new or changed since last call
+  if (bool) {
+
+    if(!private$algo.settings$silent) message("Setting data...")
+
+    # Store the received data for rebuild comparisons
+    private$old.data$entry.data <- data
+
+    # Compute the new data
+    compute_data(data, self, private)
+
+    # We must compute all data entries and rebuild AD
+    flick_data_rebuild_switches("data", self, private)
+  }
+
+}
+
+check_and_set_misc_data_and_arguments <- function(self, private, par.vec, k.ahead) {
+
+  # This function checks all of the misc data entries such as time-steps, and so forth
+  # Also sets parameter vector and k.ahead arguments
+
+  check_and_set_data_entries("ode", self, private)
+  check_and_set_data_entries("initial.state", self, private)
+
+  if (private$procedure %in% "simulate")
+    check_and_set_data_entries("sim", self, private)
 
   if (private$procedure %in% c("filter","smooth","predict", "simulate"))
-    set_parameters(pars, self, private)
+    set_parameters(par.vec, self, private)
 
   if (private$procedure %in% c("predict", "simulate"))
     set_k_ahead(k.ahead, self, private)
@@ -16,32 +39,36 @@ check_and_set_data <- function(data, pars, k.ahead, self, private){
   return(invisible(self))
 }
 
-check_data_entries <- function(str, self, private, data=NULL){
+check_and_set_data_entries <- function(str, self, private){
 
-  # check for changes in the relevant field
+  # check for changes in the 'str' field
   bool <- switch(str,
-                 data = any(private$rebuild$data, !identical(private$old.data$entry.data, data)),
                  ode = any(private$rebuild$ode.timestep, !identical(private$old.data$ode.timestep, private$algo.settings$ode.timestep)),
-                 sim = any(private$rebuild$sim.timestep, !identical(private$old.data$sim.timestep, private$algo.settings$sim.timestep))
+                 sim = any(private$rebuild$sim.timestep, !identical(private$old.data$sim.timestep, private$algo.settings$sim.timestep)),
+                 initial.state = !identical(private$old.data$initial.state, private$algo.settings$initial.state)
   )
 
   # set the relevant field and update old field, if any changes
   if (bool) {
 
-    if (str=="data") {
-      compute_data(data, self, private)
-      private$old.data$entry.data <- data
-    }
-
     if (str=="ode") {
+      # message("Setting ODE timestep...")
       compute_timestep("ode", private$data, self, private)
       compute_laplace_initial_state_guess_and_iobs(private$data, self, private)
       private$old.data$ode.timestep <- private$algo.settings$ode.timestep
     }
 
     if (str=="sim") {
+      # message("Setting SDE timestep...")
       compute_timestep("sim", private$data, self, private)
       private$old.data$sim.timestep <- private$algo.settings$sim.timestep
+    }
+
+    if (str == "initial.state") {
+      # no computations are needed for setting the initial state itself
+      # but this if-statement makes sure we recompute the laplace guess
+      compute_laplace_initial_state_guess_and_iobs(private$data, self, private)
+      private$old.data$initial.state <- private$algo.settings$initial.state
     }
 
     # finally switch the rebuild switches
@@ -84,7 +111,7 @@ basic_data_check = function(data, self, private) {
   bool = private$names$inputs %in% names(data)
   if (any(!bool)) {
     stop("The following required inputs were not provided in the data:
-         ", paste(private$names$inputs[!bool],collapse=", "))
+         ", paste(private$names$inputs[!bool], collapse=", "))
   }
 
   # check if all (basic) observations are in the data.
@@ -127,7 +154,10 @@ calculate_complex_observation_lefthandsides = function(data, self, private){
   # if there are none, return
   if(!any(bool)){
     return(data)
+  } else {
+    stop("Support for complex left hand sides is disabled.")
   }
+
 
   # otherwise, calculate these variables using data variables
   temp.data = list()
@@ -172,22 +202,20 @@ calculate_complex_observation_lefthandsides = function(data, self, private){
 # so we round up the number of steps there i.e. N = [1, 1, 3]. The last entry is the important one.
 # We take 3 steps, so for last entry, we must reduce the step-size to data.dt[3] / N[3] = 2.5 / 3 = 0.88883333
 
-compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
+compute_timestep <- function(type, data, self, private, epsilon.step = 1e-3){
 
   n <- nrow(data) - 1
   if (type=="ode") dt <- private$algo.settings$ode.timestep
   if (type=="sim") dt <- private$algo.settings$sim.timestep
 
-  if (is.null(dt)) return(invisible(self))
-
   # check that dt has length 1 or nrow(data)-1
   if (length(dt) == 1) {
     dt <- rep(dt, n)
   } else if (length(dt) > n) {
-    warning(sprintf("The provided %s.timestep was longer than nrow(data) - 1, only using first nrow(data)-1 entries.", type))
+    message(sprintf("The provided %s.timestep vector was longer than nrow(data) - 1 = %s, only using first %s entries.", type, nrow(data)-1, nrow(data)-1))
     dt <- head(dt, n)
   } else if (length(dt) < n) {
-    warning(sprintf("The provided %s.timestep was shorter than nrow(data) - 1, only using first entry.", type))
+    message(sprintf("The provided %s.timestep was shorter than nrow(data) - 1, only using the first entry.", type))
     dt <- rep(dt[1],n)
   }
 
@@ -229,7 +257,7 @@ compute_timestep = function(type, data, self, private, epsilon.step = 1e-3){
 # The reason we want to avoid using is.na is probably that it enables us
 # to use the one-step-residual function from TMB...???
 
-compute_laplace_initial_state_guess_and_iobs = function(data, self, private){
+compute_laplace_initial_state_guess_and_iobs <- function(data, self, private){
 
   # create iobs vector  ------------------------------------
   iobs = list()
@@ -240,7 +268,6 @@ compute_laplace_initial_state_guess_and_iobs = function(data, self, private){
   private$algo.settings$iobs = iobs
 
   # initial guess on random effects  ------------------------------------
-
   # set state values using only initial guess
   tempdata <- as.data.frame(matrix(0, nrow=nrow(data), ncol=private$dims$states))
   names(tempdata) <- private$names$states

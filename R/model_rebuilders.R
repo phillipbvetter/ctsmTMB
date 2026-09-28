@@ -1,39 +1,44 @@
+##########################################################################################
+# AD REBUILD SETTINGS
+##########################################################################################
 
-# This function either checks the newest parsed data / settings against the ones used last call.
-# If they have changed we must rebuild the AD likelihood function via RTMB::MakeADFun.
-check_or_save_for_ad_rebuild <- function(type, self, private){
+# These are the constant fields that we must watch for changes
+# If they change we must recompile the AD graph via RTMB::MakeADFun.
+ad.recompile.fields <- c(
+  "method",
+  "ode.solver",
+  "loss",
+  "estimate.initial",
+  "ukf.hyperpars",
+  "first.order.input.hold",
+  NULL
+)
 
-  # All fields that causes changes in the likelihood function will require a
-  # full AD re-compilation.
-  # NOTE: ODE-timestep fields are checked in the data-setting procedure earlier.
-  fields <- c(
-    "method",
-    "ode.solver",
-    "loss",
-    "estimate.initial",
-    "ukf.hyperpars",
-    "first.order.input.hold"
-    )
-
-  # CHECK MODE:
-  if (type=="check") {
-    bool <- unlist(lapply(fields, function(s) !identical(private$old.data[[s]], private$algo.settings[[s]])))
-    private$rebuild$ad <- any(private$rebuild$ad, bool)
-  }
-
-  # SAVE MODE:
-  if (type == "save") {
-    private$old.data[fields] <- private$algo.settings[fields]
-    private$rebuild$ad <- FALSE
-  }
-
+# This function saves the settings that when changed requires rebuildind the AD graph via RTMB::MakeADFun.
+save_ad_rebuild_fields <- function(self, private) {
+  private$old.data[ad.recompile.fields] <- private$algo.settings[ad.recompile.fields]
+  private$rebuild$ad <- FALSE
   return(invisible(self))
-
 }
 
-# Helper function for triggering re-computation of intermediates and the RTMB AD graph
+# This function checks the newest parsed data / settings against the ones used in the previous call.
+# If they have changed we must rebuild the AD likelihood function via RTMB::MakeADFun.
+check_for_ad_rebuild <- function(self, private) {
+  bool <- unlist(lapply(ad.recompile.fields, function(s) !identical(private$old.data[[s]], private$algo.settings[[s]])))
+  private$rebuild$ad <- any(private$rebuild$ad, bool)
+  return(invisible(self))
+}
+
+
+
+##########################################################################################
+# DATA REBUILD SETTINGS (ALSO CAUSES NEED FOR AD REBUILD)
+##########################################################################################
+
+# Helper function for triggering re-computation of data entries
 flick_data_rebuild_switches <- function(str, self, private){
 
+  # If the data is changed then we must also rebuild timesteps
   if(str=="data"){
     private$rebuild$data <- FALSE
     private$rebuild$ode.timestep <- TRUE

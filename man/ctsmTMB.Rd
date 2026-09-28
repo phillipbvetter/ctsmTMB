@@ -644,7 +644,7 @@ system contains time-varying inputs, the first element of these is used.}
     \preformatted{ctsmTMB$smooth(
   data,
   pars = NULL,
-  method = "laplace",
+  method = "ekf",
   ode.solver = "euler",
   ode.timestep = diff(data$t),
   first.order.input.hold = FALSE,
@@ -986,7 +986,7 @@ state estimate as the initial condition.
   pars = NULL,
   use.cpp = TRUE,
   cpp.seeds = NULL,
-  method = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen"),
+  method = "ekf",
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   first.order.input.hold = FALSE,

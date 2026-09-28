@@ -450,9 +450,19 @@ check_for_bad_algebraics <- function(added.name, self, private){
   }
 }
 
-check_initial_state <- function(x0, p0, self, private){
+check_initial_state <- function(initial.state, self, private){
 
   n.states <- private$dims$states
+
+  if (is.null(initial.state))
+    stop("The initial state cannot be NULL - provide a list of length 2!")
+
+  if (!is.list(initial.state) || length(initial.state)!=2) {
+    stop("The initial state should be a list of length 2!")
+  }
+
+  x0 <- initial.state[[1]]
+  p0 <- initial.state[[2]]
 
   ###### mean vector checks ######
   if (!is.numeric(x0)) {

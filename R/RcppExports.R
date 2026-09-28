@@ -13,6 +13,10 @@ ekf_simulate_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVe
     .Call('_ctsmTMB_ekf_simulate_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, any_available_obs, non_na_ids, ode_solver, last_pred_id, k_step_ahead, ng, nsims, seed, first_order_input_hold)
 }
 
+ekf_smooth_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, first_order_input_hold) {
+    .Call('_ctsmTMB_ekf_smooth_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, first_order_input_hold)
+}
+
 calculate_filtering_observations <- function(filtration_raw, funPtrs, inputMat, parVec, n_obs) {
     .Call('_ctsmTMB_calculate_filtering_observations', PACKAGE = 'ctsmTMB', filtration_raw, funPtrs, inputMat, parVec, n_obs)
 }

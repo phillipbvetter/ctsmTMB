@@ -88,6 +88,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ekf_smooth_rcpp
+List ekf_smooth_rcpp(List funPtrs, Eigen::MatrixXd obsMat, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, Eigen::MatrixXd covMat, Eigen::VectorXd stateVec, Eigen::VectorXd ode_timestep_size, Eigen::VectorXd ode_timesteps, LogicalVector any_available_obs, List non_na_ids, CharacterVector ode_solver, bool first_order_input_hold);
+RcppExport SEXP _ctsmTMB_ekf_smooth_rcpp(SEXP funPtrsSEXP, SEXP obsMatSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP covMatSEXP, SEXP stateVecSEXP, SEXP ode_timestep_sizeSEXP, SEXP ode_timestepsSEXP, SEXP any_available_obsSEXP, SEXP non_na_idsSEXP, SEXP ode_solverSEXP, SEXP first_order_input_holdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type funPtrs(funPtrsSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obsMat(obsMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inputMat(inputMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parVec(parVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type stateVec(stateVecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timestep_size(ode_timestep_sizeSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type ode_timesteps(ode_timestepsSEXP);
+    Rcpp::traits::input_parameter< LogicalVector >::type any_available_obs(any_available_obsSEXP);
+    Rcpp::traits::input_parameter< List >::type non_na_ids(non_na_idsSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type ode_solver(ode_solverSEXP);
+    Rcpp::traits::input_parameter< bool >::type first_order_input_hold(first_order_input_holdSEXP);
+    rcpp_result_gen = Rcpp::wrap(ekf_smooth_rcpp(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, first_order_input_hold));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calculate_filtering_observations
 List calculate_filtering_observations(const List filtration_raw, const List funPtrs, Eigen::MatrixXd inputMat, Eigen::VectorXd parVec, int n_obs);
 RcppExport SEXP _ctsmTMB_calculate_filtering_observations(SEXP filtration_rawSEXP, SEXP funPtrsSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP n_obsSEXP) {
@@ -336,6 +358,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ctsmTMB_ekf_filter_rcpp", (DL_FUNC) &_ctsmTMB_ekf_filter_rcpp, 12},
     {"_ctsmTMB_ekf_predict_rcpp", (DL_FUNC) &_ctsmTMB_ekf_predict_rcpp, 14},
     {"_ctsmTMB_ekf_simulate_rcpp", (DL_FUNC) &_ctsmTMB_ekf_simulate_rcpp, 19},
+    {"_ctsmTMB_ekf_smooth_rcpp", (DL_FUNC) &_ctsmTMB_ekf_smooth_rcpp, 12},
     {"_ctsmTMB_calculate_filtering_observations", (DL_FUNC) &_ctsmTMB_calculate_filtering_observations, 5},
     {"_ctsmTMB_lkf_filter_rcpp", (DL_FUNC) &_ctsmTMB_lkf_filter_rcpp, 11},
     {"_ctsmTMB_lkf_predict_rcpp", (DL_FUNC) &_ctsmTMB_lkf_predict_rcpp, 13},

@@ -50,23 +50,25 @@ Once a model is created inference and forecasting is performed using the followi
 
 2. `filter`:
 
-    Performs state filtration (Kalman filters only).
+    Performs state filtration (only for Kalman filter methods).
 
 3. `smooth`:
 
-    Performs state smoothing (only available for the Laplace approximation methods).
+    Performs state smoothing (only for Laplace approximation methods).
 
 4. `predict`:
 
-    Performs k-step forecasting of the system mean and variance (Kalman filters only).
+    Performs k-step forecasting of the system mean and variance (only for Kalman filter methods).
 
 5. `simulate`:
 
-    Performs k-step forecasting through stochastic path simulations (Kalman filters only).
+    Performs k-step forecasting through stochastic path simulations (only for Kalman filter methods).
     
 6. `likelihood`:
 
-    Construct the (negative log) likelihood function handles for the function value, gradient and hessian. This is directly passed back from `RTMB::MakeADFun`. This method allows for the use of other optimizers, modifying the likelihood calculations, or combining several data series.
+    Construct the negative log-likelihood function handles for the function value, gradient and hessian. 
+
+The `likelihood` method returns the object passed directly from `RTMB::MakeADFun`. Having the raw functon handlers enables the user to choose their own optimizer, modify the likelihood calculations, or combine likelihoods from multiple time-series.
 
 <!-- Estimation Methods -->
 # Estimation Methods
@@ -189,7 +191,7 @@ model <- newModel()
 
 # Add system equations
 model$addSystem(
-  dx ~ theta * (mu-x+u) * dt + sigma_x*dw
+  dx ~ theta * (mu-x+u) * dt + sigma_x * dw
 )
 
 # Add observation equations
@@ -205,12 +207,19 @@ model$setVariance(
 # Add vector input
 model$addInput(u)
 
+# We apply log-transformations to the strictly positive parameters
+model$setAlgebraics(
+  theta ~ exp(logtheta),
+  sigma_x ~ exp(logsigma_x),
+  sigma_y ~ exp(logsigma_y)
+)
+
 # Specify parameter initial values and lower/upper bounds in estimation
 model$setParameter(
-  theta   = c(initial=2, lower=1e-5, upper=50),
-  mu      = c(initial=2, lower=0, upper=5),
-  sigma_x = c(initial=1e-2, lower=1e-10, upper=30),
-  sigma_y = c(initial=1e-2, lower=1e-10, upper=30)
+  logtheta   = log(c(initial=2, lower=1e-5, upper=50)),
+  mu         = c(initial=2, lower=0, upper=5),
+  logsigma_x = log(c(initial=1e-2, lower=1e-10, upper=30)),
+  logsigma_y = log(c(initial=1e-2, lower=1e-10, upper=30))
 )
 
 # Set initial state mean and covariance
@@ -224,7 +233,7 @@ model$setInitialState(initial.state)
 # First we create data (no observations)
 r.seed <- 20 # this seed for for u.sim rnorm draws
 set.seed(r.seed)
-true.pars = c(theta=10, mu=1, sigma_x=1, sigma_y=0.1)
+true.pars = c(logtheta=log(10), mu=1, logsigma_x=log(1), logsigma_y=log(0.1))
 dt.sim = 1e-2
 t.sim = seq(0, 5, by=dt.sim)
 u.sim = cumsum(rnorm(length(t.sim),sd=0.05)) # Create arbitrary input signal

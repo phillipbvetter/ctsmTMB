@@ -1,22 +1,25 @@
 
 # This function call all others in this script to check / build a model object
-build_model = function(self, private) {
+build_model <- function(self, private) {
 
   # Check if model is already built else set rebuild flags
-  if(!private$rebuild$model) return(invisible(self))
+  if(!private$rebuild$model)
+    return(invisible(self))
+
+  if(!private$algo.settings$silent)
+    message("Compiling model...")
+
+  # Disable rebuild flags
   private$rebuild$model <- FALSE
   private$rebuild$data <- TRUE
   private$rebuild$ad <- TRUE
 
-  # Print
-  if(!private$algo.settings$silent) message("Compiling model...")
-
-  # basic sanity checks (does not need trans equations)
+  # basic sanity checks (does not need transformed equations)
   basic_model_check(self, private)
 
-  # apply algebraics/lamperti and build state-space function strings
-  # must happen before final_build_check, which inspects the *.trans fields
-  apply_algebraics_and_lamperti(self, private)
+  # build model equations, transformations, function strings...
+  apply_algebraic_equations(self, private)
+  apply_lamperti_transform(self, private)
   create_all_state_space_function_strings(self, private)
 
   # last check (needs obs.eqs.trans / sys.eqs.trans populated above)

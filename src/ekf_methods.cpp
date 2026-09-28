@@ -16,11 +16,11 @@ zigg::Ziggurat ziggurat_states;
 
 // [[Rcpp::export]]
 List ekf_filter_rcpp(
-  List funPtrs, 
+  List funPtrs,
   Eigen::MatrixXd obsMat,
   Eigen::MatrixXd inputMat,
   Eigen::VectorXd parVec,
-  Eigen::MatrixXd covMat, 
+  Eigen::MatrixXd covMat,
   Eigen::VectorXd stateVec,
   Eigen::VectorXd ode_timestep_size,
   Eigen::VectorXd ode_timesteps,
@@ -37,7 +37,7 @@ List ekf_filter_rcpp(
   auto dhdx__ = get_funptr<funPtr_mat_const>(funPtrs, "dhdx_const");
   auto hvar__ = get_funptr<funPtr_mat_const>(funPtrs, "hvar_const");
 
-  // constants  
+  // constants
   const int tsize = inputMat.col(0).size();
   const int ni = inputMat.row(0).size();
   const int n = stateVec.size();
@@ -121,11 +121,11 @@ List ekf_filter_rcpp(
     //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
     for(int j=0 ; j < ode_timesteps(i) ; j++){
       ode_integrator_inplace(
-        f__, g__, dfdx__, 
-        covMat, stateVec, 
-        parVec, 
-        inputVec, dinputVec, 
-        ode_timestep_size(i), ODE_solver, 
+        f__, g__, dfdx__,
+        covMat, stateVec,
+        parVec,
+        inputVec, dinputVec,
+        ode_timestep_size(i), ODE_solver,
         k1, k2, k3, k4, c1, c2, c3, c4
         );
       inputVec += dinputVec;
@@ -184,7 +184,7 @@ List ekf_filter_rcpp(
     xPost(i+1) = stateVec;
     pPost(i+1) = covMat;
   }
-  
+
   return List::create(
     Named("xPrior") = xPrior,
     Named("xPost") = xPost,
@@ -202,7 +202,7 @@ List ekf_predict_rcpp(
   Eigen::MatrixXd obsMat,
   Eigen::MatrixXd inputMat,
   Eigen::VectorXd parVec,
-  Eigen::MatrixXd covMat, 
+  Eigen::MatrixXd covMat,
   Eigen::VectorXd stateVec,
   Eigen::VectorXd ode_timestep_size,
   Eigen::VectorXd ode_timesteps,
@@ -235,7 +235,7 @@ List ekf_predict_rcpp(
   List xPost = filt["xPost"];
   List pPost = filt["pPost"];
 
-  // pre-allocate and misc  
+  // pre-allocate and misc
   const int n = stateVec.size();
   const int ni = inputMat.row(0).size();
   const int n_squared = n*n;
@@ -273,11 +273,11 @@ List ekf_predict_rcpp(
       //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
       for(int j=0 ; j < ode_timesteps(i+k) ; j++){
       ode_integrator_inplace(
-        f__, g__, dfdx__, 
-        covMat, stateVec, 
-        parVec, 
-        inputVec, dinputVec, 
-        ode_timestep_size(i+k), ODE_solver, 
+        f__, g__, dfdx__,
+        covMat, stateVec,
+        parVec,
+        inputVec, dinputVec,
+        ode_timestep_size(i+k), ODE_solver,
         k1, k2, k3, k4, c1, c2, c3, c4
         );
       inputVec += dinputVec;
@@ -302,10 +302,10 @@ List ekf_simulate_rcpp(
   Eigen::MatrixXd obsMat,
   Eigen::MatrixXd inputMat,
   Eigen::VectorXd parVec,
-  Eigen::MatrixXd covMat, 
+  Eigen::MatrixXd covMat,
   Eigen::VectorXd stateVec,
   Eigen::VectorXd ode_timestep_size,
-  Eigen::VectorXd ode_timesteps, 
+  Eigen::VectorXd ode_timesteps,
   Eigen::VectorXd simulation_timestep_size,
   Eigen::VectorXd simulation_timesteps,
   Rcpp::LogicalVector any_available_obs,
@@ -342,7 +342,7 @@ List ekf_simulate_rcpp(
   List xPost = filt["xPost"];
   List pPost = filt["pPost"];
 
-  // misc  
+  // misc
   const int n = stateVec.size();
   const int ni = inputMat.row(0).size();
   VectorXd inputVec(ni);
@@ -353,7 +353,7 @@ List ekf_simulate_rcpp(
 
   // storage for predictions
   List outer_simulate_list(last_pred_id);
-  
+
   //////////// MAIN LOOP OVER TIME POINTS ///////////
   for(int i=0 ; i < last_pred_id ; i++){
 
@@ -363,7 +363,7 @@ List ekf_simulate_rcpp(
     stateVec = xPost(i);
     covMat = pPost(i);
 
-    /* 
+    /*
     1. We draw from a multivariate normal by z = u + A * dB where A = chol(covMat), dB is i.d.d normal vector
     2. We do simultaneously for all simulations i.e. dB is matrix of #nsims i.d.d vectors and u is repeated means
     */
@@ -385,10 +385,10 @@ List ekf_simulate_rcpp(
 
       for(int j=0; j < simulation_timesteps(i+k); j++){
         euler_maruyama_simulation_inplace(
-          f__, g__, 
+          f__, g__,
           stateMat,
-          parVec, inputVec, 
-          simulation_timestep_size(i+k), 
+          parVec, inputVec,
+          simulation_timestep_size(i+k),
           nsims, n, ng
           );
         inputVec += dinputVec;
@@ -403,3 +403,228 @@ List ekf_simulate_rcpp(
   // Return
   return outer_simulate_list;
 }
+
+// [[Rcpp::export]]
+List ekf_smooth_rcpp(
+    List funPtrs,
+    Eigen::MatrixXd obsMat,
+    Eigen::MatrixXd inputMat,
+    Eigen::VectorXd parVec,
+    Eigen::MatrixXd covMat,
+    Eigen::VectorXd stateVec,
+    Eigen::VectorXd ode_timestep_size,
+    Eigen::VectorXd ode_timesteps,
+    LogicalVector any_available_obs,
+    List non_na_ids,
+    CharacterVector ode_solver,
+    bool first_order_input_hold)
+{
+
+  auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
+  auto h__ = get_funptr<funPtr_vec_const>(funPtrs, "h_const");
+  auto g__ = get_funptr<funPtr_mat_const>(funPtrs, "g_const");
+  auto dfdx__ = get_funptr<funPtr_mat_const>(funPtrs, "dfdx_const");
+  auto dhdx__ = get_funptr<funPtr_mat_const>(funPtrs, "dhdx_const");
+  auto hvar__ = get_funptr<funPtr_mat_const>(funPtrs, "hvar_const");
+
+  // constants
+  const int tsize = inputMat.col(0).size();
+  const int ni = inputMat.row(0).size();
+  const int n = stateVec.size();
+  const int m = obsMat.row(0).size();
+  int idx, n_available_obs;
+
+  // ODE solver
+  const int ODE_solver = choose_solver(ode_solver);
+
+  // pre-allocate and define
+  Eigen::VectorXd H, inputVec(ni), obsVec(m), e(m);
+  Eigen::VectorXd E;
+  Eigen::MatrixXd C, R, K, V, KC, IKC, Hvar, dHdX;
+  Eigen::MatrixXd cross_covMat;
+  Eigen::MatrixXd I = Eigen::MatrixXd::Identity(n, n);
+  Eigen::VectorXd inv_ode_timesteps = ode_timesteps.cwiseInverse();
+  Eigen::VectorXi obs_ids;
+  Eigen::VectorXd dinputVec = Eigen::VectorXd::Zero(ni);
+  // Pre-allocate for ODE solver
+  Eigen::VectorXd k1(n), k2(n), k3(n), k4(n);
+  Eigen::MatrixXd c1(n,n), c2(n,n), c3(n,n), c4(n,n);
+  Eigen::MatrixXd d1(n,n), d2(n,n), d3(n,n), d4(n,n);
+  // Pre-allocate storage for output
+  Rcpp::List xPrior(tsize), xPost(tsize), xSmooth(tsize);
+  Rcpp::List pPrior(tsize), pPost(tsize), pSmooth(tsize);
+  Rcpp::List cPrior(tsize);
+  Rcpp::List Innovation(tsize), InnovationCovariance(tsize);
+
+  // store prior
+  xPrior(0) = stateVec;
+  pPrior(0) = covMat;
+
+  //////////// INITIAL DATA-UPDATE ///////////
+  if(any_available_obs(0)){
+    inputVec = inputMat.row(0);
+    obsVec = obsMat.row(0);
+    obs_ids = Rcpp::as<Eigen::VectorXi>(non_na_ids(0));
+    n_available_obs = obs_ids.size();
+    // Calculcate H
+    H = h__(stateVec, parVec, inputVec);
+    dHdX = dhdx__(stateVec, parVec, inputVec);
+    Hvar = hvar__(stateVec, parVec, inputVec);
+    // Extract to reduce dimensions to fit number of observations
+    C = dHdX.topRows(n_available_obs);
+    V = Hvar.topLeftCorner(n_available_obs, n_available_obs);
+    E = e.head(n_available_obs);
+    // Compute innovation and remove rows/cols from dHdX and V
+    for(int j=0; j < n_available_obs; j++){
+      // Grab indices where obsVec has actual (non-NA) entries
+      idx = obs_ids[j];
+      // Innovations
+      E(j) = obsVec(idx) - H(idx);
+      // Obs Jacobian
+      C.row(j) = dHdX.row(idx);
+      // Variance
+      V(j,j) = Hvar(idx, idx);
+    }
+    // Kalman Gain
+    R = C * covMat * C.transpose() + V;
+    Eigen::LLT<Eigen::MatrixXd> llt(R);
+    K.transpose() = llt.solve(C * covMat);
+    // State Update
+    stateVec += K*E;
+    // Covariance Update - Joseph Form
+    IKC = I - K * C;
+    covMat = IKC * covMat * IKC.transpose() + K * V * K.transpose();
+    // Store innovations
+    Innovation(0) = E;
+    InnovationCovariance(0) = R;
+  }
+
+  // store posterior
+  xPost(0) = stateVec;
+  pPost(0) = covMat;
+
+  //////////// MAIN LOOP OVER TIME POINTS ///////////
+  for(int i=0 ; i < (tsize-1) ; i++){
+
+    // Reset cross covariance to posterior covariance
+    cross_covMat = covMat;
+
+    inputVec = inputMat.row(i);
+    if(first_order_input_hold){
+      dinputVec = (inputMat.row(i+1) - inputMat.row(i)) * inv_ode_timesteps(i);
+    }
+
+    //////////// TIME-UPDATE: SOLVE MOMENT ODES ///////////
+    for(int j=0 ; j < ode_timesteps(i) ; j++){
+      ode_integrator_with_cross_cov_inplace(
+        f__,
+        g__,
+        dfdx__,
+        covMat,
+        cross_covMat,
+        stateVec,
+        parVec,
+        inputVec,
+        dinputVec,
+        ode_timestep_size(i),
+        ODE_solver,
+        k1, k2, k3, k4, c1, c2, c3, c4, d1, d2, d3, d4
+      );
+      inputVec += dinputVec;
+    }
+    xPrior(i+1) = stateVec;
+    pPrior(i+1) = covMat;
+    cPrior(i+1) = cross_covMat;
+
+    //////////// DATA-UPDATE ///////////
+    if(any_available_obs(i+1)){
+
+      inputVec = inputMat.row(i+1);
+      obsVec = obsMat.row(i+1);
+
+      obs_ids = Rcpp::as<Eigen::VectorXi>(non_na_ids(i+1));
+      n_available_obs = obs_ids.size();
+
+      // Calculcate H
+      H = h__(stateVec, parVec, inputVec);
+      dHdX = dhdx__(stateVec, parVec, inputVec);
+      Hvar = hvar__(stateVec, parVec, inputVec);
+
+      C = dHdX.topRows(n_available_obs);
+      V = Hvar.topLeftCorner(n_available_obs, n_available_obs);
+      E = e.head(n_available_obs);
+
+      // Compute innovation and remove rows/cols from dHdX and V
+      for(int j=0; j < n_available_obs; j++){
+        idx = obs_ids[j];
+        // Innovations
+        E(j) = obsVec(idx) - H(idx);
+        // Obs Jacobian
+        C.row(j) = dHdX.row(idx);
+        // Variance
+        V(j,j) = Hvar(idx,idx);
+      }
+
+      // Kalman Gain
+      R = C * covMat * C.transpose() + V;
+      Eigen::LLT<Eigen::MatrixXd> llt(R);
+      K.transpose() = llt.solve(C * covMat);
+      // K = llt.solve(C * covMat).transpose();
+
+      // State Update
+      stateVec += K*E;
+
+      // Covariance Update - Joseph Form
+      IKC = I - K * C;
+      covMat = IKC * covMat * IKC.transpose() + K * V * K.transpose();
+
+      // Store innovations
+      Innovation(i+1) = E;
+      InnovationCovariance(i+1) = R;
+    }
+
+    xPost(i+1) = stateVec;
+    pPost(i+1) = covMat;
+  }
+
+
+  // Smoothing time
+  Eigen::MatrixXd G(n,n);
+  Eigen::VectorXd x_smooth, x_post, x_prior;
+  Eigen::MatrixXd p_smooth, p_post, p_prior;
+  // The posterior and smooth coincide at least time point
+  xSmooth(tsize-1) = xPost(tsize-1);
+  pSmooth(tsize-1) = pPost(tsize-1);
+  for(int i = tsize - 1; i > 0; i--) {
+    // G = C P^{-1}
+    // G^{T} = P^{-1} C^{T}
+    // P G^{T} = C^{T}
+    // G = solve(P, C^{T}).transpose()
+    p_prior = pPrior(i);
+    x_smooth = xSmooth(i);
+    p_smooth = pSmooth(i);
+    x_prior = xPrior(i);
+    x_post = xPost(i-1);
+    p_post = pPost(i-1);
+    cross_covMat = cPrior(i);
+
+    // Solve for G
+    Eigen::LLT<Eigen::MatrixXd> llt(p_prior);
+    G = llt.solve(cross_covMat.transpose()).transpose();
+    // Compute "next" smoothed state
+    xSmooth(i-1) = x_post + G * (x_smooth - x_prior);
+    pSmooth(i-1) = p_post + G * (p_smooth - p_prior) * G.transpose();
+  }
+
+  return List::create(
+    Named("cPrior") = cPrior,
+    Named("xPrior") = xPrior,
+    Named("xPost") = xPost,
+    Named("pPrior") = pPrior,
+    Named("pPost") = pPost,
+    Named("xSmooth") = xSmooth,
+    Named("pSmooth") = pSmooth
+  );
+
+}
+
