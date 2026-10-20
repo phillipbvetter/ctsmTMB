@@ -236,29 +236,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// check_if_funptr_is_null
-bool check_if_funptr_is_null(const Rcpp::List& x, const char* name);
-RcppExport SEXP _ctsmTMB_check_if_funptr_is_null(SEXP xSEXP, SEXP nameSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const char* >::type name(nameSEXP);
-    rcpp_result_gen = Rcpp::wrap(check_if_funptr_is_null(x, name));
-    return rcpp_result_gen;
-END_RCPP
-}
-// square_vec
-Eigen::VectorXd square_vec(const Eigen::Map<Eigen::VectorXd> x);
-RcppExport SEXP _ctsmTMB_square_vec(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(square_vec(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 // calculate_prediction_observations
 Eigen::MatrixXd calculate_prediction_observations(const Eigen::MatrixXd& predMat, const List& funPtrs, const Eigen::MatrixXd& inputMat, const Eigen::VectorXd& parVec, const int n_states, const int n_obs, const int last_pred_id, const int k_ahead, bool compute_dispersion);
 RcppExport SEXP _ctsmTMB_calculate_prediction_observations(SEXP predMatSEXP, SEXP funPtrsSEXP, SEXP inputMatSEXP, SEXP parVecSEXP, SEXP n_statesSEXP, SEXP n_obsSEXP, SEXP last_pred_idSEXP, SEXP k_aheadSEXP, SEXP compute_dispersionSEXP) {
@@ -401,8 +378,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ctsmTMB_lkf_smooth_rcpp", (DL_FUNC) &_ctsmTMB_lkf_smooth_rcpp, 11},
     {"_ctsmTMB_lkf_predict_rcpp", (DL_FUNC) &_ctsmTMB_lkf_predict_rcpp, 13},
     {"_ctsmTMB_lkf_simulate_rcpp", (DL_FUNC) &_ctsmTMB_lkf_simulate_rcpp, 18},
-    {"_ctsmTMB_check_if_funptr_is_null", (DL_FUNC) &_ctsmTMB_check_if_funptr_is_null, 2},
-    {"_ctsmTMB_square_vec", (DL_FUNC) &_ctsmTMB_square_vec, 1},
     {"_ctsmTMB_calculate_prediction_observations", (DL_FUNC) &_ctsmTMB_calculate_prediction_observations, 9},
     {"_ctsmTMB_calculate_simulation_observations", (DL_FUNC) &_ctsmTMB_calculate_simulation_observations, 9},
     {"_ctsmTMB_build_simulation_returnlist", (DL_FUNC) &_ctsmTMB_build_simulation_returnlist, 4},

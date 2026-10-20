@@ -41,14 +41,6 @@ lkf_simulate_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVe
     .Call('_ctsmTMB_lkf_simulate_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, any_available_obs, non_na_ids, ng, last_pred_id, k_step_ahead, nsims, seed, first_order_input_hold)
 }
 
-check_if_funptr_is_null <- function(x, name) {
-    .Call('_ctsmTMB_check_if_funptr_is_null', PACKAGE = 'ctsmTMB', x, name)
-}
-
-square_vec <- function(x) {
-    .Call('_ctsmTMB_square_vec', PACKAGE = 'ctsmTMB', x)
-}
-
 calculate_prediction_observations <- function(predMat, funPtrs, inputMat, parVec, n_states, n_obs, last_pred_id, k_ahead, compute_dispersion) {
     .Call('_ctsmTMB_calculate_prediction_observations', PACKAGE = 'ctsmTMB', predMat, funPtrs, inputMat, parVec, n_states, n_obs, last_pred_id, k_ahead, compute_dispersion)
 }

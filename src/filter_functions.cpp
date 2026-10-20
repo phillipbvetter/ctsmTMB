@@ -142,7 +142,6 @@ List from_states_to_observations_no_state_cross_covariances(
   auto hvar = get_funptr<funPtr_mat_const>(funPtrs, "hvar_const");
 
   // dimensions
-  const int n_squared = n * n;
   const int m_squared = m*m;
   const int tsize = inputMat.rows();
 
@@ -157,7 +156,6 @@ List from_states_to_observations_no_state_cross_covariances(
     for (int i = 0; i < tsize; i++) {
       // Arguments
       stateVec = stateMat.row(i).head(n);
-      // covMat = stateMat.row(i).tail(n_squared).reshaped(n, n);
       diag_covMat = stateMat.row(i).tail(n).asDiagonal();
       inputVec = inputMat.row(i);
       // Mean

@@ -75,7 +75,6 @@ UKF_structure ukf_forward_pass(
   auto f__ = get_funptr<funPtr_vec_const>(funPtrs, "f_const");
   auto h__ = get_funptr<funPtr_vec_const>(funPtrs, "h_const");
   auto g__ = get_funptr<funPtr_mat_const>(funPtrs, "g_const");
-  auto dhdx__ = get_funptr<funPtr_mat_const>(funPtrs, "dhdx_const");
   auto hvar__ = get_funptr<funPtr_mat_const>(funPtrs, "hvar_const");
 
   // constants
