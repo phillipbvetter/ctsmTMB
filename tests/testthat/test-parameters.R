@@ -1,10 +1,11 @@
+# devtools::load_all("~/github/ctsmTMB")
 data(Ornstein)
 df <- Ornstein[1:10,]
 df$z = df$y
 
 model = ctsmTMB$new()
 model$addSystem(
-  dx ~ theta * (mu*u - x) * dt + sigma_x*dw,
+  dx ~ theta * (mu * u - x) * dt + sigma_x*dw,
   dx2 ~ sigma_x * dw1
 )
 model$addObs(
@@ -31,6 +32,16 @@ model$setParameter(
 model$setInitialState(list(rep(1, 2), 0.656 * diag(2)))
 model$estimate(df, method = "ekf", silent = TRUE, trace = 0)
 
+# private <- model$getPrivate()
+# create_function_from_string_body <- function(fun.name, return.name, body.string, .envir=parent.frame()){
+#   func_string <- sprintf("%s <- function(stateVec, parVec, inputVec) { %s; return(%s) }", fun.name, body.string, return.name)
+#   func <- eval(parse(text = func_string), envir=.envir)
+#   return(NULL)
+# }
+# f__ = 0
+# create_function_from_string_body("f__", "ans", private$model$r.function.strings$f)
+# f__(1:2,1:2,1:2)
+
 ########################################################################
 # set_parameters: private$argument.parameters is always named with correct length
 ########################################################################
@@ -40,7 +51,7 @@ testthat::test_that("set_parameters produces named private$argument.parameters w
   n   = length(prv$model$parameters)
 
   check_pars = function(pars_arg) {
-    model$filter(df, method = "ekf", pars = pars_arg, use.cpp = FALSE, silent = TRUE)
+    model$filter(df, method = "ekf", pars = pars_arg, silent = TRUE)
     p = prv$algo.settings$argument.parameters
     testthat::expect_equal(length(p), n)
     testthat::expect_false(is.null(names(p)))
@@ -116,14 +127,11 @@ testthat::test_that("partial named pars only modifies the specified entries of p
   }
 
   run_and_capture("filter",
-    function(pars) model$filter(df, method = "ekf", pars = pars,
-                                use.cpp = FALSE, silent = TRUE))
+    function(pars) model$filter(df, method = "ekf", pars = pars, silent = TRUE))
 
   run_and_capture("predict",
-    function(pars) model$predict(df, method = "ekf", pars = pars,
-                                 use.cpp = FALSE, silent = TRUE))
+    function(pars) model$predict(df, method = "ekf", pars = pars, silent = TRUE))
 
   run_and_capture("simulate",
-    function(pars) model$simulate(df, method = "ekf", pars = pars,
-                                  use.cpp = FALSE, silent = TRUE))
+    function(pars) model$simulate(df, method = "ekf", pars = pars, silent = TRUE))
 })

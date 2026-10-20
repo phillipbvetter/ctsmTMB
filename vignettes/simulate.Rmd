@@ -372,7 +372,6 @@ The `simulate` method accepts the following arguments
 ```{r, eval=FALSE}
 model$simulate(data,
                pars = NULL,
-               use.cpp = TRUE,
                cpp.seeds = NULL,
                method = "ekf",
                ode.solver = "rk4",
@@ -389,15 +388,6 @@ model$simulate(data,
 ```
 
 ### `pars`
-
-See the description in the [predict
-vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
-
----
-
-### `use.cpp`
-
-Use C++ or pure R implementation.
 
 See the description in the [predict
 vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
@@ -471,8 +461,6 @@ $$
 $$
 
 using a Newton approach.
-
-**Note**: This option is only available when `use.cpp=FALSE` using the pure R implementation.
 
 ---
 

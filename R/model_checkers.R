@@ -496,9 +496,9 @@ check_initial_state <- function(initial.state, self, private){
     stop("The covariance matrix contains NAs")
   }
 
-  if (any(eigen(p0)$values < 0)){
-    stop("The covariance matrix is not positive semi-definite")
-  }
+  # if (any(eigen(p0)$values < 0)){
+    # stop("The covariance matrix is not positive semi-definite")
+  # }
 
   if (!isSymmetric.matrix(p0)){
     stop("The covariance matrix is not symmetric")

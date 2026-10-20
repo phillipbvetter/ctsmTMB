@@ -406,7 +406,9 @@ with \code{mean} and \code{covariance} as provided.
   force.ad = TRUE,
   rtmb.tapeconfig = NULL,
   tmb.tapeconfig = NULL,
-  nllreport = FALSE
+  nllreport = FALSE,
+  sequential.update = FALSE,
+  force.ad.on.input = FALSE
 )}
     \if{html}{\out{</div>}}
   }
@@ -419,6 +421,8 @@ some functionalities such as REPORT.}
       \item{\code{rtmb.tapeconfig}}{options to be passed to \link[RTMB]{TapeConfig}.}
       \item{\code{tmb.tapeconfig}}{options to be passed to \link[TMB]{config}.}
       \item{\code{nllreport}}{a boolean to disable / enable REPORT quantities out of the likelihood function, such as states and residuals.}
+      \item{\code{sequential.update}}{use sequential update in EKF}
+      \item{\code{force.ad.on.input}}{force-convert input matrix to AD representation.}
     }
     \if{html}{\out{</div>}}
   }
@@ -579,11 +583,10 @@ When not "all", a named numeric vector is returned.}
   ode.solver = "rk4",
   ode.timestep = diff(data$t),
   first.order.input.hold = FALSE,
-  ukf.hyperpars = c(1, 0, 3),
+  ukf.hyperpars = c(0.5, 2, 0),
   initial.state = self$getInitialState(),
   laplace.residuals = FALSE,
   estimate.initial.state = FALSE,
-  use.cpp = TRUE,
   silent = FALSE,
   ...
 )}
@@ -625,7 +628,6 @@ using the method of \link[TMB]{oneStepPredict}.}
       \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
 estimated as the stationary solution of the linearized mean and covariance differential equations. When the
 system contains time-varying inputs, the first element of these is used.}
-      \item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
       \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
       \item{\code{...}}{additional arguments}
@@ -645,7 +647,7 @@ system contains time-varying inputs, the first element of these is used.}
   data,
   pars = NULL,
   method = "ekf",
-  ode.solver = "euler",
+  ode.solver = "rk4",
   ode.timestep = diff(data$t),
   first.order.input.hold = FALSE,
   initial.state = self$getInitialState(),
@@ -714,7 +716,7 @@ system contains time-varying inputs, the first element of these is used.}
   first.order.input.hold = FALSE,
   loss = "quadratic",
   loss_c = NULL,
-  ukf.hyperpars = c(1, 0, 3),
+  ukf.hyperpars = c(0.5, 2, 0),
   initial.state = self$getInitialState(),
   trace = 10,
   control = list(trace = trace, iter.max = 1e+05, eval.max = 1e+05),
@@ -807,7 +809,7 @@ have more control of the optimization workflow.
   first.order.input.hold = FALSE,
   loss = "quadratic",
   loss_c = NULL,
-  ukf.hyperpars = c(1, 0, 3),
+  ukf.hyperpars = c(0.5, 2, 0),
   initial.state = self$getInitialState(),
   estimate.initial.state = FALSE,
   silent = FALSE,
@@ -910,11 +912,10 @@ state estimate as the initial condition.
   first.order.input.hold = FALSE,
   k.ahead = nrow(data) - 1,
   return.k.ahead = 0:min(k.ahead, nrow(data) - 1),
-  return.variance = c("marginal", "none", "covariance", "correlation"),
-  ukf.hyperpars = c(1, 0, 3),
+  return.variance = c("covariance", "correlation"),
+  ukf.hyperpars = c(0.5, 2, 0),
   initial.state = self$getInitialState(),
   estimate.initial.state = private$algo.settings$estimate.initial,
-  use.cpp = TRUE,
   silent = FALSE,
   ...
 )}
@@ -958,7 +959,6 @@ should be returned.}
       \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
       \item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
-      \item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
       \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
       \item{\code{...}}{additional arguments}
@@ -984,7 +984,6 @@ state estimate as the initial condition.
     \preformatted{ctsmTMB$simulate(
   data,
   pars = NULL,
-  use.cpp = TRUE,
   cpp.seeds = NULL,
   method = "ekf",
   ode.solver = "rk4",
@@ -994,7 +993,7 @@ state estimate as the initial condition.
   k.ahead = nrow(data) - 1,
   return.k.ahead = 0:min(k.ahead, nrow(data) - 1),
   n.sims = 100,
-  ukf.hyperpars = c(1, 0, 3),
+  ukf.hyperpars = c(0.5, 2, 0),
   initial.state = self$getInitialState(),
   estimate.initial.state = private$algo.settings$estimate.initial,
   silent = FALSE,
@@ -1010,7 +1009,6 @@ can take \code{NA}-values.}
       \item{\code{pars}}{fixed parameter vector parsed to the objective function for prediction/filtration. The default
 parameter values used are the initial parameters provided through \code{setParameter}, unless the \code{estimate}
 function has been run, then the default values will be those at the found optimum.}
-      \item{\code{use.cpp}}{a boolean to indicate whether to use C++ to perform calculations}
       \item{\code{cpp.seeds}}{an integer seed value to control RNG normal draws on the C++ side.}
       \item{\code{method}}{\enumerate{
 \item The natural TMB-style formulation where latent states are considered random effects

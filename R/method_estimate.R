@@ -3,41 +3,46 @@ create_ad_likelihood_fun <- function(self, private){
   # TMB::openmp(n=1, autopar=TRUE, DLL=private$modelname.with.method)
 
   # Check for rebuild - exit or continue
-  # check_or_save_for_ad_rebuild("check", self, private)
   check_for_ad_rebuild(self, private)
-  if (!private$rebuild$ad) return(invisible(self))
-
-  # Rebuild needed - save settings for next time and compile nll fun
-  # check_or_save_for_ad_rebuild("save", self, private)
-  save_ad_rebuild_fields(self, private)
+  if (!private$rebuild$ad) {
+    return(invisible(self))
+  }
 
   if (!private$algo.settings$silent)
-    message("Compiling automatic-differentiation graph...")
+    message("Compiling AD graph...")
 
-  if (private$algo.settings$method == "ukf" && !private$algo.settings$silent)
-    message("This UKF implementation may be unstable - alternativly try 'method = ukf.cpp'.")
+  # if (private$algo.settings$method == "ukf" && !private$algo.settings$silent)
+  # message("OBS! The UKF implementation may be unstable.")
 
-  # We call the precompiled list of
+  # Rebuild AD function
+  .List_of_MakeADFuns <- getMakeADFuns()
+
   comptime <- system.time({
     .List_of_MakeADFuns[[private$algo.settings$method]](self, private)
   }, gcFirst = FALSE)
-
   private$timers$construct_adfun <- comptime
+
+  # Save AD settings for next call...
+  save_ad_rebuild_fields(self, private)
 
   return(invisible(self))
 }
 
 # List of callable MakeADFun functions for the different methods
-.List_of_MakeADFuns <- list(
-  ekf = MakeADFun_EKF,
-  ekf.cpp = MakeADFun_EKF_TMB,
-  lkf = MakeADFun_LKF,
-  lkf.cpp = MakeADFun_LKF_TMB,
-  ukf = MakeADFun_UKF,
-  ukf.cpp = MakeADFun_UKF_TMB,
-  laplace = MakeADFun_Laplace,
-  laplace.thygesen = MakeADFun_Laplace_thygesen
-)
+getMakeADFuns <- function(){
+  x <- list(
+    ekf = MakeADFun_EKF,
+    ekf.cpp = MakeADFun_EKF_TMB,
+    lkf = MakeADFun_LKF,
+    lkf.cpp = MakeADFun_LKF_TMB,
+    ukf = MakeADFun_UKF,
+    ukf.cpp = MakeADFun_UKF_TMB,
+    laplace = MakeADFun_Laplace,
+    laplace.thygesen = MakeADFun_Laplace_thygesen,
+    ukf.knudsen = MakeADFun_UKF2
+  )
+  return(x)
+}
 
 #######################################################
 # OPTIMISE AD FUN
@@ -64,8 +69,8 @@ perform_estimation = function(self, private) {
     upper.parameter.bound = Inf
   }
 
-  kalman.methods <- c("lkf","lkf.cpp","ekf","ekf.cpp","ukf","ukf.cpp")
-  laplace.methods <- c("laplace","laplace.thygesen")
+  kalman.methods <- get.inference.algos("kalman")
+  laplace.methods <- get.inference.algos("laplace")
 
   comptime <- system.time({
 
@@ -192,7 +197,7 @@ create_estimation_return_fit <- function(self, private, report, laplace.residual
 
   if(report){
 
-    if(private$algo.settings$method %in% c("ekf","ekf.cpp","lkf","lkf.cpp","ukf","ukf.cpp")) {
+    if(private$algo.settings$method %in% get.inference.algos("kalman")) {
 
       # NULL finds the MLE parameters from estimate
       set_parameters(NULL, self, private)
@@ -204,7 +209,7 @@ create_estimation_return_fit <- function(self, private, report, laplace.residual
 
       # We run the filter function directly bypassing build, set flags etc
       filter_predict_simulate_smooth(self, private, proc="filter")
-      create_filter_results(self, private, laplace.residuals)
+      create_return_filter(self, private, laplace.residuals)
 
       # Merge filter results into fit
       private$results$fit = c(private$results$fit, private$results$filtration)

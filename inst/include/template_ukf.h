@@ -324,7 +324,7 @@ Type objective_function<Type>::operator() ()
   wm__.fill(ukf_weights);
   wmC__.fill(ukf_weights);
   wm__(0) = ukf_lambda/(ukf_lambda + n_states);
-  wmC__(0) = ukf_lambda/((n_states + ukf_lambda) + (1-pow(ukf_pars(0),2)+ukf_pars(1)));
+  wmC__(0) = ukf_lambda/(n_states + ukf_lambda) + (1-pow(ukf_pars(0),2)+ukf_pars(1));
   Wm__ = wm__.replicate(1, nn);
   WcDiag__.diagonal() = wmC__;
   W__ = (I__ - Wm__) * WcDiag__ * (I__ - Wm__).transpose();

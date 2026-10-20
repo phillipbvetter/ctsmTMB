@@ -36,10 +36,12 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
   # Calculating initial state
   stateVec <- private$algo.settings$initial.state$x0
   covMat <- private$algo.settings$initial.state$p0
-  if (private$algo.settings$estimate.initial)
+  if (private$algo.settings$estimate.initial) {
     stateVec <- compute_initial_state_estimate(parVec, inputMat[1,], self, private)
+  }
 
 
+  laplace.methods <- get.inference.algos("laplace")
   output <- NULL
   ########################################################################
   # FILTERING
@@ -48,7 +50,7 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
 
     if(!private$algo.settings$silent) message("Filtering...")
 
-    if (private$algo.settings$method %in% c("laplace","laplace.thygesen"))
+    if (private$algo.settings$method %in% laplace.methods)
       stop("The filter method is not available for the Laplace methods")
 
     # Linear Kalman Filter
@@ -95,8 +97,8 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
         stateVec,
         private$algo.settings$ode.stepsizes,
         private$algo.settings$ode.number.of.steps,
-        numeric_is_not_na_obsMat,
-        number_of_available_obs,
+        any_available_obs,
+        non_na_ids,
         private$algo.settings$ukf.hyperpars,
         private$algo.settings$ode.solver,
         private$algo.settings$first.order.input.hold
@@ -162,8 +164,8 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
         stateVec,
         private$algo.settings$ode.stepsizes,
         private$algo.settings$ode.number.of.steps,
-        numeric_is_not_na_obsMat,
-        number_of_available_obs,
+        any_available_obs,
+        non_na_ids,
         private$algo.settings$ukf.hyperpars,
         private$algo.settings$last.pred.index,
         private$algo.settings$k.ahead,
@@ -244,8 +246,8 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
         private$algo.settings$ode.number.of.steps,
         private$algo.settings$sim.stepsizes,
         private$algo.settings$sim.number.of.steps,
-        numeric_is_not_na_obsMat,
-        number_of_available_obs,
+        any_available_obs,
+        non_na_ids,
         private$algo.settings$ukf.hyperpars,
         private$dims$diffusions,
         private$algo.settings$last.pred.index,
@@ -260,18 +262,17 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
 
   }
 
-
   if( proc == "smooth") {
 
     if(!private$algo.settings$silent) message("Smoothing...")
 
-    if (private$algo.settings$method %in% c("laplace","laplace.thygesen"))
-      perform_smoothing(self, private)
+    if (private$algo.settings$method %in% c("laplace","laplace.thygesen")) {
+      laplace_smooth(self, private)
+    }
 
     # Linear Kalman Filter
     if ( private$algo.settings$method == "lkf" ) {
-      stop("LKF smoothing not implemented")
-      output <- lkf_filter_rcpp(
+      output <- lkf_smooth_rcpp(
         private$model$rcpp_function_ptr,
         obsMat,
         inputMat,
@@ -306,22 +307,22 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
 
     # Sarkka Unscented Kalman Filter
     if ( private$algo.settings$method == "ukf" ) {
-      stop("LKF smoothing not implemented")
-      output <- ukf_filter_rcpp(
-        private$model$rcpp_function_ptr,
-        obsMat,
-        inputMat,
-        parVec,
-        covMat,
-        stateVec,
-        private$algo.settings$ode.stepsizes,
-        private$algo.settings$ode.number.of.steps,
-        numeric_is_not_na_obsMat,
-        number_of_available_obs,
-        private$algo.settings$ukf.hyperpars,
-        private$algo.settings$ode.solver,
-        private$algo.settings$first.order.input.hold
-      )
+      stop("UKF smoothing not yet implemented.")
+      # output <- ukf_filter_rcpp(
+      #   private$model$rcpp_function_ptr,
+      #   obsMat,
+      #   inputMat,
+      #   parVec,
+      #   covMat,
+      #   stateVec,
+      #   private$algo.settings$ode.stepsizes,
+      #   private$algo.settings$ode.number.of.steps,
+      #   numeric_is_not_na_obsMat,
+      #   number_of_available_obs,
+      #   private$algo.settings$ukf.hyperpars,
+      #   private$algo.settings$ode.solver,
+      #   private$algo.settings$first.order.input.hold
+      # )
     }
 
     private$results$smooth.raw <- output
@@ -335,126 +336,209 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
 #######################################################
 # RETURN FILTERING
 #######################################################
-create_filter_results <- function(self, private, laplace.residuals){
+create_return_filter <- function(self, private, laplace.residuals){
 
   if(!private$algo.settings$silent) message("Returning results...")
 
-  rtmb.kalman.methods <- c("lkf","ekf","ukf")
-  all.kalman.methods <- c(rtmb.kalman.methods, paste0(rtmb.kalman.methods,".cpp"))
-
+  # Extract and pre-allocate
   filt <- list()
+  rep <- private$results$filtration.raw
 
-  if(private$algo.settings$method %in% all.kalman.methods){
+  # Helper functions
+  split.state.matrix <- function(mat, names, time.column=private$data[["t"]]){
+    # mat has construction [mean, cov]
+    # Extract into mean, standard dev and covariance columns
+    n <- length(names)
+    diag.ids <- seq(1, n^2, by=n+1)
+    mean <- mat[, seq_len(n), drop = FALSE]
+    cov  <- mat[, n + seq_len(n^2), drop = FALSE]
+    sd   <- sqrt(cov[, diag.ids, drop = FALSE])
 
-    rep <- private$results$filtration.raw
+    # Construct [time, mean, sd] matrix
+    summary <- cbind(time.column, mean, sd)
+    colnames(summary) <- c("t", names, paste0(names, ".sd"))
 
-    ##### helper functions #####
-    rbind_vectors <- function(list, colnames=NULL, extra=TRUE){
-      if(extra){
-        try_with_warning_recovery(
-          set.colnames(
-            cbind(private$data$t, do.call(rbind, list)),
-            colnames
-          )
-        )
-      } else {
-        do.call(rbind, list)
-      }
-    }
-    rbind_matrices_flatten <- function(list, colnames=NULL, fn=identity, extra=TRUE){
-      if(extra){
-        try_with_warning_recovery(
-          set.colnames(
-            cbind(private$data$t, fn(do.call(rbind, lapply(list,c)))),
-            colnames
-          )
-        )
-      } else {
-        fn(do.call(rbind, lapply(list,c)))
-      }
-    }
-    rbind_matrices_diag <- function(list, colnames=NULL, fn=identity, extra=TRUE){
-      if(extra){
-        try_with_warning_recovery(
-          set.colnames(
-            cbind(private$data$t, fn(do.call(rbind, lapply(list, diag)))),
-            colnames
-          )
-        )
-      } else {
-        fn(do.call(rbind, lapply(list, diag)))
-      }
-    }
+    # Construct [time, cov] matrix
+    covnames <- apply(expand.grid(names,names),1,\(a) paste0(a[1],".",a[2],".cov"))
+    cov <- cbind(time.column, cov)
+    colnames(cov) <- c("t", covnames)
 
-    # column names
-    .colnames <- c("t", private$names$states)
-    .obs.colnames <- c("t", private$names$obs)
-    .covnames <- c("t",as.vector(outer(private$names$states, private$names$states, function(a, b) paste0(a,b))))
-    .covnames.list <- paste("t = ", private$data$t, sep="")
-
-    ##### priors
-    filt$states$mean$prior = rbind_vectors(rep$xPrior, .colnames)
-    filt$states$sd$prior = rbind_matrices_diag(rep$pPrior, .colnames, sqrt)
-    filt$states$cov$prior = rep$pPrior
-    names(filt$states$cov$prior) = .covnames.list
-
-    ##### posteriors
-    filt$states$mean$posterior = rbind_vectors(rep$xPost, .colnames)
-    filt$states$sd$posterior = rbind_matrices_diag(rep$pPost, .colnames, sqrt)
-    filt$states$cov$posterior = rep$pPost
-    names(filt$states$cov$posterior) = .covnames.list
-
-    ##### residuals
-    obsMat = as.matrix(private$data[private$names$obs])
-    not.na <- !is.na(obsMat)
-    non.na.ids <- unname(split(
-      col(obsMat)[not.na],
-      factor(row(obsMat)[not.na], levels = seq_len(nrow(obsMat)))
-    ))
-    length.non.na.ids <- lapply(non.na.ids, length)
-
-    # pre-allocate
-    filt$residuals <- lapply(1:3, function(x) set.colnames(cbind(private$data$t, matrix(NA, nrow=nrow(obsMat), ncol=ncol(obsMat))), .obs.colnames))
-    names(filt$residuals) = c("residuals", "sd", "normalized")
-
-    # Take care of rows where all observations are present
-    ids.full.obs <- unlist(length.non.na.ids) == private$dims$observations
-    if(any(ids.full.obs)){
-      filt$residuals$residuals[ids.full.obs,-1] <- rbind_vectors(rep$Innovation[ids.full.obs], extra=FALSE)
-      filt$residuals$sd[ids.full.obs,-1] <- rbind_matrices_diag(rep$InnovationCovariance[ids.full.obs], fn=sqrt, extra=FALSE)
-    }
-    # Take care of all other rows with some missing observations
-    for(i in seq_along(private$names$obs[-1])){
-      ids <- which(length.non.na.ids == i)
-      for(j in ids){
-        filt$residuals$residuals[j, non.na.ids[[j]]+1] <- rep$Innovation[[j]]
-        filt$residuals$sd[j, non.na.ids[[j]]+1] <- sqrt(diag(rep$InnovationCovariance[[j]]))
-      }
-    }
-    filt$residuals$normalized = filt$residuals$residuals
-    filt$residuals$normalized[,-1] <- filt$residuals$normalized[,-1]/filt$residuals$sd[,-1]
-    filt$residuals$cov <- rep$InnovationCovariance
-    names(filt$residuals$cov) = .covnames.list
-
-    ##### observations
-    # Computed in the C++ backend:
-    observations <- calculate_filtering_observations(private$results$filtration.raw,
-                                                     private$model$rcpp_function_ptr,
-                                                     as.matrix(private$data[private$names$inputs]),
-                                                     private$algo.settings$argument.parameters,
-                                                     private$dims$observations
-    )
-    colnames(observations$mean$prior) <- .obs.colnames
-    colnames(observations$mean$posterior) <- .obs.colnames
-    colnames(observations$sd$prior) <- .obs.colnames
-    colnames(observations$sd$posterior) <- .obs.colnames
-    names(observations$cov$prior) = .covnames.list
-    names(observations$cov$posterior) = .covnames.list
-    filt$observations <- observations
+    # Return list
+    x <- list(mean_and_sd = summary, cov = cov)
+    lapply(x, as.data.frame)
   }
 
-  # store
+  split.residual.matrix <- function(mat, names, time.column=private$data[["t"]]){
+    # mat has construction [mean, cov]
+    # Extract into mean, standard dev and covariance columns
+    n <- length(names)
+    diag.ids <- seq(1, n^2, by=n+1)
+    mean <- mat[, seq_len(n), drop = FALSE]
+    cov  <- mat[, n + seq_len(n^2), drop = FALSE]
+    sd   <- sqrt(cov[, diag.ids, drop = FALSE])
+
+
+    # Construct [time, mean, normalized] matrix
+    summary <- cbind(time.column, mean, sd)
+    colnames(summary) <- c("t", names, paste0(names, ".sd"))
+
+    # Construct [time, cov] matrix
+    covnames <- apply(expand.grid(names,names),1,\(a) paste0(a[1],".",a[2],".cov"))
+    cov <- cbind(time.column, cov)
+    colnames(cov) <- c("t", covnames)
+
+    marginal.standardized <- cbind(time.column, mean/sd)
+    colnames(marginal.standardized) <- c("t", names)
+
+    # Return list
+    x <- list(
+      residuals = summary,
+      normalized = marginal.standardized,
+      cov = cov
+    )
+    lapply(x, as.data.frame)
+  }
+
+  # States
+  filt$states$prior <- split.state.matrix(rep$priorMat, private$names$states)
+  filt$states$posterior <- split.state.matrix(rep$postMat, private$names$states)
+
+  # Observations
+  # We do not include observation noise by default i.e.
+  # cov(h(x)) = H %*% P %*% t(H)
+  # not
+  # cov(y) = H %*% P %*% t(H) + V
+  obs.noise <- FALSE
+  obs.calculate.helper <- function(mat) from_states_to_observations(private$model$rcpp_function_ptr,
+                                                                    mat,
+                                                                    as.matrix(private$data[private$names$inputs]),
+                                                                    private$algo.settings$argument.parameters,
+                                                                    private$dims$observations,
+                                                                    private$dims$states,
+                                                                    obs.noise)
+  obs.prior <- obs.calculate.helper(rep$priorMat)
+  obs.post <- obs.calculate.helper(rep$postMat)
+  filt$observations$prior <- split.state.matrix(obs.prior$obsMat, private$names$obs)
+  filt$observations$posterior <- split.state.matrix(obs.post$obsMat, private$names$obs)
+
+  # Residuals
+  filt$residuals <- split.residual.matrix(rep$innoMat, private$names$obs)
+
+  # Store
   private$results$filtration <- filt
+
+  # return
+  return(invisible(self))
+}
+
+create_return_smoother <- function(self, private, laplace.residuals){
+
+  out <- list()
+  method <- private$algo.settings$method
+  state.names <- private$names$states
+  obs.names <- private$names$obs
+  n.obs <- private$dims$observations
+
+  # Helper functions
+  split.matrix <- function(mat, names, time.column=private$data[["t"]]){
+    # mat has construction [mean, cov]
+    # Extract into mean, standard dev and covariance columns
+    n <- length(names)
+    diag.ids <- seq(1, n^2, by=n+1)
+    mean <- mat[, seq_len(n), drop = FALSE]
+    cov  <- mat[, n + seq_len(n^2), drop = FALSE]
+    sd   <- sqrt(cov[, diag.ids, drop = FALSE])
+
+    # Construct [time, mean, sd] matrix
+    summary <- cbind(time.column, mean, sd)
+    colnames(summary) <- c("t", names, paste0(names, ".sd"))
+
+    # Construct [time, cov] matrix
+    covnames <- apply(expand.grid(names,names),1,\(a) paste0(a[1],".",a[2],".cov"))
+    covnames[diag.ids] <- paste0(names,".var")
+    cov <- cbind(time.column, cov)
+    colnames(cov) <- c("t", covnames)
+
+    # Return list
+    x <- list(mean_and_sd = summary, cov = cov)
+    lapply(x, as.data.frame)
+  }
+
+  if(method %in% get.inference.algos("laplace")) {
+
+    smooth <- list()
+
+    random.effects.ids <- private$algo.settings$ode.number.of.steps.cumsum + 1
+
+    # States (Smoothed) -----------------------------------
+    temp.states <- matrix(private$sdr$par.random, ncol=private$dims$states)[random.effects.ids, ]
+    temp.sd <- matrix(sqrt(private$sdr$diag.cov.random), ncol=private$dims$states)[random.effects.ids, ]
+    temp.df <- data.frame(private$data$t, temp.states, temp.sd)
+    names(temp.df) <- c("t", state.names, paste0(state.names,".sd"))
+    smooth$states$mean_and_sd <- temp.df
+
+    # Observations
+    obs.noise <- FALSE
+    observations <- from_states_to_observations_no_state_cross_covariances(
+      private$model$rcpp_function_ptr,
+      cbind(temp.states, temp.sd^2),
+      as.matrix(private$data[private$names$inputs]),
+      private$algo.settings$argument.parameters,
+      private$dims$observations,
+      private$dims$states,
+      obs.noise)
+
+    smooth$observations <- split.matrix(observations$obsMat, obs.names)
+
+    # Residuals -----------------------------------
+    # compute one-step residuals
+    if(laplace.residuals){
+      message("Calculating one-step ahead residuals...")
+      res <- RTMB::oneStepPredict(private$nll,
+                                  observation.name="obsMat",
+                                  method="oneStepGaussian",
+                                  trace=TRUE)
+      nr <- nrow(private$data)
+      temp.res <- data.frame(t=private$data$t, matrix(res[["residual"]],ncol=private$dims$observations))
+      temp.sd <- as.data.frame(matrix(res[["sd"]],ncol=private$dims$observations))
+      names(temp.res) = c("t", private$names$obs)
+      names(temp.sd) = private$names$obs
+      smooth$residuals$residuals <- cbind(temp.res, temp.sd)
+      smooth$residuals$normalized <- temp.res
+      smooth$residuals$normalized[,-1] <- temp.res[,-1]/temp.sd
+
+    }
+
+
+    private$results$smooth <- smooth
+
+  } else if (method %in% get.inference.algos("kalman")) {
+
+    # Get smoothing results from algos
+    rep <- private$results$smooth.raw
+
+    # States
+    out$states <- split.matrix(rep$smoothMat, private$names$states)
+
+    # Observations
+    # We do not include observation noise by default i.e.
+    # cov(h(x)) = H %*% P %*% t(H)
+    # not
+    # cov(y) = H %*% P %*% t(H) + V
+    obs.noise <- FALSE
+    observations <- from_states_to_observations(private$model$rcpp_function_ptr,
+                                                rep$smoothMat,
+                                                as.matrix(private$data[private$names$inputs]),
+                                                private$algo.settings$argument.parameters,
+                                                private$dims$observations,
+                                                private$dims$states,
+                                                obs.noise)
+    out$observations <- split.matrix(observations$obsMat, private$names$obs)
+
+    #store
+    private$results$smooth <- out
+
+  }
 
   # return
   return(invisible(self))
@@ -466,95 +550,95 @@ create_return_prediction <- function(reported.dispersion.type, return.k.ahead, s
 
   if (!private$algo.settings$silent) message("Returning results...")
 
-  # Simlify variable names
+  t               <- private$data$t
   n               <- private$dims$states
   n.obs           <- private$dims$observations
   k.ahead         <- private$algo.settings$k.ahead
   state.names     <- private$names$states
+  obs.names       <- private$names$obs
   last.pred.index <- private$algo.settings$last.pred.index
   diag.ids        <- seq(from=1, to=n^2, by=n+1)
   diag.ids.obs    <- seq(from=1, to=n.obs^2, by=n.obs+1)
-  rbinded.predmat <- do.call(rbind, private$results$prediction.raw)
+  predmat         <- do.call(rbind, private$results$prediction.raw)
+  pred.means      <- predmat[, seq_len(n), drop = FALSE]
+  pred.covs       <- predmat[, n + seq_len(n^2), drop = FALSE]
 
-  # time-related entries
-  m.state = matrix(nrow=last.pred.index*(k.ahead+1), ncol=5+n)
-  colnames(m.state) = c("i.","j.","t.i","t.j","k.ahead", private$names$states)
-  ran = 0:(last.pred.index-1)
-  m.state[,"i."] <- rep(ran, each=k.ahead+1)
-  m.state[,"k.ahead"] <- rep(0:k.ahead, last.pred.index)
-  m.state[,"j."] <- m.state[,"i."] + m.state[,"k.ahead"]
-  m.state[,"t.i"] <- private$data$t[m.state[,"i."]+1]
-  m.state[,"t.j"] <- private$data$t[m.state[,"j."]+1]
-  m.obs <- m.state[,1:5] #for observations further below
+  ##### TIME / INDICES #####
+  i <- rep(seq_len(last.pred.index)-1, each = k.ahead+1)
+  k <- rep(0:k.ahead, times = last.pred.index)
+  j <- i + k
+  time.mat <- cbind(i. = i, j. = j, t.i = t[i + 1], t.j = t[j + 1], k.ahead = k)
+  keep.rows <- k %in% return.k.ahead
 
-  ##### STATE PREDICTIONS #####
-  # predicted state means
-  m.state[,state.names] = rbinded.predmat[,1:n, drop=FALSE]
-  # predicted state dispersions
-  if(reported.dispersion.type != "none"){
-    if(reported.dispersion.type == "marginal"){
-      m.disp <- rbinded.predmat[, n+diag.ids, drop=FALSE]
-      colnames(m.disp) <- sprintf(rep("var.%s",n), state.names)
-    } else {
-      m.disp <- rbinded.predmat[,-(1:n), drop=FALSE]
-      colnames(m.disp) <- sprintf(rep("cov.%s.%s",n^2), rep(state.names,each=n), rep(state.names,n))
-      if(reported.dispersion.type == "correlation"){
-        m.disp <- t(apply(m.disp, 1, function(x) as.vector(cov2cor(matrix(x, nrow=n)))))
-        colnames(m.disp) <- sprintf(rep("cor.%s.%s",n^2), rep(state.names,each=n), rep(state.names,n))
-      }
-      colnames(m.disp)[diag.ids] <- sprintf(rep("var.%s",n), state.names)
+  # Format the dispersion part of a [mean | flattened cov] matrix
+  format_prediction_matrix <- function(mat, names, type = c("covariance", "correlation")) {
+    type <- match.arg(type)
+    n <- length(names)
+    diag.ids <- seq(1, n^2, by = n + 1)
+    disp.type <- ifelse(type=="covariance", "cov", "cor")
+    disp.names <- apply(expand.grid(names, names),1,\(a) paste0(a[1],".",a[2],".", disp.type))
+    means      <- mat[, seq_len(n), drop = FALSE]
+    cov       <- mat[, n + seq_len(n^2), drop = FALSE]
+
+    # Means
+    m <- means
+    colnames(m) <- names
+
+    # Standard deviations
+    sd <- sqrt(cov[, diag.ids, drop = FALSE])
+    colnames(sd) <- paste0(names, ".sd")
+
+    # Set covariances
+    disp <- cov
+    colnames(disp) <- disp.names
+    if (type == "correlation") {
+      # vectorized cov2cor: cor_ij = cov_ij / (sd_i * sd_j), variances kept on the diagonal
+      row.id <- rep(seq_len(n), times = n)
+      col.id <- rep(seq_len(n), each = n)
+      disp <- cov / (sd[, row.id, drop = FALSE] * sd[, col.id, drop = FALSE])
+      disp[, diag.ids] <- cov[, diag.ids]
+      colnames(disp) <- disp.names
     }
-    m.state <- cbind(m.state, m.disp)
+    colnames(disp)[diag.ids] <- paste0(names, ".var")
+
+    # Create return list
+    state.list <- list(
+      mean_and_sd = cbind(time.mat, m, sd),
+      dispersion = cbind(time.mat, disp)
+    )
+    names(state.list)[2] <- disp.type
+    state.list <- lapply(state.list, function(x) x[keep.rows,])
+    state.list <- lapply(state.list, as.data.frame)
   }
 
-  ##### OBSERVATION PREDICTIONS #####
-  # calculate observations
-  m.obs.pred <- calculate_prediction_observations(rbinded.predmat,
-                                                  private$model$rcpp_function_ptr,
-                                                  as.matrix(private$data[private$names$inputs]),
-                                                  private$algo.settings$argument.parameters,
-                                                  private$dims$states,
-                                                  private$dims$observations,
-                                                  private$algo.settings$last.pred.index,
-                                                  private$algo.settings$k.ahead,
-                                                  reported.dispersion.type != "none")
-  # set name etc
-  if(reported.dispersion.type != "none"){
-    m.obs.pred.mean <- m.obs.pred[,1:n.obs,drop=FALSE]
-    colnames(m.obs.pred.mean) <- private$names$obs
-    if(reported.dispersion.type == "marginal"){
-      m.obs.pred.disp <- m.obs.pred[,n.obs+diag.ids.obs, drop=FALSE]
-      colnames(m.obs.pred.disp) <- sprintf(rep("var.%s",n.obs), private$names$obs)
-    } else {
-      m.obs.pred.disp <- m.obs.pred[,-c(1:n.obs), drop=FALSE]
-      colnames(m.obs.pred.disp) <- sprintf(rep("cov.%s.%s",n.obs^2), rep(private$names$obs,each=n.obs), rep(private$names$obs,n.obs))
-      if(reported.dispersion.type == "correlation"){
-        m.obs.pred.disp <- t(apply(m.obs.pred.disp, 1, function(x) as.vector(cov2cor(matrix(x, nrow=n.obs)))))
-        colnames(m.obs.pred.disp) <- sprintf(rep("cor.%s.%s",n.obs^2), rep(private$names$obs,each=n.obs), rep(private$names$obs,n.obs))
-      }
-      colnames(m.disp)[diag.ids] <- sprintf(rep("var.%s",n.obs), private$names$obs)
-    }
-    m.obs.pred <- cbind(m.obs.pred.mean, m.obs.pred.disp)
-  }
+  ##### STATES #####
+  state.list <- format_prediction_matrix(predmat, names=state.names, type=reported.dispersion.type)
 
-  m.obs.data = as.matrix(private$data[m.state[,"j."]+1, private$names$obs, drop=F])
-  colnames(m.obs.data) = paste(private$names$obs,".data",sep="")
+  ##### OBS #####
+  obs.predmat <- calculate_prediction_observations(predmat,
+                                                   private$model$rcpp_function_ptr,
+                                                   as.matrix(private$data[private$names$inputs]),
+                                                   private$algo.settings$argument.parameters,
+                                                   private$dims$states,
+                                                   private$dims$observations,
+                                                   private$algo.settings$last.pred.index,
+                                                   private$algo.settings$k.ahead,
+                                                   TRUE)
+  obs.list <- format_prediction_matrix(obs.predmat, names=obs.names, type=reported.dispersion.type)
 
-  # cbind all obs-related mats
-  m.obs <- cbind(m.obs, m.obs.pred, m.obs.data)
+  #### DATA ####
+  data.matrix <- cbind(time.mat, private$data[j+1, obs.names,drop=FALSE])
 
-  # return only specific k.ahead
-  keep.rows <- m.state[,"k.ahead"] %in% return.k.ahead
-  m.state = m.state[keep.rows,]
-  m.obs = m.obs[keep.rows,]
 
-  list.out = list(states = m.state, observations = m.obs)
+  # Store in private
+  list.out <- list(states = state.list, observations=obs.list, data=data.matrix)
   class(list.out) = c(class(list.out), "ctsmTMB.pred")
+  attr(list.out, "state.names") <- state.names
+  attr(list.out, "obs.names") <- obs.names
 
   private$results$prediction = list.out
 
   return(invisible(self))
-
 }
 
 #######################################################
@@ -569,7 +653,6 @@ create_return_simulation <- function(return.k.ahead, n.sims, self, private){
   # Build returnlist for states
   state.list <- build_simulation_returnlist(
     private$results$simulation.raw,
-    private$data$t,
     private$dims$states,
     private$algo.settings$k.ahead,
     n.sims
@@ -577,6 +660,13 @@ create_return_simulation <- function(return.k.ahead, n.sims, self, private){
   names(state.list) <- private$names$states
   for(i in seq_along(state.list)){
     names(state.list[[i]]) <- inner.names
+  }
+
+  build_simulation_timelists <- function(time_vector, n_forecasts, k_ahead) {
+    ka <- 0:k_ahead
+    lapply(seq_len(n_forecasts) - 1L, function(k) {
+      cbind(i=k, j=k+ka, t.i=time_vector[k + 1L],t.j=time_vector[k + ka + 1L],k.ahead = ka)
+    })
   }
 
   # create index/time list
@@ -604,7 +694,6 @@ create_return_simulation <- function(return.k.ahead, n.sims, self, private){
   # # Now we can build the returnlist
   obs.list <- build_simulation_returnlist(
     simulation.raw.obs,
-    private$data$t,
     private$dims$observations,
     private$algo.settings$k.ahead,
     n.sims

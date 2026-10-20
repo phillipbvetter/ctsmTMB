@@ -6,8 +6,8 @@ template:
   # package: rbitemplate
   bootstrap: 5
   # math-rendering: katex
-  # math-rendering: mathjax
-  math-rendering: mathml
+  math-rendering: mathjax
+  # math-rendering: mathml
   light-switch: true
 
   bslib:

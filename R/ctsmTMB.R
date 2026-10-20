@@ -110,7 +110,13 @@ ctsmTMB = R6::R6Class(
         ode.solver                  = NULL,
         estimate.initial            = FALSE,
         map                         = NULL,
-        advanced.settings           = list(forceAD = TRUE, rtmb.tapeconfig = NULL, tmb.tapeconfig = NULL, nllreport=FALSE),
+        advanced.settings           = list(forceAD = TRUE,
+                                           rtmb.tapeconfig = NULL,
+                                           tmb.tapeconfig = NULL,
+                                           nllreport=FALSE,
+                                           sequential.update=FALSE,
+                                           force.ad.on.input=FALSE
+                                           ),
         train.against.full.prediction = FALSE,
         k.ahead                     = 0,
         last.pred.index             = 0,
@@ -797,11 +803,19 @@ ctsmTMB = R6::R6Class(
     #' @param nllreport a boolean to disable / enable REPORT quantities out of the likelihood function, such as states and residuals.
     #' @param rtmb.tapeconfig options to be passed to \link[RTMB]{TapeConfig}.
     #' @param tmb.tapeconfig options to be passed to \link[TMB]{config}.
-    setAdvancedSettings = function(force.ad = TRUE, rtmb.tapeconfig = NULL, tmb.tapeconfig = NULL, nllreport=FALSE) {
+    #' @param sequential.update use sequential update in EKF
+    #' @param force.ad.on.input force-convert input matrix to AD representation.
+    setAdvancedSettings = function(force.ad = TRUE,
+                                   rtmb.tapeconfig = NULL,
+                                   tmb.tapeconfig = NULL,
+                                   nllreport=FALSE,
+                                   sequential.update=FALSE,
+                                   force.ad.on.input = FALSE
+                                   ) {
 
       if (nllreport) {
-        if(!force.ad) force.ad <- FALSE
-        message("You requested nll reporting so I must set force.ad=FALSE (20% longer compile time).")
+        # We must disable force.ad since it breaks RTMB::REPORT.
+        if(force.ad) force.ad <- FALSE
       }
 
       # force AD mechanism
@@ -809,6 +823,12 @@ ctsmTMB = R6::R6Class(
         private$rebuild$ad <- TRUE
       }
       private$algo.settings$advanced.settings$forceAD <- force.ad
+
+      # force AD mechanism
+      if(!identical(private$algo.settings$advanced.settings$force.ad.on.input, force.ad.on.input)){
+        private$rebuild$ad <- TRUE
+      }
+      private$algo.settings$advanced.settings$force.ad.on.input <- force.ad.on.input
 
       # report mechanism
       if(!identical(private$algo.settings$advanced.settings$nllreport, nllreport)){
@@ -827,6 +847,12 @@ ctsmTMB = R6::R6Class(
         private$rebuild$ad <- TRUE
       }
       private$algo.settings$advanced.settings$tmb.tapeconfig <- tmb.tapeconfig
+
+      # TapeConfig for TMB models
+      if(!identical(private$algo.settings$advanced.settings$sequential.update, sequential.update)){
+        private$rebuild$ad <- TRUE
+      }
+      private$algo.settings$advanced.settings$sequential.update <- sequential.update
 
 
 
@@ -1085,7 +1111,6 @@ ctsmTMB = R6::R6Class(
     #' using the method of \link[TMB]{oneStepPredict}.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
-    #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
     #' @param ... additional arguments
     filter = function(data,
                       pars = NULL,
@@ -1093,11 +1118,10 @@ ctsmTMB = R6::R6Class(
                       ode.solver = "rk4",
                       ode.timestep = diff(data$t),
                       first.order.input.hold = FALSE,
-                      ukf.hyperpars = c(1, 0, 3),
+                      ukf.hyperpars = c(0.5, 2, 0),
                       initial.state = self$getInitialState(),
                       laplace.residuals = FALSE,
                       estimate.initial.state = FALSE,
-                      use.cpp = TRUE,
                       silent = FALSE,
                       ...){
 
@@ -1111,10 +1135,10 @@ ctsmTMB = R6::R6Class(
       filter_predict_simulate_smooth(self, private, proc=proc)
 
       # create return fit
-      create_filter_results(self, private, laplace.residuals)
+      create_return_filter(self, private, laplace.residuals)
 
       # return
-      # if(!private$algo.settings$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$filtration))
     },
 
@@ -1159,7 +1183,7 @@ ctsmTMB = R6::R6Class(
     smooth = function(data,
                       pars = NULL,
                       method = "ekf",
-                      ode.solver = "euler",
+                      ode.solver = "rk4",
                       ode.timestep = diff(data$t),
                       first.order.input.hold = FALSE,
                       initial.state = self$getInitialState(),
@@ -1179,14 +1203,13 @@ ctsmTMB = R6::R6Class(
         create_ad_likelihood_fun(self, private)
 
       # smooth
-      # perform_smoothing(self, private)
       filter_predict_simulate_smooth(self, private, "smooth", n.sims=NULL)
 
       # create return fit
-      create_smooth_results(self, private, laplace.residuals)
+      create_return_smoother(self, private, laplace.residuals)
 
       # return
-      # if(!private$algo.settings$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$smooth))
     },
 
@@ -1252,7 +1275,7 @@ ctsmTMB = R6::R6Class(
                         first.order.input.hold = FALSE,
                         loss = "quadratic",
                         loss_c = NULL,
-                        ukf.hyperpars = c(1, 0, 3),
+                        ukf.hyperpars = c(0.5, 2, 0),
                         initial.state = self$getInitialState(),
                         trace = 10,
                         control = list(trace=trace, iter.max=1e5, eval.max=1e5),
@@ -1285,10 +1308,9 @@ ctsmTMB = R6::R6Class(
 
       # create return fit
       create_estimation_return_fit(self, private, report, laplace.residuals)
-      # create_estimation_return_fit2(self, private, report, laplace.residuals)
 
       # return
-      # if(!private$algo.settings$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$fit))
     },
 
@@ -1371,7 +1393,7 @@ ctsmTMB = R6::R6Class(
                           first.order.input.hold = FALSE,
                           loss = "quadratic",
                           loss_c = NULL,
-                          ukf.hyperpars = c(1, 0, 3),
+                          ukf.hyperpars = c(0.5, 2, 0),
                           initial.state = self$getInitialState(),
                           estimate.initial.state = FALSE,
                           silent = FALSE,
@@ -1389,7 +1411,7 @@ ctsmTMB = R6::R6Class(
       create_ad_likelihood_fun(self, private)
 
       # return
-      # if(!silent) message("Finished!")
+      if(!silent) message("Finished!")
       return(invisible(private$nll))
     },
 
@@ -1439,7 +1461,6 @@ ctsmTMB = R6::R6Class(
     #' @param method The prediction method
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
-    #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
     #' @param ... additional arguments
     predict = function(data,
                        pars = NULL,
@@ -1449,16 +1470,15 @@ ctsmTMB = R6::R6Class(
                        first.order.input.hold = FALSE,
                        k.ahead = nrow(data)-1,
                        return.k.ahead = 0:min(k.ahead, nrow(data)-1),
-                       return.variance = c("marginal", "none", "covariance", "correlation"),
-                       ukf.hyperpars = c(1, 0, 3),
+                       return.variance = c("covariance", "correlation"),
+                       ukf.hyperpars = c(0.5, 2, 0),
                        initial.state = self$getInitialState(),
                        estimate.initial.state = private$algo.settings$estimate.initial,
-                       use.cpp = TRUE,
                        silent = FALSE,
                        ...){
 
       proc <- "predict"
-      reported.dispersion.type <- match.arg(return.variance)
+      return.dispersion.type <- match.arg(return.variance)
       args <- as.list(environment())[names(formals())]
 
       # set arguments, build model, check and set data...
@@ -1468,10 +1488,10 @@ ctsmTMB = R6::R6Class(
       filter_predict_simulate_smooth(self, private, proc=proc)
 
       # return
-      create_return_prediction(reported.dispersion.type, return.k.ahead, self, private)
+      create_return_prediction(return.dispersion.type, return.k.ahead, self, private)
 
       # return
-      # if(!private$algo.settings$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
       return(invisible(private$results$prediction))
     },
 
@@ -1541,12 +1561,10 @@ ctsmTMB = R6::R6Class(
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param n.sims number of simulations
     #' @param sim.timestep timestep used in the euler-maruyama scheme
-    #' @param use.cpp a boolean to indicate whether to use C++ to perform calculations
     #' @param cpp.seeds an integer seed value to control RNG normal draws on the C++ side.
     #' @param ... additional arguments
     simulate = function(data,
                         pars = NULL,
-                        use.cpp = TRUE,
                         cpp.seeds = NULL,
                         # method = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen"),
                         method = "ekf",
@@ -1557,7 +1575,7 @@ ctsmTMB = R6::R6Class(
                         k.ahead = nrow(data)-1,
                         return.k.ahead = 0:min(k.ahead, nrow(data)-1),
                         n.sims = 100,
-                        ukf.hyperpars = c(1, 0, 3),
+                        ukf.hyperpars = c(0.5, 2, 0),
                         initial.state = self$getInitialState(),
                         estimate.initial.state = private$algo.settings$estimate.initial,
                         silent = FALSE,
@@ -1576,7 +1594,7 @@ ctsmTMB = R6::R6Class(
       create_return_simulation(return.k.ahead, n.sims, self, private)
 
       # return
-      # if(!private$algo.settings$silent) message("Finished!")
+      if(!private$algo.settings$silent) message("Finished!")
 
       return(invisible(private$results$simulation))
     },
@@ -1858,18 +1876,26 @@ ctsmTMB = R6::R6Class(
       }
 
       # check if method is available
-      available_methods = c("lkf", "lkf.cpp", "ekf", "ekf.cpp", "ukf", "ukf.cpp", "laplace", "laplace.thygesen")
+      available_methods = c("lkf", "ekf", "ukf", "laplace", "laplace.thygesen", "ukf.knudsen")
       if (!(method %in% available_methods)) {
         stop("That method is not available. Please choose one of:
              - 'lkf' - Linear Kalman Filter
-             - 'lkf.cpp' - Linear Kalman Filter (TMB w. C++ Compilation)
              - 'ekf' - Extended Kalman Filter
-             - 'ekf.cpp' - Extended Kalman Filter (TMB w. C++ Compilation)
              - 'ukf' - Unscented Kalman Filter
-             - 'ukf.cpp' - Unscented Kalman Filter (TMB w. C++ Compilation)
              - 'laplace' - Laplace Approximation using Random Effects Formulation (X),
              - 'laplace.thygesen' - Stability-Improved Laplace Approximation due to Thygesen (XdB)"
         )
+        # available_methods = c("lkf", "lkf.cpp", "ekf", "ekf.cpp", "ukf", "ukf.cpp", "laplace", "laplace.thygesen")
+        # stop("That method is not available. Please choose one of:
+        #      - 'lkf' - Linear Kalman Filter
+        #      - 'lkf.cpp' - Linear Kalman Filter (TMB w. C++ Compilation)
+        #      - 'ekf' - Extended Kalman Filter
+        #      - 'ekf.cpp' - Extended Kalman Filter (TMB w. C++ Compilation)
+        #      - 'ukf' - Unscented Kalman Filter
+        #      - 'ukf.cpp' - Unscented Kalman Filter (TMB w. C++ Compilation)
+        #      - 'laplace' - Laplace Approximation using Random Effects Formulation (X),
+        #      - 'laplace.thygesen' - Stability-Improved Laplace Approximation due to Thygesen (XdB)"
+        # )
       }
 
       # set flag

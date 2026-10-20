@@ -8,6 +8,19 @@ newModel <- function(){
   ctsmTMB$new()
 }
 
+########################################################################
+# GET AVAILABLE INFERENCE METHODS
+########################################################################
+get.inference.algos <- function(type = c("all", "kalman", "laplace","kalman.ukf")) {
+  type <- match.arg(type)
+  algos <- list(
+    kalman  = c("lkf", "ekf", "ukf", "ukf.knudsen"),
+    laplace = c("laplace", "laplace.thygesen")
+  )
+  algos[["kalman.ukf"]] = algos[["kalman"]][grep("^ukf", algos[["kalman"]])]
+  if (type == "all") unlist(algos, use.names = FALSE) else algos[[type]]
+}
+
 ###########################################################
 # TRY THAT SUPPRESSES AND RECOVERS ANSWER DESPITE WARNINGS
 ###########################################################
@@ -21,7 +34,7 @@ try_with_warning_recovery = function(expr, silent=TRUE){
       invokeRestart("muffleWarning")
     }
   ), silent=silent)
-  
+
   return(output)
 }
 
@@ -56,6 +69,12 @@ getggplot2theme = function() {
     )
 
   return(mytheme)
+}
+
+getggplot2colors = function(n) {
+  hues = seq(15, 375, length = n + 1)
+  ggcolors = grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
+  return(ggcolors)
 }
 
 ###########################################################

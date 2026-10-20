@@ -81,19 +81,19 @@ MatrixXd ukf_1step(T1 f__, T2 g__, MatrixXd Xsigmapoints, MatrixXd sqrt_covMat, 
 //////////// ODE SOLVER ///////////
 template<typename T1, typename T2>
 MatrixXd ukf_ode_integration(
-  T1 f__, 
-  T2 g__, 
-  MatrixXd Xsigmapoints, 
-  MatrixXd sqrt_covMat, 
-  MatrixXd W, 
-  VectorXd wm, 
-  VectorXd parVec, 
-  VectorXd inputVec, 
-  VectorXd dinputVec, 
+  T1 f__,
+  T2 g__,
+  MatrixXd Xsigmapoints,
+  MatrixXd sqrt_covMat,
+  MatrixXd W,
+  VectorXd wm,
+  VectorXd parVec,
+  VectorXd inputVec,
+  VectorXd dinputVec,
   double dt,
-  double sqrt_c, 
-  const int ode_solver, 
-  const int n, 
+  double sqrt_c,
+  const int ode_solver,
+  const int n,
   const int nn){
 
     /*Initial State and Cov Values*/
@@ -117,7 +117,7 @@ MatrixXd ukf_ode_integration(
      Xsigmapoints = X0sigmapoints + 0.5 * dt * c1;
      // sqrt_covMat = ((Xsigmapoints - Xsigmapoints.col(0).replicate(1, nn))/sqrt(3.0)).block(0, 1, n, n);
      sqrt_covMat = sigma2chol(Xsigmapoints, sqrt_c, nn, n);
-     c2 = ukf_1step(f__, g__,Xsigmapoints, sqrt_covMat, W, wm, parVec, inputVec, sqrt_c, n, nn);        
+     c2 = ukf_1step(f__, g__,Xsigmapoints, sqrt_covMat, W, wm, parVec, inputVec, sqrt_c, n, nn);
 
      /*3. Second Approx Slope at Midpoint*/
      Xsigmapoints = X0sigmapoints + 0.5 * dt * c2;
@@ -133,9 +133,9 @@ MatrixXd ukf_ode_integration(
      c4 = ukf_1step(f__, g__,Xsigmapoints, sqrt_covMat, W, wm, parVec, inputVec, sqrt_c, n, nn);
 
      /*ODE UPDATE*/
-     X1sigmapoints = X0sigmapoints + dt * (c1 + 2.0*c2 + 2.0*c3 + c4)/6.0; 
+     X1sigmapoints = X0sigmapoints + dt * (c1 + 2.0*c2 + 2.0*c3 + c4)/6.0;
    } else {
-    // Do nothing
+     Rcpp::stop("No ODE solver selected.");
    }
 
    return X1sigmapoints;

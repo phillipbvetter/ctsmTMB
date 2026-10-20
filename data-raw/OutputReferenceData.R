@@ -1,9 +1,13 @@
 ## Generate reference outputs for C++ filter / predict / simulate tests using the Ornstein2D data.
-
-library(ctsmTMB)
+# Load data
+# ------------------
 data(Ornstein2D)
 how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]
+# add missing data to check those kind of errors
+df[1,c("y1","y2")] <- NA
+df[2,"y1"] <- NA
+df[3,"y2"] <- NA
 
 # -----------------------------------------------------------------------
 # 2D Ornstein model

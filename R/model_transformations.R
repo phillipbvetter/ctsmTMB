@@ -16,6 +16,9 @@ apply_lamperti_transform <- function(self, private){
 create_all_state_space_function_strings <- function(self, private){
   create_state_space_function_strings(self, private)
   create_rcpp_state_space_function_strings(self, private)
+
+  # Overwrite r.function.strings
+  create_state_space_function_strings_new(self, private)
 }
 
 #######################################################

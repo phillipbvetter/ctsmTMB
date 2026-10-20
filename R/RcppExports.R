@@ -5,6 +5,10 @@ ekf_filter_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec,
     .Call('_ctsmTMB_ekf_filter_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, first_order_input_hold)
 }
 
+ekf_smooth_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, first_order_input_hold) {
+    .Call('_ctsmTMB_ekf_smooth_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, first_order_input_hold)
+}
+
 ekf_predict_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, last_pred_id, k_step_ahead, first_order_input_hold) {
     .Call('_ctsmTMB_ekf_predict_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, last_pred_id, k_step_ahead, first_order_input_hold)
 }
@@ -13,16 +17,20 @@ ekf_simulate_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVe
     .Call('_ctsmTMB_ekf_simulate_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, any_available_obs, non_na_ids, ode_solver, last_pred_id, k_step_ahead, ng, nsims, seed, first_order_input_hold)
 }
 
-ekf_smooth_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, first_order_input_hold) {
-    .Call('_ctsmTMB_ekf_smooth_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ode_solver, first_order_input_hold)
+from_states_to_observations <- function(funPtrs, stateMat, inputMat, parVec, m, n, observation_noise) {
+    .Call('_ctsmTMB_from_states_to_observations', PACKAGE = 'ctsmTMB', funPtrs, stateMat, inputMat, parVec, m, n, observation_noise)
 }
 
-calculate_filtering_observations <- function(filtration_raw, funPtrs, inputMat, parVec, n_obs) {
-    .Call('_ctsmTMB_calculate_filtering_observations', PACKAGE = 'ctsmTMB', filtration_raw, funPtrs, inputMat, parVec, n_obs)
+from_states_to_observations_no_state_cross_covariances <- function(funPtrs, stateMat, inputMat, parVec, m, n, observation_noise) {
+    .Call('_ctsmTMB_from_states_to_observations_no_state_cross_covariances', PACKAGE = 'ctsmTMB', funPtrs, stateMat, inputMat, parVec, m, n, observation_noise)
 }
 
 lkf_filter_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, first_order_input_hold) {
     .Call('_ctsmTMB_lkf_filter_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, first_order_input_hold)
+}
+
+lkf_smooth_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, first_order_input_hold) {
+    .Call('_ctsmTMB_lkf_smooth_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, first_order_input_hold)
 }
 
 lkf_predict_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, last_pred_id, k_step_ahead, first_order_input_hold) {
@@ -37,6 +45,10 @@ check_if_funptr_is_null <- function(x, name) {
     .Call('_ctsmTMB_check_if_funptr_is_null', PACKAGE = 'ctsmTMB', x, name)
 }
 
+square_vec <- function(x) {
+    .Call('_ctsmTMB_square_vec', PACKAGE = 'ctsmTMB', x)
+}
+
 calculate_prediction_observations <- function(predMat, funPtrs, inputMat, parVec, n_states, n_obs, last_pred_id, k_ahead, compute_dispersion) {
     .Call('_ctsmTMB_calculate_prediction_observations', PACKAGE = 'ctsmTMB', predMat, funPtrs, inputMat, parVec, n_states, n_obs, last_pred_id, k_ahead, compute_dispersion)
 }
@@ -45,23 +57,19 @@ calculate_simulation_observations <- function(simulation_raw_states, funPtrs, in
     .Call('_ctsmTMB_calculate_simulation_observations', PACKAGE = 'ctsmTMB', simulation_raw_states, funPtrs, inputMat_T, parVec, n_states, n_obs, k_ahead, n_sims, seed)
 }
 
-build_simulation_returnlist <- function(simulation_raw, time_vector, n_states, k_ahead, n_sims) {
-    .Call('_ctsmTMB_build_simulation_returnlist', PACKAGE = 'ctsmTMB', simulation_raw, time_vector, n_states, k_ahead, n_sims)
+build_simulation_returnlist <- function(simulation_raw, n_states, k_ahead, n_sims) {
+    .Call('_ctsmTMB_build_simulation_returnlist', PACKAGE = 'ctsmTMB', simulation_raw, n_states, k_ahead, n_sims)
 }
 
-build_simulation_timelists <- function(time_vector, n_forecasts, k_ahead) {
-    .Call('_ctsmTMB_build_simulation_timelists', PACKAGE = 'ctsmTMB', time_vector, n_forecasts, k_ahead)
+ukf_filter_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ukf_pars, ode_solver, first_order_input_hold) {
+    .Call('_ctsmTMB_ukf_filter_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ukf_pars, ode_solver, first_order_input_hold)
 }
 
-ukf_filter_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, ode_solver, first_order_input_hold) {
-    .Call('_ctsmTMB_ukf_filter_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, ode_solver, first_order_input_hold)
+ukf_predict_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ukf_pars, last_pred_id, k_step_ahead, ode_solver, first_order_input_hold) {
+    .Call('_ctsmTMB_ukf_predict_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, any_available_obs, non_na_ids, ukf_pars, last_pred_id, k_step_ahead, ode_solver, first_order_input_hold)
 }
 
-ukf_predict_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, last_pred_id, k_step_ahead, ode_solver, first_order_input_hold) {
-    .Call('_ctsmTMB_ukf_predict_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, last_pred_id, k_step_ahead, ode_solver, first_order_input_hold)
-}
-
-ukf_simulate_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, ng, last_pred_id, k_step_ahead, ode_solver, nsims, seed, first_order_input_hold) {
-    .Call('_ctsmTMB_ukf_simulate_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, bool_is_not_na_obsMat, number_of_available_obs, ukf_pars, ng, last_pred_id, k_step_ahead, ode_solver, nsims, seed, first_order_input_hold)
+ukf_simulate_rcpp <- function(funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, any_available_obs, non_na_ids, ukf_pars, ng, last_pred_id, k_step_ahead, ode_solver, nsims, seed, first_order_input_hold) {
+    .Call('_ctsmTMB_ukf_simulate_rcpp', PACKAGE = 'ctsmTMB', funPtrs, obsMat, inputMat, parVec, covMat, stateVec, ode_timestep_size, ode_timesteps, simulation_timestep_size, simulation_timesteps, any_available_obs, non_na_ids, ukf_pars, ng, last_pred_id, k_step_ahead, ode_solver, nsims, seed, first_order_input_hold)
 }
 

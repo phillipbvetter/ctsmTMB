@@ -30,29 +30,6 @@ void cov_ode_1step_inplace(
   c = A_covMat + A_covMat.transpose() + G * G.transpose();
 }
 
-// Solving the variance moment differential equation 1-step forward
-template <typename MatrixTypeDef>
-void cov_and_cross_cov_ode_inplace(
-    MatrixTypeDef g__,
-    MatrixTypeDef dfdx__,
-    const Eigen::MatrixXd& covMat,
-    const Eigen::VectorXd& stateVec,
-    const Eigen::VectorXd& parVec,
-    const Eigen::VectorXd& inputVec,
-    Eigen::MatrixXd& c,
-    Eigen::MatrixXd& d)
-{
-
-  // Compute drift jacobian and diffusion
-  Eigen::MatrixXd F = dfdx__(stateVec, parVec, inputVec);
-  Eigen::MatrixXd A_covMat = F * covMat;
-  Eigen::MatrixXd G = g__(stateVec, parVec, inputVec);
-
-  // Calculate the right-hand side of covariance moment differential equation
-  c = A_covMat + A_covMat.transpose() + G * G.transpose();
-  d = covMat * F.transpose();
-}
-
 template <typename VectorTypeDef, typename MatrixTypeDef>
 void ode_integrator_inplace(
   VectorTypeDef f__,
@@ -121,8 +98,32 @@ void ode_integrator_inplace(
     stateVec = X0 + dt * (k1 + 2*k2 + 2*k3 + k4) / 6.0;
     covMat   = P0 + dt * (c1 + 2*c2 + 2*c3 + c4) / 6.0;
   } else {
-    // Do nothing
+    Rcpp::stop("No ODE solver was chosen.");
   }
+}
+
+// Solving the variance moment differential equation 1-step forward
+template <typename MatrixTypeDef>
+void cov_and_cross_cov_ode_inplace(
+    MatrixTypeDef g__,
+    MatrixTypeDef dfdx__,
+    const Eigen::MatrixXd& covMat,
+    const Eigen::MatrixXd& cross_covMat,
+    const Eigen::VectorXd& stateVec,
+    const Eigen::VectorXd& parVec,
+    const Eigen::VectorXd& inputVec,
+    Eigen::MatrixXd& c,
+    Eigen::MatrixXd& d)
+{
+
+  // Compute drift jacobian and diffusion
+  Eigen::MatrixXd F = dfdx__(stateVec, parVec, inputVec);
+  Eigen::MatrixXd A_covMat = F * covMat;
+  Eigen::MatrixXd G = g__(stateVec, parVec, inputVec);
+
+  // Calculate the right-hand side of covariance moment differential equation
+  c = A_covMat + A_covMat.transpose() + G * G.transpose();
+  d = cross_covMat * F.transpose();
 }
 
 template <typename VectorTypeDef, typename MatrixTypeDef>
@@ -156,7 +157,7 @@ void ode_integrator_with_cross_cov_inplace(
     // Forward Euler
 
     k1 = f__(stateVec, parVec, inputVec);
-    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, stateVec, parVec, inputVec, c1, d1);
+    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, cross_covMat, stateVec, parVec, inputVec, c1, d1);
 
     stateVec += dt * k1;
     covMat   += dt * c1;
@@ -169,41 +170,42 @@ void ode_integrator_with_cross_cov_inplace(
 
     const Eigen::VectorXd X0 = stateVec;
     const Eigen::MatrixXd P0 = covMat;
+    const Eigen::MatrixXd C0 = cross_covMat;
 
     // RK4
     // step 1
     k1 = f__(stateVec, parVec, inputVec);
-    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, stateVec, parVec, inputVec, c1, d1);
+    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, cross_covMat, stateVec, parVec, inputVec, c1, d1);
 
     // step 2
     inputVec += 0.5 * dinputVec;
     stateVec = X0 + 0.5 * dt * k1;
     covMat   = P0 + 0.5 * dt * c1;
-    cross_covMat   = P0 + 0.5 * dt * d1;
+    cross_covMat   = C0 + 0.5 * dt * d1;
     k2 = f__(stateVec, parVec, inputVec);
-    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, stateVec, parVec, inputVec, c2, d2);
+    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, cross_covMat, stateVec, parVec, inputVec, c2, d2);
 
     // step 3
     stateVec = X0 + 0.5 * dt * k2;
     covMat   = P0 + 0.5 * dt * c2;
-    cross_covMat = P0 + 0.5 * dt * d2;
+    cross_covMat = C0 + 0.5 * dt * d2;
     k3 = f__(stateVec, parVec, inputVec);
-    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, stateVec, parVec, inputVec, c3, d3);
+    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, cross_covMat, stateVec, parVec, inputVec, c3, d3);
 
     // step 4
     inputVec += 0.5 * dinputVec;
     stateVec = X0 + dt * k3;
     covMat   = P0 + dt * c3;
-    cross_covMat = P0 + dt * d3;
+    cross_covMat = C0 + dt * d3;
     k4 = f__(stateVec, parVec, inputVec);
-    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, stateVec, parVec, inputVec, c4, d4);
+    cov_and_cross_cov_ode_inplace(g__, dfdx__, covMat, cross_covMat, stateVec, parVec, inputVec, c4, d4);
 
     // solution
     stateVec = X0 + dt * (k1 + 2*k2 + 2*k3 + k4) / 6.0;
     covMat   = P0 + dt * (c1 + 2*c2 + 2*c3 + c4) / 6.0;
-    cross_covMat = P0 + dt * (d1 + 2*d2 + 2*d3 + d4) / 6.0;
+    cross_covMat = C0 + dt * (d1 + 2*d2 + 2*d3 + d4) / 6.0;
   } else {
-    // Do nothing
+    Rcpp::stop("No ODE solver was chosen.");
   }
 }
 

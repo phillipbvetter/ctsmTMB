@@ -2,21 +2,25 @@ apply_forceAD_to_some_variables <- function(force.ad, .envir=parent.frame()) {
 
   list2env(as.list(.envir), envir = environment())
 
+  method <- private$algo.settings$method
+
   # UKF related
-  if(private$algo.settings$method=="ukf"){
+  ukf.methods <- get.inference.algos("kalman.ukf")
+
+  if (method %in% ukf.methods) {
     Fsigma <- array(list(), c(1,n.sigmapoints))
     Hsigma <- array(list(),c(1,n.sigmapoints))
-
     assign("Fsigma", Fsigma, envir = .envir)
     assign("Hsigma", Hsigma, envir = .envir)
   }
 
   # This "hack" where zero-matrices/vectors are created globally rather than inside the state space functions
   # reduces MakeADFun compilation time by roughly 20%. We must use force=TRUE to force the variables into ad
-  # context. This works for the estimation, but breaks the report functionality.
+  # context. This works for the estimation, but breaks the report functionality because variables become
+  # advectors regardless of calling method.
   if(force.ad) {
 
-    if(private$algo.settings$method == "ekf"){
+    if(method == "ekf"){
       stateVec <- RTMB::AD(stateVec, force=TRUE)
       covMat <- RTMB::AD(covMat, force=TRUE)
       inputMat <- RTMB::AD(inputMat,force=TRUE)
@@ -26,7 +30,7 @@ apply_forceAD_to_some_variables <- function(force.ad, .envir=parent.frame()) {
       assign("inputMat", inputMat, envir = .envir)
     }
 
-    if(private$algo.settings$method == "lkf") {
+    if(method == "lkf") {
       stateVec <- RTMB::AD(stateVec, force=TRUE)
       covMat <- RTMB::AD(covMat, force=TRUE)
 
@@ -34,24 +38,31 @@ apply_forceAD_to_some_variables <- function(force.ad, .envir=parent.frame()) {
       assign("covMat", covMat, envir = .envir)
     }
 
-    if(private$algo.settings$method == "ukf"){
+    # if(private$algo.settings$method == "ukf"){
+    if(method %in% ukf.methods){
       stateVec <- RTMB::AD(stateVec, force=TRUE)
       covMat <- RTMB::AD(covMat, force=TRUE)
       inputMat <- RTMB::AD(inputMat,force=TRUE)
-      Fsigma <- array(list(),c(1,n.sigmapoints))
-      Hsigma <- array(list(),c(1,n.sigmapoints))
+      # Fsigma <- array(list(),c(1,n.sigmapoints))
+      # Hsigma <- array(list(),c(1,n.sigmapoints))
 
       assign("stateVec", stateVec, envir = .envir)
       assign("covMat", covMat, envir = .envir)
       assign("inputMat", inputMat, envir = .envir)
-      assign("Fsigma", Fsigma, envir = .envir)
-      assign("Hsigma", Hsigma, envir = .envir)
+      # assign("Fsigma", Fsigma, envir = .envir)
+      # assign("Hsigma", Hsigma, envir = .envir)
     }
 
   }
 
   return(invisible(NULL))
 
+}
+
+create_function_from_string_body <- function(fun.name, return.name, body.string, .envir=parent.frame()){
+  func_string <- sprintf("%s <- function(stateVec, parVec, inputVec) { %s; return(%s) }", fun.name, body.string, return.name)
+  func <- eval(parse(text = func_string), envir=.envir)
+  return(NULL)
 }
 
 create_state_space_functions_for_estimation <- function(force.ad, .envir=parent.frame()){
@@ -70,6 +81,7 @@ create_state_space_functions_for_estimation <- function(force.ad, .envir=parent.
     h_vec <- RTMB::AD(numeric(n.obs), force=TRUE)
     dhdx_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.states), force=TRUE)
     hvar_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.obs, ncol=n.obs), force=TRUE)
+    hvar_vec <- RTMB::AD(numeric(n.obs), force=TRUE)
     dfdu_mat <- RTMB::AD(RTMB::matrix(0, nrow=n.states, ncol=n.inputs+1), force=TRUE)
     hvar_vec <- RTMB::AD(numeric(n.obs), force=TRUE)
 
@@ -107,6 +119,33 @@ create_state_space_functions_for_estimation <- function(force.ad, .envir=parent.
   return(invisible(NULL))
 }
 
+# Create and assign functions to caller environment
+unpack_state_space_functions <- function(self, private, .envir=parent.frame()){
+
+  fun_from_string <- function(fun.name, return.name, body.string, .envir=parent.frame()){
+    func_string <- sprintf("%s <- function(stateVec, parVec, inputVec) { %s; return(%s) }", fun.name, body.string, return.name)
+    func <- eval(parse(text = func_string), envir=.envir)
+    return(NULL)
+  }
+
+  fun.strs <- private$model$r.function.strings
+  names(fun.strs) <- paste0(names(fun.strs),"__")
+  names(fun.strs)[names(fun.strs) == "hvar__matrix__"] = "hvar__matrix"
+  nams <- names(fun.strs)
+
+  e <- new.env()
+  local({
+    for(i in seq_along(nams)){
+      do.call(fun_from_string, list(nams[i], "ans", fun.strs[[nams[i]]]))
+    }
+  },
+  envir=e)
+
+  # Unpack into the caller environment
+  list2env(as.list(e, all.names=TRUE), envir=.envir)
+  return(invisible(e))
+}
+
 
 create_state_space_functions_for_filtering <- function(.envir=parent.frame()){
 
@@ -132,12 +171,141 @@ create_state_space_functions_for_filtering <- function(.envir=parent.frame()){
   return(invisible(NULL))
 }
 
+create_state_space_function_strings_new = function(self, private)
+{
 
-create_function_from_string_body <- function(fun.name, return.name, body.string, .envir=parent.frame()){
-  func_string <- sprintf("%s <- function(stateVec, parVec, inputVec) { %s; return(%s) }", fun.name, body.string, return.name)
-  func <- eval(parse(text = func_string), envir=.envir)
-  return(NULL)
+  obsList = lapply(seq_along(private$names$obs), function(id) substitute(obsVec[[i]],list(i=as.numeric(id))))
+  parList = lapply(seq_along(private$names$parameters), function(id) substitute(parVec[[i]],list(i=as.numeric(id))))
+  stateList = lapply(seq_along(private$names$states), function(id) substitute(stateVec[[i]],list(i=as.numeric(id))))
+  inputList = lapply(seq_along(private$names$inputs), function(id) substitute(inputVec[[i]],list(i=as.numeric(id))))
+  names(obsList) = private$names$obs
+  names(parList) = private$names$parameters
+  names(stateList) = private$names$states
+  names(inputList) = private$names$inputs
+  subsList = c(obsList, parList, stateList, inputList)
+
+  n.states <- private$dims$states
+  n.obs <- private$dims$observations
+  n.diffusions <- length(private$model$diff.processes[-1])
+  n.inputs <- private$dims$inputs
+
+  ##################################################
+  # helpers
+  ##################################################
+
+  # substitute variable names with vector indexing and deparse
+  to_term <- function(expr) deparse1(do.call(substitute, list(expr, subsList)))
+
+  # terms that depend on no state/parameter/input are plain numerics, and assigning
+  # those into an advector throws a lost AD error, so wrap them in RTMB::AD
+  wrap_const <- function(term) {
+    if (grepl("stateVec|parVec|inputVec", term)) term else sprintf("RTMB::AD(%s)", term)
+  }
+
+  # allocate an AD vector and fill non-zero entries
+  vec_body <- function(terms) {
+    nz <- which(terms != "0")
+    paste(c(
+      sprintf("ans <- RTMB::AD(numeric(%i))", length(terms)),
+      sprintf("ans[[%i]] <- %s", nz, vapply(terms[nz], wrap_const, "", USE.NAMES = FALSE))
+    ), collapse = "; ")
+  }
+
+  # allocate an AD matrix and fill non-zero entries
+  mat_body <- function(terms) {
+    nz <- which(terms != "0", arr.ind = TRUE)
+    paste(c(
+      sprintf("ans <- RTMB::AD(matrix(0, nrow=%i, ncol=%i))", nrow(terms), ncol(terms)),
+      sprintf("ans[[%i, %i]] <- %s", nz[,1], nz[,2], vapply(terms[nz], wrap_const, "", USE.NAMES = FALSE))
+    ), collapse = "; ")
+  }
+
+  ##################################################
+  # drift
+  ##################################################
+  f.terms <- vapply(seq_len(n.states), function(i) to_term(private$model$diff.terms[[i]]$dt), "")
+  private$model$r.function.strings$f <- vec_body(f.terms)
+
+  ##################################################
+  # drift jacobian
+  ##################################################
+  dfdx.terms <- matrix("0", n.states, n.states)
+  for(i in seq_len(n.states)){
+    for(j in seq_len(n.states)){
+      dfdx.terms[i,j] <- to_term(private$model$diff.terms.drift[[i]][[j]])
+    }
+  }
+  private$model$r.function.strings$dfdx <- mat_body(dfdx.terms)
+
+  ##################################################
+  # diffusion
+  ##################################################
+  g.terms <- matrix("0", n.states, n.diffusions)
+  for(i in seq_len(n.states)){
+    for(j in seq_len(n.diffusions)){
+      g.terms[i,j] <- to_term(private$model$diff.terms[[i]][[j+1]])
+    }
+  }
+  private$model$r.function.strings$g <- mat_body(g.terms)
+
+  ##################################################
+  # observation
+  ##################################################
+  h.terms <- vapply(seq_len(n.obs), function(i) to_term(private$model$obs.eqs.trans[[i]]$rhs), "")
+  private$model$r.function.strings$h <- vec_body(h.terms)
+
+  ##################################################
+  # observation jacobian
+  ##################################################
+  dhdx.terms <- matrix("0", n.obs, n.states)
+  for(i in seq_len(n.obs)){
+    for(j in seq_len(n.states)){
+      dhdx.terms[i,j] <- to_term(private$model$diff.terms.obs[[i]][[j]])
+    }
+  }
+  private$model$r.function.strings$dhdx <- mat_body(dhdx.terms)
+
+  ##################################################
+  # observation variance (vector and diagonal matrix form)
+  ##################################################
+  hvar.terms <- vapply(seq_len(n.obs), function(i) to_term(private$model$obs.var.trans[[i]]$rhs), "")
+  private$model$r.function.strings$hvar <- vec_body(hvar.terms)
+
+  hvar.mat.terms <- matrix("0", n.obs, n.obs)
+  diag(hvar.mat.terms) <- hvar.terms
+  private$model$r.function.strings$hvar__matrix <- mat_body(hvar.mat.terms)
+
+  ##################################################
+  # derivative w.r.t inputs (for linear kalman filter)
+  ##################################################
+  # B in dX = (A*X + B*U) dt + G dW with U = [1, u1(t), u2(t), ...]
+  # first column: constant terms (all inputs and states set to zero)
+  zero.list <- as.list(numeric(n.inputs + n.states))
+  names(zero.list) <- c(private$names$inputs, private$names$states)
+  constant.terms <- try_with_warning_recovery(
+    unname(sapply(
+      sapply(private$model$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list)))),
+      function(x) deparse1(do.call(substitute, list(x, subsList)))
+    ))
+  )
+  if(inherits(constant.terms, "try-error")){
+    constant.terms <- rep("0", n.states)
+  }
+
+  # remaining columns: derivatives w.r.t. each input
+  dfdu.terms <- matrix("0", n.states, n.inputs + 1)
+  dfdu.terms[,1] <- constant.terms
+  for(i in seq_len(n.states)){
+    for(j in seq_len(n.inputs)){
+      tempterm <- ctsmTMB_Deriv(f=private$model$sys.eqs.trans[[i]]$diff.dt, x=private$names$inputs[j])
+      dfdu.terms[i,j+1] <- to_term(tempterm)
+    }
+  }
+  private$model$r.function.strings$dfdu <- mat_body(dfdu.terms)
+
+  return(invisible(NULL))
 }
+
 
 create_state_space_function_strings = function(self, private)
 {
@@ -243,6 +411,7 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$h = paste(f.elements, collapse=";")
   private$model$r.function.strings$h <- paste("ans <- c(",paste(f.elements2,collapse=", "),")")
+  # private$model$r.function.strings$h <- paste("ans <- RTMB::AD(c(",paste(f.elements2,collapse=", "),"))")
 
   ##################################################
   # observation jacobian
@@ -275,7 +444,7 @@ create_state_space_function_strings = function(self, private)
   ##################################################
 
   f.elements <- c()
-  f2.elements <- numeric(private$dims$observations)
+  f.elements2 <- numeric(private$dims$observations)
   for(i in seq_along(private$names$obs)){
     term <- deparse1(do.call(substitute, list(private$model$obs.var.trans[[i]]$rhs, subsList)))
     # skip if zero
@@ -293,6 +462,7 @@ create_state_space_function_strings = function(self, private)
   }
   private$model$rtmb.function.strings.indexed2$hvar = paste(f.elements,collapse=";")
   private$model$r.function.strings$hvar <- paste("ans <- c(",paste(c(f.elements2),collapse=", "),")")
+  # private$model$r.function.strings$hvar <- paste("ans <- RTMB::AD(c(",paste(f.elements2,collapse=", "),"))")
 
   ### MATRIX FORM ### (for kalman)
   f.elements <- c()

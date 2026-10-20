@@ -5,34 +5,6 @@ compile_rcpp_functions = function(self, private){
 
   # if(!private$algo.settings$silent) message("Compiling function pointers...")
 
-  # # Settings
-  # .depends <- c("Rcpp", "RcppEigen", "ctsmTMB")
-  #
-  # # COMMENT:
-  # # These .includes should in principle be added via the .depends = 'ctsmTMB'.
-  # # This automatically fetches the code in inst/include/ctsmTMB.h
-  # # This does not work however when using devtools::load_all.
-  # .includes <- c(
-  #   "double invlogit(double x){return 1/(1 + exp(-x));}",
-  #   "const double pi = 3.14159265358979323846;"
-  # )
-  #
-  # # Create XPtr's
-  # print(system.time(
-  #   outlist <- lapply(private$model$rcpp.function.strings,
-  #                     function(s) RcppXPtrUtils::cppXPtr(s,
-  #                                                        depends=.depends,
-  #                                                        includes = .includes)
-  #   )
-  # ))
-  #
-  # # Add to private fields
-  # nams <- c("f","dfdx","g","h","dhdx","hvar","dfdu")
-  # names(outlist) <- nams
-  # private$model$rcpp_function_ptr[nams] <- outlist[nams]
-  #
-
-
   # Read lines from inst/include template
   txt <- readLines(system.file("include/template_user_functions.h", package="ctsmTMB"))
 
@@ -58,28 +30,6 @@ compile_rcpp_functions = function(self, private){
 
 }
 
-#######################################################'
-# CHECK CPP POINTERS (FOR NULL)
-#######################################################
-
-## TODO:
-# This function was needed when saving and retrieving models with saveRDS/readRDS
-# but it seems that this has no advantage with RTMB because the AD tape must be
-# re-taped, which costs the same as the call to MakeADFun.
-
-# The function is still called prior to using C++ filter/predict/simulate calls
-# but not really needed since we don't support this model saving stuff anyway...
-
-check_if_rcpp_pointers_are_valid <- function(self, private){
-  ptrs <- private$model$rcpp_function_ptr
-  bool <- unlist(lapply(names(ptrs), function(s) check_if_funptr_is_null(ptrs[s],s)))
-  if(any(bool)){
-    message("The C++ pointers are no longer valid and needs recompilation.")
-    compile_rcpp_functions(self, private)
-  }
-  return(invisible(self))
-}
-
 #######################################################
 # COMPILE CPP FUNCTION
 #######################################################
@@ -93,7 +43,7 @@ compile_cppfile <- function(self, private) {
 
   # Start Check:
   # - Exit if the method uses RTMB and does not need C++ compilation.
-  bool <- any(private$algo.settings$method == c("lkf", "ekf", "ukf", "laplace", "laplace.thygesen"))
+  bool <- !(private$algo.settings$method %in% c("ekf.cpp","lkf.cpp","ukf.cpp"))
   if(bool){
     return(invisible(self))
   }

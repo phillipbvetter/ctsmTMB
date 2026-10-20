@@ -29,10 +29,10 @@ License: GPL-3
 URL: https://github.com/phillipbvetter/ctsmTMB
 BugReports: https://github.com/phillipbvetter/ctsmTMB/issues
 Depends:
-    R (>= 4.0.0)
+    R (>= 4.1.0)
 Imports:
     Deriv,
-    ggplot2,
+    ggplot2 (>= 3.5.2),
     graphics,
     grDevices,
     Matrix,
@@ -51,7 +51,6 @@ Suggests:
     testthat (>= 3.0.0)
 LinkingTo:
     Rcpp,
-    RcppArmadillo,
     RcppEigen,
     zigg
 VignetteBuilder: 

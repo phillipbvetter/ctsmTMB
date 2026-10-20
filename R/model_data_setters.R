@@ -85,6 +85,7 @@ compute_data <- function(data, self, private) {
   basic_data_check(data, self, private)
 
   # calculate "complex" right-hand side observation equations
+  # NOTE!!: This feature is currently disabled...
   data <- calculate_complex_observation_lefthandsides(data, self, private)
 
   # save data
@@ -100,11 +101,16 @@ compute_data <- function(data, self, private) {
 # CHECK AND SET DATA BEFORE OPTIMIZATION
 #######################################################
 
-basic_data_check = function(data, self, private) {
+basic_data_check <- function(data, self, private) {
 
   # check if data is a data.frame
   if (!(is.data.frame(data))) {
     stop("The data should be a data.frame.")
+  }
+
+  # need at least two time points
+  if (nrow(data) < 2) {
+    stop("The data must contain at least two time points.")
   }
 
   # check if all inputs are in the data
@@ -347,7 +353,7 @@ set_parameters <- function(pars, self, private){
 set_k_ahead <- function(k.ahead, self, private) {
 
   # check if k.ahead is positive with length 1
-  if (!(is.numeric(k.ahead)) | !(length(k.ahead==1)) | !(k.ahead >= 0)) {
+  if (!is.numeric(k.ahead) || length(k.ahead) != 1 || is.na(k.ahead) || k.ahead < 0) {
     stop("k.ahead must be a non-negative numeric scalar")
   }
   # make sure its an integer

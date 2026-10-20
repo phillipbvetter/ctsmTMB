@@ -6,11 +6,13 @@
 \usage{
 \method{plot}{ctsmTMB.pred}(
   x,
-  y,
-  k.ahead = unique(x$states[, "k.ahead"]),
-  state.name = NULL,
-  type = "states",
+  y = NULL,
+  plot.series.i = 0,
+  type = c("states", "observations", "both"),
+  state.name = attributes(pred)$state.names[1],
+  obs.name = attributes(pred)$obs.names[1],
   against.obs = NULL,
+  ggtheme = getggplot2theme(),
   ...
 )
 }
@@ -19,40 +21,45 @@
 
 \item{y}{not used}
 
-\item{k.ahead}{an integer indicating which k-ahead predictions to plot}
+\item{plot.series.i}{an integer determining with prediction series to plot, corresponding
+to the index ".i" in the prediction data.frame.}
 
-\item{state.name}{a string indicating which states to plot}
+\item{type}{which series to plot (states, observations or both of those).}
 
-\item{type}{one of 'states' or 'observations', to plot}
+\item{state.name}{the name of the state variable to plot}
 
-\item{against.obs}{name of an observations to plot predictions against}
+\item{obs.name}{the name of the observation variable to plot}
+
+\item{against.obs}{the name of the observations variable whose data series to plot against.}
+
+\item{ggtheme}{a ggplot2 theme to use for the plots.}
 
 \item{...}{additional arguments}
 }
 \value{
-A plot of predicted states
+A ggplot2 plot object.
 }
 \description{
 Plot of k-step predictions from a ctsmTMB prediction object
 }
 \examples{
 \dontrun{
-# Given a prediction
-pred <- model$predict(data, k.ahead=10)
+data(Ornstein)
+df <- Ornstein
 
-# We can plot the all k.head predictions in the same plot
+model <- create.Ornstein1D.model()
+
+# Given a prediction
+pred <- model$predict(df, k.ahead=100)
+
+# plot the first series (starting from the posterior at i=0)
 plot(pred)
 
-# This is usually messy. We can instead set a specific horizon
-plot(pred, k.ahead=10)
+# We can also plot the observations instead, and compare with the data
+plot(pred, type="obs", against.obs="y")
 
-# We can select among all states using the 'state.name' argument
-plot(pred, k.ahead=10, state.name="x")
+# or plot a later series (startering from the posterior at i=50), for both obs and state
+plot(pred, type="both", against.obs="y", plot.series.i=50)
 
-# We can also plot against some observations using the 'against' argument
-plot(pred, k.ahead=10, state.name="x", against="y")
-
-# We can also show observations on that plot
-plot(fit, type="states", state.type="prior", against.obs="y")
 }
 }

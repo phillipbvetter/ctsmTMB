@@ -2,11 +2,15 @@
 ##
 ## Uses the 2D Ornstein_augmented_NA dataset (10 rows, some NAs).
 ## One reference object per method; the 'private' environment is excluded.
-
-library(ctsmTMB)
+# Load data
+# ------------------
 data(Ornstein2D)
 how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]
+# add missing data to check those kind of errors
+df[1,c("y1","y2")] <- NA
+df[2,"y1"] <- NA
+df[3,"y2"] <- NA
 
 # Helper: strip the non-serialisable private environment from a fit object
 strip_fit = function(fit) {

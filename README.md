@@ -26,9 +26,11 @@ The purpose of *ctsmTMB* is to offer a user-friendly tool for inference
 and forecasting in linear and mildly non-linear continuous-discrete
 stochastic state space systems, i.e. systems on the form
 
-$$dx_{t} = f\left( t, x_t, u_t, \theta \right) \, dt + g\left( t, x_t, u_t, \theta \right) \, d\omega_{t}$$
-
-$$y_{k} = h\left( t_k, x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{k}$$
+$$
+dx_{t} = f\left( t, x_t, u_t, \theta \right) \, dt + g\left( t, x_t, u_t, \theta \right) \, d\omega_{t}
+$$ $$
+y_{k} = h\left( t_k, x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{k}
+$$
 
 In this formulation the state $x_t$ is a stochastic continous-time
 process whose evolution is governed by the specified stochastic
@@ -38,7 +40,9 @@ at discrete times $t_k$ to the state values $x_{t_k}$ through the link
 function $h$. The measurement process is subject to zero-mean Gaussian
 noise via $\varepsilon_{k}$ i.e.
 
-$$\varepsilon_{k} \sim \mathcal{N} \left(0, \, \Sigma(t_k, x_{t_k}, u_{t_k}, \theta) \right)$$
+$$
+\varepsilon_{k} \sim \mathcal{N} \left(0, \, \Sigma(t_k, x_{t_k}, u_{t_k}, \theta) \right)
+$$
 
 State and parameter inference is based on maximum-likelihood estimation,
 using Gaussian approximations (Kalman filtering and methods based on the
@@ -67,30 +71,31 @@ following available methods:
 
 2.  `filter`:
 
-    Performs state filtration (Kalman filters only).
+    Performs state filtration (only for Kalman filter methods).
 
 3.  `smooth`:
 
-    Performs state smoothing (only available for the Laplace
-    approximation methods).
+    Performs state smoothing (only for Laplace approximation methods).
 
 4.  `predict`:
 
-    Performs k-step forecasting of the system mean and variance (Kalman
-    filters only).
+    Performs k-step forecasting of the system mean and variance (only
+    for Kalman filter methods).
 
 5.  `simulate`:
 
     Performs k-step forecasting through stochastic path simulations
-    (Kalman filters only).
+    (only for Kalman filter methods).
 
 6.  `likelihood`:
 
-    Construct the (negative log) likelihood function handles for the
-    function value, gradient and hessian. This is directly passed back
-    from `RTMB::MakeADFun`. This method allows for the use of other
-    optimizers, modifying the likelihood calculations, or combining
-    several data series.
+    Construct the negative log-likelihood function handles for the
+    function value, gradient and hessian.
+
+The `likelihood` method returns the object passed directly from
+`RTMB::MakeADFun`. Having the raw functon handlers enables the user to
+choose their own optimizer, modify the likelihood calculations, or
+combine likelihoods from multiple time-series.
 
 <!-- Estimation Methods -->
 
@@ -215,13 +220,17 @@ homepage](https://phillipbvetter.github.io/ctsmTMB/reference/ctsmTMB.html).
 We consider estimating the parameters of the modified Ornstein-Uhlenbeck
 process
 
-$$dx_{t} = \theta \left( \mu + u_t - x_t \right) dt + \sigma_x d\omega_{t}$$
+$$
+dx_{t} = \theta \left( \mu + u_t - x_t \right) dt + \sigma_x d\omega_{t}
+$$
 
 where the stationary mean $\mu$ has been augmented with the addition of
 a time-varying input $u_{t}$. We observe the state directly with noise
 i.e.:
 
-$$y_{k} = x_{t_k} + \varepsilon_{k} \qquad \varepsilon_{k} \sim \mathcal{N}\left(0, \sigma_{y}^2 \right)$$
+$$
+y_{k} = x_{t_k} + \varepsilon_{k} \qquad \varepsilon_{k} \sim \mathcal{N}\left(0, \sigma_{y}^2 \right)
+$$
 
 In the code chunk below we demonstate how to:
 
@@ -251,7 +260,7 @@ model <- newModel()
 
 # Add system equations
 model$addSystem(
-  dx ~ theta * (mu-x+u) * dt + sigma_x*dw
+  dx ~ theta * (mu-x+u) * dt + sigma_x * dw
 )
 
 # Add observation equations
@@ -327,41 +336,43 @@ cbind(true.pars, fitted.pars, difference=true.pars-fitted.pars)
 
 par(mfrow=c(3,1))
 # Plot prior predictions (1-step predictions) against simulation (truth) and observations (data)
-df.est <- cbind(fit$states$mean$prior, x.sd=fit$states$sd$prior[,"x"])
-t <- df.est[,"t"]
-x <- df.est[,"x"]
-x.sd <- df.est[,"x.sd"]
-plot(x=t, y=x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(0,3))
-polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
-lines(t, x, col="steelblue", lwd=2)
-points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
+df.prior <- fit$states$prior$mean_and_sd
+with(cbind(df.prior,y=df.obs$y),
+     {
+       plot(x=t, y=x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(0,3))
+       polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
+       lines(t, x, col="steelblue", lwd=2)
+       points(t, y, col="tomato", pch=16, cex=0.7)
+     }
+)
 
 # Predict to obtain 10-step-ahead predictions to see model forecasting ability
 pred.10step <- model$predict(df.obs, k.ahead=10, method="ekf", return.k.ahead = 10)
+pred.10step$states$mean_and_sd %>% head
 
 # Plot 10 step predictions vs data
-dfp <- pred.10step$states[,c("t.j","x","var.x")]
-t <- dfp[,"t.j"]
-x <- dfp[,"x"]
-x.sd <- sqrt(dfp[,"var.x"])
-plot(x=t, y=x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(0,3))
-polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
-lines(t, x, col="steelblue", lwd=2)
+with(pred.10step$states$mean_and_sd,{
+  plot(x=t.j, y=x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(0,3))
+  polygon(c(t.j, rev(t.j)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
+  lines(t.j, x, col="steelblue", lwd=2)
+}
+)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
 # Compare full (i.e. without updating to data along the way) prediction and simulation
-dfp <- model$predict(df.obs, method="ekf")
-xpred <- dfp$states[,"x"]
-sdf <- model$simulate(df.obs, method="ekf", n.sims=10)
-t <- sdf$times$i0[,"t.j"]
-xsim <- sdf$states$x$i0
-
-matplot(t, xsim, type="l", lty="solid", col="grey70", main="Full Prediction/Simulations vs Observations", xlab="Time", ylim=c(0,3))
-lines(t, xpred, col="steelblue", lwd=2)
+pred <- model$predict(df.obs, method="ekf")
+sim <- model$simulate(df.obs, method="ekf", n.sims=10, sim.timestep=1e-3)
+xsim <- sim$states$x$i0
+x <- pred$states$mean_and_sd$x
+# All use the same time vector since all series are full predictions
+matplot(df.obs$t, xsim, 
+        type="l", lty="solid", col="grey70",  ylim=c(0,3),
+        xlab="Time", main="Full Prediction/Simulations vs Observations")
+lines(df.obs$t, x, col="steelblue", lwd=2)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
 # Perform residual analysis
-p2 <- plot(fit)
+plot(fit)
 ```
 
 ## Bibliography

@@ -7,7 +7,7 @@ build_model <- function(self, private) {
     return(invisible(self))
 
   if(!private$algo.settings$silent)
-    message("Compiling model...")
+    message("Creating model...")
 
   # Disable rebuild flags
   private$rebuild$model <- FALSE

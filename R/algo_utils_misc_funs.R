@@ -60,90 +60,149 @@ configure_ad_tape <- function(context, self, private){
   return(invisible(self))
 }
 
-get_sys_dims <- function(.envir=parent.frame()){
+unpack_data <- function(self, private, force.ad=TRUE, .envir=parent.frame()){
 
-  list2env(as.list(.envir), envir = environment())
+  e <- new.env()
+  local({
 
-  n.states <- private$dims$states
-  n.obs <- private$dims$observations
-  n.pars <- private$dims$pars
-  n.diffusions <- private$dims$diffusions
-  n.inputs <- private$dims$inputs
-  n.sigmapoints <- 2*n.states + 1
+    # initial
+    stateVec = private$algo.settings$initial.state$x0
+    covMat = private$algo.settings$initial.state$p0
 
-  assign("n.states", n.states, envir = .envir)
-  assign("n.obs", n.obs, envir = .envir)
-  assign("n.pars", n.pars, envir = .envir)
-  assign("n.diffusions", n.diffusions, envir = .envir)
-  assign("n.inputs", n.inputs, envir = .envir)
-  assign("n.sigmapoints", n.sigmapoints, envir = .envir)
+    # input and obs matrix
+    inputMat = as.matrix(private$data[private$names$inputs])
+    obsMat = as.matrix(private$data[private$names$obs])
+
+    # force ad on the data
+    if(force.ad){
+      stateVec <- RTMB::AD(stateVec, force=TRUE)
+      covMat <- RTMB::AD(covMat, force=TRUE)
+      if (private$algo.settings$advanced.settings$force.ad.on.input){
+        inputMat <- RTMB::AD(inputMat,force=TRUE)
+      }
+    }
+
+    ode.stepsizes = private$algo.settings$ode.stepsizes
+    ode.number.of.steps = private$algo.settings$ode.number.of.steps
+
+  },
+  envir=e)
+
+  # Unpack into the caller environment
+  list2env(as.list(e, all.names=TRUE), envir=.envir)
+  return(invisible(self))
+}
+
+unpack_advanced_settings <- function(self, private, .envir=parent.frame()){
+
+  e <- new.env()
+  local({
+    force.ad <- private$algo.settings$advanced.settings$forceAD
+    nllreport <- private$algo.settings$advanced.settings$nllreport
+  },
+  envir=e)
+
+  # Unpack into the caller environment
+  list2env(as.list(e, all.names=TRUE), envir=.envir)
+  return(invisible(self))
+}
+
+unpack_system_dimensions <- function(self, private, .envir=parent.frame()){
+
+  e <- new.env()
+  local({
+    n.states <- private$dims$states
+    n.obs <- private$dims$observations
+    n.pars <- private$dims$pars
+    n.diffusions <- private$dims$diffusions
+    n.inputs <- private$dims$inputs
+    n.sigmapoints <- 2*n.states + 1
+  },
+  envir=e)
+
+  # Unpack into the caller environment
+  list2env(as.list(e, all.names=TRUE), envir=.envir)
+
+  return(invisible(e))
+}
+
+unpack_adjoints <- function(.envir=parent.frame()){
+
+  e <- new.env()
+  local({
+
+    # log determinant ----------------------------------------
+    # f(X(p)) = log det (X(p))
+    # df = Tr[X^{-1} dX]
+    logdet <- RTMB::ADjoint(
+      function(x) {
+        dim(x) <- rep(sqrt(length(x)), 2)
+        log(det(x))
+      },
+      function(x, y, dy) {
+        dim(x) <- rep(sqrt(length(x)), 2)
+        t(RTMB::solve(x)) * dy
+      },
+      name = "logdet")
+
+  },
+  envir=e)
+
+  # Unpack into the caller environment
+  list2env(as.list(e, all.names=TRUE), envir=.envir)
 
   return(invisible(NULL))
 }
 
-get_adjoints <- function(.envir=parent.frame()){
+get_loss_function <- function(type=c("multivariate","scalar"),.envir=parent.frame()){
+
+  type <- match.arg(type)
 
   list2env(as.list(.envir), envir = environment())
 
-  # adjoints ----------------------------------------
-  # f(X(p)) = log det (X(p))
-  # df = Tr[X^{-1} dX]
-  logdet <- RTMB::ADjoint(
-    function(x) {
-      dim(x) <- rep(sqrt(length(x)), 2)
-      log(det(x))
-    },
-    function(x, y, dy) {
-      dim(x) <- rep(sqrt(length(x)), 2)
-      t(RTMB::solve(x)) * dy
-    },
-    name = "logdet")
-
-  assign("logdet", logdet, envir = .envir)
-
-  return(invisible(NULL))
-}
-
-get_loss_function <- function(.envir=parent.frame()){
-
-  list2env(as.list(.envir), envir = environment())
-
-  # Loss function ----------------------------------------a
-  # quadratic loss
-  if(private$algo.settings$loss$loss == "quadratic"){
-    loss.function = function(e,R) -RTMB::dmvnorm(e, Sigma=R, log=TRUE)
-  }
-  # huber loss
-  if(private$algo.settings$loss$loss == "huber"){
-    loss.c <- private$algo.settings$loss$c
-    k.smooth <- 5
-    sigmoid <- function(r_sqr) 1/(1+exp(-k.smooth*(sqrt(r_sqr)-loss.c)))
-    huber.loss <- function(r_sqr) {
-      s <- sigmoid(r_sqr)
-      r_sqr * (1-s) + loss.c * (2*sqrt(r_sqr)-loss.c)*s
+  # Loss function ----------------------------------------
+  if(type=="multivariate"){
+    # quadratic loss
+    if(private$algo.settings$loss$loss == "quadratic"){
+      loss.function = function(e,R) -RTMB::dmvnorm(e, Sigma=R, log=TRUE)
     }
-    log2pi = log(2*pi)
-    loss.function = function(e,R){
-      # r_squared <- t(e) %*% RTMB::solve(R) %*% e
-      r_squared <- t(e) %*% RTMB::solve(R,e)
-      0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*huber.loss(r_squared)
+    # huber loss
+    if(private$algo.settings$loss$loss == "huber"){
+      loss.c <- private$algo.settings$loss$c
+      k.smooth <- 5
+      sigmoid <- function(r_sqr) 1/(1+exp(-k.smooth*(sqrt(r_sqr)-loss.c)))
+      huber.loss <- function(r_sqr) {
+        s <- sigmoid(r_sqr)
+        r_sqr * (1-s) + loss.c * (2*sqrt(r_sqr)-loss.c)*s
+      }
+      log2pi = log(2*pi)
+      loss.function = function(e,R){
+        r_squared <- t(e) %*% RTMB::solve(R,e)
+        0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*huber.loss(r_squared)
+      }
     }
-  }
-  # tukey loss
-  if(private$algo.settings$loss$loss == "tukey"){
-    loss.c <- private$algo.settings$loss$c
-    k.smooth <- 5
-    sigmoid <- function(r_sqr) 1/(1+exp(-k.smooth*(sqrt(r_sqr)-loss.c)))
-    tukey.loss <- function(r_sqr) {
-      s <- sigmoid(r_sqr)
-      r_sqr * (1-s) + loss.c^2*s
+    # tukey loss
+    if(private$algo.settings$loss$loss == "tukey"){
+      loss.c <- private$algo.settings$loss$c
+      k.smooth <- 5
+      sigmoid <- function(r_sqr) 1/(1+exp(-k.smooth*(sqrt(r_sqr)-loss.c)))
+      tukey.loss <- function(r_sqr) {
+        s <- sigmoid(r_sqr)
+        r_sqr * (1-s) + loss.c^2*s
+      }
+      log2pi = log(2*pi)
+      loss.function = function(e,R){
+        r_squared <- t(e) %*% RTMB::solve(R,e)
+        0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*tukey.loss(r_squared)
+      }
     }
-    log2pi = log(2*pi)
-    loss.function = function(e,R){
-      # r_squared <- t(e) %*% RTMB::solve(R) %*% e
-      r_squared <- t(e) %*% RTMB::solve(R,e)
-      0.5 * logdet(R) + 0.5 * log2pi * length(e) + 0.5*tukey.loss(r_squared)
+  } else if (type=="scalar") {
+    # quadratic loss
+    if(private$algo.settings$loss$loss == "quadratic"){
+      loss.function = function(e,R) -RTMB::dnorm(e, sd=sqrt(R), log=TRUE)
     }
+  } else {
+    stop("Please select a loss function")
   }
 
   assign("loss.function", loss.function, envir = .envir)
@@ -256,61 +315,17 @@ get_ode_solvers <- function(.envir=parent.frame()){
     }
 
   }
-  # else {
 
-  #   # desolve ODE solver ----------------------------------------
-  #
-  #   # Step 1: construct input interpolators
-  #
-  #   # Expand time-domain slightly to avoid NAs in RTMB::interpol1Dfun
-  #   # if ODE is evaluated slightly outside domain
-  #   time <- inputMat[,1]
-  #   time.range <- range(time)
-  #   time.range.diff <- diff(time.range)
-  #   new.range = time.range + rep(time.range.diff/10, 2) * c(-1,1)
-  #   new.time <- seq(new.range[1], new.range[2], by=min(diff(time)))
-  #   input.interp.funs <- vector("list",length=n.inputs)
-  #   # Create interpolation on uniform grid
-  #   for(i in 1:length(input.interp.funs)){
-  #     # create uniform time grid
-  #     out <- stats::approx(x=time, y=inputMat[,i], xout=new.time, rule=2)
-  #     # interpol1Dfun assumes uniform distances in x-coordinates
-  #     input.interp.funs[[i]] <- RTMB::interpol1Dfun(z=out$y, xlim=range(new.time), R=1)
-  #   }
-  #
-  #   # Step 2: construct ode fun for DeSolve
-  #   ode.fun <- function(time, stateVec_an d_covMat, parVec){
-  #     inputVec <- RTMB::sapply(input.interp.funs, function(f) f(time))
-  #     #
-  #     stateVec <- head(stateVec_and_covMat, n.states)
-  #     covMat <- RTMB::matrix(tail(stateVec_and_covMat, -n.states),nrow=n.states)
-  #     #
-  #     G <- g__(stateVec, parVec, inputVec)
-  #     AcovMat = dfdx__(stateVec, parVec, inputVec) %*% covMat
-  #     #
-  #     dX <- f__(stateVec, parVec, inputVec)
-  #     dP <- AcovMat + t(AcovMat) + G %*% t(G)
-  #     return(list(c(dX,dP)))
-  #   }
-  #
-  #   # Step 3: construct function to call in likelihood functon
-  #   ode_integrator <- function(covMat, stateVec, parVec, inputVec, dinputVec, dt){
-  #     out <- RTMBode::ode(y = c(stateVec, covMat),
-  #                         times = c(inputVec[1], inputVec[1]+dt),
-  #                         func = ode.fun,
-  #                         parms = parVec,
-  #                         method=ode.solver)[2,-1]
-  #
-  #     return(
-  #       list(head(out,n.states),
-  #            RTMB::matrix(tail(out,-n.states),nrow=n.states)
-  #       )
-  #     )
-  #   }
-  # }
+  # # tape the ode integrator (3 times faster adfun compilation)
+  ode.integrator.taped <- RTMB::MakeTape(function(x) {
+    sol <- ode.integrator(x[[2]], x[[1]], x[[3]], x[[4]], x[[5]], x[[6]])
+    return(cbind(sol[[1]],sol[[2]]))
+  }, list(numeric(n.states), array(0,dim=rep(n.states,2)), numeric(n.pars), numeric(n.inputs), numeric(n.inputs), numeric(1)))
+
 
   assign("cov.ode.1step", cov.ode.1step, envir=.envir)
   assign("ode.integrator", ode.integrator, envir = .envir)
+  assign("ode.integrator.taped", ode.integrator.taped, envir = .envir)
 
   return(NULL)
 }
@@ -340,7 +355,8 @@ get_initial_state_estimator_fixed_inputs <- function(inputVec, .envir=parent.fra
     sum(y*y)
   }
   # create the tape and perform newton
-  f.initial.state.newton0 <- RTMB::MakeTape(initial.state.newton, numeric(n.total))
+  # f.initial.state.newton0 <- RTMB::MakeTape(initial.state.newton, numeric(n.total))
+  f.initial.state.newton0 <- RTMB::MakeTape(initial.state.newton, rep(1,n.total))
   f.initial.state.newton <- f.initial.state.newton0$newton(1:n.states, grad_tol=1e-20)
 
   assign("f.initial.state.newton_fixed_input", f.initial.state.newton, envir=.envir)
@@ -404,7 +420,7 @@ get_initial_state_estimator <- function(.envir=parent.frame()){
   return(NULL)
 }
 
-get_ukf_ode_solvers <- function(.envir=parent.frame()){
+get_ukf_utils <- function(.envir=parent.frame()){
 
   list2env(as.list(.envir), envir = environment())
 
@@ -430,29 +446,75 @@ get_ukf_ode_solvers <- function(.envir=parent.frame()){
   }
 
   # create f of sigma points
-  f.sigma <- function(sigmaPoints, parVec, inputVec){
-    # Fsigma <- RTMB::matrix(0,nrow=n.states,ncol=nn)
+  f.sigma <- function(X, parVec, inputVec){
     for(i in 1:n.sigmapoints){
-      # Fsigma[,i] <- f__(sigmaPoints[,i], parVec, inputVec)
-      Fsigma[[1,i]] <- f__(sigmaPoints[,i], parVec, inputVec)
+      Fsigma[[1,i]] <- f__(X[,i], parVec, inputVec)
     }
     x <- do.call("c", Fsigma)
     dim(x) <- c(n.states, n.sigmapoints)
     return(x)
-    # return(Fsigma)
   }
 
-  h.sigma <- function(sigmaPoints, parVec, inputVec){
-    # Hsigma <- RTMB::matrix(0,nrow=n.obs,ncol=nn)
+  h.sigma <- function(X, parVec, inputVec){
     for(i in 1:n.sigmapoints){
-      # Hsigma[,i] <- h__(sigmaPoints[,i], parVec, inputVec)
-      Hsigma[[1,i]] <- h__(sigmaPoints[,i], parVec, inputVec)
+      Hsigma[[1,i]] <- h__(X[,i], parVec, inputVec)
     }
     x <- do.call("c", Hsigma)
     dim(x) <- c(n.obs, n.sigmapoints)
     return(x)
-    # return(Hsigma)
   }
+
+  assign("create.sigmaPoints", create.sigmaPoints, envir=.envir)
+  assign("sigma2chol", sigma2chol, envir=.envir)
+  assign("f.sigma", f.sigma, envir=.envir)
+  assign("h.sigma", h.sigma, envir=.envir)
+
+}
+
+get_ukf_ode_solvers <- function(.envir=parent.frame()){
+
+  list2env(as.list(.envir), envir = environment())
+
+  # # Sample sigma-points from mean and sqrt-covariance
+  # # [X0, X0,...,X0] + sqrt(c) [0, chol(P), -chol(P)]
+  # create.sigmaPoints <- function(stateVec, chol.covMat){
+  #   # Copy state vector
+  #   x <- rep(stateVec, n.sigmapoints)
+  #   dim(x) <- c(n.states, n.sigmapoints)
+  #
+  #   # Compute sqrt(c) * [0, A, -A], with A = chol(P)
+  #   n.zeros <- RTMB::AD(numeric(n.states))
+  #   y <- sqrt_c * c(n.zeros, chol.covMat, -chol.covMat)
+  #   dim(y) <- c(n.states, n.sigmapoints)
+  #
+  #   X.sigma <- x+y
+  #   return(X.sigma)
+  # }
+  #
+  # # get chol(P) from sigma points
+  # sigma2chol <- function(X.sigma){
+  #   (X.sigma[,2:(n.states+1)] - X.sigma[,1])/sqrt_c
+  # }
+  #
+  # # create f of sigma points
+  # f.sigma <- function(X, parVec, inputVec){
+  #   for(i in 1:n.sigmapoints){
+  #     Fsigma[[1,i]] <- f__(X[,i], parVec, inputVec)
+  #   }
+  #   x <- do.call("c", Fsigma)
+  #   dim(x) <- c(n.states, n.sigmapoints)
+  #   return(x)
+  # }
+  #
+  # h.sigma <- function(X, parVec, inputVec){
+  #   for(i in 1:n.sigmapoints){
+  #     Hsigma[[1,i]] <- h__(X[,i], parVec, inputVec)
+  #   }
+  #   x <- do.call("c", Hsigma)
+  #   dim(x) <- c(n.obs, n.sigmapoints)
+  #   return(x)
+  #   # return(Hsigma)
+  # }
 
   # 1-step UKF ODE ----------------------------------------
   cov.ode.1step = function(X.sigma, chol.covMat, parVec, inputVec){
@@ -588,10 +650,6 @@ get_ukf_ode_solvers <- function(.envir=parent.frame()){
     }
   }
 
-  assign("create.sigmaPoints", create.sigmaPoints, envir=.envir)
-  assign("sigma2chol", sigma2chol, envir=.envir)
-  assign("f.sigma", f.sigma, envir=.envir)
-  assign("h.sigma", h.sigma, envir=.envir)
   assign("cov.ode.1step", cov.ode.1step, envir=.envir)
   assign("ode.integrator", ode.integrator, envir = .envir)
 
@@ -613,7 +671,7 @@ get_ukf_weights <- function(.envir=parent.frame()){
   # weights
   W.m <- W.c <- rep(1/(2*(n.states+ukf.lambda)), n.sigmapoints)
   W.m[1] <- ukf.lambda/(n.states+ukf.lambda)
-  W.c[1] <- ukf.lambda/((n.states+ukf.lambda)+(1-ukf.alpha^2+ukf.beta))
+  W.c[1] <- ukf.lambda/(n.states+ukf.lambda)+(1-ukf.alpha^2+ukf.beta)
   W.m.mat <- replicate(n.sigmapoints, W.m)
   W <- (diag(n.sigmapoints) - W.m.mat) %*% diag(W.c) %*% t(diag(n.sigmapoints) - W.m.mat)
 
@@ -638,7 +696,7 @@ get_ukf_weights <- function(.envir=parent.frame()){
 # }
 
 compute_initial_state_estimate <- function(pars, inputvec, self, private) {
-  get_sys_dims()
+  unpack_system_dimensions(self, private)
   apply_forceAD_to_some_variables(force.ad=FALSE)
   create_state_space_functions_for_estimation(force.ad=FALSE)
   get_initial_state_estimator()

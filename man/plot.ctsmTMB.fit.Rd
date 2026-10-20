@@ -7,48 +7,48 @@
 \method{plot}{ctsmTMB.fit}(
   x,
   print.plot = 1,
-  type = "residuals",
-  state.type = "prior",
+  type = c("residuals", "states"),
+  state.type = c("prior", "posterior"),
   against.obs = NULL,
-  ggtheme = getggplot2theme(),
-  ylims = c(NA, NA),
   standardized.residuals = TRUE,
   residual.burnin = 0L,
   residual.vs.obs.and.inputs = FALSE,
+  ggtheme = getggplot2theme(),
+  time.series.ylims = c(NA, NA),
+  hist.bins = 50,
   ...
 )
 }
 \arguments{
 \item{x}{A R6 ctsmTMB fit object}
 
-\item{print.plot}{a single integer determining which element out of all
-states/observations (depending on the argument to \code{type}).
+\item{print.plot}{an integer determining which of the produced plots to print in the plot window.
 A value of 0 means not to plot anything.}
 
 \item{type}{a character vector either 'residuals' or 'states' determining what
 to plot.}
 
-\item{state.type}{a character vector either 'prior', 'posterior' or 'smoothed'
-determining what kind of states to plot.}
+\item{state.type}{a character vector either 'prior' or 'posterior' determining what kind of states to plot.}
 
 \item{against.obs}{name of an observation to plot state predictions against.}
 
-\item{ggtheme}{ggplot2 theme to use for creating the ggplot.}
+\item{standardized.residuals}{logical whether or not the time-series and histogram plots show standardized residuals.}
 
-\item{ylims}{limits on the y-axis for residual time-series plot}
-
-\item{standardized.residuals}{logical whether or not the time-series residual
-plot uses standardized residuals or not.}
-
-\item{residual.burnin}{integer N to remove the first N residuals}
+\item{residual.burnin}{integer N - removes the first N entries in the residual vectors, including NAs.}
 
 \item{residual.vs.obs.and.inputs}{the residual plots also include a new window
 with time-series plots of residuals, associated observations and inputs}
 
+\item{ggtheme}{ggplot2 theme to use for creating the ggplot.}
+
+\item{time.series.ylims}{limits on the y-axis for residual time-series plot}
+
+\item{hist.bins}{number of bins passed to \code{ggplot2::geom_histogram}}
+
 \item{...}{additional arguments}
 }
 \value{
-a (list of) ggplot residual plot(s)
+a list of residual analysis / state plots (ggplots) depending on \code{type}.
 }
 \description{
 This function creates residual plots for an estimated ctsmTMB object

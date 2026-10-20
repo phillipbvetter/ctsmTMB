@@ -17,35 +17,7 @@
 # -----------------------------------------------------------------------
 # Create Model
 # -----------------------------------------------------------------------
-model <- newModel()
-model$addSystem(
-  dx1 ~ theta * (mu + u - x1) * dt + sigma_x1 * dw1,
-  dx2 ~ alpha * (x1 - x2) * dt + sigma_x2 * dw2
-)
-model$addObs(
-  y1~x1,
-  y2~x2
-)
-model$setVariance(
-  y1 ~ sigma_y1^2,
-  y2 ~ sigma_y2^2
-)
-model$addInput(u)
-model$setParameter(
-  theta   = 5,
-  mu      = 3,
-  alpha   = 2,
-  sigma_x1 = 1,
-  sigma_x2 = 0.5,
-  sigma_y1 = 0.1,
-  # sigma_y2 = c(initial=0.1, lower=1e-10, upper=30)
-  sigma_y2 = 0.1
-)
-model$setInitialState(list(
-  x0=c(3,3),
-  p0=1e-10 * diag(2)
-))
-
+model <- create.Ornstein2D.model()
 
 # -----------------------------------------------------------------------
 # Create data for simulation
@@ -64,11 +36,9 @@ df.sim <- data.frame(
 # -----------------------------------------------------------------------
 # Simulate
 # -----------------------------------------------------------------------
-sim.out <- model$simulate(
-  data=df.sim,
-  cpp.seeds = c(1,10),
-  n.sim=1
-)
+sim.out <- model$simulate(data=df.sim,
+                          cpp.seeds = c(1,10),
+                          n.sim=1)
 
 # -----------------------------------------------------------------------
 # Create final data

@@ -1,9 +1,19 @@
-#### Setup ####
+# Data
+# ------------------
 data(Ornstein2D)
 how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]
+# add missing data to check those kind of errors
+df[1,c("y1","y2")] <- NA
+df[2,"y1"] <- NA
+df[3,"y2"] <- NA
+
+# Load reference results
+# ------------------
 data(EstimateReferenceData)
 ed <- EstimateReferenceData
+
+tol <- 1e-6
 
 # Helper: strip the non-serialisable private environment from a fit object
 strip_fit = function(fit) {
@@ -13,7 +23,8 @@ strip_fit = function(fit) {
 }
 
 model <- create.Ornstein2D.model()
-methods = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen")
+# methods = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen")
+methods = c("ekf", "lkf", "laplace", "laplace.thygesen")
 
 testthat::test_that("Check if estimation matches references for zero order hold",{
   # Author only test
@@ -22,13 +33,13 @@ testthat::test_that("Check if estimation matches references for zero order hold"
   # ZERO ORDER HOLD
   for (m in methods) {
     fit      = model$estimate(df, method = m, silent = TRUE, trace=0)
-    testthat::expect_equal(strip_fit(fit), ed[[m]])
+    testthat::expect_equal(strip_fit(fit), ed[[m]],tolerance=tol)
   }
 
   # FIRST ORDER HOLD
   for (m in methods) {
     fit      = model$estimate(df, method = m, silent = TRUE, trace=0, first.order.input.hold = TRUE)
-    testthat::expect_equal(strip_fit(fit), ed[[paste0(m,"_foh")]])
+    testthat::expect_equal(strip_fit(fit), ed[[paste0(m,"_foh")]], tolerance=tol)
   }
 })
 

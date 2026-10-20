@@ -325,29 +325,25 @@ This is useful for instance when searching for good initial guesses for the opti
 ```{r, message=FALSE}
 ## create vectors with different theta's
 pars <- lapply(c(1,2,4,8), function(x) c(x, 10, 1, 0.05))
-
 ## predict for the various theta values
-pred1 = model$predict(df.obs, pars=pars[[1]])
-pred2 = model$predict(df.obs, pars=pars[[2]])
-pred3 = model$predict(df.obs, pars=pars[[3]])
-pred4 = model$predict(df.obs, pars=pars[[4]])
+preds <- lapply(pars, function(p) model$predict(df.obs, pars=p))
 ```
 
 Plotting these state estimates against the data we get a feeling that $\theta \in \left[10,50\right]$ (with $\theta=20$ being the truth here).
 
 ```{r, echo=TRUE, fig.height=5,fig.width=9,out.width="100%", fig.align='center'}
-plot.df <- data.frame(t = pred$states[,"t.j"],
-                      t.obs = t.obs,
-                      y.obs = y.obs,
-                      x1=pred1$states[,"x"],
-                      x2=pred2$states[,"x"],
-                      x3=pred3$states[,"x"],
-                      x4=pred4$states[,"x"])
+df.x <- lapply(preds, function(df) df$states$mean_and_sd$x)
+names(df.x) <- c("x1","x2","x3","x4")
+plot.df <- data.frame(
+  t.obs = t.obs,
+  y.obs = y.obs,
+  df.x
+)
 ggplot(data=plot.df) +
-  geom_line(aes(x=t, y=x1, color="x1")) +
-  geom_line(aes(x=t, y=x2, color="x2")) +
-  geom_line(aes(x=t, y=x3, color="x3")) +
-  geom_line(aes(x=t, y=x4, color="x4")) +
+  geom_line(aes(x=t.obs, y=x1, color="x1")) +
+  geom_line(aes(x=t.obs, y=x2, color="x2")) +
+  geom_line(aes(x=t.obs, y=x3, color="x3")) +
+  geom_line(aes(x=t.obs, y=x4, color="x4")) +
   geom_point(aes(x=t.obs, y=y.obs, color="y")) +
   scale_color_discrete(
     breaks = c("x1", "x2", "x3", "x4", "y"),
@@ -368,7 +364,6 @@ fit = model$estimate(df.obs)
 print(fit)
 ```
 
-
 and then predict over an appropriate forecast horizon. In this example we let that horizon be 25-steps:
 ```{r}
 pred.horizon <- 15
@@ -377,14 +372,18 @@ pred = model$predict(df.obs, k.ahead=pred.horizon)
 
 Let's plot the `pred.horizon`-step predictions against the observations.
 ```{r}
-pred.obs = pred$states[pred$states[,"k.ahead"]==pred.horizon,]
+with(pred$states$mean_and_sd,{
+  pred.obs <<- cbind(t.j,x,x.sd)[k.ahead == pred.horizon,]
+})
+# pred$states$mean_and_sd$k.ahead %in% pred.horizon
+# pred.obs = pred$states[pred$states[,"k.ahead"]==pred.horizon,]
 ```
 
 
 ```{r, echo=FALSE, fig.height=5,fig.width=9,out.width="100%", fig.align='center', fig.alt='The plot shows 25-step predictions with associated 95% prediction interval in grey, against the observations.'}
 t.j <- pred.obs[,"t.j"]
 x <- pred.obs[,"x"]
-x.sd <- sqrt(pred.obs[,"var.x"])
+x.sd <- pred.obs[,"x.sd"]
 
 ggplot() +
   geom_line(aes(x=t.j, y=x,color="25-Step Predictions")) +
@@ -396,7 +395,7 @@ ggplot() +
 
 Lastly we calculate the mean prediction accuracy using an RMSE-score for all prediction horizons:
 ```{r}
-pdf <- data.frame(pred$states, y.data = pred$observations[,"y.data"])
+pdf <- data.frame(pred$states$mean_and_sd, y.data = pred$data$y)
 rmse <- data.frame(
   k.ahead = 0:pred.horizon,
   rmse = sapply(
@@ -419,108 +418,3 @@ ggplot(data=rmse) +
   ) +
   ctsmTMB:::getggplot2theme()
 ```
-
-## Arguments
-
----
-
-The `predict` method accepts the following arguments
-
-```{r, eval=FALSE}
-model$predict(data,
-              pars = NULL,
-              method = "ekf",
-              ode.solver = "rk4",
-              ode.timestep = diff(data$t),
-              k.ahead = nrow(data)-1,
-              return.k.ahead = 0:min(k.ahead, nrow(data)-1),
-              return.variance = c("marginal", "none", "covariance", "correlation"),
-              ukf.hyperpars = c(1, 0, 3),
-              initial.state = self$getInitialState(),
-              estimate.initial.state = private$estimate.initial,
-              use.cpp = TRUE,
-              silent = FALSE,
-              ...)
-```
-
-### `pars`
-
-This argument is a vector of parameter values, which are used to generate the predictions. The default behaviour is to use the parameters obtained from the latest call to `estimate` (if any) or alternative to use the initial guesses defined in `setParameter`.
-
----
-
-### `use.cpp`
-
-Perform predictions in R-based code (`use.cpp=FALSE`) or C++-based code or **C++** (`use.cpp=TRUE`, default).
-
----
-
-### `method`
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
----
-
-### `ode.solver`
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
-**Note:** When the argument `use.cpp=TRUE` then the only solvers available are *euler* and *rk4*.
-
----
-
-### `ode.timestep`
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
----
-
-### `k.ahead`
-
-This integer argument determines the number of prediction steps desired.
-
----
-
-
-### `return.k.ahead`
-
-This vector of integers determines which k-step predictions are returned. The default behaviour is to return all prediction steps (as determined by `k.ahead`).
-
----
-
-### `return.variance`
-
-The four options are:
-
-1. 'marginal' - return marginal variances only.
-2. 'none' - return no dispersion-related quantities.
-3. 'covariance' - return full covariance matrix.
-4. 'correlation' - return full correlation matrix.
-
----
-
-### `initial.state`
-
-Sets the initial state $\hat{x}_{0 \mid 0}$ and variance $P_{0 \mid 0}$.
-
----
-
-### `estimate.initial.state`
-
-A boolean to indicate whether or not estimate the initial state mean value instead of using the one provided via the `model$setInitialState` method or the `initial.state` argument to this method.
-
-The estimation is carried out by root-finding the stationary mean equation equivalent to minimizing
-
-$$
-\hat{x}_{0 \mid 0} = \min_{x} \left(f(t_0, x, u_{0}, \theta)\right)^{2}
-$$
-
-**Note**: This option is only available when `use.cpp=FALSE` using the pure R implementation.
-
----
-
-### `silent`
-
-See the description in the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
-
----

@@ -53,7 +53,8 @@ my_expect_no_error <- function(object, ..., message = NULL, class = NULL){
 }
 
 caller <- "smooth"
-methods <- c("laplace", "laplace.thygesen")
+# methods <- c("laplace", "laplace.thygesen")
+methods <- c("ekf","laplace", "laplace.thygesen")
 
 testthat::test_that("Checking for 'estimate' errors in 1/1 model",{
   # 1 / 1

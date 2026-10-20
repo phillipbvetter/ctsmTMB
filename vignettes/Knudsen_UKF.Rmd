@@ -1,0 +1,174 @@
+---
+title: "Unscented Kalman Filter using Euler-Maruyama"
+author: ""
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Unscented Kalman Filter using Euler-Maruyama}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, eval=FALSE, include=FALSE}
+render.rmd <- function(file, pkg="~/github/ctsmTMB", binding = "rmd", env = .GlobalEnv) {
+  if (exists(binding, envir = env, inherits = FALSE))
+    rm(list = binding, envir = env)
+
+  pkg <- normalizePath(pkg)
+  html <- file.path(pkg, "docs", "articles", paste0(file, ".html"))
+
+  makeActiveBinding(binding, function(fd) {
+    pkgdown::build_article(name = file, pkg = pkg)
+    browseURL(html)
+  }, env)
+}
+
+render.rmd(file = "Knudsen_UKF")
+rmd
+
+
+# render.rmd("rmd")
+# pkgdown::init_site("~/github/ctsmTMB")
+# pkgdown::build_article("Knudsen_UKF", pkg = "~/github/ctsmTMB")
+# browseURL("~/github/ctsmTMB/docs/articles/Knudsen_UKF.html")
+```
+
+\newcommand{\E}[1]{\mathbb{E}\left(#1\right)}
+\newcommand{\V}[1]{\mathbb{V}\left(#1\right)}
+\newcommand{\ar}[2]{\left[\begin{array}{#1}#2\end{array}\right]}
+
+# Notation
+
+Let the mean and covariance be denoted by
+
+$$
+\begin{align}
+m_k & = \E{x_{t_k}} \\ P_k & = \V{x_{t_k}}
+\end{align}
+$$
+
+# General Idea
+
+The general idea in Knudsen and Leth's *A New Continuous Discrete Unscented Kalman Filter* is to approximate the Gaussian transition density by applying the Unscented Transform to the Euler-Maruyama discretization of the SDE. 
+
+# Setup
+
+Consider the Euler-Maruyama scheme approximating the path from $x_{k}$ to $x_{k+1}$ using $L$ intermediate steps i.e.
+
+$$
+x_{k}^{(i+1)} = x_{k}^{(i)} + f(x_{k}^{(i)}) \, \Delta t_{i} + g(x_{k}^{(i)}) \, \Delta B_{i} \qquad \text{for} \quad i=0,1,2,...,L-1
+$$
+
+and let the sought solution be the final iterate i.e. $x_{k+1} = x_{k}^{L}$. We can view this procedure as the mapping from the initial state value and the noise increments to the final iterate i.e.
+
+$$
+\begin{equation}
+x_{k+1} = \Phi(z_k) = \Phi(x_{k}, \Delta B_{0},\Delta B_{1},...,\Delta B_{L-1})
+\end{equation}
+$$
+
+We can use the Unscented Transform on this mapping to obtain an approximate Gaussian transition at $x_{k+1}$, assuming we can generate the sigma points associated with $z$. We just need the mean and covariance of $z_k$, and these are easily obtained since all variables are independent and
+
+$$
+\Delta B_{i} \sim \mathcal{N}\left( 0 \, , \, I \Delta t_{i} \right)
+$$
+
+The mean and covariance of $z$ are given by:
+
+$$
+\begin{align}
+\E{z_k} = \begin{bmatrix} m_{k} \\ 0 \\ 0 \\ \vdots \\ 0 \end{bmatrix}
+&& 
+\V{z_k} = \begin{bmatrix}
+P_{k}  & 0 & 0 & 0 & 0 \\
+0 & I\Delta t_{i} & 0 & 0 & 0 \\ 
+0 & 0 & I\Delta t_{i} & 0&  0 \\
+0 & 0 & 0 & I\Delta t_{i} & 0 \\
+0 & 0 & 0 & 0 & \ddots 
+\end{bmatrix}
+\end{align}
+$$
+
+The general form of the sigma-points is:
+
+$$
+\mathcal{X} =
+\ar{c|c|c}{
+ \E{z_k}
+ & 
+ \E{z_k} + c \, \Lambda_k \, \text{diag}(\sqrt{\lambda_k}) 
+ & 
+ \E{z_k} - c \, \Lambda_k \, \text{diag}(\sqrt{\lambda_k})
+}
+$$
+
+where $\Lambda_k$ is a matrix of eigenvectors of $\V{z_k}$, and $\lambda_k$ is a vector of the eigenvalues, and $c$ is a constant. In this case we will therefore get the sigma-point structure
+
+<!-- ::: {style="font-size: 90%"} -->
+$$
+\mathcal{X} = \left[
+\begin{array}{c|cc|cc|cc|c|cc}
+m_k & m_k + cQ_k & m_k - cQ_k & m_k & m_k & m_k & m_k & \cdots & m_k & m_k \\
+0 & 0 & 0 & cI\sqrt{\Delta t_0} & -cI\sqrt{\Delta t_0} & 0 & 0 & \cdots & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & cI\sqrt{\Delta t_1} & -cI\sqrt{\Delta t_1} & \cdots & 0 & 0 \\
+\vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & \cdots & cI\sqrt{\Delta t_{L-1}} & -cI\sqrt{\Delta t_{L-1}}
+\end{array}
+\right]
+$$
+<!-- ::: -->
+with $Q_k = \Lambda_k \, \text{diag}(\sqrt{\lambda_k})$.
+
+We form in total $N_{s} = 2N+1$ sigma points, where $N = n+mL$ is the dimension of $z$, with $n$ and $m$ being the dimensions of $x \in R^{n}$ and $dB \in R^{m}$, and where $L$ was the number of intermediate discretization steps.
+
+We push these sigma points through $\Phi$ in order to obtain our approximate mean and covariance at the next iterate. In summary the algorithm reconstructs these as:
+
+$$
+m_{k+1 \mid k} = \sum_{i=0}^{2N} w_{i} \Phi(\mathcal{X}_{i})
+$$
+$$
+P_{k+1 \mid k} = \sum_{i=0}^{2N} w_{i} \left( \Phi(\mathcal{X}_{i}) - m_{k+1 \mid k} \right)\left( \Phi(\mathcal{X}_{i}) - m_{k+1 \mid k} \right)^{T}
+$$
+
+## Details
+
+Note that the first $2n+1$ sigma-points i.e. the first three columns in $\mathcal{X}$ above, all have zero diffusion i.e. $\Delta B_{i} = 0$ for all $i$. When these are mapped through $\Phi$ we therefore get just the ODE solution, and the code looks like
+```{r, eval=FALSE}
+f3c <- seq_len(2*n+1)
+for(i in seq_len(L)){
+  X[i,f3c] <- X[i,f3c] + apply(X[i,f3c],2,f) * dt
+}
+
+```
+
+
+
+Let's pick out the first non-zero entries and define
+
+$$
+\mathcal{X}^{s} = \ar{c|c|c}{m & m + kQ & m - kQ}
+$$
+
+then the mapping is given by
+
+$$
+\mathcal{X}^{s,j}_{i} = x_{k}^{(i)} + f(x_{k}^{(i)}) \, \Delta t_{i} + g(x_{k}^{(i)}) \, \Delta B_{i} \qquad \text{for} \quad i=0,1,2,...,L-1
+$$
+
+$$
+\Phi(\mathcal{X}_{i}) = \mathcal{X}^{(s)}_{i} + f(\mathcal{X}^{(s)}_{i}) \Delta t_{i}
+$$
+
+
+```{r, eval=FALSE}
+
+create.sigma.points <- function(x,p,L){
+  
+  
+  e <- eigen(p)
+  
+  
+}
+
+```
+

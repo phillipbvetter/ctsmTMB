@@ -1,9 +1,15 @@
 # Tests if the outputs from filter, predict and simulate against the Ornstein2D data, matches
 # the results previously obtained and stored in the OutputReferenceData.
 
+# Load data
+# ------------------
 data(Ornstein2D)
 how.many.rows <- 50
 df <- Ornstein2D[1:how.many.rows,]
+# add missing data to check those kind of errors
+df[1,c("y1","y2")] <- NA
+df[2,"y1"] <- NA
+df[3,"y2"] <- NA
 data(OutputReferenceData)
 od <- OutputReferenceData
 

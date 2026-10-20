@@ -3,7 +3,7 @@
 #' @returns a ctsmTMB model object
 #' @export
 create.Ornstein1D.model <- function(){
-  model <- ctsmTMB$new()
+  model <- newModel()
   model$addSystem(dx ~ theta * (mu * u - x) * dt + sigma_x * dw)
   model$addObs(y ~ x)
   model$setVariance(y ~ sigma_y^2)
@@ -14,8 +14,8 @@ create.Ornstein1D.model <- function(){
   )
   model$addInput("u")
   model$setParameter(
-    logtheta   = log(c(initial = 1,    lower = 1e-5,  upper = 50)),
-    mu         =     c(initial = 1.5,  lower = 0,     upper = 5),
+    logtheta   = log(c(initial = 5,    lower = 1e-5,  upper = 50)),
+    mu         =     c(initial = 3,  lower = 0,     upper = 5),
     logsigma_x = log(c(initial = 1,    lower = 1e-10, upper = 2)),
     logsigma_y = log(c(initial = 0.1,  lower = 1e-10, upper = 2))
   )

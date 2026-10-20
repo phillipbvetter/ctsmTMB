@@ -207,19 +207,12 @@ model$setVariance(
 # Add vector input
 model$addInput(u)
 
-# We apply log-transformations to the strictly positive parameters
-model$setAlgebraics(
-  theta ~ exp(logtheta),
-  sigma_x ~ exp(logsigma_x),
-  sigma_y ~ exp(logsigma_y)
-)
-
 # Specify parameter initial values and lower/upper bounds in estimation
 model$setParameter(
-  logtheta   = log(c(initial=2, lower=1e-5, upper=50)),
-  mu         = c(initial=2, lower=0, upper=5),
-  logsigma_x = log(c(initial=1e-2, lower=1e-10, upper=30)),
-  logsigma_y = log(c(initial=1e-2, lower=1e-10, upper=30))
+  theta   = c(initial=2, lower=1e-5, upper=50),
+  mu      = c(initial=2, lower=0, upper=5),
+  sigma_x = c(initial=1e-2, lower=1e-10, upper=30),
+  sigma_y = c(initial=1e-2, lower=1e-10, upper=30)
 )
 
 # Set initial state mean and covariance
@@ -233,7 +226,7 @@ model$setInitialState(initial.state)
 # First we create data (no observations)
 r.seed <- 20 # this seed for for u.sim rnorm draws
 set.seed(r.seed)
-true.pars = c(logtheta=log(10), mu=1, logsigma_x=log(1), logsigma_y=log(0.1))
+true.pars = c(theta=10, mu=1, sigma_x=1, sigma_y=0.1)
 dt.sim = 1e-2
 t.sim = seq(0, 5, by=dt.sim)
 u.sim = cumsum(rnorm(length(t.sim),sd=0.05)) # Create arbitrary input signal
@@ -274,41 +267,43 @@ cbind(true.pars, fitted.pars, difference=true.pars-fitted.pars)
 
 par(mfrow=c(3,1))
 # Plot prior predictions (1-step predictions) against simulation (truth) and observations (data)
-df.est <- cbind(fit$states$mean$prior, x.sd=fit$states$sd$prior[,"x"])
-t <- df.est[,"t"]
-x <- df.est[,"x"]
-x.sd <- df.est[,"x.sd"]
-plot(x=t, y=x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(0,3))
-polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
-lines(t, x, col="steelblue", lwd=2)
-points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
+df.prior <- fit$states$prior$mean_and_sd
+with(cbind(df.prior,y=df.obs$y),
+     {
+       plot(x=t, y=x, type="n", main="1-Step State Estimates vs Observations", xlab="Time", ylab="",  ylim=c(0,3))
+       polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
+       lines(t, x, col="steelblue", lwd=2)
+       points(t, y, col="tomato", pch=16, cex=0.7)
+     }
+)
 
 # Predict to obtain 10-step-ahead predictions to see model forecasting ability
 pred.10step <- model$predict(df.obs, k.ahead=10, method="ekf", return.k.ahead = 10)
+pred.10step$states$mean_and_sd %>% head
 
 # Plot 10 step predictions vs data
-dfp <- pred.10step$states[,c("t.j","x","var.x")]
-t <- dfp[,"t.j"]
-x <- dfp[,"x"]
-x.sd <- sqrt(dfp[,"var.x"])
-plot(x=t, y=x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(0,3))
-polygon(c(t, rev(t)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
-lines(t, x, col="steelblue", lwd=2)
+with(pred.10step$states$mean_and_sd,{
+  plot(x=t.j, y=x, type="n", main="10 Step Predictions vs Observations", xlab="Time", ylab="", ylim=c(0,3))
+  polygon(c(t.j, rev(t.j)), c(x+1.96*x.sd, rev(x-1.96*x.sd)), col="grey70", border=NA)
+  lines(t.j, x, col="steelblue", lwd=2)
+}
+)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
 # Compare full (i.e. without updating to data along the way) prediction and simulation
-dfp <- model$predict(df.obs, method="ekf")
-xpred <- dfp$states[,"x"]
-sdf <- model$simulate(df.obs, method="ekf", n.sims=10)
-t <- sdf$times$i0[,"t.j"]
-xsim <- sdf$states$x$i0
-
-matplot(t, xsim, type="l", lty="solid", col="grey70", main="Full Prediction/Simulations vs Observations", xlab="Time", ylim=c(0,3))
-lines(t, xpred, col="steelblue", lwd=2)
+pred <- model$predict(df.obs, method="ekf")
+sim <- model$simulate(df.obs, method="ekf", n.sims=10, sim.timestep=1e-3)
+xsim <- sim$states$x$i0
+x <- pred$states$mean_and_sd$x
+# All use the same time vector since all series are full predictions
+matplot(df.obs$t, xsim, 
+        type="l", lty="solid", col="grey70",  ylim=c(0,3),
+        xlab="Time", main="Full Prediction/Simulations vs Observations")
+lines(df.obs$t, x, col="steelblue", lwd=2)
 points(df.obs$t, df.obs$y, col="tomato", pch=16, cex=0.7)
 
 # Perform residual analysis
-p2 <- plot(fit)
+plot(fit)
 ```
 
 ## Bibliography

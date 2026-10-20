@@ -1,0 +1,5 @@
+main p, main li {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;  /* Safari needs the prefix */
+}
