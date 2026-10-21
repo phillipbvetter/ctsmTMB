@@ -3,7 +3,7 @@
 #######################################################
 
 
-MakeADFun_EKF = function(self, private)
+MakeADFun_EKF2 = function(self, private)
 {
 
   # Settings
@@ -12,7 +12,7 @@ MakeADFun_EKF = function(self, private)
 
   # Unpacking data
   unpack_system_dimensions(self, private)
-  unpack_data(self, private, force.ad=TRUE)
+  unpack_data(self, private)
   unpack_state_space_functions(self, private)
   unpack_adjoints()
   get_ode_solvers()
@@ -43,6 +43,12 @@ MakeADFun_EKF = function(self, private)
   # likelihood function --------------------------------------
   ekf.nll = function(p){
 
+    stateVec <- RTMB::AD(stateVec)
+    covMat <- RTMB::AD(covMat)
+    if (private$algo.settings$advanced.settings$force.ad.on.input){
+      inputMat <- RTMB::AD(inputMat)
+    }
+
     ####### Sometimes necessary to avoid rtmb errors #######
     "[<-" <- RTMB::ADoverload("[<-")
     "diag<-" <- RTMB::ADoverload("diag<-")
@@ -57,9 +63,7 @@ MakeADFun_EKF = function(self, private)
     ####### Stationary Solution #######
     inputVec = inputMat[1,]
     if (private$algo.settings$estimate.initial) {
-      # stateVec <- f.initial.state.newton(c(parVec, inputVec))
       stateVec <- f.initial.state.newton_fixed_input(parVec)
-      # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }
     if (nllreport) {
       statePrior[[1]] <- stateVec
