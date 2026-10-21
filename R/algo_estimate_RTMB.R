@@ -3,7 +3,7 @@
 #######################################################
 
 
-MakeADFun_EKF2 = function(self, private)
+MakeADFun_EKF = function(self, private)
 {
 
   # Settings
