@@ -382,7 +382,7 @@ model$simulate(data,
                n.sims = 100,
                ukf.hyperpars = c(1, 0, 3),
                initial.state = self$getInitialState(),
-               estimate.initial.state = private$estimate.initial,
+               estimate.initial.state = FALSE,
                silent = FALSE,
                ...)
 ```
@@ -452,7 +452,7 @@ Sets the initial state $\hat{x}_{0 \mid 0}$ and variance $P_{0 \mid 0}$.
 
 ### `estimate.initial.state`
 
-A boolean to indicate whether or not estimate the initial state mean value instead of using the one provided via the `model$setInitialState` method or the `initial.state` argument to this method.
+A boolean (or vector of 2 booleans `c(mean, covariance)`) to indicate whether or not to estimate the initial state mean and/or covariance instead of using the ones provided via the `model$setInitialState` method or the `initial.state` argument to this method. A single `TRUE` estimates both the initial state mean and covariance, whereas e.g. `c(TRUE, FALSE)` estimates only the mean.
 
 The estimation is carried out by root-finding the stationary mean equation equivalent to minimizing
 

@@ -128,7 +128,7 @@ MakeADFun_UKF2 <- function(self, private) {
 
     ####### INITIAL STATE / COVARIANCE #######
     inputVec = inputMat[1,]
-    if(private$algo.settings$estimate.initial){
+    if(private$algo.settings$estimate.initial[1]){
       stateVec <- f.initial.state.newton_fixed_input(parVec)
       # covMat <- f.initial.covar.solve(stateVec, parVec, inputVec)
     }

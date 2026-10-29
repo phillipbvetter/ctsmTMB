@@ -625,9 +625,11 @@ or zero-order (FALSE) hold on the inputs when integrating between time-points.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
       \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
-      \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
-estimated as the stationary solution of the linearized mean and covariance differential equations. When the
-system contains time-varying inputs, the first element of these is used.}
+      \item{\code{estimate.initial.state}}{boolean or vector of 2 booleans. Controls estimation of the initial state
+and covariance matrices as the stationary solution of the linearized mean and covariance differential
+equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
+booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
+the initial state covariance. When the system contains time-varying inputs, the first element of these is used.}
       \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
       \item{\code{...}}{additional arguments}
@@ -690,9 +692,11 @@ or zero-order (FALSE) hold on the inputs when integrating between time-points.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
       \item{\code{laplace.residuals}}{boolean - whether or not to calculate one-step ahead residuals
 using the method of \link[TMB]{oneStepPredict}.}
-      \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
-estimated as the stationary solution of the linearized mean and covariance differential equations. When the
-system contains time-varying inputs, the first element of these is used.}
+      \item{\code{estimate.initial.state}}{boolean or vector of 2 booleans. Controls estimation of the initial state
+and covariance matrices as the stationary solution of the linearized mean and covariance differential
+equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
+booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
+the initial state covariance. When the system contains time-varying inputs, the first element of these is used.}
       \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
       \item{\code{...}}{additional arguments}
@@ -777,9 +781,11 @@ without any random effects.}
 using the method of \link[TMB]{oneStepPredict}.}
       \item{\code{unconstrained.optim}}{boolean value. When TRUE then the optimization is carried out unconstrained i.e.
 without any of the parameter bounds specified during \code{setParameter}.}
-      \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
-estimated as the stationary solution of the linearized mean and covariance differential equations. When the
-system contains time-varying inputs, the first element of these is used.}
+      \item{\code{estimate.initial.state}}{boolean or vector of 2 booleans. Controls estimation of the initial state
+and covariance matrices as the stationary solution of the linearized mean and covariance differential
+equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
+booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
+the initial state covariance. When the system contains time-varying inputs, the first element of these is used.}
       \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
       \item{\code{compile}}{boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.}
@@ -873,9 +879,11 @@ approximation respectively) for smooth derivatives.}
 as the 0.95 percentile of the chi-squared distribution with degrees of freedom equal to the number of observations in the model}
       \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-      \item{\code{estimate.initial.state}}{boolean value. When TRUE the initial state and covariance matrices are
-estimated as the stationary solution of the linearized mean and covariance differential equations. When the
-system contains time-varying inputs, the first element of these is used.}
+      \item{\code{estimate.initial.state}}{boolean or vector of 2 booleans. Controls estimation of the initial state
+and covariance matrices as the stationary solution of the linearized mean and covariance differential
+equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
+booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
+the initial state covariance. When the system contains time-varying inputs, the first element of these is used.}
       \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
       \item{\code{compile}}{boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.}
@@ -915,7 +923,7 @@ state estimate as the initial condition.
   return.variance = c("covariance", "correlation"),
   ukf.hyperpars = c(0.5, 2, 0),
   initial.state = self$getInitialState(),
-  estimate.initial.state = private$algo.settings$estimate.initial,
+  estimate.initial.state = FALSE,
   silent = FALSE,
   ...
 )}
@@ -958,7 +966,7 @@ should be returned.}
       \item{\code{return.variance}}{a string to indicate what kind of dispersions should be reported.}
       \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-      \item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
+      \item{\code{estimate.initial.state}}{boolean or vector of 2 booleans c(mean, covariance) - stationary estimation of initial state mean and/or covariance}
       \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
       \item{\code{...}}{additional arguments}
@@ -995,7 +1003,7 @@ state estimate as the initial condition.
   n.sims = 100,
   ukf.hyperpars = c(0.5, 2, 0),
   initial.state = self$getInitialState(),
-  estimate.initial.state = private$algo.settings$estimate.initial,
+  estimate.initial.state = FALSE,
   silent = FALSE,
   ...
 )}
@@ -1058,7 +1066,7 @@ should be returned.}
       \item{\code{n.sims}}{number of simulations}
       \item{\code{ukf.hyperpars}}{The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.}
       \item{\code{initial.state}}{a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state}
-      \item{\code{estimate.initial.state}}{bool - stationary estimation of initial mean and covariance}
+      \item{\code{estimate.initial.state}}{boolean or vector of 2 booleans c(mean, covariance) - stationary estimation of initial state mean and/or covariance}
       \item{\code{silent}}{logical value whether or not to suppress printed messages such as 'Checking Data',
 'Building Model', etc. Default behaviour (FALSE) is to print the messages.}
       \item{\code{...}}{additional arguments}

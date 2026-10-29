@@ -429,7 +429,7 @@ This boolean allows for quick unconstrained estimation removing the parameter bo
 
 ### `estimate.initial.state`
 
-This boolean determines whether or not the initial-time state distribution (mean and covariance) should be estimated or not. By default `estimate.initial.state=FALSE` and it is not estimated but simply taken as the values provided by `setInitialState`. When `estimate.initial.state=TRUE` the mean and covariance are estimated as the stationary solution of the moment differential equations using the input values are the initial time-point.
+This argument determines whether or not the initial-time state distribution (mean and covariance) should be estimated or not. It accepts either a single boolean or a vector of 2 booleans `c(mean, covariance)`. By default `estimate.initial.state=FALSE` and neither is estimated but simply taken as the values provided by `setInitialState`. When `estimate.initial.state=TRUE` (equivalently `c(TRUE, TRUE)`) both the mean and covariance are estimated as the stationary solution of the moment differential equations using the input values are the initial time-point, whereas e.g. `estimate.initial.state=c(TRUE, FALSE)` estimates only the initial state mean and keeps the user-provided covariance, and `c(FALSE, TRUE)` estimates only the initial state covariance.
 
 The stationary solution is obtained first by solving
 

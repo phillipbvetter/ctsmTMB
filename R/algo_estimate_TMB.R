@@ -39,7 +39,7 @@ MakeADFun_EKF_TMB = function(self, private){
     n_inputs = private$dims$inputs,
     
     # estimate stationary levels
-    estimate_stationary_initials = as.numeric(private$algo.settings$estimate.initial)
+    estimate_stationary_initials = as.integer(private$algo.settings$estimate.initial)
   )
   
   # MAP Estimation?
@@ -121,7 +121,7 @@ MakeADFun_LKF_TMB = function(self, private){
     n_inputs = private$dims$inputs,
     
     # estimate stationary levels
-    estimate_stationary_initials = as.numeric(private$algo.settings$estimate.initial)
+    estimate_stationary_initials = as.integer(private$algo.settings$estimate.initial)
   )
   
   # MAP Estimation?
@@ -211,7 +211,7 @@ MakeADFun_UKF_TMB = function(self, private){
     n_inputs = private$dims$inputs,
     
     # estimate stationary levels
-    estimate_stationary_initials = as.numeric(private$algo.settings$estimate.initial)
+    estimate_stationary_initials = as.integer(private$algo.settings$estimate.initial)
   )
   
   # MAP Estimation?

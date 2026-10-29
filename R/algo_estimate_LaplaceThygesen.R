@@ -173,10 +173,8 @@ MakeADFun_Laplace_thygesen <- function(self, private)
     # Estimate initial conditions as stationary solution with first input
     # This estimate is, as with the user provided initial state, assumed to be
     # the prior mean and covariance x_{0 | -1} and P_{0 | -1}.
-    # NOTE: Only the state is estimated - the covariance P is kept as the
-    # user-provided prior
-    if (estimate.initial.state) {
-      get.cov <- FALSE
+    if (any(estimate.initial.state)) {
+      get.cov <- estimate.initial.state[2]
       sol <- stationary.solver(p,U[1,],get.cov=get.cov)
       x <- sol[,1]
       if(get.cov) P <- sol[,-1, drop=FALSE]

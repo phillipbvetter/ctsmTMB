@@ -330,11 +330,14 @@ Type objective_function<Type>::operator() ()
   W__ = (I__ - Wm__) * WcDiag__ * (I__ - Wm__).transpose();
 
   //////////// stationary solution ///////////
-  DATA_INTEGER(estimate_stationary_initials);
-  if(estimate_stationary_initials == 1){
+  DATA_IVECTOR(estimate_stationary_initials); // (mean, covariance) flags
+  if(estimate_stationary_initials(0) == 1){
     inputVec = inputMat.row(0);
     Functor<TMBad::ad_aug> F(parVec, inputVec);
     stateVec = newton::Newton(F, stateVec, cfg);
+  };
+  if(estimate_stationary_initials(1) == 1){
+    inputVec = inputMat.row(0);
     covMat = LyapSolver(stateVec, parVec, inputVec);
   };
 
