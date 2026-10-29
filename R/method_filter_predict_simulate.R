@@ -39,12 +39,12 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
   if (any(private$algo.settings$estimate.initial)) {
     stationary.solver <- construct.initial.state.estimators(self, private)
     get.cov <- private$algo.settings$estimate.initial[2]
-    out <- stationary.solver(parVec, inputMat[1,],get.cov=get.cov)
+    out <- stationary.solver(parVec, inputMat[1,],get.cov=get.cov,
+                             estimate.mean=private$algo.settings$estimate.initial[1], x0=stateVec)
     stateVec <- out[,1]
-    if(get.cov) {
-      # drop=FALSE ensures that the covariance stays a matrix also for single-state models
-      covMat <- out[,-1,drop=FALSE]
-    }
+    if(get.cov) covMat <- out[,-1,drop=FALSE]
+    print(stateVec)
+    print(covMat)
   }
 
 

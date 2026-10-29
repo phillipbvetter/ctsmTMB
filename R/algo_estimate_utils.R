@@ -53,11 +53,15 @@ construct.initial.state.estimators <- function(self, private){
   }
 
   # Return solver
-  # get.cov is controlled by the second entry (state covariance) of the
-  # algo.settings$estimate.initial field set via set_initial_state_estimation
-  stationary.solve <- function(p,u, get.cov=private$algo.settings$estimate.initial[2]){
+  # get.cov and estimate.mean are controlled by the entries (state covariance, state mean)
+  # of the algo.settings$estimate.initial field set via set_initial_state_estimation.
+  # When the state mean is not estimated (estimate.mean=FALSE) the covariance is
+  # computed around the user-provided initial state x0.
+  stationary.solve <- function(p,u, get.cov=private$algo.settings$estimate.initial[2],
+                               estimate.mean=private$algo.settings$estimate.initial[1],
+                               x0=NULL){
     z <- list(p,u)
-    x <- stationary.state(z)
+    x <- if (estimate.mean) stationary.state(z) else x0
     if(get.cov){
       z <- list(x,p,u)
       A <- do.call(funs$dfdx, z)
