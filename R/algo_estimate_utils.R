@@ -37,6 +37,7 @@ construct.initial.state.estimators <- function(self, private){
   n.pars   <- private$dims$pars
   n.inputs <- private$dims$inputs
   funs <- private$model$state.space.funs
+  settings <- private$algo.settings
 
   # STATIONARY SOLVER FOR THE MEAN
   # --------------------------------
@@ -53,15 +54,16 @@ construct.initial.state.estimators <- function(self, private){
   }
 
   # Return solver
-  # get.cov and estimate.mean are controlled by the entries (state covariance, state mean)
+  # get.mean and get.cov are controlled by the entries (state mean, state covariance)
   # of the algo.settings$estimate.initial field set via set_initial_state_estimation.
-  # When the state mean is not estimated (estimate.mean=FALSE) the covariance is
+  # When the state mean is not estimated (get.mean=FALSE) the covariance is
   # computed around the user-provided initial state x0.
-  stationary.solve <- function(p,u, get.cov=private$algo.settings$estimate.initial[2],
-                               estimate.mean=private$algo.settings$estimate.initial[1],
+  stationary.solve <- function(p,u,
+                               get.mean=settings$estimate.initial[1],
+                               get.cov=settings$estimate.initial[2],
                                x0=NULL){
     z <- list(p,u)
-    x <- if (estimate.mean) stationary.state(z) else x0
+    x <- if (get.mean) stationary.state(z) else x0
     if(get.cov){
       z <- list(x,p,u)
       A <- do.call(funs$dfdx, z)
