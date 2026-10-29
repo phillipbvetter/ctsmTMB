@@ -18,7 +18,12 @@ create_all_state_space_function_strings <- function(self, private){
   create_rcpp_state_space_function_strings(self, private)
 
   # Overwrite r.function.strings
+  # TO DO: Remove this, after converting UKF to new method stye
   create_state_space_function_strings_new(self, private)
+
+  # Create state space function strings and functions
+  create.state.space.funs(self, private)
+  create.model.funs(self, private)
 }
 
 #######################################################

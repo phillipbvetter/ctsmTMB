@@ -60,7 +60,7 @@ configure_ad_tape <- function(context, self, private){
   return(invisible(self))
 }
 
-unpack_data <- function(self, private, force.ad=TRUE, .envir=parent.frame()){
+unpack_data <- function(self, private, .envir=parent.frame()){
 
   e <- new.env()
   local({
@@ -72,15 +72,6 @@ unpack_data <- function(self, private, force.ad=TRUE, .envir=parent.frame()){
     # input and obs matrix
     inputMat = as.matrix(private$data[private$names$inputs])
     obsMat = as.matrix(private$data[private$names$obs])
-
-    # force ad on the data
-    if(force.ad){
-      stateVec <- RTMB::AD(stateVec, force=TRUE)
-      covMat <- RTMB::AD(covMat, force=TRUE)
-      if (private$algo.settings$advanced.settings$force.ad.on.input){
-        inputMat <- RTMB::AD(inputMat,force=TRUE)
-      }
-    }
 
     ode.stepsizes = private$algo.settings$ode.stepsizes
     ode.number.of.steps = private$algo.settings$ode.number.of.steps
@@ -145,13 +136,44 @@ unpack_adjoints <- function(.envir=parent.frame()){
       },
       name = "logdet")
 
+    # Stationary covariance: solve  A P + P A' + Q = 0  for P  (Q = G G')
+    #
+    # Vectorised:  (I %x% A + A %x% I) vec(P) = -vec(Q)
+    #
+    # Adjoint: for a scalar J with dJ/dP = W, solve the transposed system
+    #   (I %x% A' + A' %x% I) vec(S) = vec(W)    i.e.  A' S + S A = W
+    # and then
+    #   dJ/dQ = -S
+    #   dJ/dA = -(S P' + S' P)
+    lyap_matrix <- function(A) {
+      I <- diag(nrow(A))
+      kronecker(I, A) + kronecker(A, I)
+    }
+    solve_lyapunov <- RTMB::ADjoint(
+      function(x) {
+        n <- sqrt(length(x) / 2)
+        A <- x[1:n^2];
+        dim(A) <- c(n, n)
+        Q <- x[n^2 + 1:n^2]
+        RTMB::solve(lyap_matrix(A), -Q)
+      },
+      function(x, y, dy) {
+        n <- sqrt(length(x) / 2)
+        A <- x[1:n^2]; dim(A) <- c(n, n)
+        P <- y; dim(P) <- c(n, n)
+        S <- RTMB::solve(t(lyap_matrix(A)), dy); dim(S) <- c(n, n)
+        c(-(S %*% t(P) + t(S) %*% P), -S)
+      },
+      name = "solve_lyapunov"
+    )
+
   },
   envir=e)
 
   # Unpack into the caller environment
   list2env(as.list(e, all.names=TRUE), envir=.envir)
 
-  return(invisible(NULL))
+  return(as.list(e))
 }
 
 get_loss_function <- function(type=c("multivariate","scalar"),.envir=parent.frame()){

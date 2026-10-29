@@ -26,7 +26,7 @@ model <- create.Ornstein2D.model()
 # methods = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen")
 methods = c("ekf", "lkf", "laplace", "laplace.thygesen")
 
-testthat::test_that("Check if estimation matches references for zero order hold",{
+testthat::test_that("Check estimate vs reference (ZOH)",{
   # Author only test
   testthat::skip_if_not(Sys.getenv("USER") == "pbrve", "Author test - skipping due to minor numerical inconsistencies across operating systems and versions")
 
@@ -35,6 +35,12 @@ testthat::test_that("Check if estimation matches references for zero order hold"
     fit      = model$estimate(df, method = m, silent = TRUE, trace=0)
     testthat::expect_equal(strip_fit(fit), ed[[m]],tolerance=tol)
   }
+
+})
+
+testthat::test_that("Check estimate vs reference (FOH)",{
+  # Author only test
+  testthat::skip_if_not(Sys.getenv("USER") == "pbrve", "Author test - skipping due to minor numerical inconsistencies across operating systems and versions")
 
   # FIRST ORDER HOLD
   for (m in methods) {

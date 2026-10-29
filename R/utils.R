@@ -84,3 +84,10 @@ set.colnames <- function(object, colnames){
   colnames(object) <- colnames
   object
 }
+
+
+# Returns a named list based on the variable names e.g. a=2,b=3
+# then named_list(a,b) returns list(a=2,b=3)
+named_list <- function(...) {
+  setNames(list(...), vapply(substitute(list(...))[-1], deparse, ""))
+}

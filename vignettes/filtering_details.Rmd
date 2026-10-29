@@ -1,0 +1,62 @@
+---
+title: "Theoretical Details"
+author: ""
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Theoretical Details}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+```{r, include=FALSE, eval=FALSE}
+render.rmd("rmd")
+```
+
+
+# The conditional expectation is optimal in the mean-squared error sense:
+
+First, define the following quantities:
+
+- The past information:
+$$
+F_{k-1} = \left\{ y_0, y_1, ... , y_{k-1} \right\}
+$$
+- The conditional expectation:
+$$
+x_{k \mid k-1} = \mathbb{E}\left( x_t \mid F_{t-1} \right)
+$$
+- The state residual
+$$
+r_k = x_{t_k} - x_{k \mid k-1} 
+$$
+
+### The conditional expectation of the residual is zero:
+$$
+\begin{align}
+\mathbb{E}\left(r_k \mid F_{k-1}\right) & = \mathbb{E}(x_{t_k} \mid F_{k-1}) - \mathbb{E}(x_{k \mid k-1} \mid F_{k-1})  \\[5pt]
+& = x_{k \mid k-1} - x_{k \mid k-1} \\[5pt]
+& = 0 
+\end{align}
+$$
+
+### The residual is orthogonal (and uncorrelated) to every function of the past information
+We use the tower property to condition on the filtration $F_{k-1}$.
+$$
+\begin{align}
+\mathbb{E}\left(r_k \cdot h(F_{k-1}) \right) 
+& = E(E(r_k \cdot h(F_{k-1})\mid F_{k-1})) \\
+& = E(E(r_k \mid F_{k-1}) \cdot h(F_{k-1})) \\ 
+& = E(0 \cdot h(F_{k-1})) \\
+& = E(0) = 0
+\end{align}
+$$
+We can also conclude from this, since th expectation is also the covariance since $E(XY) = C(X,Y)$ if $E(X)=0$ or $E(Y)=0$, that
+$$
+C(r_k, h(F_{k-1})) = 0
+$$
+That is, the state residual and any function of the past information are uncorrelated.
+
+### The conditional expectation is the best estimator
+$$
+
+$$
