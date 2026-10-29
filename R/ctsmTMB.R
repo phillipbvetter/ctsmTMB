@@ -1107,10 +1107,10 @@ ctsmTMB = R6::R6Class(
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean or vector of 2 booleans. Controls estimation of the initial state
-    #' and covariance matrices as the stationary solution of the linearized mean and covariance differential
+    #' mean and covariance as the stationary solution of the linearized mean and covariance differential
     #' equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
     #' booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
-    #' the initial state covariance. When the system contains time-varying inputs, the first element of these is used.
+    #' the initial state covariance. When the system contains time-varying inputs, the first element is used to find the stationary solution.
     #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
     #' using the method of \link[TMB]{oneStepPredict}.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
@@ -1177,10 +1177,10 @@ ctsmTMB = R6::R6Class(
     #' Must be one of either "lkf", "ekf", "laplace".
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean or vector of 2 booleans. Controls estimation of the initial state
-    #' and covariance matrices as the stationary solution of the linearized mean and covariance differential
+    #' mean and covariance as the stationary solution of the linearized mean and covariance differential
     #' equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
     #' booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
-    #' the initial state covariance. When the system contains time-varying inputs, the first element of these is used.
+    #' the initial state covariance. When the system contains time-varying inputs, the first element is used to find the stationary solution.
     #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
     #' using the method of \link[TMB]{oneStepPredict}.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
@@ -1256,10 +1256,10 @@ ctsmTMB = R6::R6Class(
     #' without any of the parameter bounds specified during \code{setParameter}.
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean or vector of 2 booleans. Controls estimation of the initial state
-    #' and covariance matrices as the stationary solution of the linearized mean and covariance differential
+    #' mean and covariance as the stationary solution of the linearized mean and covariance differential
     #' equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
     #' booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
-    #' the initial state covariance. When the system contains time-varying inputs, the first element of these is used.
+    #' the initial state covariance. When the system contains time-varying inputs, the first element is used to find the stationary solution.
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
     #' @param report boolean - whether or not to report filtered states, observations and residuals.
     #' @param laplace.residuals boolean - whether or not to calculate one-step ahead residuals
@@ -1381,10 +1381,10 @@ ctsmTMB = R6::R6Class(
     #' as the 0.95 percentile of the chi-squared distribution with degrees of freedom equal to the number of observations in the model
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param estimate.initial.state boolean or vector of 2 booleans. Controls estimation of the initial state
-    #' and covariance matrices as the stationary solution of the linearized mean and covariance differential
+    #' mean and covariance as the stationary solution of the linearized mean and covariance differential
     #' equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
     #' booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
-    #' the initial state covariance. When the system contains time-varying inputs, the first element of these is used.
+    #' the initial state covariance. When the system contains time-varying inputs, the first element is used to find the stationary solution.
     #' @param silent logical value whether or not to suppress printed messages such as 'Checking Data',
     #' 'Building Model', etc. Default behaviour (FALSE) is to print the messages.
     #' @param compile boolean for (re)compiling the objective C++ file, used for methods ending with \code{_cpp}.
@@ -1448,7 +1448,11 @@ ctsmTMB = R6::R6Class(
     #' should be returned.
     #' @param return.variance a string to indicate what kind of dispersions should be reported.
     #' @param ukf.hyperpars The hyperparameters alpha, beta, and kappa used for sigma points and weights construction in the Unscented Kalman Filter.
-    #' @param estimate.initial.state boolean or vector of 2 booleans c(mean, covariance) - stationary estimation of initial state mean and/or covariance
+    #' @param estimate.initial.state boolean or vector of 2 booleans. Controls estimation of the initial state
+    #' mean and covariance as the stationary solution of the linearized mean and covariance differential
+    #' equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
+    #' booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
+    #' the initial state covariance. When the system contains time-varying inputs, the first element is used to find the stationary solution.
     #' @param initial.state a named list of two entries 'x0' and 'p0' containing the initial state and covariance of the state
     #' @param ode.timestep numeric value. Sets the time step-size in numerical filtering schemes.
     #' The defined step-size is used to calculate the number of steps between observation time-points as
@@ -1548,7 +1552,11 @@ ctsmTMB = R6::R6Class(
     #' 4th order Runge Kutta method is available via "rk4".
     #' @param first.order.input.hold logical which determines whether the moment equations are solved using first-order (TRUE)
     #' or zero-order (FALSE) hold on the inputs when integrating between time-points.
-    #' @param estimate.initial.state boolean or vector of 2 booleans c(mean, covariance) - stationary estimation of initial state mean and/or covariance
+    #' @param estimate.initial.state boolean or vector of 2 booleans. Controls estimation of the initial state
+    #' mean and covariance as the stationary solution of the linearized mean and covariance differential
+    #' equations. A single boolean applies to both the initial state mean and covariance, and for a vector of 2
+    #' booleans c(mean, covariance) the first entry controls the initial state mean and the second entry controls
+    #' the initial state covariance. When the system contains time-varying inputs, the first element is used to find the stationary solution.
     #' @param method
     #' 1. The natural TMB-style formulation where latent states are considered random effects
     #' and are integrated out using the Laplace approximation. This method only yields the gradient
