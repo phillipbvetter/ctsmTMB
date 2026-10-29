@@ -40,7 +40,7 @@ construct.initial.state.estimators <- function(self, private){
 
   # STATIONARY SOLVER FOR THE MEAN
   # --------------------------------
-  arglist <- list(numeric(n.states),numeric(n.pars),numeric(n.inputs))
+  arglist <- list(rep(1,n.states),rep(1,n.pars),rep(1,n.inputs))
   f <- RTMB::MakeTape(function(z) sum(do.call(funs$f,z)^2), arglist)
   stationary.state <- f$newton(seq_len(n.states),grad_tol=1e-20)
 

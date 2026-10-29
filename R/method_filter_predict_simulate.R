@@ -37,7 +37,13 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
   stateVec <- private$algo.settings$initial.state$x0
   covMat <- private$algo.settings$initial.state$p0
   if (private$algo.settings$estimate.initial) {
-    stateVec <- compute_initial_state_estimate(parVec, inputMat[1,], self, private)
+    stationary.solver <- construct.initial.state.estimators(self, private)
+    get.cov <- TRUE
+    out <- stationary.solver(parVec, inputMat[1,],get.cov=get.cov)
+    stateVec <- out[,1]
+    if(get.cov) {
+      covMat <- out[,-1]
+    }
   }
 
 

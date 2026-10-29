@@ -121,11 +121,11 @@ MakeADFun_Laplace <- function(self, private)
   # Settings
   configure_ad_tape("RTMB", self, private)
   setup <- laplace.setup(self, private)
-  RTMB::getAll(setup$data)
-  RTMB::getAll(setup$dims)
-  RTMB::getAll(setup$settings)
-  RTMB::getAll(setup$advanced.settings)
-  RTMB::getAll(setup$algorithms)
+  list2env(setup$data, envir=environment())
+  list2env(setup$dims, envir=environment())
+  list2env(setup$settings, envir=environment())
+  list2env(setup$advanced.settings, envir=environment())
+  list2env(setup$algorithms, envir=environment())
   funs <- private$model$state.space.funs
 
   # likelihood function --------------------------------------

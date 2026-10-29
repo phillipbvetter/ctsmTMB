@@ -230,10 +230,10 @@ MakeADFun_EKF = function(self, private) {
   # Settings
   configure_ad_tape("RTMB", self, private)
   setup <- ekf.setup(self, private)
-  RTMB::getAll(setup$data)
-  RTMB::getAll(setup$settings)
-  RTMB::getAll(setup$advanced.settings)
-  RTMB::getAll(setup$algorithms)
+  list2env(setup$data, envir=environment())
+  list2env(setup$settings, envir=environment())
+  list2env(setup$advanced.settings, envir=environment())
+  list2env(setup$algorithms, envir=environment())
 
   # likelihood function --------------------------------------
   ekf.nll = function(p){
