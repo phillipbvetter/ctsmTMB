@@ -8,7 +8,7 @@
   x,
   print.plot = 1,
   type = c("residuals", "states"),
-  state.type = c("prior", "posterior"),
+  state.type = c("prior", "posterior", "smoothed"),
   against.obs = NULL,
   standardized.residuals = TRUE,
   residual.burnin = 0L,
@@ -28,7 +28,9 @@ A value of 0 means not to plot anything.}
 \item{type}{a character vector either 'residuals' or 'states' determining what
 to plot.}
 
-\item{state.type}{a character vector either 'prior' or 'posterior' determining what kind of states to plot.}
+\item{state.type}{a character vector either 'prior', 'posterior' or 'smoothed' determining what kind of states to plot.
+'prior' and 'posterior' are available for the Kalman filter methods, while 'smoothed' is available for the
+Laplace methods (and is used automatically for those fits).}
 
 \item{against.obs}{name of an observation to plot state predictions against.}
 
@@ -74,5 +76,8 @@ plot(fit, type="states", state.type="prior")
 
 # We can also show observations on that plot
 plot(fit, type="states", state.type="prior", against.obs="y")
+
+# For fits obtained with the Laplace methods the smoothed states are plotted
+plot(fit, type="states", state.type="smoothed", against.obs="y")
 }
 }

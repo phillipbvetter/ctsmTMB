@@ -184,7 +184,9 @@ plot.ctsmTMB.pred = function(x,
 #' A value of 0 means not to plot anything.
 #' @param type a character vector either 'residuals' or 'states' determining what
 #' to plot.
-#' @param state.type a character vector either 'prior' or 'posterior' determining what kind of states to plot.
+#' @param state.type a character vector either 'prior', 'posterior' or 'smoothed' determining what kind of states to plot.
+#' 'prior' and 'posterior' are available for the Kalman filter methods, while 'smoothed' is available for the
+#' Laplace methods (and is used automatically for those fits).
 #' @param against.obs name of an observation to plot state predictions against.
 #' @param standardized.residuals logical whether or not the time-series and histogram plots show standardized residuals.
 #' @param residual.burnin integer N - removes the first N entries in the residual vectors, including NAs.
@@ -215,13 +217,16 @@ plot.ctsmTMB.pred = function(x,
 #'
 #' # We can also show observations on that plot
 #' plot(fit, type="states", state.type="prior", against.obs="y")
+#'
+#' # For fits obtained with the Laplace methods the smoothed states are plotted
+#' plot(fit, type="states", state.type="smoothed", against.obs="y")
 #' }
 #' @returns a list of residual analysis / state plots (ggplots) depending on \code{type}.
 #' @export
 plot.ctsmTMB.fit = function(x,
                             print.plot = 1,
                             type = c("residuals", "states"),
-                            state.type = c("prior","posterior"),
+                            state.type = c("prior","posterior","smoothed"),
                             against.obs=NULL,
                             standardized.residuals = TRUE,
                             residual.burnin = 0L,
@@ -420,7 +425,32 @@ plot.ctsmTMB.fit = function(x,
   # state plots
   ########################################
   if(type=="states"){
-    ms <- fit$states[[state.type]]$mean_and_sd
+
+    # The Laplace methods produce smoothed state estimates, which are stored
+    # in the fit object as fit$states$mean$smoothed and fit$states$sd$smoothed
+    if (method %in% laplace.methods) {
+      if (state.type != "smoothed") {
+        message("The Laplace methods produce smoothed state estimates - using state.type='smoothed'.")
+        state.type <- "smoothed"
+      }
+      mean.df <- fit$states$mean$smoothed
+      sd.df <- fit$states$sd$smoothed
+      if (is.null(mean.df) || is.null(sd.df)) {
+        stop("No smoothed states found in the fit object. Did you run 'estimate' with 'report=TRUE'?")
+      }
+      # construct the same 'mean_and_sd' data.frame structure used by the Kalman filters
+      ms <- mean.df
+      for (nam in state.names) ms[[paste0(nam, ".sd")]] <- sd.df[[nam]]
+    } else {
+      if (state.type == "smoothed") {
+        stop("Smoothed states are only available for the Laplace methods - use state.type='prior' or 'posterior'.")
+      }
+      ms <- fit$states[[state.type]]$mean_and_sd
+      if (is.null(ms)) {
+        stop("No ", state.type, " states found in the fit object. Did you run 'estimate' with 'report=TRUE'?")
+      }
+    }
+
     plot.obs <- !is.null(against.obs)
     if (plot.obs && !against.obs %in% obs.names) stop("'against.obs' must be one of: ", paste(obs.names, collapse = ", "))
     obs.layer <- NULL
