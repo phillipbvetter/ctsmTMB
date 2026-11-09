@@ -121,7 +121,25 @@ opt = stats::nlminb(start=nll$par, objective=nll$fn, grad=nll$gr, hessian=nll$he
 
 ---
 
-The `likelihood` method allows you to retrieve the `nll` object that holds the negative log-likelihood, and its derivatives. The method takes arguments similar to those of `estimate`.
+The `likelihood` method allows you to retrieve the `nll` object that holds the negative log-likelihood, and its derivatives. The method accepts the following arguments:
+
+```{r, eval=FALSE}
+obj$likelihood(data,
+               method = "ekf",
+               ode.solver = "rk4",
+               ode.timestep = diff(data$t),
+               first.order.input.hold = FALSE,
+               loss = "quadratic",
+               loss_c = NULL,
+               ukf.hyperpars = c(0.5, 2, 0),
+               initial.state = self$getInitialState(),
+               estimate.initial.state = FALSE,
+               silent = FALSE,
+               compile = FALSE,
+               ...)
+```
+
+These are similar to those of `estimate` - see the [estimate vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html) for their descriptions.
 
 ```{r}
 nll = obj$likelihood(.data)

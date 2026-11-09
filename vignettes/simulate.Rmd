@@ -376,11 +376,12 @@ model$simulate(data,
                method = "ekf",
                ode.solver = "rk4",
                ode.timestep = diff(data$t),
+               first.order.input.hold = FALSE,
                sim.timestep = diff(data$t),
                k.ahead = nrow(data)-1,
                return.k.ahead = 0:min(k.ahead, nrow(data)-1),
                n.sims = 100,
-               ukf.hyperpars = c(1, 0, 3),
+               ukf.hyperpars = c(0.5, 2, 0),
                initial.state = self$getInitialState(),
                estimate.initial.state = FALSE,
                silent = FALSE,
@@ -394,9 +395,15 @@ vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
 
 ---
 
+### `cpp.seeds`
+
+A vector of two integer seed values `c(state.seed, obs.seed)` controlling the RNG normal draws on the C++ side, i.e. for the Brownian increments $dB_t$ and for the observation noise $\varepsilon_t$ respectively. The default `cpp.seeds = NULL` lets the C++ side draw seeds from R's RNG.
+
+---
+
 ### `method`
 
-Filtering method used - one of 'ekf', 'lkf', or 'ukf'.
+Filtering method used - one of 'ekf', 'lkf', 'ukf', or 'ukf.knudsen' (the Laplace methods do not support simulation).
 
 See the description in the [estimate
 vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
@@ -411,6 +418,13 @@ vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
 ---
 
 ### `ode.timestep`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+---
+
+### `first.order.input.hold`
 
 See the description in the [estimate
 vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
@@ -433,14 +447,20 @@ vignette](https://phillipbvetter.github.io/ctsmTMB/articles/predict.html).
 
 ### `sim.timestep`
 
-The number of intermediate time-steps taken between time-points in the provided
-data for the Euler-Maruyama method.
+The time-step size used in the Euler-Maruyama scheme when simulating the state trajectories between the time-points in the provided data. As for `ode.timestep`, a scalar is used as the global time-step, or a vector of length `diff(data$t)` specifying all individual time-steps.
 
 ---
 
 ### `n.sims`
 
-The number of stochastic simulation trajectories generated.
+The number of stochastic simulation trajectories generated (default `n.sims = 100`).
+
+---
+
+### `ukf.hyperpars`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
 
 ---
 

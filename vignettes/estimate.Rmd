@@ -190,18 +190,24 @@ The `estimate` method accepts the following arguments:
 
 ```{r, eval=FALSE}
 model$estimate(
-  data, 
+  data,
   method = "ekf",
-  ode.solver = "euler",
+  ode.solver = "rk4",
   ode.timestep = diff(data$t),
+  first.order.input.hold = FALSE,
   loss = "quadratic",
   loss_c = NULL,
-  control = list(trace=1,iter.max=1e5,eval.max=1e5),
+  ukf.hyperpars = c(0.5, 2, 0),
+  initial.state = self$getInitialState(),
+  trace = 10,
+  control = list(trace = trace, iter.max = 1e5, eval.max = 1e5),
   use.hessian = FALSE,
+  report = TRUE,
   laplace.residuals = FALSE,
   unconstrained.optim = FALSE,
   estimate.initial.state = FALSE,
-  silent = FALSE
+  silent = FALSE,
+  compile = FALSE
 )
 ```
 
@@ -213,9 +219,13 @@ The `method` argument decides which estimation/filtering algorithm is used. The 
 
 - `method='ekf'`: The Extended Kalman Filter (default).
 
-- `method='ukf'`: The Unscented Kalman Filter.  
+- `method='ukf'`: The Unscented Kalman Filter.
 
-- `method='laplace'`: The Laplace Approximation.
+- `method='ukf.knudsen'`: A variant of the Unscented Kalman Filter due to Knudsen and Leth, which applies the unscented transform to the Euler-Maruyama discretization of the SDE (see the [UKF vignette](https://phillipbvetter.github.io/ctsmTMB/articles/Knudsen_UKF.html)).
+
+- `method='laplace'`: The Laplace Approximation, where the latent states are treated as random effects and integrated out.
+
+- `method='laplace.thygesen'`: A stability-improved Laplace Approximation due to Thygesen, where the diffusion increments are included as random effects alongside the states.
 
 
 
@@ -253,7 +263,13 @@ $$
 \dfrac{d\mathrm{V}\left[x_t\right]}{dt} = \dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\mathrm{V}\left[x_t\right] + \mathrm{V}\left[x_t\right]\left[\dfrac{df}{dx}\bigg\vert_{(\mathrm{E}\left[x_t\right])}\right]^{T} + g(\mathrm{E}\left[x_t\right])g(\mathrm{E}\left[x_t\right])^{T}
 $$
 
-The **ctsmTMB** package implements the Explicit Forward-Euler *euler* and the Explicit 4th Order Runge-Kutta *rk4* methods. 
+The **ctsmTMB** package implements the Explicit Forward-Euler *euler* and the Explicit 4th Order Runge-Kutta *rk4* methods, with *rk4* being the default (`ode.solver = "rk4"`).
+
+---
+
+### `first.order.input.hold`
+
+This logical argument is used for the Kalman filtering methods (and all other methods based on **RTMB**) to determine how the inputs $u_t$ are held when integrating the moment differential equations between time-points. The default `first.order.input.hold = FALSE` applies a zero-order hold, i.e. the input value is kept constant at the value of the previous time-point during the integration. Setting `first.order.input.hold = TRUE` instead applies a first-order hold, i.e. the input is interpolated linearly between the time-points, which is more accurate when the inputs vary rapidly.
 
 ---
 
@@ -406,21 +422,39 @@ where $m$ is the number of observation equations.
 
 ---
 
-### `use_hessian`
+### `ukf.hyperpars`
 
-This argument is a boolean which determines whether or not the likelihood hessian constructed by automatic differentiation from **TMB** is used during the optimization procedure by providing it to the `hessian` argument of `stats::nlminb`. The default is `use.hessian=FALSE`. The argument has no effect if `method=laplace` due to restrictions in **TMB**/**RTMB**.
+This argument is only used by the Unscented Kalman Filter methods (`method='ukf'` and `method='ukf.knudsen'`). It is a vector of the three hyperparameters `c(alpha, beta, kappa)` used for constructing the sigma points and weights, with default `ukf.hyperpars = c(0.5, 2, 0)`. Typically `alpha` determines the spread of the sigma points around the mean, `beta` incorporates prior knowledge of the distribution (beta = 2 is optimal for Gaussian distributions), and `kappa` is a secondary scaling parameter.
+
+---
+
+### `initial.state`
+
+This argument is a named list with two entries `x0` and `p0` containing the initial state mean and covariance. The default `initial.state = self$getInitialState()` uses the values provided via the `setInitialState` method. See also the `estimate.initial.state` argument below.
+
+---
+
+### `use.hessian`
+
+This argument is a boolean which determines whether or not the likelihood hessian constructed by automatic differentiation from **TMB**/**RTMB** is used during the optimization procedure by providing it to the `hessian` argument of `stats::nlminb`. The default is `use.hessian=FALSE`. The argument has no effect if `method='laplace'` or `method='laplace.thygesen'` due to restrictions in **TMB**/**RTMB**.
 
 One advantage of using the hessian is that the optimizer is more robust against parameters being on different scales, and the minimum is typically found in fewer (but more expensive) iterations. It is usually faster just to use the gradient.
 
 ---
 
-### `laplace.residuals`
+### `report`
 
-This boolean controls whether or not model residuals are calculated with `TMB::oneStepPredict` when the Laplace filtering is used (`method=laplace`). This takes a considerable amount of time - typically much longer than the estimation itself.
+This boolean (default `report = TRUE`) determines whether or not the filtered/smoothed states, observations and residuals are computed and returned in the `fit` object after the optimization has finished. Set `report = FALSE` to skip this step, e.g. if only the parameter estimates are of interest and the reporting is time-consuming.
 
 ---
 
-### `unconstrainted.optim`
+### `laplace.residuals`
+
+This boolean controls whether or not model residuals are calculated with `RTMB::oneStepPredict` when the Laplace methods are used (`method='laplace'` or `method='laplace.thygesen'`). This takes a considerable amount of time - typically much longer than the estimation itself.
+
+---
+
+### `unconstrained.optim`
 
 This boolean allows for quick unconstrained estimation removing the parameter boundaries specified by `setParameter`. This may be useful sometimes, to quickly check whether estimation issues occur because of ill boundaries.
 
@@ -429,7 +463,7 @@ This boolean allows for quick unconstrained estimation removing the parameter bo
 
 ### `estimate.initial.state`
 
-This argument determines whether or not the initial-time state distribution (mean and covariance) should be estimated or not. It accepts either a single boolean or a vector of 2 booleans `c(mean, covariance)`. By default `estimate.initial.state=FALSE` and neither is estimated but simply taken as the values provided by `setInitialState`. When `estimate.initial.state=TRUE` (equivalently `c(TRUE, TRUE)`) both the mean and covariance are estimated as the stationary solution of the moment differential equations using the input values are the initial time-point, whereas e.g. `estimate.initial.state=c(TRUE, FALSE)` estimates only the initial state mean and keeps the user-provided covariance, and `c(FALSE, TRUE)` estimates only the initial state covariance.
+This argument determines whether or not the initial-time state distribution (mean and covariance) should be estimated or not. It accepts either a single boolean or a vector of 2 booleans `c(mean, covariance)`. By default `estimate.initial.state=FALSE` and neither is estimated but simply taken as the values provided by `setInitialState`. When `estimate.initial.state=TRUE` (equivalently `c(TRUE, TRUE)`) both the mean and covariance are estimated as the stationary solution of the moment differential equations using the input values at the initial time-point, whereas e.g. `estimate.initial.state=c(TRUE, FALSE)` estimates only the initial state mean and keeps the user-provided covariance, and `c(FALSE, TRUE)` estimates only the initial state covariance.
 
 The stationary solution is obtained first by solving
 
@@ -451,9 +485,19 @@ for $\mathrm{E}\left[x_\infty\right]$ using Newton's method. This stationary mea
 
 This argument is a list which controls various settings of the `stats::nlminb` optimizer. See the documentation on `?stats::nlminb` for more information.
 
-The default is `list(trace=1,iter.max=1e5,eval.max=1e5)` which prints the iteration steps, and increases the default number of iterations and function calls allowed before the optimization procedure terminates.
+The default is `list(trace=trace, iter.max=1e5, eval.max=1e5)`, where the `trace` argument (default `trace=10`) determines the number of steps between each print-out during optimization, and where the iteration and function call limits are increased relative to the `stats::nlminb` defaults before the optimization procedure terminates.
 
-**Note::** The user should remember that disabling tracing by passing `control = list(trace=0)` will remove the `ìter.max`and `eval.max` arguments, so they should be provided as well if needed.
+---
+
+### `trace`
+
+This integer (default `trace=10`) is passed to the `control` list as its `trace` entry, and determines the number of optimization steps between each print-out of the objective value and parameter values. Use `trace=0` to disable the tracing print-outs (remember to also provide `iter.max` and `eval.max` in `control` in that case).
+
+---
+
+### `compile`
+
+This boolean (default `compile=FALSE`) forces a recompilation of the underlying C++ objective function before the estimation is carried out. The C++ functions are otherwise compiled on the first call to a method, and only recompiled if the model equations have changed.
 
 ---
 

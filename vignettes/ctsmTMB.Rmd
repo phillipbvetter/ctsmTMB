@@ -200,12 +200,14 @@ We can now pass the `data` to the `estimate` method. This will build the model, 
 _**Note**: The data *must* contain an increasing time column named `t` and columns for each of the specified inputs and observations, in this case `u` and `y`._
 
 ```{r}
-fit <- model$estimate(.df)
+fit <- model$estimate(.df, method="ekf")
 ```
 
 ```{r, eval=FALSE,echo=FALSE}
-# fit2 <- model$estimate(data, method="lkf")
-# fit3 <- model$estimate(data, method="laplace")
+fit1 <- model$estimate(.df, method="lkf")
+fit2 <- model$estimate(.df, method="ukf")
+fit3 <- model$estimate(.df, method="laplace")
+fit4 <- model$estimate(.df, method="laplace.thygesen")
 ```
 
 
@@ -299,11 +301,11 @@ In this example we used the Extended Kalman filter (this is the default filterin
 
 ```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center', fig.alt='The plot shows prior and posterior state estimates against data.',eval=F,include=F}
 # Extract time, and prior/posterior mean and standard deviation estimates
-t         = fit$states$mean$posterior[,"t"]
-xprior    = fit$states$mean$prior[,"x"]
-xprior_sd = fit$states$sd$prior[,"x"]
-xpost     = fit$states$mean$posterior[,"x"]
-xpost_sd  = fit$states$sd$posterior[,"x"]
+t <- fit$states$posterior$mean_and_sd$t
+xprior <- fit$states$prior$mean_and_sd$x
+xprior_sd <- fit$states$prior$mean_and_sd$x.sd
+xpost <- fit$states$posterior$mean_and_sd$x
+xpost_sd <- fit$states$posterior$mean_and_sd$x.sd
 
 # Create vector c(xprior[1], xpost[1], xprior[2], xpost[2],...)
 t2 <- c(rbind(t,t))
@@ -312,8 +314,9 @@ xprior_post_sd <- c(rbind(xprior_sd,xpost_sd))
 
 # Plot
 ggplot() +
+  # geom_ribbon(aes(x=t2,ymin=xprior_post-2*xprior_post_sd,ymax=xprior_post+xprior_post_sd),fill="grey") +
   geom_line(aes(x=t2,y=xprior_post,color="State Estimates (Prior-Posterior)"),lwd=1) +
-  geom_point(aes(x=data$t,data$y, color="Observations")) +
+  geom_point(aes(x=.df$t,.df$y, color="Observations")) +
   labs(x = "Time", y = "", color="") +
   ctsmTMB:::getggplot2theme()
 ```
@@ -326,10 +329,10 @@ ggplot() +
 The states can easily be plotted using the provided **S3** plot.ctsmTMB.fit method. Here we plot both prior and posterior states against the observations:
 
 ```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center', fig.alt='The plot shows the prior states against the observations'}
-plot(fit, type="states",state.type="prior",against="y")
+plot(fit, type="states",state.type="prior",against.obs="y")
 ```
 ```{r, fig.height=5,fig.width=7, out.width="100%", fig.align='center', fig.alt='The plot shows a plot of the posterior states against the observations'}
-plot(fit, type="states",state.type="posterior",against="y")
+plot(fit, type="states",state.type="posterior",against.obs="y")
 ```
 
 _**Note:** The decrease in variance for the posterior state estimate is expected because these states are updated to the observations._
@@ -351,7 +354,7 @@ Model validation typically involves inspecting the properties of prediction resi
 names(fit$residuals)
 ```
 
-We can also easily generate a residual analysis plot with the **S3** plot.ctsmTMB.fit method. This is actually the default arguments to `plot.ctsmTMB.fit`. This produces a time-series of the residuals, a histogram, a quantile-quantile plot, auto/partial-correlations and a cumulative periodogram:
+We can also easily generate a residual analysis plot with the **S3** plot.ctsmTMB.fit method. This is actually the default arguments to `plot.ctsmTMB.fit`. This produces a time-series of the residuals, a histogram, a quantile-quantile plot, auto/partial-correlations and a cumulative periodogram. Note that the time-series and histogram plots show *standardized* residuals by default - this can be changed to raw residuals via the `standardized.residuals = FALSE` argument:
 
 ```{r, fig.height=9,fig.width=9, out.width="100%", fig.align='center'}
 plot(fit)
@@ -369,6 +372,10 @@ a <- fit$par.fixed["theta"] - 3*fit$sd.fixed["theta"]
 b <- fit$par.fixed["theta"] + 3*fit$sd.fixed["theta"]
 prof <- profile(fit, list("theta"=seq(a,b,length.out=50)), silent=TRUE)
 plot(prof)
+
+prof <- profile(fit, list(theta=NULL,mu=NULL), grid.qnt=c(10,10), grid.size=c(50,50), silent=FALSE)
+plot(prof)
+
 ```
 
 ```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center'}

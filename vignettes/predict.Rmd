@@ -147,7 +147,7 @@ The algorithm carries out the following step-wise procedure:
 
 -   For each $i=0,1,..,N-1$ posteriors, integrate the MDEs forward from the initial time $t_{i}$ until time $t_{i+k_{\text{ahead}}}$ producing moment forecasts at each of the intermediate times $t_{i+j}$.
 
-The output of `predict` is a list with the two entries `states` and `observations`. Each entry is a matrix with $N \cdot (1+k_{\text{ahead}})$ rows, obtained by row-binding each forecast scenario together.
+The output of `predict` is a list with the three entries `states`, `observations` and `data`. The `states` and `observations` entries are each a list with the two entries `mean_and_sd` and `cov` (or `cor` if `return.variance = "correlation"`), which are data.frames with $N \cdot (1+k_{\text{ahead}})$ rows, obtained by row-binding each forecast scenario together. The `data` entry holds the observations from the provided data aligned with the forecast rows.
 
 
 
@@ -296,23 +296,27 @@ observations `y[2:nrow(data)]` are not used at all, and might as well be `NA`.
 
 ### Output
 
-The returned `pred` object is a list of two matrices named `states` and `observations`.
+The returned `pred` object is a list with three entries: `states`, `observations` and `data`.
 
-1. The first five columns of each matrix are time indices and time-values for each of the forecast scenarios:
-    - The column `i` holds the time-index from where the forecast began.
-    - The column `j` holds the time-index for where the forecast is.
+1. The `states` and `observations` entries are each a list with two entries:
+    - `mean_and_sd`: a data.frame with the forecasted means and marginal standard deviations for the states and observations respectively.
+    - `cov` (or `cor` when `return.variance = "correlation"`): a data.frame with the flattened forecasted covariance (or correlation) matrices, with entries named e.g. `x.x.cov` / `x.x.var` (or `x.x.cor`).
+
+2. The first five columns of each of these data.frames are time indices and time-values for each of the forecast scenarios:
+    - The column `i.` holds the time-index from where the forecast began.
+    - The column `j.` holds the time-index for where the forecast is.
     - The column `t.i` is the numeric time value associated with index `i.`
     - The column `t.j` is the numeric time value associated with index `j.`
     - The column `k.ahead` is the number of forecasted timesteps since the last posterior update (if any data was available at that time-point).
 
-2. The next columns in both matrices are mean and covariances for the states and observations respectively, named appropriately.
+3. The remaining columns of `mean_and_sd` are the means and standard deviations named appropriately e.g. `x`, `x.sd` for the states, and `y`, `y.sd` for the forecasted observations (the Laplace-free Kalman methods now also return forecasted observations and associated dispersion).
 
-3. The final columns in the `observations` matrix also hold the corresponding observations in the data. The name is suffixed by `.data` e.g. `y.data`.
+4. The `data` entry is a data.frame which holds the same time index/time-value columns together with the corresponding observations from the provided data e.g. the column `y`.
 
 ```{r}
-head(pred$states)
-
-head(pred$observations)
+head(pred$states$mean_and_sd)
+head(pred$observations$mean_and_sd)
+head(pred$data)
 ```
 
 
@@ -347,7 +351,7 @@ ggplot(data=plot.df) +
   geom_point(aes(x=t.obs, y=y.obs, color="y")) +
   scale_color_discrete(
     breaks = c("x1", "x2", "x3", "x4", "y"),
-    labels=expression(theta*"=1",theta*"=10",theta*"=50",theta*"=100",y[k])
+    labels=expression(theta*"=1",theta*"=2",theta*"=4",theta*"=8",y[k])
   ) +
   ctsmTMB:::getggplot2theme() + 
   theme(legend.text = ggplot2::element_text(size=15)) +
@@ -375,8 +379,6 @@ Let's plot the `pred.horizon`-step predictions against the observations.
 with(pred$states$mean_and_sd,{
   pred.obs <<- cbind(t.j,x,x.sd)[k.ahead == pred.horizon,]
 })
-# pred$states$mean_and_sd$k.ahead %in% pred.horizon
-# pred.obs = pred$states[pred$states[,"k.ahead"]==pred.horizon,]
 ```
 
 
@@ -418,3 +420,105 @@ ggplot(data=rmse) +
   ) +
   ctsmTMB:::getggplot2theme()
 ```
+
+
+## Method Arguments
+
+The `predict` method accepts the following arguments:
+
+```{r, eval=FALSE}
+model$predict(data,
+              pars = NULL,
+              method = "ekf",
+              ode.solver = "rk4",
+              ode.timestep = diff(data$t),
+              first.order.input.hold = FALSE,
+              k.ahead = nrow(data)-1,
+              return.k.ahead = 0:min(k.ahead, nrow(data)-1),
+              return.variance = c("covariance", "correlation"),
+              ukf.hyperpars = c(0.5, 2, 0),
+              initial.state = self$getInitialState(),
+              estimate.initial.state = FALSE,
+              silent = FALSE,
+              ...)
+```
+
+### `pars`
+
+A named vector of fixed parameter values used for the prediction. The default `pars = NULL` uses the initial parameter values provided through `setParameter`, unless the `estimate` method has been run, in which case the parameter values at the found optimum are used.
+
+---
+
+### `method`
+
+Prediction method used - one of 'ekf', 'lkf', 'ukf', or 'ukf.knudsen' (the Laplace methods do not support prediction).
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+---
+
+### `ode.solver`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+---
+
+### `ode.timestep`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+---
+
+### `first.order.input.hold`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+---
+
+### `k.ahead`
+
+An integer specifying the desired number of time-steps (as determined by the provided data time-vector `data$t`) for which predictions are made, by integrating the moment ODEs forward in time without data updates. The default and maximum allowed value is `k.ahead = nrow(data)-1`, which generates a single prediction over the entire time-vector.
+
+---
+
+### `return.k.ahead`
+
+A numeric vector of integers specifying which of the `k.ahead` predictions should be returned, e.g. `return.k.ahead = 0` returns only the filtered (posterior) states, while the default `return.k.ahead = 0:min(k.ahead, nrow(data)-1)` returns all of them.
+
+---
+
+### `return.variance`
+
+A character string indicating which kind of dispersion should be reported in the second entry of the `states`/`observations` lists: either `"covariance"` (default, entry named `cov`) or `"correlation"` (entry named `cor`).
+
+---
+
+### `ukf.hyperpars`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+---
+
+### `initial.state`
+
+Sets the initial state $\hat{x}_{0 \mid 0}$ and variance $P_{0 \mid 0}$ used as the starting point of the filter. The default uses the values provided via `setInitialState`.
+
+---
+
+### `estimate.initial.state`
+
+See the description in the [estimate
+vignette](https://phillipbvetter.github.io/ctsmTMB/articles/estimate.html).
+
+---
+
+### `silent`
+
+Disable message print-outs.
+
+---
