@@ -48,7 +48,7 @@ Printing the model object in the console reveals some basic information about it
 print(model)
 ```
 
-# Add system equations
+## Add system equations
 
 ---
 
@@ -63,7 +63,7 @@ We emphasize that drift terms must be multiplied by a `dt` and diffusion terms b
 model$addSystem(dx ~ theta * (mu - x) * dt + sigma_x1 * dw1 + x * sigma_x2 * dw2 + dw3)
 ```
 
-# Add observation equations
+## Add observation equations
 
 ---
 
@@ -373,28 +373,11 @@ b <- fit$par.fixed["theta"] + 3*fit$sd.fixed["theta"]
 prof <- profile(fit, list("theta"=seq(a,b,length.out=50)), silent=TRUE)
 plot(prof)
 
-prof <- profile(fit, list(theta=NULL,mu=NULL), grid.qnt=c(10,10), grid.size=c(50,50), silent=FALSE)
+prof <- profile(fit, list(theta=NULL,mu=NULL), grid.qnt=c(10,10),
+                grid.size=c(20,20), silent=TRUE)
 plot(prof)
 
 ```
-
-```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center'}
-# a <- fit$par.fixed["mu"] - 8*fit$sd.fixed["mu"]
-# b <- fit$par.fixed["mu"] + 8*fit$sd.fixed["mu"]
-# prof <- profile(fit, list("mu"=seq(a,b,length.out=50)), silent=TRUE)
-# plot(prof)
-```
-
-```{r, fig.height=5,fig.width=9, out.width="100%", fig.align='center'}
-# a <- fit$par.fixed["theta"] - 5*fit$sd.fixed["theta"]
-# b <- fit$par.fixed["theta"] + 5*fit$sd.fixed["theta"]
-# c <- fit$par.fixed["mu"] - 10*fit$sd.fixed["mu"]
-# d <- fit$par.fixed["mu"] + 10*fit$sd.fixed["mu"]
-# prof <- profile(fit, list("theta"=seq(a,b,length.out=50),
-#                           "mu"=seq(c,d,length.out=50)), silent=TRUE)
-# plot(prof)
-```
-
 
 # **Extra:** Algebraic equations
 

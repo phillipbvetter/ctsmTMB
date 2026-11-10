@@ -14,8 +14,7 @@ laplace.construct.ode.integrator <- function(self, private){
     numeric(n.pars),
     numeric(n.inputs),
     1 # IMPORTANT!: dt CAN'T BE INITIALIZED ZERO OTHERWISE THE TAPE
-    # IS WRONG BECAUSE RTMB::dmvnorm decomposes matrix difficult
-    # it V is zero!
+    # IS WRONG BECAUSE RTMB::dmvnorm decomposes matrix differently when V is zero!
   )
   step.tape <- RTMB::MakeTape(function(z) {
     x0 <- z[[1]]
@@ -126,7 +125,6 @@ MakeADFun_Laplace <- function(self, private)
   list2env(setup$settings, envir=environment())
   list2env(setup$advanced.settings, envir=environment())
   list2env(setup$algorithms, envir=environment())
-  funs <- private$model$state.space.funs
 
   # likelihood function --------------------------------------
   laplace.nll = function(p_fixed_and_random){
