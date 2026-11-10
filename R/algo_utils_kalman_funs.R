@@ -76,11 +76,6 @@ get_ekf_update_functions <- function(.envir = parent.frame()){
   # Tape 1: observation function, jacobian, obs variance (vectorized)
   obs.fun.tape <- RTMB::MakeTape(function(x) {
     # stateVec, parVec, inputVec
-    # cbind(
-    #   h__(x[[1]], x[[2]], x[[3]]),
-    #   hvar__(x[[1]], x[[2]], x[[3]]),
-    #   dhdx__(x[[1]], x[[2]], x[[3]])
-    # )
     cbind(
       do.call(h__, x),
       do.call(hvar__, x),

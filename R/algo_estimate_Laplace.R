@@ -141,7 +141,6 @@ MakeADFun_Laplace <- function(self, private)
     X <- do.call(cbind, p_fixed_and_random[(n.pars+1):length(p_fixed_and_random)])
     # Convert fixed effects list to vector
     p <- do.call(c, p_fixed_and_random[1:n.pars])
-
     # Set likelihood to zero
     nll <- 0
 
@@ -158,7 +157,7 @@ MakeADFun_Laplace <- function(self, private)
     # the prior mean and covariance x_{0 | -1} and P_{0 | -1}
     if (any(estimate.initial.state)) {
       get.cov <- estimate.initial.state[2]
-      sol <- stationary.solver(p,U[1,],get.cov=get.cov,get.mean=estimate.initial.state[1],x0=x)
+      sol <- stationary.solver(p, U[1,], get.cov=get.cov, get.mean=estimate.initial.state[1], x0=x)
       x <- sol[,1]
       if(get.cov) P <- sol[,-1, drop=FALSE]
     }

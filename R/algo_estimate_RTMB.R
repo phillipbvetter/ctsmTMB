@@ -408,7 +408,7 @@ MakeADFun_UKF = function(self, private)
   nllreport <- private$algo.settings$advanced.settings$nllreport
   if(nllreport) {
     statePrior <- statePosterior <- covPrior <- covPosterior <-
-      nllList <- Innov <- InnovCov <- vector("list",length=nrow(obsMat))
+      nllList <- Innov <- InnovCov <- vector("list", length=nrow(obsMat))
   }
 
   # Weights

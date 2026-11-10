@@ -79,7 +79,7 @@ ekf.construct.data.updater <- function(self, private){
   # Loss function
   loss.type <- private$algo.settings$loss$loss
   loss.c <- private$algo.settings$loss$c
-  loss.function <- construct.loss.function(dim="scalar",type=loss.type, c=loss.c)
+  loss.function <- construct.loss.function(dim="scalar", type=loss.type, c=loss.c)
 
   # Taped observation functions
   funs <- private$model$state.space.funs
@@ -235,6 +235,9 @@ MakeADFun_EKF = function(self, private) {
   list2env(setup$advanced.settings, envir=environment())
   list2env(setup$algorithms, envir=environment())
 
+  # report.post <- list(mean=vector("list",length=nrow(Y)),cov=vector("list",length=nrow(Y)))
+  # report.prior <- list(mean=vector("list",length=nrow(Y)),cov=vector("list",length=nrow(Y)))
+
   # likelihood function --------------------------------------
   ekf.nll = function(p){
 
@@ -257,12 +260,16 @@ MakeADFun_EKF = function(self, private) {
     # Estimate initial conditions as stationary solution with first input
     # This estimate is, as with the user provided initial state, assumed to be
     # the prior mean and covariance x_{0 | -1} and P_{0 | -1}
+    # report.prior$mean[[1]] <- x
+    # report.prior$cov[[1]] <- P
     if (any(estimate.initial.state)) {
       get.cov <- estimate.initial.state[2]
       sol <- stationary.solver(p,U[1,],get.cov=get.cov,get.mean=estimate.initial.state[1],x0=x)
       x <- sol[,1]
       if(get.cov) P <- sol[,-1, drop=FALSE]
     }
+    # report.post$mean[[1]] <- x
+    # report.post$cov[[1]] <- P
 
     # First data update
     post <- data.update(x,P,p,U[1,],Y[1,])
@@ -274,12 +281,18 @@ MakeADFun_EKF = function(self, private) {
       ###### time update #######
       sol <- time.update(x,P,p,U[i,],dU[i,],ode.number.of.steps[i],ode.stepsizes[i])
       x <- sol$x; P <- sol$P
+      # report.prior$mean[[i+1]] <- x
+      # report.prior$cov[[i+1]] <- P
       ######## data update ########
       post <- data.update(x,P,p,U[i+1,],Y[i+1,])
       x <- post$x; P <- post$P
       nll <- nll + post$nll
+      # report.post$mean[[i+1]] <- x
+      # report.post$cov[[i+1]] <- P
     }
 
+    # RTMB::REPORT(report.post)
+    # RTMB::REPORT(report.prior)
     # return
     return(nll)
   }
