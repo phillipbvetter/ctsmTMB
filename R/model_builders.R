@@ -9,11 +9,6 @@ build_model <- function(self, private) {
   if(!private$algo.settings$silent)
     message("Creating model...")
 
-  # Disable rebuild flags
-  private$rebuild$model <- FALSE
-  private$rebuild$data <- TRUE
-  private$rebuild$ad <- TRUE
-
   # basic sanity checks (does not need transformed equations)
   basic_model_check(self, private)
 
@@ -27,6 +22,11 @@ build_model <- function(self, private) {
 
   # compile rcpp functions
   compile_rcpp_functions(self, private)
+
+  # Build finalized - now disable rebuild flag
+  private$rebuild$model <- FALSE
+  private$rebuild$data <- TRUE
+  private$rebuild$ad <- TRUE
 
   # return
   return(invisible(self))
