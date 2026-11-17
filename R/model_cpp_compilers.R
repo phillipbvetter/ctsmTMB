@@ -111,8 +111,8 @@ compile_cppfile <- function(self, private) {
 
     # reload shared libraries
     # Suppress TMB output 'removing X pointers' with capture.output
-    utils::capture.output(try(dyn.unload(TMB::dynlib(private$cppfile.path.with.method)),silent=T))
-    utils::capture.output(try(dyn.load(TMB::dynlib(private$cppfile.path.with.method)),silent=T))
+    utils::capture.output(try(dyn.unload(TMB::dynlib(private$cppfile.path.with.method)), silent=T))
+    utils::capture.output(try(dyn.load(TMB::dynlib(private$cppfile.path.with.method)), silent=T))
   }
 
   # If compilation not requested

@@ -8,3 +8,73 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+# Data update
+
+At each time step the predicted state is summarized by its mean $x$ and covariance $P$, from which $2n+1$ sigma points are sampled as
+
+$$
+\mathcal{X} = x + \sqrt{c}\,\big[\,0,\ C,\ -C\,\big],
+$$
+
+where $C$ is a matrix square root of $P$ (the transposed Cholesky factor in the code, so $CC^\top = P$) and $\sqrt{c} = \sqrt{\alpha^2(n+\kappa)}$. The weights are $W_m^{(0)} = W_c^{(0)} - (1-\alpha^2+\beta) = \lambda/(n+\lambda)$ and $W_m^{(i)} = W_c^{(i)} = 1/(2(n+\lambda))$ for $i=1,\dots,2n$, with $\lambda = c - n$. The sigma points are propagated through the observation function,
+
+$$
+\mathcal{Y}^{(i)} = h(\mathcal{X}^{(i)}, p, u),
+$$
+
+and the predicted observation mean, innovation covariance, and state--observation cross-covariance are
+
+$$
+\bar{y} = \sum_{i=0}^{2n} W_m^{(i)}\,\mathcal{Y}^{(i)},
+$$
+
+$$
+S = \underbrace{\sum_{i=0}^{2n} W_c^{(i)}\,(\mathcal{Y}^{(i)}-\bar{y})(\mathcal{Y}^{(i)}-\bar{y})^\top}_{P_{yy}} + V,
+$$
+
+$$
+P_{xy} = \sum_{i=0}^{2n} W_c^{(i)}\,(\mathcal{X}^{(i)}-x)(\mathcal{Y}^{(i)}-\bar{y})^\top,
+$$
+
+where $V$ is the observation noise covariance (`hvar_matrix`). The Kalman gain and the state update are
+
+$$
+K = P_{xy}\,S^{-1}, \qquad x^{+} = x + K\,(y-\bar{y}).
+$$
+
+## Generalized Joseph form of the covariance update
+
+The simple covariance update $P^{+} = P - K S K^\top$ is, for the optimal gain, algebraically equal to
+
+$$
+\boxed{P^{+} = P - P_{xy}K^\top - K P_{xy}^\top + K S K^\top}
+$$
+
+which is the generalized Joseph form. In the linear-Gaussian Kalman filter this coincides with
+
+$$
+P^{+} = (I-KH)\,P\,(I-KH)^\top + K V K^\top,
+$$
+
+because expanding the right-hand side and substituting $P_{xy} = P H^\top$ and $S = H P H^\top + V$ gives exactly the three-term expression above. The Joseph form is used in the implementation since it is manifestly symmetric and preserves positive definiteness better in finite precision; the result is resymmetrized as $P^{+} \leftarrow \tfrac{1}{2}(P^{+} + P^{+^\top})$.
+
+In `R/algo_estimate_UKF.R`, the joint update (`joint.update` in `ukf.construct.data.updater.joint`) computes these quantities from the matrix of sigma-point observations $H = [\mathcal{Y}^{(0)},\dots,\mathcal{Y}^{(2n)}]$ using the centered weight matrix $W = (I-\mathbf{1}W_m^\top)\,\mathrm{diag}(W_c)\,(I-\mathbf{1}W_m^\top)^\top$, so that $HWH^\top = P_{yy}$ and $XWH^\top = P_{xy}$:
+
+```{r, eval=FALSE}
+e    <- y[idx] - H %*% W.m                  # innovation
+R    <- H %*% W %*% t(H) + V                # innovation covariance S
+P.xy <- X %*% W %*% t(H)                    # cross-covariance
+K    <- t(RTMB::solve(R, t(P.xy)))          # Kalman gain
+x    <- x + K %*% e                         # state update
+P    <- P - P.xy %*% t(K) - K %*% t(P.xy) + K %*% R %*% t(K)  # generalized Joseph form
+P    <- 0.5 * (P + t(P))                    # resymmetrize
+```
+
+When the observations are processed one at a time (`ukf.construct.data.updater.scalar`), $S$ reduces to the scalar $R = H_j W H_j^\top + v_j$ for observation $j$, the gain is $K = P_{xy}/R$, and the Joseph form becomes
+
+$$
+P^{+} = P - P_{xy}K^\top - K P_{xy}^\top + R\,K K^\top,
+$$
+
+as in `scalar.update.tape`. Since $KS = P_{xy}$ for the optimal gain, the three terms collapse to the simple update $P^{+} = P - KSK^\top$; the three-term form is kept for numerical stability.

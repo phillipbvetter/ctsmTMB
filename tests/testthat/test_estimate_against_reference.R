@@ -23,8 +23,7 @@ strip_fit = function(fit) {
 }
 
 model <- create.Ornstein2D.model()
-# methods = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen")
-methods = c("ekf", "lkf", "laplace", "laplace.thygesen")
+methods = c("ekf", "lkf", "ukf", "laplace", "laplace.thygesen")
 
 testthat::test_that("Check estimate vs reference (ZOH)",{
   # Author only test

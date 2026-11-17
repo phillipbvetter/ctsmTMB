@@ -6,9 +6,6 @@ filter_predict_simulate_smooth <- function(self, private, proc, n.sims=NULL) {
 
   parVec <- private$algo.settings$argument.parameters
 
-  # Note:
-  # The UKF method still uses the old matrices 'numeric_is_not_na_obsMat' and 'number_of_available_obs'
-
   # Convert from data.frames to matrices
   obsMat <- as.matrix(private$data[private$names$obs])
   inputMat <- as.matrix(private$data[private$names$inputs])
@@ -713,5 +710,26 @@ create_return_simulation <- function(return.k.ahead, n.sims, self, private){
 
   private$results$simulation <- list(states=state.list, observations=obs.list, times=time.list)
 
+  return(invisible(self))
+}
+
+laplace_smooth <- function(self, private){
+
+  # Get parameters
+  par.type.free <- self$getParameters()[,"type"] == "free"
+  free.pars <- private$algo.settings$argument.parameters[par.type.free]
+
+  # Integrate out random effect states (perform laplace approx)
+  private$nll$fn(free.pars)
+
+  # Calculate random effects standard deviations
+  sdr <- RTMB::sdreport(private$nll,
+                        ignore.parm.uncertainty=T,
+                        skip.delta.method=T)
+
+  # Store result
+  private$sdr <- sdr
+
+  # return
   return(invisible(self))
 }

@@ -74,7 +74,8 @@ ctsmTMB = R6::R6Class(
         rcpp.function.strings  = NULL,
         rcpp_function_ptr      = NULL,
         state.space.fun.strings = NULL,
-        state.space.funs = NULL
+        state.space.funs = NULL,
+        rcpp.state.space.fun.strings = list()
       )
 
       # model fields - names
