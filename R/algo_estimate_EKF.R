@@ -18,8 +18,7 @@ ekf.construct.ode.integrator <- function(self, private){
     )
   }
 
-  ode.integrator <- switch(
-    solver,
+  ode.integrator <- switch(solver,
     euler = function(x, P, p, u, du, dt){
       k <- dm_dt(x, P, p, u)
       list(
@@ -67,9 +66,9 @@ ekf.construct.ode.integrator <- function(self, private){
   return(time.update)
 }
 
-# data update step
+# data update step: scalar (one observation at a time)
 # ------------------------------------
-ekf.construct.data.updater <- function(self, private){
+ekf.construct.data.updater.scalar <- function(self, private){
 
   # Unpack dimensions
   n.states <- private$dims$states
@@ -86,7 +85,6 @@ ekf.construct.data.updater <- function(self, private){
   obs.fun.tape <- RTMB::MakeTape(function(x) {
     do.call(cbind, lapply(funs[c("h","hvar","dhdx")], \(f) do.call(f,x)))
   }, list(numeric(n.states), numeric(n.pars), numeric(n.inputs)))
-
 
   I0 <- diag(n.states)
   # Taped sequential EKF update
@@ -188,6 +186,110 @@ ekf.construct.data.updater <- function(self, private){
   return(update.fun)
 }
 
+# data update step: joint (all available observations at once),
+# copied from kalman.data.update.with.nll in get_ekf_update_functions
+# (algo_utils_kalman_funs.R, old implementation)
+# ------------------------------------
+ekf.construct.data.updater.joint <- function(self, private){
+
+  # Unpack dimensions
+  n.states <- private$dims$states
+  n.pars   <- private$dims$pars
+  n.inputs <- private$dims$inputs
+  n.obs    <- private$dims$observations
+
+  # Loss function (multivariate, as in the old joint update)
+  loss.type <- private$algo.settings$loss$loss
+  loss.c <- private$algo.settings$loss$c
+  loss.function <- construct.loss.function(dim="joint", type=loss.type, c=loss.c)
+
+  # Taped observation functions
+  # output: n.obs x (1 + n.obs + n.states) matrix [h | hvar_matrix | dhdx]
+  funs <- private$model$state.space.funs
+  obs.fun.tape <- RTMB::MakeTape(function(x) {
+    do.call(cbind, lapply(funs[c("h","hvar_matrix","dhdx")], \(f) do.call(f,x)))
+  }, list(numeric(n.states), numeric(n.pars), numeric(n.inputs)))
+
+  I0 <- diag(n.states)
+
+  # Joint update with all available observations.
+  # NOTE: the subsetting to available observations (which(y_bool)) must happen
+  # outside a MakeTape - tape arguments become AD objects, so which() would fail
+  # inside a tape. Here the function runs inside the outer AD tape, where
+  # subsetting AD matrices by a plain logical vector works (as in the old code).
+  # Only the observation function evaluations are taped (obs.fun.tape).
+  joint.update <- function(x, P, p, u, y, y_bool){
+    obs.funs <- obs.fun.tape(list(x, p, u))
+    idx <- which(y_bool)
+    H <- obs.funs[idx, 1, drop=TRUE]                              # n.avail
+    V <- obs.funs[idx, 1 + idx, drop=FALSE]                       # hvar_matrix[idx, idx]
+    C <- obs.funs[idx, 1 + n.obs + seq_len(n.states), drop=FALSE] # dhdx[idx, ]
+    # Innovation
+    e <- y[idx] - H
+    # Obs Jacobian times covariance
+    C_P <- C %*% P
+    # Innovation variance
+    R <- C_P %*% t(C) + V
+    # Kalman gain
+    K <- t(RTMB::solve(R, C_P))
+    # State update
+    x <- x + K %*% e
+    # Cov update (Joseph form with measurement noise V, as in the old kalman.data.update)
+    IKC <- I0 - K %*% C
+    P <- IKC %*% P %*% t(IKC) + K %*% V %*% t(K)
+    # Resymmetrize
+    P <- 0.5 * (P + t(P))
+    # Likelihood
+    nll <- loss.function(e, R)
+    return(list(x=x, P=P, nll=nll))
+  }
+
+  # Joint likelihood contribution without state update
+  # (used when training against full prediction; same as kalman.no.update.with.nll)
+  joint.no.update <- function(x, P, p, u, y, y_bool){
+    obs.funs <- obs.fun.tape(list(x, p, u))
+    idx <- which(y_bool)
+    H <- obs.funs[idx, 1, drop=TRUE]
+    V <- obs.funs[idx, 1 + idx, drop=FALSE]
+    e <- y[idx] - H
+    R <- V
+    nll <- loss.function(e, R)
+    return(list(x=x, P=P, nll=nll))
+  }
+
+  create_ekf_update_function <- function(data.update.fun){
+    f <- function(x,P,p,u,y){
+      y_bool = !is.na(y)
+      if (any(y_bool)) {
+        out <- data.update.fun(x, P, p, u, y, y_bool)
+      } else {
+        out <- list(x=x,P=P,nll=0)
+      }
+      return(out)
+    }
+    return(f)
+  }
+
+  if(private$algo.settings$train.against.full.prediction){
+    update.fun <- create_ekf_update_function(joint.no.update)
+  } else {
+    update.fun <- create_ekf_update_function(joint.update)
+  }
+
+  return(update.fun)
+}
+
+# data update dispatcher: choose between scalar and joint update
+# ------------------------------------
+ekf.construct.data.updater <- function(self, private, scalar.or.joint=c("scalar","joint")){
+  scalar.or.joint <- match.arg(scalar.or.joint)
+  if(scalar.or.joint=="scalar"){
+    return(ekf.construct.data.updater.scalar(self, private))
+  } else {
+    return(ekf.construct.data.updater.joint(self, private))
+  }
+}
+
 # setup function
 # ------------------------------------
 ekf.setup <- function(self, private){
@@ -215,7 +317,9 @@ ekf.setup <- function(self, private){
 
   algorithms <- list(
     time.update = ekf.construct.ode.integrator(self, private),
-    data.update = ekf.construct.data.updater(self, private),
+    # TO DO: add option to choose between joint and scalar update
+    data.update = ekf.construct.data.updater(self, private, scalar.or.joint="scalar"),
+    # data.update = ekf.construct.data.updater(self, private, scalar.or.joint="joint"),
     stationary.solver = construct.initial.state.estimators(self, private)
   )
 

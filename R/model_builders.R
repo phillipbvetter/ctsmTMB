@@ -15,13 +15,14 @@ build_model <- function(self, private) {
   # build model equations, transformations, function strings...
   apply_algebraic_equations(self, private)
   apply_lamperti_transform(self, private)
-  create_all_state_space_function_strings(self, private)
+
+  # create state space functions for RTMB and Rcpp Back-end
+  create_model_funs(self, private)
+  create_rcpp_model_funs(self, private)
+  compile_rcpp_functions(self, private)
 
   # last check (needs obs.eqs.trans / sys.eqs.trans populated above)
   final_build_check(self, private)
-
-  # compile rcpp functions
-  compile_rcpp_functions(self, private)
 
   # Build finalized - now disable rebuild flag
   private$rebuild$model <- FALSE
@@ -73,7 +74,7 @@ basic_model_check = function(self, private) {
 # 3. We check that all variables in the model are declared as states, inputs or parameters
 
 
-final_build_check = function(self, private) {
+final_build_check <- function(self, private) {
 
   # Verify that all observations relate to a state (have a state on their rhs)
   bool = unlist(lapply(private$model$obs.eqs.trans, function(x) any(private$names$states %in% x$allvars)))
