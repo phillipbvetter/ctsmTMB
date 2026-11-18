@@ -244,7 +244,7 @@ create.rcpp.state.space.string.bodies = function(self, private){
   constant.terms <- try_with_warning_recovery(
     unname(sapply(
       sapply(private$model$sys.eqs.trans, function(x) Deriv::Simplify(do.call(substitute, list(x$diff.dt, zero.list)))),
-      function(x) deparse1(do.call(substitute, list(x, subsList)))
+      to_term
     ))
   )
   if(inherits(constant.terms, "try-error")){
