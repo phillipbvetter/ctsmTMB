@@ -27,3 +27,6 @@ CLAUDE.md
 
 /.quarto/
 **/*.quarto_ipynb
+.RData
+.Rdata
+*.code-workspace
