@@ -26,16 +26,16 @@ Welcome to the GitHub repository of the *[ctsmTMB](https://phillipbvetter.github
 The purpose of *ctsmTMB* is to offer a user-friendly tool for inference and forecasting in linear and mildly non-linear continuous-discrete stochastic state space systems, i.e. systems on the form
 
 $$
-dx_{t} = f\left( t, x_t, u_t, \theta \right) \, dt + g\left( t, x_t, u_t, \theta \right) \, d\omega_{t}
+dx_{t} = f\left( x_t, u_t, \theta \right) \, dt + g\left( x_t, u_t, \theta \right) \, d\omega_{t}
 $$
 $$
-y_{k} = h\left( t_k, x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{k}
+y_{k} = h\left( x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{k}
 $$
 
 In this formulation the state $x_t$ is a stochastic continous-time process whose evolution is governed by the specified stochastic differential equation characterized by its drift $f$ and diffusion $g$. The associated algebraic equation relates measurements $y_{k}$ obtained at discrete times $t_k$ to the state values $x_{t_k}$ through the link function $h$. The measurement process is subject to zero-mean Gaussian noise via $\varepsilon_{k}$ i.e.
 
 $$
-\varepsilon_{k} \sim \mathcal{N} \left(0, \, \Sigma(t_k, x_{t_k}, u_{t_k}, \theta) \right)
+\varepsilon_{k} \sim \mathcal{N} \left(0, \, \Sigma(x_{t_k}, u_{t_k}, \theta) \right)
 $$
 
 State and parameter inference is based on maximum-likelihood estimation, using Gaussian approximations (Kalman filtering and methods based on the Laplace approximation). The likelihood optimization procedure is improved by the use of automatic differentiation made available via the *RTMB* package due to [Kristensen et. al (2016)](https://www.jstatsoft.org/article/view/v070i05). 
@@ -54,7 +54,7 @@ Once a model is created inference and forecasting is performed using the followi
 
 3. `smooth`:
 
-    Performs state smoothing (only for Laplace approximation methods).
+    Performs state smoothing.
 
 4. `predict`:
 

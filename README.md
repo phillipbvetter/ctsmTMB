@@ -1,6 +1,5 @@
 
 <!-- README.md is generated from README.Rmd. -->
-
 <!-- Logo -->
 
 # ctsmTMB <img src='man/figures/logo.png' align="right" height="150" />
@@ -27,9 +26,9 @@ and forecasting in linear and mildly non-linear continuous-discrete
 stochastic state space systems, i.e. systems on the form
 
 $$
-dx_{t} = f\left( t, x_t, u_t, \theta \right) \, dt + g\left( t, x_t, u_t, \theta \right) \, d\omega_{t}
+dx_{t} = f\left( x_t, u_t, \theta \right) \, dt + g\left( x_t, u_t, \theta \right) \, d\omega_{t}
 $$ $$
-y_{k} = h\left( t_k, x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{k}
+y_{k} = h\left( x_{t_k}, u_{t_k}, \theta \right) + \varepsilon_{k}
 $$
 
 In this formulation the state $x_t$ is a stochastic continous-time
@@ -41,7 +40,7 @@ function $h$. The measurement process is subject to zero-mean Gaussian
 noise via $\varepsilon_{k}$ i.e.
 
 $$
-\varepsilon_{k} \sim \mathcal{N} \left(0, \, \Sigma(t_k, x_{t_k}, u_{t_k}, \theta) \right)
+\varepsilon_{k} \sim \mathcal{N} \left(0, \, \Sigma(x_{t_k}, u_{t_k}, \theta) \right)
 $$
 
 State and parameter inference is based on maximum-likelihood estimation,
@@ -75,7 +74,7 @@ following available methods:
 
 3.  `smooth`:
 
-    Performs state smoothing (only for Laplace approximation methods).
+    Performs state smoothing.
 
 4.  `predict`:
 
@@ -377,15 +376,15 @@ plot(fit)
 
 ## Bibliography
 
-- Kristensen, K. (2016) “TMB: Automatic Differentiation and Laplace
-  Approximation”, In: [Journal of Statistical Software, 70(5),
-  pp. 1–21](https://www.jstatsoft.org/article/view/v070i05)
+-   Kristensen, K. (2016) “TMB: Automatic Differentiation and Laplace
+    Approximation”, In: [Journal of Statistical Software, 70(5),
+    pp. 1–21](https://www.jstatsoft.org/article/view/v070i05)
 
-- U. H. Thygesen and K. Kristensen (2025), *“Inference in stochastic
-  differential equations using the Laplace approximation: Demonstration
-  and examples”*. In:
-  [arXiv:2503.21358v2](https://arxiv.org/abs/2503.21358).
+-   U. H. Thygesen and K. Kristensen (2025), *“Inference in stochastic
+    differential equations using the Laplace approximation:
+    Demonstration and examples”*. In:
+    [arXiv:2503.21358v2](https://arxiv.org/abs/2503.21358).
 
-- S. Särkkä, *“On Unscented Kalman Filtering for State Estimation of
-  Continuous-Time Nonlinear Systems”*. In: IEEE Transactions on
-  Automatic Control, 52(9), 1631-1641.
+-   S. Särkkä, *“On Unscented Kalman Filtering for State Estimation of
+    Continuous-Time Nonlinear Systems”*. In: IEEE Transactions on
+    Automatic Control, 52(9), 1631-1641.
