@@ -24,3 +24,6 @@ dev
 .claude
 CLAUDE.md
 .Rproj.user
+
+/.quarto/
+**/*.quarto_ipynb
