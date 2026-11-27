@@ -53,7 +53,7 @@ ekf.construct.ode.integrator <- function(self, private){
     do.call(cbind, do.call(ode.integrator, arglist))
   }, arglist)
 
-  time.update <- function(x,P,p,u,du,steps,dt){
+  time.update <- function(x, P, p, u, du, steps, dt){
     for (j in seq_len(steps)) {
       sol <- taped.integrator(list(x, P, p, u, du, dt))
       x = sol[,1]
@@ -104,10 +104,7 @@ ekf.construct.data.updater.scalar <- function(self, private){
     K <- PCt / R
     # State Update
     x <- x + K * e
-    # Cov Update
-    # Standard Update Form
-    # P <- P - K %*% t(PCt)
-    # Joseph Form
+    # Cov Update - Joseph Form
     IKC <- I0 - K %*% C
     P <- IKC %*% P %*% t(IKC) + vj * K %*% t(K)
     # Resymmetrize
@@ -117,7 +114,8 @@ ekf.construct.data.updater.scalar <- function(self, private){
     # Return
     # It is faster to return a matrix for subsetting than to return a vector with c()
     # so we just repeat nll to match the rows of stateVec/covMat
-    cbind(x, P, rep(nll, n.states))
+    # cbind(x, P, rep(nll, n.states))
+    cbind(x, P, nll)
   }, list(numeric(n.states), diag(n.states), numeric(n.states), numeric(n.states), 0, 1, 0))
 
   sequential.update <- function(x, P, p, u, y, y_bool){
