@@ -49,8 +49,8 @@ plot.ctsmTMB.pred = function(x,
   pred <- x
 
   # Create plot
-  colors <- getggplot2colors(3)
-  colors <- colors[c(1,3,2)]
+  # These are ggplot colors 
+  colors <- c("#F8766D","#619CFF","#00BA38")
   names(colors) <- c(state.name, obs.name, paste0(against.obs,".data"))
 
   bool <- pred$states$mean_and_sd$i. %in% plot.series.i

@@ -34,7 +34,6 @@ Imports:
     Deriv,
     ggplot2 (>= 3.5.2),
     graphics,
-    grDevices,
     Matrix,
     patchwork,
     R6,
